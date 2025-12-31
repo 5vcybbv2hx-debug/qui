@@ -2,18 +2,19 @@ import { Download } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { format, parse } from 'date-fns';
 
-export default function CalendarExport({ shifts }) {
+export default function CalendarExport({ shifts, reservations }) {
     const generateICS = () => {
         const lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
-            'PRODID:-//Bar Manager//Schichtplan//DE',
+            'PRODID:-//Bar Manager//Schichtplan & Reservierungen//DE',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
-            'X-WR-CALNAME:Bar Schichtplan',
+            'X-WR-CALNAME:Bar Management',
             'X-WR-TIMEZONE:Europe/Berlin'
         ];
 
+        // Add shifts
         shifts.forEach(shift => {
             const date = shift.date.replace(/-/g, '');
             const startTime = shift.start_time.replace(':', '') + '00';
@@ -44,6 +45,32 @@ export default function CalendarExport({ shifts }) {
             lines.push('END:VEVENT');
         });
 
+        // Add reservations
+        if (reservations) {
+            reservations.forEach(res => {
+                if (res.status === 'storniert') return;
+                
+                const date = res.date.replace(/-/g, '');
+                const time = res.time.replace(':', '') + '00';
+                const endHour = parseInt(res.time.split(':')[0]) + 2;
+                const endTime = endHour.toString().padStart(2, '0') + res.time.split(':')[1] + '00';
+
+                lines.push('BEGIN:VEVENT');
+                lines.push(`UID:res-${res.id}@barmanager.app`);
+                lines.push(`DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`);
+                lines.push(`DTSTART:${date}T${time}`);
+                lines.push(`DTEND:${date}T${endTime}`);
+                lines.push(`SUMMARY:Reservierung: ${res.customer_name} (${res.guests} Pers.)`);
+                let desc = `${res.guests} Personen`;
+                if (res.table) desc += ` - Tisch ${res.table}`;
+                if (res.phone) desc += `\\nTel: ${res.phone}`;
+                if (res.notes) desc += `\\n${res.notes}`;
+                lines.push(`DESCRIPTION:${desc}`);
+                lines.push('STATUS:CONFIRMED');
+                lines.push('END:VEVENT');
+            });
+        }
+
         lines.push('END:VCALENDAR');
         
         return lines.join('\r\n');
@@ -54,7 +81,7 @@ export default function CalendarExport({ shifts }) {
         const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `bar-schichtplan-${format(new Date(), 'yyyy-MM-dd')}.ics`;
+        link.download = `bar-management-${format(new Date(), 'yyyy-MM-dd')}.ics`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -64,7 +91,7 @@ export default function CalendarExport({ shifts }) {
         <Button 
             variant="outline"
             onClick={handleExport}
-            disabled={shifts.length === 0}
+            disabled={shifts.length === 0 && (!reservations || reservations.length === 0)}
             className="gap-2"
         >
             <Download className="w-4 h-4" />

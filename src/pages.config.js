@@ -3,6 +3,7 @@ import Shifts from './pages/Shifts';
 import Cleaning from './pages/Cleaning';
 import Todos from './pages/Todos';
 import Employees from './pages/Employees';
+import Reservations from './pages/Reservations';
 import __Layout from './Layout.jsx';
 
 
@@ -12,6 +13,7 @@ export const PAGES = {
     "Cleaning": Cleaning,
     "Todos": Todos,
     "Employees": Employees,
+    "Reservations": Reservations,
 }
 
 export const pagesConfig = {

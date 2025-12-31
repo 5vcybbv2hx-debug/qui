@@ -26,6 +26,11 @@ export default function Shifts() {
         queryFn: () => base44.entities.Shift.list('-date', 200)
     });
 
+    const { data: reservations = [] } = useQuery({
+        queryKey: ['reservations'],
+        queryFn: () => base44.entities.Reservation.list('-date', 200)
+    });
+
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
         onSuccess: () => {
@@ -94,7 +99,7 @@ export default function Shifts() {
                         <p className="text-slate-500 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2">
-                        <CalendarExport shifts={shifts} />
+                        <CalendarExport shifts={shifts} reservations={reservations} />
                         <Button 
                             onClick={() => handleAddShift(new Date())}
                             className="bg-slate-800 hover:bg-slate-900"

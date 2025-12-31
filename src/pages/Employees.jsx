@@ -35,12 +35,14 @@ export default function Employees() {
         role: 'Barkeeper',
         color: COLORS[0],
         phone: '',
+        email: '',
         birthday: '',
         birth_name: '',
         birth_place: '',
         entry_date: '',
         education: '',
         tax_id: '',
+        pension_insurance_number: '',
         health_insurance: '',
         tshirt_size: '',
         pullover_size: '',
@@ -90,12 +92,14 @@ export default function Employees() {
                 role: employee.role,
                 color: employee.color || COLORS[0],
                 phone: employee.phone || '',
+                email: employee.email || '',
                 birthday: employee.birthday || '',
                 birth_name: employee.birth_name || '',
                 birth_place: employee.birth_place || '',
                 entry_date: employee.entry_date || '',
                 education: employee.education || '',
                 tax_id: employee.tax_id || '',
+                pension_insurance_number: employee.pension_insurance_number || '',
                 health_insurance: employee.health_insurance || '',
                 tshirt_size: employee.tshirt_size || '',
                 pullover_size: employee.pullover_size || '',
@@ -112,12 +116,14 @@ export default function Employees() {
                 role: 'Barkeeper',
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
                 phone: '',
+                email: '',
                 birthday: '',
                 birth_name: '',
                 birth_place: '',
                 entry_date: '',
                 education: '',
                 tax_id: '',
+                pension_insurance_number: '',
                 health_insurance: '',
                 tshirt_size: '',
                 pullover_size: '',
@@ -315,6 +321,16 @@ export default function Employees() {
                             </div>
 
                             <div className="space-y-2">
+                                <Label>E-Mail</Label>
+                                <Input
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    placeholder="name@beispiel.de"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
                                 <Label>Geburtsdatum</Label>
                                 <Input
                                     type="date"
@@ -382,24 +398,31 @@ export default function Employees() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label>Steuer-IdNr</Label>
-                                        <Input
-                                            value={formData.tax_id}
-                                            onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
-                                            placeholder="12 345 678 901"
-                                        />
-                                    </div>
+                                <div className="space-y-2">
+                                    <Label>Steuer-IdNr</Label>
+                                    <Input
+                                        value={formData.tax_id}
+                                        onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                                        placeholder="12 345 678 901"
+                                    />
+                                </div>
 
-                                    <div className="space-y-2">
-                                        <Label>Krankenkasse</Label>
-                                        <Input
-                                            value={formData.health_insurance}
-                                            onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
-                                            placeholder="z.B. AOK"
-                                        />
-                                    </div>
+                                <div className="space-y-2">
+                                    <Label>Rentenversicherungsnummer</Label>
+                                    <Input
+                                        value={formData.pension_insurance_number}
+                                        onChange={(e) => setFormData({ ...formData, pension_insurance_number: e.target.value })}
+                                        placeholder="12 345678 A 123"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Krankenkasse</Label>
+                                    <Input
+                                        value={formData.health_insurance}
+                                        onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
+                                        placeholder="z.B. AOK"
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">

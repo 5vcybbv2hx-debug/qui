@@ -35,6 +35,7 @@ export default function Employees() {
         role: 'Barkeeper',
         color: COLORS[0],
         phone: '',
+        birthday: '',
         is_active: true
     });
 
@@ -77,6 +78,7 @@ export default function Employees() {
                 role: employee.role,
                 color: employee.color || COLORS[0],
                 phone: employee.phone || '',
+                birthday: employee.birthday || '',
                 is_active: employee.is_active !== false
             });
         } else {
@@ -86,6 +88,7 @@ export default function Employees() {
                 role: 'Barkeeper',
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
                 phone: '',
+                birthday: '',
                 is_active: true
             });
         }
@@ -272,6 +275,15 @@ export default function Employees() {
                                     value={formData.phone}
                                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="+49 123 456789"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Geburtsdatum</Label>
+                                <Input
+                                    type="date"
+                                    value={formData.birthday}
+                                    onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
                                 />
                             </div>
 

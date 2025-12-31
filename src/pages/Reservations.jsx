@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import ReservationModal from '@/components/reservations/ReservationModal';
+import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 
 export default function Reservations() {
     const queryClient = useQueryClient();
@@ -146,6 +147,7 @@ export default function Reservations() {
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        <LiveSyncInstructions />
                         <Button 
                             variant="outline"
                             onClick={handleExportCalendar}

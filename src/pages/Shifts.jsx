@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import ShiftCalendar from '@/components/shifts/ShiftCalendar';
 import ShiftModal from '@/components/shifts/ShiftModal';
 import CalendarExport from '@/components/shifts/CalendarExport';
+import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 
 export default function Shifts() {
     const queryClient = useQueryClient();
@@ -99,6 +100,7 @@ export default function Shifts() {
                         <p className="text-slate-500 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2">
+                        <LiveSyncInstructions />
                         <CalendarExport shifts={shifts} reservations={reservations} />
                         <Button 
                             onClick={() => handleAddShift(new Date())}

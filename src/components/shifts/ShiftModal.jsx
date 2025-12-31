@@ -14,9 +14,9 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         employee_id: '',
         employee_name: '',
         date: '',
-        start_time: '18:00',
-        end_time: '02:00',
-        shift_type: 'Spätschicht',
+        start_time: '16:00',
+        end_time: '03:00',
+        shift_type: 'Aufmachen',
         notes: '',
         color: ''
     });
@@ -39,9 +39,9 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 employee_id: '',
                 employee_name: '',
                 date: format(selectedDate, 'yyyy-MM-dd'),
-                start_time: '18:00',
-                end_time: '02:00',
-                shift_type: 'Spätschicht',
+                start_time: '16:00',
+                end_time: '03:00',
+                shift_type: 'Aufmachen',
                 notes: '',
                 color: ''
             }));
@@ -55,6 +55,31 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
             employee_id: employeeId,
             employee_name: employee?.name || '',
             color: employee?.color || ''
+        }));
+    };
+
+    const handleShiftTypeChange = (shiftType) => {
+        let start_time = formData.start_time;
+        let end_time = formData.end_time;
+
+        // Auto-fill times based on shift type
+        if (shiftType === 'Aufmachen') {
+            start_time = '16:00';
+            end_time = '03:00';
+        } else if (shiftType === 'Frühschicht') {
+            start_time = '20:00';
+            end_time = '05:00';
+        } else if (shiftType === 'Spätschicht') {
+            start_time = '21:00';
+            end_time = '05:00';
+        }
+        // For Sonderschicht, keep current times (manual entry)
+
+        setFormData(prev => ({
+            ...prev,
+            shift_type: shiftType,
+            start_time,
+            end_time
         }));
     };
 
@@ -125,15 +150,15 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
 
                     <div className="space-y-2">
                         <Label>Schichttyp</Label>
-                        <Select value={formData.shift_type} onValueChange={(v) => setFormData({ ...formData, shift_type: v })}>
+                        <Select value={formData.shift_type} onValueChange={handleShiftTypeChange}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Frühschicht">Frühschicht</SelectItem>
-                                <SelectItem value="Spätschicht">Spätschicht</SelectItem>
-                                <SelectItem value="Nachtschicht">Nachtschicht</SelectItem>
-                                <SelectItem value="Doppelschicht">Doppelschicht</SelectItem>
+                                <SelectItem value="Aufmachen">Aufmachen (16:00 - 03:00)</SelectItem>
+                                <SelectItem value="Frühschicht">Frühschicht (20:00 - 05:00)</SelectItem>
+                                <SelectItem value="Spätschicht">Spätschicht (21:00 - 05:00)</SelectItem>
+                                <SelectItem value="Sonderschicht">Sonderschicht (manuell)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

@@ -36,6 +36,12 @@ export default function Employees() {
         color: COLORS[0],
         phone: '',
         birthday: '',
+        birth_name: '',
+        birth_place: '',
+        entry_date: '',
+        education: '',
+        tax_id: '',
+        health_insurance: '',
         tshirt_size: '',
         pullover_size: '',
         street: '',
@@ -85,6 +91,12 @@ export default function Employees() {
                 color: employee.color || COLORS[0],
                 phone: employee.phone || '',
                 birthday: employee.birthday || '',
+                birth_name: employee.birth_name || '',
+                birth_place: employee.birth_place || '',
+                entry_date: employee.entry_date || '',
+                education: employee.education || '',
+                tax_id: employee.tax_id || '',
+                health_insurance: employee.health_insurance || '',
                 tshirt_size: employee.tshirt_size || '',
                 pullover_size: employee.pullover_size || '',
                 street: employee.street || '',
@@ -101,6 +113,12 @@ export default function Employees() {
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
                 phone: '',
                 birthday: '',
+                birth_name: '',
+                birth_place: '',
+                entry_date: '',
+                education: '',
+                tax_id: '',
+                health_insurance: '',
                 tshirt_size: '',
                 pullover_size: '',
                 street: '',
@@ -326,6 +344,64 @@ export default function Employees() {
                             <div className="pt-4 border-t space-y-4">
                                 <h4 className="font-semibold text-slate-800">Personalakte</h4>
                                 
+                                <div className="space-y-2">
+                                    <Label>Eintrittsdatum</Label>
+                                    <Input
+                                        type="date"
+                                        value={formData.entry_date}
+                                        onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Geburtsname</Label>
+                                        <Input
+                                            value={formData.birth_name}
+                                            onChange={(e) => setFormData({ ...formData, birth_name: e.target.value })}
+                                            placeholder="Falls abweichend"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Geburtsort</Label>
+                                        <Input
+                                            value={formData.birth_place}
+                                            onChange={(e) => setFormData({ ...formData, birth_place: e.target.value })}
+                                            placeholder="z.B. Berlin"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Schul- und Berufsausbildung</Label>
+                                    <Input
+                                        value={formData.education}
+                                        onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                                        placeholder="z.B. Realschule, Ausbildung zur Hotelfachkraft"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Steuer-IdNr</Label>
+                                        <Input
+                                            value={formData.tax_id}
+                                            onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                                            placeholder="12 345 678 901"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Krankenkasse</Label>
+                                        <Input
+                                            value={formData.health_insurance}
+                                            onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
+                                            placeholder="z.B. AOK"
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
                                         <Label>T-Shirt Größe</Label>

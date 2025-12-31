@@ -43,7 +43,6 @@ export default function Employees() {
         street: '',
         postal_code: '',
         city: '',
-        nationality: '',
         is_active: true
     });
 
@@ -94,7 +93,6 @@ export default function Employees() {
                 street: employee.street || '',
                 postal_code: employee.postal_code || '',
                 city: employee.city || '',
-                nationality: employee.nationality || '',
                 is_active: employee.is_active !== false
             });
         } else {
@@ -464,15 +462,6 @@ export default function Employees() {
                                             placeholder="Berlin"
                                         />
                                     </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Nationalität</Label>
-                                    <Input
-                                        value={formData.nationality}
-                                        onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                                        placeholder="z.B. Deutsch"
-                                    />
                                 </div>
                             </div>
 

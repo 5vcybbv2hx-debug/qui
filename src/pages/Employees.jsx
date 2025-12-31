@@ -323,6 +323,86 @@ export default function Employees() {
                                 </div>
                             </div>
 
+                            <div className="pt-4 border-t space-y-4">
+                                <h4 className="font-semibold text-slate-800">Personalakte</h4>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>T-Shirt Größe</Label>
+                                        <Select value={formData.tshirt_size} onValueChange={(v) => setFormData({ ...formData, tshirt_size: v })}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Größe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="XS">XS</SelectItem>
+                                                <SelectItem value="S">S</SelectItem>
+                                                <SelectItem value="M">M</SelectItem>
+                                                <SelectItem value="L">L</SelectItem>
+                                                <SelectItem value="XL">XL</SelectItem>
+                                                <SelectItem value="XXL">XXL</SelectItem>
+                                                <SelectItem value="XXXL">XXXL</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Pullovergröße</Label>
+                                        <Select value={formData.pullover_size} onValueChange={(v) => setFormData({ ...formData, pullover_size: v })}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Größe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="XS">XS</SelectItem>
+                                                <SelectItem value="S">S</SelectItem>
+                                                <SelectItem value="M">M</SelectItem>
+                                                <SelectItem value="L">L</SelectItem>
+                                                <SelectItem value="XL">XL</SelectItem>
+                                                <SelectItem value="XXL">XXL</SelectItem>
+                                                <SelectItem value="XXXL">XXXL</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Straße und Hausnummer</Label>
+                                    <Input
+                                        value={formData.street}
+                                        onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                                        placeholder="Musterstraße 123"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Postleitzahl</Label>
+                                        <Input
+                                            value={formData.postal_code}
+                                            onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                                            placeholder="12345"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Wohnort</Label>
+                                        <Input
+                                            value={formData.city}
+                                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                            placeholder="Berlin"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Nationalität</Label>
+                                    <Input
+                                        value={formData.nationality}
+                                        onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                                        placeholder="z.B. Deutsch"
+                                    />
+                                </div>
+                            </div>
+
                             {selectedEmployee && (
                                 <div className="flex items-center justify-between py-2">
                                     <Label>Aktiv</Label>

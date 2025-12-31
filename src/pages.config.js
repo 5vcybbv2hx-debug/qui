@@ -3,6 +3,7 @@ import Shifts from './pages/Shifts';
 import Cleaning from './pages/Cleaning';
 import Todos from './pages/Todos';
 import Employees from './pages/Employees';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -16,4 +17,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
+    Layout: __Layout,
 };

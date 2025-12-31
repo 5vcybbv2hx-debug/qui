@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ShiftCalendar from '@/components/shifts/ShiftCalendar';
 import ShiftModal from '@/components/shifts/ShiftModal';
+import CalendarExport from '@/components/shifts/CalendarExport';
 
 export default function Shifts() {
     const queryClient = useQueryClient();
@@ -92,13 +93,16 @@ export default function Shifts() {
                         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Schichtplan</h1>
                         <p className="text-slate-500 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
-                    <Button 
-                        onClick={() => handleAddShift(new Date())}
-                        className="bg-slate-800 hover:bg-slate-900"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Neue Schicht
-                    </Button>
+                    <div className="flex gap-2">
+                        <CalendarExport shifts={shifts} />
+                        <Button 
+                            onClick={() => handleAddShift(new Date())}
+                            className="bg-slate-800 hover:bg-slate-900"
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Neue Schicht
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Calendar */}

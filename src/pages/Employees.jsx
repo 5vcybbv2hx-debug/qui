@@ -36,6 +36,12 @@ export default function Employees() {
         color: COLORS[0],
         phone: '',
         birthday: '',
+        tshirt_size: '',
+        pullover_size: '',
+        street: '',
+        postal_code: '',
+        city: '',
+        nationality: '',
         is_active: true
     });
 
@@ -79,6 +85,12 @@ export default function Employees() {
                 color: employee.color || COLORS[0],
                 phone: employee.phone || '',
                 birthday: employee.birthday || '',
+                tshirt_size: employee.tshirt_size || '',
+                pullover_size: employee.pullover_size || '',
+                street: employee.street || '',
+                postal_code: employee.postal_code || '',
+                city: employee.city || '',
+                nationality: employee.nationality || '',
                 is_active: employee.is_active !== false
             });
         } else {
@@ -89,6 +101,12 @@ export default function Employees() {
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
                 phone: '',
                 birthday: '',
+                tshirt_size: '',
+                pullover_size: '',
+                street: '',
+                postal_code: '',
+                city: '',
+                nationality: '',
                 is_active: true
             });
         }

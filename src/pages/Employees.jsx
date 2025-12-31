@@ -41,9 +41,6 @@ export default function Employees() {
         birth_place: '',
         entry_date: '',
         education: '',
-        tax_id: '',
-        pension_insurance_number: '',
-        health_insurance: '',
         tshirt_size: '',
         pullover_size: '',
         street: '',
@@ -98,9 +95,6 @@ export default function Employees() {
                 birth_place: employee.birth_place || '',
                 entry_date: employee.entry_date || '',
                 education: employee.education || '',
-                tax_id: employee.tax_id || '',
-                pension_insurance_number: employee.pension_insurance_number || '',
-                health_insurance: employee.health_insurance || '',
                 tshirt_size: employee.tshirt_size || '',
                 pullover_size: employee.pullover_size || '',
                 street: employee.street || '',
@@ -415,33 +409,6 @@ export default function Employees() {
                                         value={formData.education}
                                         onChange={(e) => setFormData({ ...formData, education: e.target.value })}
                                         placeholder="z.B. Realschule, Ausbildung zur Hotelfachkraft"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Steuer-IdNr</Label>
-                                    <Input
-                                        value={formData.tax_id}
-                                        onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
-                                        placeholder="12 345 678 901"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Rentenversicherungsnummer</Label>
-                                    <Input
-                                        value={formData.pension_insurance_number}
-                                        onChange={(e) => setFormData({ ...formData, pension_insurance_number: e.target.value })}
-                                        placeholder="12 345678 A 123"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Krankenkasse</Label>
-                                    <Input
-                                        value={formData.health_insurance}
-                                        onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
-                                        placeholder="z.B. AOK"
                                     />
                                 </div>
 

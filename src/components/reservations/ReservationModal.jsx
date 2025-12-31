@@ -107,9 +107,10 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label>Uhrzeit *</Label>
+                            <Label>Uhrzeit * (bis 21:00 Uhr)</Label>
                             <Input
                                 type="time"
+                                max="21:00"
                                 value={formData.time}
                                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                                 required

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Phone, Users } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, Users, ShoppingCart } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -155,6 +155,26 @@ export default function Employees() {
         if (confirm('Mitarbeiter wirklich löschen?')) {
             deleteMutation.mutate(id);
         }
+    };
+
+    const handleOrderItem = (itemType, size, employeeName) => {
+        if (!size) {
+            alert(`Bitte zuerst ${itemType === 'tshirt' ? 'T-Shirt' : 'Pullover'}-Größe auswählen`);
+            return;
+        }
+        
+        const title = itemType === 'tshirt' 
+            ? `T-Shirt bestellen: ${employeeName} (${size})`
+            : `Pullover bestellen: ${employeeName} (${size})`;
+        
+        base44.entities.TodoItem.create({
+            title: title,
+            category: 'Einkauf',
+            priority: 'mittel',
+            status: 'offen'
+        }).then(() => {
+            alert(`Bestellung zur Aufgabenliste hinzugefügt!`);
+        });
     };
 
     const activeEmployees = employees.filter(e => e.is_active !== false);
@@ -425,41 +445,63 @@ export default function Employees() {
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-3">
                                     <div className="space-y-2">
                                         <Label>T-Shirt Größe</Label>
-                                        <Select value={formData.tshirt_size} onValueChange={(v) => setFormData({ ...formData, tshirt_size: v })}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Größe" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="XS">XS</SelectItem>
-                                                <SelectItem value="S">S</SelectItem>
-                                                <SelectItem value="M">M</SelectItem>
-                                                <SelectItem value="L">L</SelectItem>
-                                                <SelectItem value="XL">XL</SelectItem>
-                                                <SelectItem value="XXL">XXL</SelectItem>
-                                                <SelectItem value="XXXL">XXXL</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex gap-2">
+                                            <Select value={formData.tshirt_size} onValueChange={(v) => setFormData({ ...formData, tshirt_size: v })}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Größe" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="XS">XS</SelectItem>
+                                                    <SelectItem value="S">S</SelectItem>
+                                                    <SelectItem value="M">M</SelectItem>
+                                                    <SelectItem value="L">L</SelectItem>
+                                                    <SelectItem value="XL">XL</SelectItem>
+                                                    <SelectItem value="XXL">XXL</SelectItem>
+                                                    <SelectItem value="XXXL">XXXL</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => handleOrderItem('tshirt', formData.tshirt_size, formData.name)}
+                                                className="shrink-0"
+                                            >
+                                                <ShoppingCart className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label>Pullovergröße</Label>
-                                        <Select value={formData.pullover_size} onValueChange={(v) => setFormData({ ...formData, pullover_size: v })}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Größe" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="XS">XS</SelectItem>
-                                                <SelectItem value="S">S</SelectItem>
-                                                <SelectItem value="M">M</SelectItem>
-                                                <SelectItem value="L">L</SelectItem>
-                                                <SelectItem value="XL">XL</SelectItem>
-                                                <SelectItem value="XXL">XXL</SelectItem>
-                                                <SelectItem value="XXXL">XXXL</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <div className="flex gap-2">
+                                            <Select value={formData.pullover_size} onValueChange={(v) => setFormData({ ...formData, pullover_size: v })}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Größe" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="XS">XS</SelectItem>
+                                                    <SelectItem value="S">S</SelectItem>
+                                                    <SelectItem value="M">M</SelectItem>
+                                                    <SelectItem value="L">L</SelectItem>
+                                                    <SelectItem value="XL">XL</SelectItem>
+                                                    <SelectItem value="XXL">XXL</SelectItem>
+                                                    <SelectItem value="XXXL">XXXL</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => handleOrderItem('pullover', formData.pullover_size, formData.name)}
+                                                className="shrink-0"
+                                            >
+                                                <ShoppingCart className="w-4 h-4" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
 

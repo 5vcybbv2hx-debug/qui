@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
 
@@ -9,6 +9,7 @@ const navigation = [
     { name: 'Dashboard', page: 'Dashboard', icon: Home },
     { name: 'Schichtplan', page: 'Shifts', icon: Calendar },
     { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck },
+    { name: 'Auffüllen', page: 'Restock', icon: Package },
     { name: 'Putzliste', page: 'Cleaning', icon: Sparkles },
     { name: 'Aufgaben', page: 'Todos', icon: CheckSquare },
     { name: 'Team', page: 'Employees', icon: Users },

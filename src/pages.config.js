@@ -4,6 +4,7 @@ import Employees from './pages/Employees';
 import Reservations from './pages/Reservations';
 import Shifts from './pages/Shifts';
 import Todos from './pages/Todos';
+import Restock from './pages/Restock';
 import __Layout from './Layout.jsx';
 
 
@@ -14,6 +15,7 @@ export const PAGES = {
     "Reservations": Reservations,
     "Shifts": Shifts,
     "Todos": Todos,
+    "Restock": Restock,
 }
 
 export const pagesConfig = {

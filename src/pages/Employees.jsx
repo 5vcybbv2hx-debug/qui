@@ -37,10 +37,7 @@ export default function Employees() {
         phone: '',
         email: '',
         birthday: '',
-        birth_name: '',
-        birth_place: '',
         entry_date: '',
-        education: '',
         tshirt_size: '',
         pullover_size: '',
         street: '',
@@ -91,10 +88,7 @@ export default function Employees() {
                 phone: employee.phone || '',
                 email: employee.email || '',
                 birthday: employee.birthday || '',
-                birth_name: employee.birth_name || '',
-                birth_place: employee.birth_place || '',
                 entry_date: employee.entry_date || '',
-                education: employee.education || '',
                 tshirt_size: employee.tshirt_size || '',
                 pullover_size: employee.pullover_size || '',
                 street: employee.street || '',
@@ -380,35 +374,6 @@ export default function Employees() {
                                         type="date"
                                         value={formData.entry_date}
                                         onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label>Geburtsname</Label>
-                                        <Input
-                                            value={formData.birth_name}
-                                            onChange={(e) => setFormData({ ...formData, birth_name: e.target.value })}
-                                            placeholder="Falls abweichend"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Geburtsort</Label>
-                                        <Input
-                                            value={formData.birth_place}
-                                            onChange={(e) => setFormData({ ...formData, birth_place: e.target.value })}
-                                            placeholder="z.B. Berlin"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Schul- und Berufsausbildung</Label>
-                                    <Input
-                                        value={formData.education}
-                                        onChange={(e) => setFormData({ ...formData, education: e.target.value })}
-                                        placeholder="z.B. Realschule, Ausbildung zur Hotelfachkraft"
                                     />
                                 </div>
 

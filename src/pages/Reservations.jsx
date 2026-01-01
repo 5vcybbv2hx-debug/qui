@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tantml/react-query';
 import { format, isSameDay, startOfWeek, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Calendar, Users, Phone, Mail, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +15,7 @@ import ReservationModal from '@/components/reservations/ReservationModal';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 
 export default function Reservations() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedReservation, setSelectedReservation] = useState(null);
@@ -135,6 +138,10 @@ export default function Reservations() {
         .filter(r => r.status !== 'storniert')
         .reduce((sum, r) => sum + (r.guests || 0), 0);
 
+    if (!permissions.canViewReservations) {
+        return <PermissionDenied message="Du hast keine Berechtigung, Reservierungen zu sehen." />;
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
             <div className="max-w-6xl mx-auto px-4 py-8">
@@ -156,16 +163,18 @@ export default function Reservations() {
                             <Download className="w-4 h-4 mr-2" />
                             Kalender
                         </Button>
-                        <Button 
-                            onClick={() => {
-                                setSelectedReservation(null);
-                                setModalOpen(true);
-                            }}
-                            className="bg-slate-800 hover:bg-slate-900"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Reservierung
-                        </Button>
+                        {permissions.canEditReservations && (
+                            <Button 
+                                onClick={() => {
+                                    setSelectedReservation(null);
+                                    setModalOpen(true);
+                                }}
+                                className="bg-slate-800 hover:bg-slate-900"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Reservierung
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -296,18 +305,20 @@ export default function Reservations() {
                         <div className="text-center py-12 text-slate-400">
                             <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                             <p className="text-lg font-medium">Keine Reservierungen</p>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="mt-3"
-                                onClick={() => {
-                                    setSelectedReservation(null);
-                                    setModalOpen(true);
-                                }}
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Reservierung hinzufügen
-                            </Button>
+                            {permissions.canEditReservations && (
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="mt-3"
+                                    onClick={() => {
+                                        setSelectedReservation(null);
+                                        setModalOpen(true);
+                                    }}
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Reservierung hinzufügen
+                                </Button>
+                            )}
                         </div>
                     )}
                 </Card>

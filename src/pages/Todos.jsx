@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Filter, CheckSquare } from 'lucide-react';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TodoCard from '@/components/todos/TodoCard';
 import TodoModal from '@/components/todos/TodoModal';
 
 export default function Todos() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTodo, setSelectedTodo] = useState(null);
@@ -84,6 +87,10 @@ export default function Todos() {
     const inProgressCount = todos.filter(t => t.status === 'in_bearbeitung').length;
     const doneCount = todos.filter(t => t.status === 'erledigt').length;
 
+    if (!permissions.canViewTodos) {
+        return <PermissionDenied message="Du hast keine Berechtigung, Aufgaben zu sehen." />;
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
             <div className="max-w-3xl mx-auto px-4 py-8">
@@ -95,16 +102,18 @@ export default function Todos() {
                             {openCount} offen · {inProgressCount} in Bearbeitung · {doneCount} erledigt
                         </p>
                     </div>
-                    <Button 
-                        onClick={() => {
-                            setSelectedTodo(null);
-                            setModalOpen(true);
-                        }}
-                        className="bg-slate-800 hover:bg-slate-900"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Neue Aufgabe
-                    </Button>
+                    {permissions.canEditTodos && (
+                        <Button 
+                            onClick={() => {
+                                setSelectedTodo(null);
+                                setModalOpen(true);
+                            }}
+                            className="bg-slate-800 hover:bg-slate-900"
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Neue Aufgabe
+                        </Button>
+                    )}
                 </div>
 
                 {/* Filter Tabs */}

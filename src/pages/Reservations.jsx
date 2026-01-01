@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tantml/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isSameDay, startOfWeek, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Calendar, Users, Phone, Mail, ChevronLeft, ChevronRight, Download } from 'lucide-react';

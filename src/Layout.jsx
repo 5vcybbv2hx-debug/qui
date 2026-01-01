@@ -51,7 +51,7 @@ export default function Layout({ children, currentPageName }) {
                                             : "text-slate-400 hover:bg-slate-800"
                                     )}
                                 >
-                                    <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-400")} />
+                                    <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
                                     {item.name}
                                 </Link>
                             );
@@ -105,7 +105,7 @@ export default function Layout({ children, currentPageName }) {
                                                 : "text-slate-400 hover:bg-slate-800"
                                         )}
                                     >
-                                        <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-400")} />
+                                        <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
                                         {item.name}
                                     </Link>
                                 );

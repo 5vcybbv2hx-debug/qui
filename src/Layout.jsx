@@ -24,16 +24,16 @@ export default function Layout({ children, currentPageName }) {
     const permissions = usePermissions();
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-900">
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-                <div className="flex flex-col flex-grow bg-white border-r border-slate-200 pt-5 overflow-y-auto">
+                <div className="flex flex-col flex-grow bg-slate-950 border-r border-slate-800 pt-5 overflow-y-auto">
                     {/* Logo */}
                     <div className="flex items-center gap-3 px-6 mb-8">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                             <span className="text-white font-bold text-lg">B</span>
                         </div>
-                        <span className="text-xl font-bold text-slate-800 tracking-tight">BarManager</span>
+                        <span className="text-xl font-bold text-white tracking-tight">BarManager</span>
                     </div>
 
                     {/* Navigation */}
@@ -47,8 +47,8 @@ export default function Layout({ children, currentPageName }) {
                                     className={cn(
                                         "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
                                         isActive 
-                                            ? "bg-slate-800 text-white shadow-lg shadow-slate-800/20" 
-                                            : "text-slate-600 hover:bg-slate-100"
+                                            ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20" 
+                                            : "text-slate-400 hover:bg-slate-800"
                                     )}
                                 >
                                     <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-400")} />
@@ -59,9 +59,9 @@ export default function Layout({ children, currentPageName }) {
                     </nav>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-slate-100">
-                        <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50">
-                            <p className="text-xs font-medium text-amber-700">Bar Management</p>
+                    <div className="p-4 border-t border-slate-800">
+                        <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-900/20 to-orange-900/20 border border-amber-800/30">
+                            <p className="text-xs font-medium text-amber-500">Bar Management</p>
                             <p className="text-[10px] text-amber-600/70 mt-0.5">
                                 {permissions.employeeRole || 'Alles im Griff'}
                             </p>
@@ -71,17 +71,17 @@ export default function Layout({ children, currentPageName }) {
             </aside>
 
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200">
+            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-800">
                 <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                             <span className="text-white font-bold">B</span>
                         </div>
-                        <span className="font-bold text-slate-800">BarManager</span>
+                        <span className="font-bold text-white">BarManager</span>
                     </div>
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="p-2 rounded-lg hover:bg-slate-100"
+                        className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
                     >
                         {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
@@ -89,7 +89,7 @@ export default function Layout({ children, currentPageName }) {
 
                 {/* Mobile Menu */}
                 {mobileMenuOpen && (
-                    <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-lg">
+                    <div className="absolute top-full left-0 right-0 bg-slate-950 border-b border-slate-800 shadow-lg">
                         <nav className="p-3 space-y-1">
                             {navigation.filter(item => permissions[item.permission]).map((item) => {
                                 const isActive = currentPageName === item.page;
@@ -101,8 +101,8 @@ export default function Layout({ children, currentPageName }) {
                                         className={cn(
                                             "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium",
                                             isActive 
-                                                ? "bg-slate-800 text-white" 
-                                                : "text-slate-600 hover:bg-slate-100"
+                                                ? "bg-amber-600 text-white" 
+                                                : "text-slate-400 hover:bg-slate-800"
                                         )}
                                     >
                                         <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-400")} />

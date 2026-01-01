@@ -20,32 +20,32 @@ export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectS
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+            <div className="flex items-center justify-between p-4 border-b border-slate-700">
                 <Button 
                     variant="ghost" 
                     size="icon"
                     onClick={() => setWeekStart(addDays(weekStart, -7))}
-                    className="hover:bg-slate-100"
+                    className="hover:bg-slate-700 text-slate-300"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </Button>
-                <h3 className="font-semibold text-slate-800">
+                <h3 className="font-semibold text-white">
                     {format(weekStart, 'MMMM yyyy', { locale: de })}
                 </h3>
                 <Button 
                     variant="ghost" 
                     size="icon"
                     onClick={() => setWeekStart(addDays(weekStart, 7))}
-                    className="hover:bg-slate-100"
+                    className="hover:bg-slate-700 text-slate-300"
                 >
                     <ChevronRight className="w-5 h-5" />
                 </Button>
             </div>
-            
+
             {/* Calendar Grid */}
-            <div className="grid grid-cols-7 divide-x divide-slate-100">
+            <div className="grid grid-cols-7 divide-x divide-slate-700">
                 {weekDays.map((day, idx) => {
                     const dayShifts = getShiftsForDay(day);
                     const isToday = isSameDay(day, new Date());
@@ -56,19 +56,19 @@ export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectS
                             key={idx} 
                             className={cn(
                                 "min-h-[140px] p-2 cursor-pointer transition-colors",
-                                isToday && "bg-amber-50/50",
-                                isSelected && "bg-slate-50"
+                                isToday && "bg-amber-900/20",
+                                isSelected && "bg-slate-700"
                             )}
                             onClick={() => setSelectedDate(day)}
                         >
                             {/* Day Header */}
                             <div className="text-center mb-2">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                                <p className="text-[10px] uppercase tracking-wider text-slate-500">
                                     {format(day, 'EEE', { locale: de })}
                                 </p>
                                 <p className={cn(
                                     "text-lg font-semibold mt-1",
-                                    isToday ? "text-amber-600" : "text-slate-700"
+                                    isToday ? "text-amber-500" : "text-slate-300"
                                 )}>
                                     {format(day, 'd')}
                                 </p>
@@ -103,7 +103,7 @@ export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectS
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="w-full mt-2 h-6 text-xs text-slate-400 hover:text-slate-600 opacity-0 hover:opacity-100 transition-opacity"
+                                className="w-full mt-2 h-6 text-xs text-slate-500 hover:text-slate-300 opacity-0 hover:opacity-100 transition-opacity hover:bg-slate-700"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     onAddShift(day);

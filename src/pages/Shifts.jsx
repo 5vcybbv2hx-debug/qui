@@ -93,20 +93,20 @@ export default function Shifts() {
         : [];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Schichtplan</h1>
-                        <p className="text-slate-500 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Schichtplan</h1>
+                        <p className="text-slate-400 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2">
                         <LiveSyncInstructions />
                         <CalendarExport shifts={shifts} reservations={reservations} />
                         <Button 
                             onClick={() => handleAddShift(new Date())}
-                            className="bg-slate-800 hover:bg-slate-900"
+                            className="bg-amber-600 hover:bg-amber-700"
                         >
                             <Plus className="w-4 h-4 mr-2" />
                             Neue Schicht
@@ -126,8 +126,8 @@ export default function Shifts() {
 
                 {/* Selected Date Details */}
                 {selectedDate && (
-                    <Card className="mt-6 p-6 bg-white border-0 shadow-sm">
-                        <h3 className="font-semibold text-slate-800 mb-4">
+                    <Card className="mt-6 p-6 bg-slate-800 border-slate-700 shadow-sm">
+                        <h3 className="font-semibold text-white mb-4">
                             {format(selectedDate, "EEEE, d. MMMM", { locale: de })}
                         </h3>
                         
@@ -137,7 +137,7 @@ export default function Shifts() {
                                     <div 
                                         key={shift.id}
                                         onClick={() => handleSelectShift(shift)}
-                                        className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
+                                        className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 cursor-pointer hover:bg-slate-700 transition-colors"
                                     >
                                         <div 
                                             className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold"
@@ -146,8 +146,8 @@ export default function Shifts() {
                                             {shift.employee_name?.charAt(0)}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-medium text-slate-800">{shift.employee_name}</p>
-                                            <p className="text-sm text-slate-500">
+                                            <p className="font-medium text-white">{shift.employee_name}</p>
+                                            <p className="text-sm text-slate-400">
                                                 {shift.start_time} - {shift.end_time} · {shift.shift_type}
                                             </p>
                                         </div>

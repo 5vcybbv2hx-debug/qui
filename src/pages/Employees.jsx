@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Phone, Users, ShoppingCart } from 'lucide-react';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +29,7 @@ const roleLabels = {
 };
 
 export default function Employees() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -165,6 +168,10 @@ export default function Employees() {
 
     const activeEmployees = employees.filter(e => e.is_active !== false);
     const inactiveEmployees = employees.filter(e => e.is_active === false);
+
+    if (!permissions.canViewEmployees) {
+        return <PermissionDenied message="Nur Manager können die Mitarbeiterliste einsehen." />;
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">

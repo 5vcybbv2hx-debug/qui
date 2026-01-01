@@ -4,20 +4,22 @@ import { createPageUrl } from '@/utils';
 import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 const navigation = [
-    { name: 'Dashboard', page: 'Dashboard', icon: Home },
-    { name: 'Schichtplan', page: 'Shifts', icon: Calendar },
-    { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck },
-    { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart },
-    { name: 'Auffüllen', page: 'Restock', icon: Package },
-    { name: 'Putzliste', page: 'Cleaning', icon: Sparkles },
-    { name: 'Aufgaben', page: 'Todos', icon: CheckSquare },
-    { name: 'Team', page: 'Employees', icon: Users },
+    { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
+    { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
+    { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
+    { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
+    { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },
+    { name: 'Putzliste', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
+    { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos' },
+    { name: 'Team', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
 ];
 
 export default function Layout({ children, currentPageName }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const permissions = usePermissions();
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -34,7 +36,7 @@ export default function Layout({ children, currentPageName }) {
 
                     {/* Navigation */}
                     <nav className="flex-1 px-3 space-y-1">
-                        {navigation.map((item) => {
+                        {navigation.filter(item => permissions[item.permission]).map((item) => {
                             const isActive = currentPageName === item.page;
                             return (
                                 <Link
@@ -58,7 +60,9 @@ export default function Layout({ children, currentPageName }) {
                     <div className="p-4 border-t border-slate-100">
                         <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50">
                             <p className="text-xs font-medium text-amber-700">Bar Management</p>
-                            <p className="text-[10px] text-amber-600/70 mt-0.5">Alles im Griff</p>
+                            <p className="text-[10px] text-amber-600/70 mt-0.5">
+                                {permissions.employeeRole || 'Alles im Griff'}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -85,7 +89,7 @@ export default function Layout({ children, currentPageName }) {
                 {mobileMenuOpen && (
                     <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-lg">
                         <nav className="p-3 space-y-1">
-                            {navigation.map((item) => {
+                            {navigation.filter(item => permissions[item.permission]).map((item) => {
                                 const isActive = currentPageName === item.page;
                                 return (
                                     <Link

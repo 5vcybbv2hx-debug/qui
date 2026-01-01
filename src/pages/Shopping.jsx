@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, ShoppingCart, Trash2, Check, Clock, Package } from 'lucide-react';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +28,7 @@ const statusConfig = {
 };
 
 export default function Shopping() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
@@ -132,6 +135,10 @@ export default function Shopping() {
     const orderedItems = filteredItems.filter(item => item.status === 'bestellt');
     const receivedItems = filteredItems.filter(item => item.status === 'erhalten');
 
+    if (!permissions.canViewShopping) {
+        return <PermissionDenied message="Du hast keine Berechtigung, die Einkaufsliste zu sehen." />;
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
             <div className="max-w-5xl mx-auto px-4 py-8">
@@ -143,13 +150,15 @@ export default function Shopping() {
                             {openItems.length} offene Artikel
                         </p>
                     </div>
-                    <Button 
-                        onClick={() => openModal()}
-                        className="bg-slate-800 hover:bg-slate-900"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Artikel hinzufügen
-                    </Button>
+                    {permissions.canEditShopping && (
+                        <Button 
+                            onClick={() => openModal()}
+                            className="bg-slate-800 hover:bg-slate-900"
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Artikel hinzufügen
+                        </Button>
+                    )}
                 </div>
 
                 {/* Tabs */}

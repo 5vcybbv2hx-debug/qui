@@ -4,8 +4,8 @@ import Employees from './pages/Employees';
 import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
 import Shifts from './pages/Shifts';
-import Todos from './pages/Todos';
 import Shopping from './pages/Shopping';
+import Todos from './pages/Todos';
 import __Layout from './Layout.jsx';
 
 
@@ -16,8 +16,8 @@ export const PAGES = {
     "Reservations": Reservations,
     "Restock": Restock,
     "Shifts": Shifts,
-    "Todos": Todos,
     "Shopping": Shopping,
+    "Todos": Todos,
 }
 
 export const pagesConfig = {

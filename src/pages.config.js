@@ -7,6 +7,7 @@ import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import Todos from './pages/Todos';
 import Recipes from './pages/Recipes';
+import Events from './pages/Events';
 import __Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "Shopping": Shopping,
     "Todos": Todos,
     "Recipes": Recipes,
+    "Events": Events,
 }
 
 export const pagesConfig = {

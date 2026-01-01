@@ -174,19 +174,19 @@ export default function Employees() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-4xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Team</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Team</h1>
+                        <p className="text-slate-400 text-sm mt-1">
                             {activeEmployees.length} aktive Mitarbeiter
                         </p>
                     </div>
                     <Button 
                         onClick={() => openModal()}
-                        className="bg-slate-800 hover:bg-slate-900"
+                        className="bg-amber-600 hover:bg-amber-700"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Mitarbeiter hinzufügen
@@ -198,7 +198,7 @@ export default function Employees() {
                     {activeEmployees.map(employee => (
                         <Card 
                             key={employee.id}
-                            className="p-5 bg-white border-0 shadow-sm hover:shadow-md transition-shadow"
+                            className="p-5 bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow"
                         >
                             <div className="flex items-start gap-4">
                                 <div 
@@ -208,7 +208,7 @@ export default function Employees() {
                                     {employee.name?.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-slate-800 truncate">{employee.name}</h3>
+                                    <h3 className="font-semibold text-white truncate">{employee.name}</h3>
                                     <Badge className={cn("mt-1 text-xs", roleLabels[employee.role] || 'bg-slate-100 text-slate-700')}>
                                         {employee.role}
                                     </Badge>
@@ -221,11 +221,11 @@ export default function Employees() {
                                 </div>
                             </div>
                             
-                            <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
+                            <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700">
                                 <Button 
                                     variant="ghost" 
                                     size="sm"
-                                    className="flex-1 text-slate-600"
+                                    className="flex-1 text-slate-300 hover:bg-slate-700"
                                     onClick={() => openModal(employee)}
                                 >
                                     <Pencil className="w-4 h-4 mr-1" />
@@ -247,14 +247,14 @@ export default function Employees() {
                 {/* Inactive Employees */}
                 {inactiveEmployees.length > 0 && (
                     <div className="mt-8">
-                        <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">
+                        <h2 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-4">
                             Inaktive Mitarbeiter
                         </h2>
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {inactiveEmployees.map(employee => (
                                 <Card 
                                     key={employee.id}
-                                    className="p-5 bg-slate-50 border-0 opacity-60"
+                                    className="p-5 bg-slate-800/50 border-slate-700 opacity-60"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div 
@@ -264,8 +264,8 @@ export default function Employees() {
                                             {employee.name?.charAt(0).toUpperCase()}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-medium text-slate-600">{employee.name}</p>
-                                            <p className="text-xs text-slate-400">{employee.role}</p>
+                                            <p className="font-medium text-slate-300">{employee.name}</p>
+                                            <p className="text-xs text-slate-500">{employee.role}</p>
                                         </div>
                                         <Button 
                                             variant="ghost" 

@@ -120,19 +120,19 @@ export default function Recipes() {
     });
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Rezepte</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Rezepte</h1>
+                        <p className="text-slate-400 text-sm mt-1">
                             {recipes.length} Rezept{recipes.length !== 1 ? 'e' : ''}
                         </p>
                     </div>
                     <Button 
                         onClick={() => openModal()}
-                        className="bg-slate-800 hover:bg-slate-900"
+                        className="bg-amber-600 hover:bg-amber-700"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Rezept hinzufügen
@@ -166,10 +166,10 @@ export default function Recipes() {
                 {filteredRecipes.length > 0 ? (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredRecipes.map(recipe => (
-                            <Card key={recipe.id} className="p-5 bg-white border-0 shadow-sm hover:shadow-md transition-shadow">
+                            <Card key={recipe.id} className="p-5 bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex-1">
-                                        <h3 className="font-semibold text-slate-800 mb-2">{recipe.name}</h3>
+                                        <h3 className="font-semibold text-white mb-2">{recipe.name}</h3>
                                         <Badge className={cn("text-xs", categoryColors[recipe.category])}>
                                             {recipe.category}
                                         </Badge>
@@ -197,8 +197,8 @@ export default function Recipes() {
                                 <div className="space-y-3 text-sm">
                                     {recipe.ingredients && (
                                         <div>
-                                            <p className="font-medium text-slate-700 mb-1">Zutaten:</p>
-                                            <p className="text-slate-600 whitespace-pre-line text-xs leading-relaxed">
+                                            <p className="font-medium text-slate-300 mb-1">Zutaten:</p>
+                                            <p className="text-slate-400 whitespace-pre-line text-xs leading-relaxed">
                                                 {recipe.ingredients}
                                             </p>
                                         </div>
@@ -206,15 +206,15 @@ export default function Recipes() {
 
                                     {recipe.preparation && (
                                         <div>
-                                            <p className="font-medium text-slate-700 mb-1">Zubereitung:</p>
-                                            <p className="text-slate-600 text-xs leading-relaxed">
+                                            <p className="font-medium text-slate-300 mb-1">Zubereitung:</p>
+                                            <p className="text-slate-400 text-xs leading-relaxed">
                                                 {recipe.preparation}
                                             </p>
                                         </div>
                                     )}
 
                                     {(recipe.glass_type || recipe.garnish) && (
-                                        <div className="pt-2 border-t border-slate-100 text-xs text-slate-500">
+                                        <div className="pt-2 border-t border-slate-700 text-xs text-slate-400">
                                             {recipe.glass_type && <p>Glas: {recipe.glass_type}</p>}
                                             {recipe.garnish && <p>Garnitur: {recipe.garnish}</p>}
                                         </div>
@@ -224,7 +224,7 @@ export default function Recipes() {
                         ))}
                     </div>
                 ) : (
-                    <Card className="p-12 bg-white border-0 shadow-sm">
+                    <Card className="p-12 bg-slate-800 border-slate-700 shadow-sm">
                         <div className="text-center text-slate-400">
                             <Wine className="w-16 h-16 mx-auto mb-4 opacity-50" />
                             <p className="text-lg font-medium">Keine Rezepte gefunden</p>

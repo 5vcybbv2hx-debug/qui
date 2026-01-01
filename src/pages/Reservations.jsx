@@ -143,13 +143,13 @@ export default function Reservations() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Reservierungen</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Reservierungen</h1>
+                        <p className="text-slate-400 text-sm mt-1">
                             {todayCount} Reservierung{todayCount !== 1 ? 'en' : ''} heute
                         </p>
                     </div>

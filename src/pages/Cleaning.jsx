@@ -93,13 +93,13 @@ export default function Cleaning() {
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-3xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Putzliste</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Putzliste</h1>
+                        <p className="text-slate-400 text-sm mt-1">
                             {format(new Date(), "EEEE, d. MMMM", { locale: de })}
                         </p>
                     </div>
@@ -114,7 +114,7 @@ export default function Cleaning() {
                         </Button>
                         <Button 
                             onClick={() => setModalOpen(true)}
-                            className="bg-slate-800 hover:bg-slate-900"
+                            className="bg-amber-600 hover:bg-amber-700"
                         >
                             <Plus className="w-4 h-4 mr-2" />
                             Aufgabe

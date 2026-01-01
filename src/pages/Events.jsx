@@ -146,19 +146,19 @@ export default function Events() {
         : [];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Events</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Events</h1>
+                        <p className="text-slate-400 text-sm mt-1">
                             {events.length} Event{events.length !== 1 ? 's' : ''}
                         </p>
                     </div>
                     <Button 
                         onClick={() => openModal()}
-                        className="bg-slate-800 hover:bg-slate-900"
+                        className="bg-amber-600 hover:bg-amber-700"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Event hinzufügen
@@ -168,7 +168,7 @@ export default function Events() {
                 <div className="grid lg:grid-cols-3 gap-6">
                     {/* Calendar */}
                     <div className="lg:col-span-2">
-                        <Card className="p-6 bg-white border-0 shadow-sm">
+                        <Card className="p-6 bg-slate-800 border-slate-700 shadow-sm">
                             {/* Month Navigation */}
                             <div className="flex items-center justify-between mb-6">
                                 <Button 
@@ -178,7 +178,7 @@ export default function Events() {
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </Button>
-                                <h2 className="text-xl font-semibold text-slate-800">
+                                <h2 className="text-xl font-semibold text-white">
                                     {format(currentMonth, 'MMMM yyyy', { locale: de })}
                                 </h2>
                                 <Button 
@@ -193,7 +193,7 @@ export default function Events() {
                             {/* Weekday Headers */}
                             <div className="grid grid-cols-7 gap-2 mb-2">
                                 {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(day => (
-                                    <div key={day} className="text-center text-xs font-medium text-slate-400 py-2">
+                                    <div key={day} className="text-center text-xs font-medium text-slate-500 py-2">
                                         {day}
                                     </div>
                                 ))}
@@ -213,15 +213,15 @@ export default function Events() {
                                             onClick={() => setSelectedDate(day)}
                                             className={cn(
                                                 "min-h-24 p-2 rounded-lg border-2 cursor-pointer transition-all",
-                                                isToday && "border-amber-400",
-                                                isSelected && "bg-slate-50 border-slate-300",
-                                                !isToday && !isSelected && "border-slate-100 hover:border-slate-200",
+                                                isToday && "border-amber-500",
+                                                isSelected && "bg-slate-700 border-slate-600",
+                                                !isToday && !isSelected && "border-slate-700 hover:border-slate-600",
                                                 !isCurrentMonth && "opacity-30"
                                             )}
                                         >
                                             <div className={cn(
                                                 "text-sm font-medium mb-1",
-                                                isToday ? "text-amber-600" : "text-slate-700"
+                                                isToday ? "text-amber-500" : "text-slate-300"
                                             )}>
                                                 {format(day, 'd')}
                                             </div>
@@ -256,18 +256,18 @@ export default function Events() {
 
                     {/* Selected Day Events */}
                     <div className="space-y-4">
-                        <Card className="p-4 bg-white border-0 shadow-sm">
-                            <h3 className="font-semibold text-slate-800 mb-3">
+                        <Card className="p-4 bg-slate-800 border-slate-700 shadow-sm">
+                            <h3 className="font-semibold text-white mb-3">
                                 {selectedDate ? format(selectedDate, 'dd. MMMM yyyy', { locale: de }) : 'Wähle ein Datum'}
                             </h3>
                             
                             {selectedDayEvents.length > 0 ? (
                                 <div className="space-y-3">
                                     {selectedDayEvents.map(event => (
-                                        <Card key={event.id} className="p-3 bg-slate-50 border-0">
+                                        <Card key={event.id} className="p-3 bg-slate-900 border-slate-700">
                                             <div className="flex items-start justify-between mb-2">
                                                 <div className="flex-1">
-                                                    <h4 className="font-semibold text-slate-800 text-sm mb-1">
+                                                    <h4 className="font-semibold text-white text-sm mb-1">
                                                         {event.title}
                                                     </h4>
                                                     <div className="flex flex-wrap gap-1 mb-2">
@@ -339,17 +339,17 @@ export default function Events() {
                         </Card>
 
                         {/* Quick Stats */}
-                        <Card className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 border-0">
-                            <h4 className="font-semibold text-slate-800 text-sm mb-3">Events diesen Monat</h4>
+                        <Card className="p-4 bg-gradient-to-br from-purple-900/20 to-pink-900/20 border-slate-700">
+                            <h4 className="font-semibold text-white text-sm mb-3">Events diesen Monat</h4>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-slate-600">Geplant</span>
+                                    <span className="text-slate-300">Geplant</span>
                                     <span className="font-semibold text-yellow-700">
                                         {events.filter(e => e.status === 'geplant' && isSameMonth(new Date(e.date), currentMonth)).length}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-slate-600">Bestätigt</span>
+                                    <span className="text-slate-300">Bestätigt</span>
                                     <span className="font-semibold text-green-700">
                                         {events.filter(e => e.status === 'bestätigt' && isSameMonth(new Date(e.date), currentMonth)).length}
                                     </span>

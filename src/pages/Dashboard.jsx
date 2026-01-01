@@ -49,7 +49,7 @@ export default function Dashboard() {
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch').length;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">

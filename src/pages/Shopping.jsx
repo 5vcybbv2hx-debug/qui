@@ -140,20 +140,20 @@ export default function Shopping() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="min-h-screen bg-slate-900">
             <div className="max-w-5xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Einkaufsliste</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Einkaufsliste</h1>
+                        <p className="text-slate-400 text-sm mt-1">
                             {openItems.length} offene Artikel
                         </p>
                     </div>
                     {permissions.canEditShopping && (
                         <Button 
                             onClick={() => openModal()}
-                            className="bg-slate-800 hover:bg-slate-900"
+                            className="bg-amber-600 hover:bg-amber-700"
                         >
                             <Plus className="w-4 h-4 mr-2" />
                             Artikel hinzufügen

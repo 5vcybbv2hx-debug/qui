@@ -87,7 +87,9 @@ export default function Shifts() {
 
     // Get shifts for selected date
     const selectedDateShifts = selectedDate 
-        ? shifts.filter(s => s.date === format(selectedDate, 'yyyy-MM-dd'))
+        ? shifts
+            .filter(s => s.date === format(selectedDate, 'yyyy-MM-dd'))
+            .sort((a, b) => a.start_time.localeCompare(b.start_time))
         : [];
 
     return (

@@ -11,6 +11,7 @@ import ShiftModal from '@/components/shifts/ShiftModal';
 import CalendarExport from '@/components/shifts/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
+import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManager';
 
 export default function Shifts() {
     const queryClient = useQueryClient();
@@ -31,6 +32,11 @@ export default function Shifts() {
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
         queryFn: () => base44.entities.Reservation.list('-date', 200)
+    });
+
+    const { data: requirements = [] } = useQuery({
+        queryKey: ['shift-requirements'],
+        queryFn: () => base44.entities.ShiftRequirement.list()
     });
 
     const createMutation = useMutation({
@@ -102,7 +108,8 @@ export default function Shifts() {
                         <h1 className="text-2xl font-bold text-white tracking-tight">Schichtplan</h1>
                         <p className="text-slate-400 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                        <ShiftRequirementsManager />
                         <OpeningHoursManager />
                         <LiveSyncInstructions />
                         <CalendarExport shifts={shifts} reservations={reservations} />
@@ -120,6 +127,7 @@ export default function Shifts() {
                 <ShiftCalendar 
                     shifts={shifts}
                     employees={employees}
+                    requirements={requirements}
                     onAddShift={handleAddShift}
                     onSelectShift={handleSelectShift}
                     selectedDate={selectedDate}

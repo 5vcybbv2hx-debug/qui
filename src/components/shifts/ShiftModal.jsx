@@ -222,15 +222,16 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                     Hinzufügen
                                 </Button>
                             </div>
-                            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                                 {multipleShifts.map((slot, index) => (
-                                    <div key={index} className="flex gap-2 items-start p-2 bg-slate-50 rounded-lg border border-slate-200">
-                                        <div className="flex-1 space-y-2">
+                                    <div key={index} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                        <div className="flex gap-2 items-start mb-3">
                                             <Select 
                                                 value={slot.employee_id} 
                                                 onValueChange={(value) => updateShiftSlot(index, 'employee_id', value)}
+                                                className="flex-1"
                                             >
-                                                <SelectTrigger className="h-8">
+                                                <SelectTrigger>
                                                     <SelectValue placeholder="Wählen..." />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -247,31 +248,29 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <Input
-                                                    type="time"
-                                                    value={slot.start_time}
-                                                    onChange={(e) => updateShiftSlot(index, 'start_time', e.target.value)}
-                                                    className="h-8 text-xs"
-                                                />
-                                                <Input
-                                                    type="time"
-                                                    value={slot.end_time}
-                                                    onChange={(e) => updateShiftSlot(index, 'end_time', e.target.value)}
-                                                    className="h-8 text-xs"
-                                                />
-                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => removeShiftSlot(index)}
+                                                disabled={multipleShifts.length === 1}
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            >
+                                                <Minus className="w-4 h-4" />
+                                            </Button>
                                         </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => removeShiftSlot(index)}
-                                            disabled={multipleShifts.length === 1}
-                                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                        >
-                                            <Minus className="w-4 h-4" />
-                                        </Button>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Input
+                                                type="time"
+                                                value={slot.start_time}
+                                                onChange={(e) => updateShiftSlot(index, 'start_time', e.target.value)}
+                                            />
+                                            <Input
+                                                type="time"
+                                                value={slot.end_time}
+                                                onChange={(e) => updateShiftSlot(index, 'end_time', e.target.value)}
+                                            />
+                                        </div>
                                     </div>
                                 ))}
                             </div>

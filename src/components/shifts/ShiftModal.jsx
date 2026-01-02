@@ -287,25 +287,6 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label>Startzeit</Label>
-                            <Input
-                                type="time"
-                                value={formData.start_time}
-                                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Endzeit</Label>
-                            <Input
-                                type="time"
-                                value={formData.end_time}
-                                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                            />
-                        </div>
-                    </div>
-
                     {!isMultiMode && (
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">

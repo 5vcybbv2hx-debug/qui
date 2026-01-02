@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import TaskManager from './TaskManager';
 
 const areaColors = {
     'Theke': 'bg-amber-100 text-amber-700',
@@ -18,11 +19,14 @@ const areaColors = {
 
 const frequencyLabels = {
     'täglich': 'Täglich',
+    'am Wochenende': 'Wochenende',
     'wöchentlich': 'Wöchentlich',
-    'monatlich': 'Monatlich'
+    'alle zwei Wochen': 'Alle 2 Wochen',
+    'monatlich': 'Monatlich',
+    'an Sonderöffnungstagen': 'Sonderöffnungstage'
 };
 
-export default function CleaningList({ tasks, onComplete, onReset, userName }) {
+export default function CleaningList({ tasks, areas, onComplete, onReset, userName }) {
     const groupedTasks = tasks.reduce((acc, task) => {
         const area = task.area || 'Sonstiges';
         if (!acc[area]) acc[area] = [];
@@ -87,16 +91,19 @@ export default function CleaningList({ tasks, onComplete, onReset, userName }) {
                                         </div>
                                     </div>
                                     
-                                    {task.is_completed && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-slate-400 hover:text-slate-600"
-                                            onClick={() => onReset(task)}
-                                        >
-                                            <RotateCcw className="w-4 h-4" />
-                                        </Button>
-                                    )}
+                                    <div className="flex items-center gap-1">
+                                        <TaskManager task={task} areas={areas} />
+                                        {task.is_completed && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                                                onClick={() => onReset(task)}
+                                            >
+                                                <RotateCcw className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             </Card>
                         ))}

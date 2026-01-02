@@ -32,10 +32,15 @@ export default function Cleaning() {
         queryFn: () => base44.entities.CleaningTask.list('area')
     });
 
-    const { data: areas = [] } = useQuery({
+    const { data: allAreas = [] } = useQuery({
         queryKey: ['cleaning-areas'],
         queryFn: () => base44.entities.CleaningArea.list('order')
     });
+
+    // Filtere saisonale Bereiche (April-Oktober)
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const isSeason = currentMonth >= 4 && currentMonth <= 10;
+    const areas = allAreas.filter(area => !area.seasonal || isSeason);
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.CleaningTask.create(data),
@@ -146,6 +151,7 @@ export default function Cleaning() {
                 {/* Task List */}
                 <CleaningList 
                     tasks={tasks}
+                    areas={areas}
                     onComplete={handleComplete}
                     onReset={handleReset}
                     userName={user?.full_name || user?.email}
@@ -200,8 +206,11 @@ export default function Cleaning() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="täglich">Täglich</SelectItem>
+                                            <SelectItem value="am Wochenende">Am Wochenende (Fr+Sa)</SelectItem>
                                             <SelectItem value="wöchentlich">Wöchentlich</SelectItem>
+                                            <SelectItem value="alle zwei Wochen">Alle zwei Wochen</SelectItem>
                                             <SelectItem value="monatlich">Monatlich</SelectItem>
+                                            <SelectItem value="an Sonderöffnungstagen">An Sonderöffnungstagen</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

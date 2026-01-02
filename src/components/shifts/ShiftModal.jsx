@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, Plus, Minus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete }) {
     const [formData, setFormData] = useState({
@@ -21,8 +22,17 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         color: ''
     });
 
+    const [multipleShifts, setMultipleShifts] = useState([
+        { employee_id: '', start_time: '16:00', end_time: '03:00' },
+        { employee_id: '', start_time: '16:00', end_time: '03:00' },
+        { employee_id: '', start_time: '16:00', end_time: '03:00' }
+    ]);
+    
+    const [isMultiMode, setIsMultiMode] = useState(false);
+
     useEffect(() => {
         if (shift) {
+            setIsMultiMode(false);
             setFormData({
                 employee_id: shift.employee_id || '',
                 employee_name: shift.employee_name || '',
@@ -34,6 +44,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 color: shift.color || ''
             });
         } else if (selectedDate) {
+            setIsMultiMode(false);
             setFormData(prev => ({
                 ...prev,
                 employee_id: '',
@@ -45,8 +56,13 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 notes: '',
                 color: ''
             }));
+            setMultipleShifts([
+                { employee_id: '', start_time: '16:00', end_time: '03:00' },
+                { employee_id: '', start_time: '16:00', end_time: '03:00' },
+                { employee_id: '', start_time: '16:00', end_time: '03:00' }
+            ]);
         }
-    }, [shift, selectedDate]);
+    }, [shift, selectedDate, open]);
 
     const handleEmployeeChange = (employeeId) => {
         const employee = employees.find(e => e.id === employeeId);
@@ -83,14 +99,60 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         }));
     };
 
+    const addShiftSlot = () => {
+        if (multipleShifts.length < 9) {
+            setMultipleShifts([...multipleShifts, { 
+                employee_id: '', 
+                start_time: formData.start_time, 
+                end_time: formData.end_time 
+            }]);
+        }
+    };
+
+    const removeShiftSlot = (index) => {
+        if (multipleShifts.length > 1) {
+            setMultipleShifts(multipleShifts.filter((_, i) => i !== index));
+        }
+    };
+
+    const updateShiftSlot = (index, field, value) => {
+        const updated = [...multipleShifts];
+        updated[index][field] = value;
+        setMultipleShifts(updated);
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData, shift?.id);
+        
+        if (isMultiMode) {
+            // Save multiple shifts
+            const shiftsToSave = multipleShifts
+                .filter(s => s.employee_id)
+                .map(s => {
+                    const employee = employees.find(e => e.id === s.employee_id);
+                    return {
+                        employee_id: s.employee_id,
+                        employee_name: employee?.name || '',
+                        color: employee?.color || '',
+                        date: formData.date,
+                        start_time: s.start_time,
+                        end_time: s.end_time,
+                        shift_type: formData.shift_type,
+                        notes: formData.notes
+                    };
+                });
+            
+            // Save all shifts
+            shiftsToSave.forEach(shiftData => onSave(shiftData, null));
+            onClose();
+        } else {
+            onSave(formData, shift?.id);
+        }
     };
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
                         {shift ? 'Schicht bearbeiten' : 'Neue Schicht'}
@@ -98,27 +160,122 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 </DialogHeader>
                 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    <div className="space-y-2">
-                        <Label>Mitarbeiter</Label>
-                        <Select value={formData.employee_id} onValueChange={handleEmployeeChange}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Mitarbeiter auswählen" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {employees.map(emp => (
-                                    <SelectItem key={emp.id} value={emp.id}>
-                                        <div className="flex items-center gap-2">
-                                            <div 
-                                                className="w-3 h-3 rounded-full"
-                                                style={{ backgroundColor: emp.color }}
-                                            />
-                                            {emp.name}
+                    {!shift && (
+                        <div className="flex gap-2 pb-2 border-b">
+                            <Button
+                                type="button"
+                                variant={!isMultiMode ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setIsMultiMode(false)}
+                                className={cn(!isMultiMode && "bg-amber-600 hover:bg-amber-700")}
+                            >
+                                Einzeln
+                            </Button>
+                            <Button
+                                type="button"
+                                variant={isMultiMode ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setIsMultiMode(true)}
+                                className={cn(isMultiMode && "bg-amber-600 hover:bg-amber-700")}
+                            >
+                                Mehrere ({multipleShifts.length})
+                            </Button>
+                        </div>
+                    )}
+
+                    {!isMultiMode ? (
+                        <div className="space-y-2">
+                            <Label>Mitarbeiter</Label>
+                            <Select value={formData.employee_id} onValueChange={handleEmployeeChange}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Mitarbeiter auswählen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {employees.map(emp => (
+                                        <SelectItem key={emp.id} value={emp.id}>
+                                            <div className="flex items-center gap-2">
+                                                <div 
+                                                    className="w-3 h-3 rounded-full"
+                                                    style={{ backgroundColor: emp.color }}
+                                                />
+                                                {emp.name}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <Label>Mitarbeiter</Label>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addShiftSlot}
+                                    disabled={multipleShifts.length >= 9}
+                                    className="h-7 text-xs"
+                                >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    Hinzufügen
+                                </Button>
+                            </div>
+                            <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
+                                {multipleShifts.map((slot, index) => (
+                                    <div key={index} className="flex gap-2 items-start p-2 bg-slate-50 rounded-lg border border-slate-200">
+                                        <div className="flex-1 space-y-2">
+                                            <Select 
+                                                value={slot.employee_id} 
+                                                onValueChange={(value) => updateShiftSlot(index, 'employee_id', value)}
+                                            >
+                                                <SelectTrigger className="h-8">
+                                                    <SelectValue placeholder="Wählen..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {employees.map(emp => (
+                                                        <SelectItem key={emp.id} value={emp.id}>
+                                                            <div className="flex items-center gap-2">
+                                                                <div 
+                                                                    className="w-2 h-2 rounded-full"
+                                                                    style={{ backgroundColor: emp.color }}
+                                                                />
+                                                                {emp.name}
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <Input
+                                                    type="time"
+                                                    value={slot.start_time}
+                                                    onChange={(e) => updateShiftSlot(index, 'start_time', e.target.value)}
+                                                    className="h-8 text-xs"
+                                                />
+                                                <Input
+                                                    type="time"
+                                                    value={slot.end_time}
+                                                    onChange={(e) => updateShiftSlot(index, 'end_time', e.target.value)}
+                                                    className="h-8 text-xs"
+                                                />
+                                            </div>
                                         </div>
-                                    </SelectItem>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => removeShiftSlot(index)}
+                                            disabled={multipleShifts.length === 1}
+                                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                            <Minus className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label>Datum</Label>
@@ -147,6 +304,27 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                             />
                         </div>
                     </div>
+
+                    {!isMultiMode && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label>Startzeit</Label>
+                                <Input
+                                    type="time"
+                                    value={formData.start_time}
+                                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Endzeit</Label>
+                                <Input
+                                    type="time"
+                                    value={formData.end_time}
+                                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label>Schichttyp</Label>
@@ -187,8 +365,8 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                             Abbrechen
                         </Button>
-                        <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
-                            {shift ? 'Speichern' : 'Hinzufügen'}
+                        <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
+                            {shift ? 'Speichern' : isMultiMode ? 'Alle hinzufügen' : 'Hinzufügen'}
                         </Button>
                     </div>
                 </form>

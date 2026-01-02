@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import CleaningList from '@/components/cleaning/CleaningList';
+import AreasManager from '@/components/cleaning/AreasManager';
 
 export default function Cleaning() {
     const queryClient = useQueryClient();
@@ -29,6 +30,11 @@ export default function Cleaning() {
     const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['cleaning'],
         queryFn: () => base44.entities.CleaningTask.list('area')
+    });
+
+    const { data: areas = [] } = useQuery({
+        queryKey: ['cleaning-areas'],
+        queryFn: () => base44.entities.CleaningArea.list('order')
     });
 
     const createMutation = useMutation({
@@ -104,10 +110,11 @@ export default function Cleaning() {
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        <AreasManager />
                         <Button 
                             variant="outline"
                             onClick={resetAllDaily}
-                            className="text-slate-600"
+                            className="text-slate-300 border-slate-600 hover:bg-slate-700"
                         >
                             <RefreshCw className="w-4 h-4 mr-2" />
                             Tägl. zurücksetzen
@@ -170,12 +177,17 @@ export default function Cleaning() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Theke">Theke</SelectItem>
-                                            <SelectItem value="Küche">Küche</SelectItem>
-                                            <SelectItem value="Toiletten">Toiletten</SelectItem>
-                                            <SelectItem value="Gastraum">Gastraum</SelectItem>
-                                            <SelectItem value="Lager">Lager</SelectItem>
-                                            <SelectItem value="Außenbereich">Außenbereich</SelectItem>
+                                            {areas.map(area => (
+                                                <SelectItem key={area.id} value={area.name}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div 
+                                                            className="w-3 h-3 rounded-full"
+                                                            style={{ backgroundColor: area.color }}
+                                                        />
+                                                        {area.name}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -199,7 +211,7 @@ export default function Cleaning() {
                                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
+                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
                                     Hinzufügen
                                 </Button>
                             </div>

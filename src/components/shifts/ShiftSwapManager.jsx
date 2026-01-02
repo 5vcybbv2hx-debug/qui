@@ -1,0 +1,233 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { RepeatIcon, Check, X, Clock } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { cn } from "@/lib/utils";
+
+export default function ShiftSwapManager() {
+    const queryClient = useQueryClient();
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [responseNote, setResponseNote] = useState('');
+
+    const { data: swapRequests = [] } = useQuery({
+        queryKey: ['shift-swap-requests'],
+        queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date')
+    });
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me()
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.ShiftSwapRequest.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shift-swap-requests']);
+            setSelectedRequest(null);
+            setResponseNote('');
+        }
+    });
+
+    const approveMutation = useMutation({
+        mutationFn: async ({ requestId, shiftId, newEmployeeId }) => {
+            // Update swap request status
+            await base44.entities.ShiftSwapRequest.update(requestId, {
+                status: 'genehmigt',
+                approved_by: currentUser?.full_name || currentUser?.email,
+                response_date: new Date().toISOString(),
+                response_note: responseNote
+            });
+            
+            // Update the actual shift
+            await base44.entities.Shift.update(shiftId, {
+                employee_id: newEmployeeId
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shift-swap-requests']);
+            queryClient.invalidateQueries(['shifts']);
+            setSelectedRequest(null);
+            setResponseNote('');
+        }
+    });
+
+    const handleApprove = (request) => {
+        if (confirm('Schichttausch genehmigen?')) {
+            approveMutation.mutate({
+                requestId: request.id,
+                shiftId: request.shift_id,
+                newEmployeeId: request.target_employee_id
+            });
+        }
+    };
+
+    const handleReject = (request) => {
+        if (confirm('Schichttausch ablehnen?')) {
+            updateMutation.mutate({
+                id: request.id,
+                data: {
+                    status: 'abgelehnt',
+                    approved_by: currentUser?.full_name || currentUser?.email,
+                    response_date: new Date().toISOString(),
+                    response_note: responseNote
+                }
+            });
+        }
+    };
+
+    const pendingRequests = swapRequests.filter(r => r.status === 'ausstehend');
+    const processedRequests = swapRequests.filter(r => r.status !== 'ausstehend');
+
+    return (
+        <>
+            <Button 
+                variant="outline" 
+                onClick={() => setModalOpen(true)}
+                className="border-slate-600 hover:bg-slate-700 text-slate-300 relative"
+            >
+                <RepeatIcon className="w-4 h-4 mr-2" />
+                Tauschanfragen
+                {pendingRequests.length > 0 && (
+                    <Badge className="ml-2 bg-red-500 text-white">{pendingRequests.length}</Badge>
+                )}
+            </Button>
+
+            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Schichttausch Anfragen</DialogTitle>
+                    </DialogHeader>
+
+                    <Tabs defaultValue="pending" className="mt-4">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="pending">
+                                Ausstehend ({pendingRequests.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="processed">
+                                Bearbeitet ({processedRequests.length})
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="pending" className="space-y-3 mt-4">
+                            {pendingRequests.length > 0 ? (
+                                pendingRequests.map(request => (
+                                    <Card key={request.id} className="p-4 bg-slate-50">
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Badge className="bg-amber-100 text-amber-700">
+                                                        <Clock className="w-3 h-3 mr-1" />
+                                                        Ausstehend
+                                                    </Badge>
+                                                    <span className="text-xs text-slate-500">
+                                                        {format(new Date(request.created_date), 'dd.MM.yyyy HH:mm', { locale: de })}
+                                                    </span>
+                                                </div>
+                                                
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <p className="text-sm font-medium text-slate-700">
+                                                            {request.requesting_employee_name} → {request.target_employee_name}
+                                                        </p>
+                                                        <p className="text-sm text-slate-600">
+                                                            {format(new Date(request.shift_date), 'EEEE, d. MMMM', { locale: de })} • {request.shift_time}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    {request.reason && (
+                                                        <div className="p-2 bg-white rounded border border-slate-200">
+                                                            <p className="text-xs text-slate-500 mb-1">Grund:</p>
+                                                            <p className="text-sm text-slate-700">{request.reason}</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2 mt-4 pt-3 border-t border-slate-200">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleReject(request)}
+                                                className="flex-1 border-red-200 text-red-600 hover:bg-red-50"
+                                            >
+                                                <X className="w-4 h-4 mr-1" />
+                                                Ablehnen
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => handleApprove(request)}
+                                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                            >
+                                                <Check className="w-4 h-4 mr-1" />
+                                                Genehmigen
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 text-slate-500">
+                                    <RepeatIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                    <p>Keine ausstehenden Anfragen</p>
+                                </div>
+                            )}
+                        </TabsContent>
+
+                        <TabsContent value="processed" className="space-y-3 mt-4">
+                            {processedRequests.length > 0 ? (
+                                processedRequests.map(request => (
+                                    <Card key={request.id} className="p-4 bg-slate-50">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Badge className={cn(
+                                                request.status === 'genehmigt' 
+                                                    ? "bg-green-100 text-green-700" 
+                                                    : "bg-red-100 text-red-700"
+                                            )}>
+                                                {request.status === 'genehmigt' ? (
+                                                    <Check className="w-3 h-3 mr-1" />
+                                                ) : (
+                                                    <X className="w-3 h-3 mr-1" />
+                                                )}
+                                                {request.status === 'genehmigt' ? 'Genehmigt' : 'Abgelehnt'}
+                                            </Badge>
+                                            <span className="text-xs text-slate-500">
+                                                {format(new Date(request.response_date || request.created_date), 'dd.MM.yyyy', { locale: de })}
+                                            </span>
+                                        </div>
+                                        
+                                        <p className="text-sm text-slate-700">
+                                            {request.requesting_employee_name} → {request.target_employee_name}
+                                        </p>
+                                        <p className="text-sm text-slate-600">
+                                            {format(new Date(request.shift_date), 'dd.MM.yyyy', { locale: de })} • {request.shift_time}
+                                        </p>
+                                        
+                                        {request.approved_by && (
+                                            <p className="text-xs text-slate-500 mt-2">
+                                                von {request.approved_by}
+                                            </p>
+                                        )}
+                                    </Card>
+                                ))
+                            ) : (
+                                <div className="text-center py-12 text-slate-500">
+                                    <p>Keine bearbeiteten Anfragen</p>
+                                </div>
+                            )}
+                        </TabsContent>
+                    </Tabs>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+}

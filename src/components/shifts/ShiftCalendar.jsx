@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, AlertTriangle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectShift, selectedDate, setSelectedDate }) {
+export default function ShiftCalendar({ shifts, employees, requirements = [], onAddShift, onSelectShift, selectedDate, setSelectedDate }) {
     const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
     
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -17,6 +18,25 @@ export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectS
     const getEmployeeColor = (employeeId) => {
         const employee = employees.find(e => e.id === employeeId);
         return employee?.color || '#64748b';
+    };
+
+    const getDayRequirement = (date) => {
+        const dayName = format(date, 'EEEE', { locale: de });
+        const dayNameGerman = {
+            'Monday': 'Montag',
+            'Tuesday': 'Dienstag', 
+            'Wednesday': 'Mittwoch',
+            'Thursday': 'Donnerstag',
+            'Friday': 'Freitag',
+            'Saturday': 'Samstag',
+            'Sunday': 'Sonntag'
+        }[dayName] || dayName;
+        
+        const reqs = requirements.filter(r => r.day_of_week === dayNameGerman);
+        if (reqs.length === 0) return null;
+        
+        const totalRequired = reqs.reduce((sum, r) => sum + r.required_employees, 0);
+        return totalRequired;
     };
 
     return (
@@ -50,6 +70,8 @@ export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectS
                     const dayShifts = getShiftsForDay(day);
                     const isToday = isSameDay(day, new Date());
                     const isSelected = selectedDate && isSameDay(day, selectedDate);
+                    const required = getDayRequirement(day);
+                    const understaffed = required && dayShifts.length < required;
                     
                     return (
                         <div 
@@ -57,7 +79,8 @@ export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectS
                             className={cn(
                                 "min-h-[140px] p-2 cursor-pointer transition-colors",
                                 isToday && "bg-amber-900/20",
-                                isSelected && "bg-slate-700"
+                                isSelected && "bg-slate-700",
+                                understaffed && "border-l-2 border-red-500"
                             )}
                             onClick={() => setSelectedDate(day)}
                         >
@@ -66,12 +89,25 @@ export default function ShiftCalendar({ shifts, employees, onAddShift, onSelectS
                                 <p className="text-[10px] uppercase tracking-wider text-slate-500">
                                     {format(day, 'EEE', { locale: de })}
                                 </p>
-                                <p className={cn(
-                                    "text-lg font-semibold mt-1",
-                                    isToday ? "text-amber-500" : "text-slate-300"
-                                )}>
-                                    {format(day, 'd')}
-                                </p>
+                                <div className="flex items-center justify-center gap-1">
+                                    <p className={cn(
+                                        "text-lg font-semibold mt-1",
+                                        isToday ? "text-amber-500" : "text-slate-300"
+                                    )}>
+                                        {format(day, 'd')}
+                                    </p>
+                                    {required && (
+                                        <Badge 
+                                            variant="outline" 
+                                            className={cn(
+                                                "text-[9px] px-1 h-4 mt-1",
+                                                understaffed ? "border-red-500 text-red-500" : "border-green-500 text-green-500"
+                                            )}
+                                        >
+                                            {dayShifts.length}/{required}
+                                        </Badge>
+                                    )}
+                                </div>
                             </div>
                             
                             {/* Shifts */}

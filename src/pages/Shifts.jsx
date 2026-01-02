@@ -12,6 +12,7 @@ import CalendarExport from '@/components/shifts/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
 import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManager';
+import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 
 export default function Shifts() {
     const queryClient = useQueryClient();
@@ -109,6 +110,7 @@ export default function Shifts() {
                         <p className="text-slate-400 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
+                        <ShiftSwapManager />
                         <ShiftRequirementsManager />
                         <OpeningHoursManager />
                         <LiveSyncInstructions />

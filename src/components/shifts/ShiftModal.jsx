@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import ShiftSwapRequest from './ShiftSwapRequest';
 
 export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete }) {
     const [formData, setFormData] = useState({
@@ -350,6 +351,12 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                             rows={2}
                         />
                     </div>
+
+                    {shift && (
+                        <div className="pt-2 border-t">
+                            <ShiftSwapRequest shift={shift} onSuccess={onClose} />
+                        </div>
+                    )}
 
                     <div className="flex gap-2 pt-4">
                         {shift && (

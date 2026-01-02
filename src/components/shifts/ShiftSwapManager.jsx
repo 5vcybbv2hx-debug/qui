@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RepeatIcon, Check, X, Clock } from 'lucide-react';
+import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import { de } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 
 export default function ShiftSwapManager() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
@@ -87,6 +89,11 @@ export default function ShiftSwapManager() {
 
     const pendingRequests = swapRequests.filter(r => r.status === 'ausstehend');
     const processedRequests = swapRequests.filter(r => r.status !== 'ausstehend');
+
+    // Nur Manager/Admins können Tauschanfragen verwalten
+    if (!permissions.canApproveShiftSwaps) {
+        return null;
+    }
 
     return (
         <>

@@ -12,6 +12,7 @@ import { de } from 'date-fns/locale';
 const COLORS = ['#f59e0b', '#3b82f6', '#ef4444', '#22c55e', '#8b5cf6', '#ec4899'];
 
 export default function ShiftAnalytics() {
+    const permissions = usePermissions();
     const [selectedWeek, setSelectedWeek] = useState(new Date());
 
     const { data: employees = [] } = useQuery({

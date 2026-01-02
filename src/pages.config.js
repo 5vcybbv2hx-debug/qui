@@ -8,6 +8,7 @@ import Restock from './pages/Restock';
 import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import Todos from './pages/Todos';
+import ShiftAnalytics from './pages/ShiftAnalytics';
 import __Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "Shifts": Shifts,
     "Shopping": Shopping,
     "Todos": Todos,
+    "ShiftAnalytics": ShiftAnalytics,
 }
 
 export const pagesConfig = {

@@ -93,12 +93,12 @@ export default function Todos() {
 
     return (
         <div className="min-h-screen bg-slate-900">
-            <div className="max-w-3xl mx-auto px-4 py-8">
+            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Aufgaben</h1>
-                        <p className="text-slate-500 text-sm mt-1">
+                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Aufgaben</h1>
+                        <p className="text-slate-400 text-sm mt-1">
                             {openCount} offen · {inProgressCount} in Bearbeitung · {doneCount} erledigt
                         </p>
                     </div>
@@ -118,11 +118,11 @@ export default function Todos() {
 
                 {/* Filter Tabs */}
                 <Tabs value={filter} onValueChange={setFilter} className="mb-6">
-                    <TabsList className="bg-white shadow-sm">
-                        <TabsTrigger value="offen">Offen ({openCount})</TabsTrigger>
-                        <TabsTrigger value="in_bearbeitung">In Bearbeitung ({inProgressCount})</TabsTrigger>
-                        <TabsTrigger value="erledigt">Erledigt ({doneCount})</TabsTrigger>
-                        <TabsTrigger value="alle">Alle</TabsTrigger>
+                    <TabsList className="bg-slate-800 shadow-sm w-full grid grid-cols-4 border border-slate-700">
+                        <TabsTrigger value="offen" className="text-xs sm:text-sm">Offen ({openCount})</TabsTrigger>
+                        <TabsTrigger value="in_bearbeitung" className="text-xs sm:text-sm">In Arb. ({inProgressCount})</TabsTrigger>
+                        <TabsTrigger value="erledigt" className="text-xs sm:text-sm">Erledigt ({doneCount})</TabsTrigger>
+                        <TabsTrigger value="alle" className="text-xs sm:text-sm">Alle</TabsTrigger>
                     </TabsList>
                 </Tabs>
 

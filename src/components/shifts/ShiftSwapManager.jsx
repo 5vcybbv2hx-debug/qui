@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import { toast } from 'sonner';
 
 export default function ShiftSwapManager() {
     const permissions = usePermissions();
@@ -37,29 +38,53 @@ export default function ShiftSwapManager() {
             queryClient.invalidateQueries(['shift-swap-requests']);
             setSelectedRequest(null);
             setResponseNote('');
+            toast.success('Tauschanfrage abgelehnt');
+        },
+        onError: (error) => {
+            toast.error('Fehler beim Ablehnen: ' + error.message);
         }
     });
 
     const approveMutation = useMutation({
-        mutationFn: async ({ requestId, shiftId, newEmployeeId }) => {
-            // Update swap request status
-            await base44.entities.ShiftSwapRequest.update(requestId, {
-                status: 'genehmigt',
-                approved_by: currentUser?.full_name || currentUser?.email,
-                response_date: new Date().toISOString(),
-                response_note: responseNote
-            });
-            
-            // Update the actual shift
-            await base44.entities.Shift.update(shiftId, {
-                employee_id: newEmployeeId
-            });
+        mutationFn: async ({ requestId, shiftId, newEmployeeId, request }) => {
+            try {
+                // First, get the shift to get the employee name
+                const shifts = await base44.entities.Shift.filter({ id: shiftId });
+                const shift = shifts[0];
+                
+                if (!shift) {
+                    throw new Error('Schicht nicht gefunden');
+                }
+
+                // Update swap request status first
+                await base44.entities.ShiftSwapRequest.update(requestId, {
+                    status: 'genehmigt',
+                    approved_by: currentUser?.full_name || currentUser?.email,
+                    response_date: new Date().toISOString(),
+                    response_note: responseNote
+                });
+                
+                // Update the actual shift with both ID and name
+                await base44.entities.Shift.update(shiftId, {
+                    employee_id: newEmployeeId,
+                    employee_name: request.target_employee_name
+                });
+
+                return { success: true };
+            } catch (error) {
+                console.error('Approval error:', error);
+                throw error;
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['shift-swap-requests']);
             queryClient.invalidateQueries(['shifts']);
             setSelectedRequest(null);
             setResponseNote('');
+            toast.success('Tauschanfrage genehmigt');
+        },
+        onError: (error) => {
+            toast.error('Fehler beim Genehmigen: ' + error.message);
         }
     });
 
@@ -68,7 +93,8 @@ export default function ShiftSwapManager() {
             approveMutation.mutate({
                 requestId: request.id,
                 shiftId: request.shift_id,
-                newEmployeeId: request.target_employee_id
+                newEmployeeId: request.target_employee_id,
+                request: request
             });
         }
     };

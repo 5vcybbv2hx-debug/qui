@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ShoppingCart, Trash2, Check, Clock, Package } from 'lucide-react';
+import { Plus, ShoppingCart, Trash2, Check, Clock, Package, Camera } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import BarcodeScanner from '../components/restock/BarcodeScanner';
 
 const categoryColors = {
     'C+C': 'bg-blue-100 text-blue-700 border-blue-200',
@@ -33,6 +34,7 @@ export default function Shopping() {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [activeTab, setActiveTab] = useState('alle');
+    const [scannerOpen, setScannerOpen] = useState(false);
     const [formData, setFormData] = useState({
         item_name: '',
         category: 'C+C',
@@ -127,6 +129,16 @@ export default function Shopping() {
         }
     };
 
+    const handleBarcodeScan = (barcode) => {
+        setScannerOpen(false);
+        setFormData({
+            ...formData,
+            item_name: barcode,
+            notes: `Barcode: ${barcode}`
+        });
+        setModalOpen(true);
+    };
+
     const filteredItems = activeTab === 'alle' 
         ? items 
         : items.filter(item => item.category === activeTab);
@@ -151,13 +163,23 @@ export default function Shopping() {
                         </p>
                     </div>
                     {permissions.canEditShopping && (
-                        <Button 
-                            onClick={() => openModal()}
-                            className="bg-amber-600 hover:bg-amber-700"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Artikel hinzufügen
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button 
+                                onClick={() => setScannerOpen(true)}
+                                variant="outline"
+                                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                            >
+                                <Camera className="w-4 h-4 mr-2" />
+                                Barcode
+                            </Button>
+                            <Button 
+                                onClick={() => openModal()}
+                                className="bg-amber-600 hover:bg-amber-700"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Artikel
+                            </Button>
+                        </div>
                     )}
                 </div>
 
@@ -423,6 +445,13 @@ export default function Shopping() {
                         </form>
                     </DialogContent>
                 </Dialog>
+
+                {/* Barcode Scanner */}
+                <BarcodeScanner
+                    open={scannerOpen}
+                    onClose={() => setScannerOpen(false)}
+                    onScan={handleBarcodeScan}
+                />
             </div>
         </div>
     );

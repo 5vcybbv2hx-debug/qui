@@ -70,7 +70,7 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Camera className="w-5 h-5" />
@@ -82,11 +82,16 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                     <div 
                         id="barcode-scanner" 
                         ref={scannerRef}
-                        className="rounded-lg overflow-hidden"
+                        className="rounded-lg overflow-hidden border-2 border-slate-700 bg-slate-900 min-h-[400px]"
                     />
-                    <p className="text-sm text-slate-500 mt-3 text-center">
-                        Halte den Barcode vor die Kamera
-                    </p>
+                    <div className="mt-4 p-3 bg-slate-100 rounded-lg border border-slate-300">
+                        <p className="text-sm text-slate-700 text-center font-medium">
+                            📱 Halte den Barcode vor die Kamera
+                        </p>
+                        <p className="text-xs text-slate-500 text-center mt-1">
+                            Stelle sicher, dass der Barcode gut beleuchtet und lesbar ist
+                        </p>
+                    </div>
                 </div>
 
                 <Button 

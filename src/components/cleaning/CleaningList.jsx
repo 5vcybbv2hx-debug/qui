@@ -52,7 +52,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                             <Card 
                                 key={task.id}
                                 className={cn(
-                                    "p-4 border-0 shadow-sm transition-all duration-200",
+                                    "p-3 sm:p-4 border-0 shadow-sm transition-all duration-200",
                                     task.is_completed ? "bg-slate-50" : "bg-white hover:shadow-md"
                                 )}
                             >
@@ -72,17 +72,17 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                         
                                         <div className="min-w-0">
                                             <p className={cn(
-                                                "font-medium truncate",
+                                                "font-medium truncate text-sm sm:text-base",
                                                 task.is_completed ? "text-slate-400 line-through" : "text-slate-800"
                                             )}>
                                                 {task.title}
                                             </p>
-                                            <div className="flex items-center gap-2 mt-0.5">
+                                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                                 <span className="text-[10px] uppercase tracking-wider text-slate-400">
                                                     {frequencyLabels[task.frequency]}
                                                 </span>
                                                 {task.is_completed && task.completed_by && (
-                                                    <span className="text-[10px] text-slate-400">
+                                                    <span className="text-[10px] text-slate-400 truncate">
                                                         • {task.completed_by}
                                                         {task.completed_at && ` um ${format(new Date(task.completed_at), 'HH:mm', { locale: de })}`}
                                                     </span>

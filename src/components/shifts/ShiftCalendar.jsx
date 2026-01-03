@@ -42,7 +42,7 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], on
     return (
         <div className="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-slate-700">
                 <Button 
                     variant="ghost" 
                     size="icon"
@@ -51,7 +51,7 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], on
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </Button>
-                <h3 className="font-semibold text-white">
+                <h3 className="font-semibold text-white text-sm sm:text-base">
                     {format(weekStart, 'MMMM yyyy', { locale: de })}
                 </h3>
                 <Button 
@@ -77,7 +77,7 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], on
                         <div 
                             key={idx} 
                             className={cn(
-                                "min-h-[140px] p-2 cursor-pointer transition-colors",
+                                "min-h-[120px] sm:min-h-[140px] p-2 cursor-pointer transition-colors",
                                 isToday && "bg-amber-900/20",
                                 isSelected && "bg-slate-700",
                                 understaffed && "border-l-2 border-red-500"
@@ -86,12 +86,12 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], on
                         >
                             {/* Day Header */}
                             <div className="text-center mb-2">
-                                <p className="text-[10px] uppercase tracking-wider text-slate-500">
+                                <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500">
                                     {format(day, 'EEE', { locale: de })}
                                 </p>
                                 <div className="flex items-center justify-center gap-1">
                                     <p className={cn(
-                                        "text-lg font-semibold mt-1",
+                                        "text-base sm:text-lg font-semibold mt-1",
                                         isToday ? "text-amber-500" : "text-slate-300"
                                     )}>
                                         {format(day, 'd')}
@@ -119,7 +119,7 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], on
                                             e.stopPropagation();
                                             onSelectShift(shift);
                                         }}
-                                        className="px-2 py-1 rounded-lg text-xs font-medium truncate hover:opacity-80 transition-opacity"
+                                        className="px-2 py-1 rounded-lg text-[10px] sm:text-xs font-medium truncate hover:opacity-80 transition-opacity"
                                         style={{ 
                                             backgroundColor: `${getEmployeeColor(shift.employee_id)}20`,
                                             color: getEmployeeColor(shift.employee_id)

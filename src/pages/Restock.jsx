@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Scan, Package, Trash2, User, Camera, Zap } from 'lucide-react';
+import { Scan, Package, Trash2, User, Camera, Zap, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +76,13 @@ export default function Restock() {
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.RestockItem.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['restock-items']);
+        }
+    });
+
+    const toggleCompleteMutation = useMutation({
+        mutationFn: ({ id, completed }) => base44.entities.RestockItem.update(id, { is_completed: completed }),
         onSuccess: () => {
             queryClient.invalidateQueries(['restock-items']);
         }
@@ -269,43 +276,67 @@ export default function Restock() {
                     )}
                 </div>
 
-                {/* Scanned Items List */}
+                {/* Restock To-Do List */}
                 <div className="mb-6">
                     <h2 className="text-lg font-semibold text-white mb-4">
-                        Abgescannte Artikel ({todayItems.length})
+                        Auffüllliste ({todayItems.filter(i => !i.is_completed).length} offen)
                     </h2>
                     {todayItems.length > 0 ? (
-                        <div className="grid gap-3">
-                            {todayItems.map(item => (
-                                <Card key={item.id} className="p-4 bg-slate-800 border-slate-700 shadow-sm border-l-4 border-l-green-500">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Package className="w-4 h-4 text-green-500" />
-                                                <h3 className="font-medium text-white">
+                        <div className="space-y-2">
+                            {todayItems
+                                .sort((a, b) => {
+                                    if (a.is_completed === b.is_completed) return 0;
+                                    return a.is_completed ? 1 : -1;
+                                })
+                                .map(item => (
+                                    <Card 
+                                        key={item.id} 
+                                        className={cn(
+                                            "p-4 bg-slate-800 border-slate-700 shadow-sm transition-all",
+                                            item.is_completed && "opacity-50 bg-slate-800/50"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => toggleCompleteMutation.mutate({ 
+                                                    id: item.id, 
+                                                    completed: !item.is_completed 
+                                                })}
+                                                className={cn(
+                                                    "w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
+                                                    item.is_completed 
+                                                        ? "bg-green-600 border-green-600" 
+                                                        : "border-slate-600 hover:border-green-500"
+                                                )}
+                                            >
+                                                {item.is_completed && <Check className="w-4 h-4 text-white" />}
+                                            </button>
+                                            
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className={cn(
+                                                    "font-medium truncate",
+                                                    item.is_completed ? "text-slate-500 line-through" : "text-white"
+                                                )}>
                                                     {item.article_name}
                                                 </h3>
-                                            </div>
-                                            <div className="text-sm text-slate-400 space-y-1">
-                                                <p>Barcode: {item.barcode}</p>
-                                                <p>Menge: <span className="font-semibold text-green-400">{item.quantity}</span></p>
-                                                <div className="flex items-center gap-1 text-xs text-slate-500">
-                                                    <User className="w-3 h-3" />
-                                                    {item.restocked_by} • {item.time} Uhr
+                                                <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                                                    <span>Menge: {item.quantity}</span>
+                                                    <span>•</span>
+                                                    <span>{item.barcode}</span>
                                                 </div>
                                             </div>
+
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-slate-500 hover:text-red-500 hover:bg-red-900/20"
+                                                onClick={() => handleDelete(item.id)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
                                         </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-red-500 hover:text-red-600 hover:bg-red-900/20"
-                                            onClick={() => handleDelete(item.id)}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </Card>
-                            ))}
+                                    </Card>
+                                ))}
                         </div>
                     ) : (
                         <Card className="p-8 bg-slate-800 border-slate-700 shadow-sm">

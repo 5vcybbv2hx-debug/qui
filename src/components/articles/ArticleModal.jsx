@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { Camera } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import BarcodeScanner from '@/components/restock/BarcodeScanner';
 
 export default function ArticleModal({ open, onClose, article, onSave }) {
+    const [scannerOpen, setScannerOpen] = useState(false);
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
@@ -56,6 +59,11 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         onSave(dataToSave, article?.id);
     };
 
+    const handleScan = (barcode) => {
+        setFormData({ ...formData, barcode });
+        setScannerOpen(false);
+    };
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-md">
@@ -66,12 +74,22 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
                         <Label>Barcode/EAN *</Label>
-                        <Input
-                            value={formData.barcode}
-                            onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                            placeholder="z.B. 4029764001807"
-                            required
-                        />
+                        <div className="flex gap-2">
+                            <Input
+                                value={formData.barcode}
+                                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                                placeholder="z.B. 4029764001807"
+                                required
+                                className="flex-1"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setScannerOpen(true)}
+                            >
+                                <Camera className="w-4 h-4" />
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -171,6 +189,12 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                         </Button>
                     </div>
                 </form>
+
+                <BarcodeScanner
+                    open={scannerOpen}
+                    onClose={() => setScannerOpen(false)}
+                    onScan={handleScan}
+                />
             </DialogContent>
         </Dialog>
     );

@@ -34,6 +34,7 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                             qrbox: { width: 250, height: 150 },
                             aspectRatio: 1.0,
                             showTorchButtonIfSupported: true,
+                            rememberLastUsedCamera: true,
                             formatsToSupport: [
                                 0, // QR_CODE
                                 8, // CODE_128
@@ -50,7 +51,22 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                     html5QrcodeScanner.render(
                         (decodedText) => {
                             onScan(decodedText);
-                            onClose();
+                            // Cleanup before closing
+                            if (scannerInstanceRef.current) {
+                                scannerInstanceRef.current.clear()
+                                    .then(() => {
+                                        scannerInstanceRef.current = null;
+                                        setIsInitialized(false);
+                                        onClose();
+                                    })
+                                    .catch(() => {
+                                        scannerInstanceRef.current = null;
+                                        setIsInitialized(false);
+                                        onClose();
+                                    });
+                            } else {
+                                onClose();
+                            }
                         },
                         (error) => {
                             // Ignore scanning errors (they happen frequently)
@@ -62,7 +78,7 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                 } catch (error) {
                     console.error('Scanner initialization error:', error);
                 }
-            }, 100);
+            }, 300);
 
             return () => clearTimeout(timer);
         }

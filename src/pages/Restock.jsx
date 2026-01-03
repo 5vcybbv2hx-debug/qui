@@ -148,22 +148,46 @@ export default function Restock() {
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-4xl mx-auto px-4 py-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Auffülliste</h1>
-                    <p className="text-slate-400 text-sm mt-1">Theke aus dem Lager auffüllen</p>
+                <div className="mb-8 flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white tracking-tight">Auffülliste</h1>
+                        <p className="text-slate-400 text-sm mt-1">Theke aus dem Lager auffüllen</p>
+                    </div>
+                    <Button
+                        variant={scanMode ? "default" : "outline"}
+                        onClick={() => {
+                            const newMode = !scanMode;
+                            setScanMode(newMode);
+                            if (newMode) {
+                                setScannerOpen(true);
+                            }
+                        }}
+                        className={scanMode ? "bg-green-600 hover:bg-green-700" : "border-slate-600 hover:bg-slate-700 text-slate-300"}
+                    >
+                        <Zap className="w-4 h-4 mr-2" />
+                        {scanMode ? 'Scanmodus AN' : 'Scanmodus AUS'}
+                    </Button>
                 </div>
 
                 {/* Scanner */}
                 <Card className="p-6 bg-slate-800 border-slate-700 shadow-sm mb-6">
                     <form onSubmit={handleBarcodeSubmit} className="space-y-4">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
-                                <Scan className="w-6 h-6 text-slate-300" />
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
+                                    <Scan className="w-6 h-6 text-slate-300" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-white">Barcode scannen</h3>
+                                    <p className="text-sm text-slate-400">Kamera oder manuelle Eingabe</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-semibold text-white">Barcode scannen</h3>
-                                <p className="text-sm text-slate-400">Kamera oder manuelle Eingabe</p>
-                            </div>
+                            {scanMode && (
+                                <div className="flex items-center gap-2 px-3 py-1 bg-green-900/50 rounded-full">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                                    <span className="text-xs text-green-400 font-medium">Aktiv</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-2">

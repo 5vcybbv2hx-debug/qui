@@ -133,6 +133,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                     <SelectItem value="C+C">C+C</SelectItem>
                                     <SelectItem value="Metro">Metro</SelectItem>
                                     <SelectItem value="Wein-Bauer">Wein-Bauer</SelectItem>
+                                    <SelectItem value="Mebold">Mebold</SelectItem>
                                     <SelectItem value="Sonstiger">Sonstiger</SelectItem>
                                 </SelectContent>
                             </Select>

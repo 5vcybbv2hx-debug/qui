@@ -9,6 +9,7 @@ import ShiftAnalytics from './pages/ShiftAnalytics';
 import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import Todos from './pages/Todos';
+import Articles from './pages/Articles';
 import __Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "Shifts": Shifts,
     "Shopping": Shopping,
     "Todos": Todos,
+    "Articles": Articles,
 }
 
 export const pagesConfig = {

@@ -35,6 +35,9 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                             aspectRatio: 1.0,
                             showTorchButtonIfSupported: true,
                             rememberLastUsedCamera: true,
+                            videoConstraints: {
+                                facingMode: { ideal: "environment" }
+                            },
                             formatsToSupport: [
                                 0, // QR_CODE
                                 8, // CODE_128

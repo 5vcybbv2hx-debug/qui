@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Wine, Trash2, Edit } from 'lucide-react';
+import { Plus, Search, Wine, Trash2, Edit, Settings } from 'lucide-react';
+import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,11 +23,13 @@ const categoryColors = {
 };
 
 export default function Recipes() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedRecipe, setSelectedRecipe] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('alle');
+    const [categoriesModalOpen, setCategoriesModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         category: 'Cocktail',
@@ -130,13 +133,25 @@ export default function Recipes() {
                             {recipes.length} Rezept{recipes.length !== 1 ? 'e' : ''}
                         </p>
                     </div>
-                    <Button 
-                        onClick={() => openModal()}
-                        className="bg-amber-600 hover:bg-amber-700"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Rezept hinzufügen
-                    </Button>
+                    {permissions.isManager && (
+                        <div className="flex gap-2">
+                            <Button 
+                                onClick={() => setCategoriesModalOpen(true)}
+                                variant="outline"
+                                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                            >
+                                <Settings className="w-4 h-4 mr-2" />
+                                Kategorien
+                            </Button>
+                            <Button 
+                                onClick={() => openModal()}
+                                className="bg-amber-600 hover:bg-amber-700"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Rezept
+                            </Button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Search and Filter */}
@@ -174,24 +189,26 @@ export default function Recipes() {
                                             {recipe.category}
                                         </Badge>
                                     </div>
-                                    <div className="flex gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => openModal(recipe)}
-                                            className="h-8 w-8"
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleDelete(recipe.id)}
-                                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
+                                    {permissions.isManager && (
+                                        <div className="flex gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => openModal(recipe)}
+                                                className="h-8 w-8 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDelete(recipe.id)}
+                                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-900/20"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-3 text-sm">
@@ -330,6 +347,39 @@ export default function Recipes() {
                                 </Button>
                             </div>
                         </form>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Categories Modal */}
+                <Dialog open={categoriesModalOpen} onOpenChange={setCategoriesModalOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Kategorien verwalten</DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="mt-4">
+                            <p className="text-sm text-slate-600 mb-4">
+                                Um Kategorien hinzuzufügen oder zu ändern, bearbeite die Recipe-Entity in der Datenbank.
+                            </p>
+                            <div className="space-y-2">
+                                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Aktuelle Kategorien:</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {Object.keys(categoryColors).map(category => (
+                                        <Badge key={category} className={cn("text-xs", categoryColors[category])}>
+                                            {category}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setCategoriesModalOpen(false)}
+                            className="w-full mt-4"
+                        >
+                            Schließen
+                        </Button>
                     </DialogContent>
                 </Dialog>
             </div>

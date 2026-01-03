@@ -55,16 +55,6 @@ export default function Restock() {
                 // Create new restock entry
                 await base44.entities.RestockItem.create(data);
             }
-            
-            // Update article stock if exists
-            const article = articles.find(a => a.barcode === data.barcode);
-            if (article) {
-                const newStock = (article.current_stock || 0) + data.quantity;
-                await base44.entities.Article.update(article.id, {
-                    ...article,
-                    current_stock: newStock
-                });
-            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['restock-items']);

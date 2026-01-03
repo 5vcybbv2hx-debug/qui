@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 import ShiftSwapRequest from './ShiftSwapRequest';
 
-export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete }) {
+export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete, existingShifts = [] }) {
     const [formData, setFormData] = useState({
         employee_id: '',
         employee_name: '',
@@ -126,7 +126,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         e.preventDefault();
         
         if (isMultiMode) {
-            // Save multiple shifts
+            // Validate: No employee can have multiple shifts on the same day
             const shiftsToSave = multipleShifts
                 .filter(s => s.employee_id)
                 .map(s => {
@@ -142,11 +142,46 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         notes: formData.notes
                     };
                 });
+
+            // Check for duplicates within the new shifts
+            const employeeIds = shiftsToSave.map(s => s.employee_id);
+            const duplicates = employeeIds.filter((id, index) => employeeIds.indexOf(id) !== index);
+            if (duplicates.length > 0) {
+                const employee = employees.find(e => e.id === duplicates[0]);
+                alert(`Fehler: ${employee?.name} wurde mehrmals für denselben Tag eingetragen.`);
+                return;
+            }
+
+            // Check against existing shifts
+            for (const newShift of shiftsToSave) {
+                const hasExisting = existingShifts.some(
+                    s => s.employee_id === newShift.employee_id && 
+                         s.date === newShift.date
+                );
+                if (hasExisting) {
+                    const employee = employees.find(e => e.id === newShift.employee_id);
+                    alert(`Fehler: ${employee?.name} hat bereits eine Schicht an diesem Tag.`);
+                    return;
+                }
+            }
             
             // Save all shifts
             shiftsToSave.forEach(shiftData => onSave(shiftData, null));
             onClose();
         } else {
+            // Single shift validation (only for new shifts)
+            if (!shift) {
+                const hasExisting = existingShifts.some(
+                    s => s.employee_id === formData.employee_id && 
+                         s.date === formData.date
+                );
+                if (hasExisting) {
+                    const employee = employees.find(e => e.id === formData.employee_id);
+                    alert(`Fehler: ${employee?.name} hat bereits eine Schicht an diesem Tag.`);
+                    return;
+                }
+            }
+            
             onSave(formData, shift?.id);
         }
     };

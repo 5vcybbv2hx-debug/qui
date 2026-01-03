@@ -13,9 +13,12 @@ import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
 import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManager';
 import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
+import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Shifts() {
     const queryClient = useQueryClient();
+    const permissions = usePermissions();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
@@ -111,6 +114,7 @@ export default function Shifts() {
                     </div>
                     <div className="flex gap-2 flex-wrap overflow-x-auto pb-2">
                         <ShiftSwapManager />
+                        {permissions.isAdmin && <MonthlyStaffingCheck />}
                         <ShiftRequirementsManager />
                         <OpeningHoursManager />
                         <LiveSyncInstructions />
@@ -199,6 +203,7 @@ export default function Shifts() {
                     shift={selectedShift}
                     employees={employees}
                     selectedDate={selectedDate}
+                    existingShifts={shifts}
                     onSave={handleSave}
                     onDelete={handleDelete}
                 />

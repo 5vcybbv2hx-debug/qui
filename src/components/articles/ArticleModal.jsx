@@ -13,6 +13,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         category: '',
         supplier: '',
         unit: '',
+        current_stock: '',
         min_stock: '',
         notes: ''
     });
@@ -25,6 +26,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 category: article.category || '',
                 supplier: article.supplier || '',
                 unit: article.unit || '',
+                current_stock: article.current_stock || '',
                 min_stock: article.min_stock || '',
                 notes: article.notes || ''
             });
@@ -35,6 +37,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 category: '',
                 supplier: '',
                 unit: '',
+                current_stock: '',
                 min_stock: '',
                 notes: ''
             });
@@ -46,6 +49,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         
         const dataToSave = {
             ...formData,
+            current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
         };
         
@@ -117,13 +121,23 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                         </div>
                     </div>
 
+                    <div className="space-y-2">
+                        <Label>Einheit</Label>
+                        <Input
+                            value={formData.unit}
+                            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                            placeholder="z.B. Flasche, Kiste"
+                        />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                            <Label>Einheit</Label>
+                            <Label>Aktueller Bestand</Label>
                             <Input
-                                value={formData.unit}
-                                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                                placeholder="z.B. Flasche, Kiste"
+                                type="number"
+                                value={formData.current_stock}
+                                onChange={(e) => setFormData({ ...formData, current_stock: e.target.value })}
+                                placeholder="z.B. 10"
                             />
                         </div>
 

@@ -31,6 +31,11 @@ export default function Restock() {
         queryFn: () => base44.entities.RestockItem.list('-created_date', 50)
     });
 
+    const { data: articles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list()
+    });
+
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.RestockItem.create(data),
         onSuccess: () => {

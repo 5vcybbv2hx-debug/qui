@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Scan, Package, Trash2, User, Camera } from 'lucide-react';
+import { Scan, Package, Trash2, User, Camera, Zap } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +21,7 @@ export default function Restock() {
     const [articleName, setArticleName] = useState('');
     const [quantity, setQuantity] = useState('');
     const [user, setUser] = useState(null);
+    const [scanMode, setScanMode] = useState(false);
 
     useEffect(() => {
         base44.auth.me().then(setUser).catch(() => {});
@@ -38,8 +39,22 @@ export default function Restock() {
 
     const createMutation = useMutation({
         mutationFn: async (data) => {
-            // Create restock entry
-            await base44.entities.RestockItem.create(data);
+            // Check if item with same barcode exists today
+            const today = format(new Date(), 'yyyy-MM-dd');
+            const existingItem = restockItems.find(
+                item => item.barcode === data.barcode && item.date === today
+            );
+
+            if (existingItem) {
+                // Update existing item with combined quantity
+                await base44.entities.RestockItem.update(existingItem.id, {
+                    ...existingItem,
+                    quantity: existingItem.quantity + data.quantity
+                });
+            } else {
+                // Create new restock entry
+                await base44.entities.RestockItem.create(data);
+            }
             
             // Update article stock if exists
             const article = articles.find(a => a.barcode === data.barcode);
@@ -59,7 +74,11 @@ export default function Restock() {
             setArticleName('');
             setQuantity('');
             setBarcode('');
-            if (barcodeInputRef.current) {
+            
+            // Im Scanmodus: Scanner wieder öffnen
+            if (scanMode) {
+                setTimeout(() => setScannerOpen(true), 300);
+            } else if (barcodeInputRef.current) {
                 barcodeInputRef.current.focus();
             }
         }

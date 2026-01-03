@@ -37,9 +37,23 @@ export default function Restock() {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.RestockItem.create(data),
+        mutationFn: async (data) => {
+            // Create restock entry
+            await base44.entities.RestockItem.create(data);
+            
+            // Update article stock if exists
+            const article = articles.find(a => a.barcode === data.barcode);
+            if (article) {
+                const newStock = (article.current_stock || 0) + data.quantity;
+                await base44.entities.Article.update(article.id, {
+                    ...article,
+                    current_stock: newStock
+                });
+            }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['restock-items']);
+            queryClient.invalidateQueries(['articles']);
             setQuantityModalOpen(false);
             setScannedBarcode('');
             setArticleName('');
@@ -62,6 +76,12 @@ export default function Restock() {
         e.preventDefault();
         if (!barcode.trim()) return;
 
+        // Check if article exists in database
+        const article = articles.find(a => a.barcode === barcode);
+        if (article) {
+            setArticleName(article.name);
+        }
+
         setScannedBarcode(barcode);
         setQuantityModalOpen(true);
     };
@@ -69,6 +89,13 @@ export default function Restock() {
     const handleCameraScan = (decodedText) => {
         setScannerOpen(false);
         setBarcode(decodedText);
+        
+        // Check if article exists in database
+        const article = articles.find(a => a.barcode === decodedText);
+        if (article) {
+            setArticleName(article.name);
+        }
+        
         setScannedBarcode(decodedText);
         setQuantityModalOpen(true);
     };

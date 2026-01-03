@@ -225,6 +225,60 @@ export default function Restock() {
                     </form>
                 </Card>
 
+                {/* Low Stock Articles - To Restock */}
+                <div className="mb-6">
+                    <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Package className="w-5 h-5 text-amber-500" />
+                        Artikel zum Auffüllen
+                    </h2>
+                    {articles.filter(a => a.min_stock && a.current_stock <= a.min_stock).length > 0 ? (
+                        <div className="grid gap-3">
+                            {articles
+                                .filter(a => a.min_stock && a.current_stock <= a.min_stock)
+                                .sort((a, b) => (a.current_stock / a.min_stock) - (b.current_stock / b.min_stock))
+                                .map(article => (
+                                    <Card key={article.id} className="p-4 bg-slate-800 border-slate-700 shadow-sm border-l-4 border-l-amber-500">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <div className="flex-1">
+                                                <h3 className="font-medium text-white mb-1">{article.name}</h3>
+                                                <div className="text-sm text-slate-400 space-y-1">
+                                                    <p>Barcode: {article.barcode}</p>
+                                                    <p className="flex items-center gap-2">
+                                                        <span>Bestand: <span className="font-semibold text-red-400">{article.current_stock || 0}</span></span>
+                                                        <span className="text-slate-600">|</span>
+                                                        <span>Min: {article.min_stock}</span>
+                                                        {article.unit && <span className="text-slate-600">({article.unit})</span>}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setBarcode(article.barcode);
+                                                    setArticleName(article.name);
+                                                    setScannedBarcode(article.barcode);
+                                                    setQuantityModalOpen(true);
+                                                }}
+                                                className="border-amber-600 text-amber-400 hover:bg-amber-600 hover:text-white"
+                                            >
+                                                <Scan className="w-4 h-4 mr-1" />
+                                                Auffüllen
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                        </div>
+                    ) : (
+                        <Card className="p-6 bg-slate-800 border-slate-700 shadow-sm">
+                            <div className="text-center text-slate-500">
+                                <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                                <p>Alle Artikel sind ausreichend gefüllt</p>
+                            </div>
+                        </Card>
+                    )}
+                </div>
+
                 {/* Today's Items */}
                 <div className="mb-6">
                     <h2 className="text-lg font-semibold text-white mb-4">

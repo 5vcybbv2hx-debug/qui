@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingCart } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -304,6 +304,34 @@ export default function Employees() {
                                             <p className="text-slate-300">
                                                 {format(new Date(employee.birthday), 'dd.MM.yyyy', { locale: de })}
                                             </p>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Order Buttons */}
+                                    {permissions.isManager && (employee.tshirt_size || employee.pullover_size) && (
+                                        <div className="flex gap-2 pt-2">
+                                            {employee.tshirt_size && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleOrderItem('tshirt', employee.tshirt_size, employee.name)}
+                                                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                                                >
+                                                    <ShoppingBag className="w-3 h-3 mr-1" />
+                                                    T-Shirt
+                                                </Button>
+                                            )}
+                                            {employee.pullover_size && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleOrderItem('pullover', employee.pullover_size, employee.name)}
+                                                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                                                >
+                                                    <ShoppingBag className="w-3 h-3 mr-1" />
+                                                    Pullover
+                                                </Button>
+                                            )}
                                         </div>
                                     )}
                                 </div>

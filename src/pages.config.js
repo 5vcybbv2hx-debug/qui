@@ -1,3 +1,4 @@
+import Articles from './pages/Articles';
 import Cleaning from './pages/Cleaning';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
@@ -9,11 +10,11 @@ import ShiftAnalytics from './pages/ShiftAnalytics';
 import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import Todos from './pages/Todos';
-import Articles from './pages/Articles';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Articles": Articles,
     "Cleaning": Cleaning,
     "Dashboard": Dashboard,
     "Employees": Employees,
@@ -25,7 +26,6 @@ export const PAGES = {
     "Shifts": Shifts,
     "Shopping": Shopping,
     "Todos": Todos,
-    "Articles": Articles,
 }
 
 export const pagesConfig = {

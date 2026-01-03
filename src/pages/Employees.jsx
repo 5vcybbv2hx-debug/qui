@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Phone, Users, ShoppingCart } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingCart } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 const COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#84cc16', 
@@ -21,7 +23,7 @@ const COLORS = [
     '#d946ef', '#ec4899', '#f43f5e', '#64748b'
 ];
 
-const roleLabels = {
+const roleColors = {
     'Barkeeper': 'bg-amber-100 text-amber-700',
     'Servicekraft': 'bg-blue-100 text-blue-700',
     'Manager': 'bg-purple-100 text-purple-700',
@@ -49,15 +51,19 @@ export default function Employees() {
         is_active: true
     });
 
-    const { data: employees = [], isLoading } = useQuery({
-        queryKey: ['employees-all'],
+    const { data: employees = [] } = useQuery({
+        queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.list('name')
+    });
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me()
     });
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Employee.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['employees-all']);
             queryClient.invalidateQueries(['employees']);
             closeModal();
         }
@@ -66,7 +72,6 @@ export default function Employees() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Employee.update(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['employees-all']);
             queryClient.invalidateQueries(['employees']);
             closeModal();
         }
@@ -75,7 +80,6 @@ export default function Employees() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Employee.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries(['employees-all']);
             queryClient.invalidateQueries(['employees']);
         }
     });
@@ -107,19 +111,12 @@ export default function Employees() {
                 phone: '',
                 email: '',
                 birthday: '',
-                birth_name: '',
-                birth_place: '',
                 entry_date: '',
-                education: '',
-                tax_id: '',
-                pension_insurance_number: '',
-                health_insurance: '',
                 tshirt_size: '',
                 pullover_size: '',
                 street: '',
                 postal_code: '',
                 city: '',
-                nationality: '',
                 is_active: true
             });
         }
@@ -147,6 +144,11 @@ export default function Employees() {
     };
 
     const handleInvite = async (employee) => {
+        if (!employee.email) {
+            alert('Mitarbeiter hat keine E-Mail-Adresse hinterlegt.');
+            return;
+        }
+
         try {
             const roleMapping = {
                 'Manager': 'admin',
@@ -156,9 +158,9 @@ export default function Employees() {
             };
             
             await base44.users.inviteUser(employee.email, roleMapping[employee.role] || 'user');
-            alert(`Einladung an ${employee.email} wurde versendet!`);
+            alert(`✅ Einladung an ${employee.email} wurde versendet!`);
         } catch (error) {
-            alert('Fehler beim Versenden der Einladung: ' + error.message);
+            alert('❌ Fehler beim Versenden der Einladung: ' + error.message);
         }
     };
 
@@ -198,37 +200,39 @@ export default function Employees() {
     const inactiveEmployees = employees.filter(e => e.is_active === false);
 
     if (!permissions.canViewEmployees) {
-        return <PermissionDenied message="Nur Manager können die Mitarbeiterliste einsehen." />;
+        return <PermissionDenied message="Du hast keine Berechtigung, die Mitarbeiterliste zu sehen." />;
     }
 
     return (
         <div className="min-h-screen bg-slate-900">
-            <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Team</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Team</h1>
                         <p className="text-slate-400 text-sm mt-1">
                             {activeEmployees.length} aktive Mitarbeiter
                         </p>
                     </div>
-                    <Button 
-                        onClick={() => openModal()}
-                        className="bg-amber-600 hover:bg-amber-700"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Mitarbeiter hinzufügen
-                    </Button>
+                    {permissions.isManager && (
+                        <Button 
+                            onClick={() => openModal()}
+                            className="bg-amber-600 hover:bg-amber-700"
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Mitarbeiter hinzufügen
+                        </Button>
+                    )}
                 </div>
 
                 {/* Employee Grid */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeEmployees.map(employee => (
                         <Card 
                             key={employee.id}
-                            className="p-5 bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow"
+                            className="p-4 sm:p-5 bg-slate-800 border-slate-700 shadow-sm"
                         >
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-center gap-3 mb-4">
                                 <div 
                                     className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg shrink-0"
                                     style={{ backgroundColor: employee.color || '#64748b' }}
@@ -237,43 +241,115 @@ export default function Employees() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-white truncate">{employee.name}</h3>
-                                    <Badge className={cn("mt-1 text-xs", roleLabels[employee.role] || 'bg-slate-100 text-slate-700')}>
+                                    <Badge className={cn("mt-1 text-xs", roleColors[employee.role] || 'bg-slate-100 text-slate-700')}>
                                         {employee.role}
                                     </Badge>
+                                </div>
+                            </div>
+
+                            {/* Contact Icons - visible to all */}
+                            <div className="flex gap-2 mb-3">
+                                {employee.phone && (
+                                    <>
+                                        <a
+                                            href={`tel:${employee.phone}`}
+                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition-colors text-sm"
+                                            title="Anrufen"
+                                        >
+                                            <Phone className="w-4 h-4" />
+                                            <span className="hidden sm:inline">Anrufen</span>
+                                        </a>
+                                        <a
+                                            href={`https://wa.me/${employee.phone.replace(/\D/g, '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-colors text-sm"
+                                            title="WhatsApp"
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                            <span className="hidden sm:inline">WhatsApp</span>
+                                        </a>
+                                    </>
+                                )}
+                                {employee.email && !employee.phone && (
+                                    <a
+                                        href={`mailto:${employee.email}`}
+                                        className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition-colors text-sm"
+                                        title="E-Mail"
+                                    >
+                                        <Mail className="w-4 h-4" />
+                                        <span className="hidden sm:inline">E-Mail</span>
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* Details - only for Manager or own profile */}
+                            {canViewDetails(employee) && (
+                                <div className="space-y-2 pt-3 border-t border-slate-700 text-sm">
+                                    {employee.email && (
+                                        <div>
+                                            <p className="text-xs text-slate-500">E-Mail</p>
+                                            <p className="text-slate-300 truncate">{employee.email}</p>
+                                        </div>
+                                    )}
                                     {employee.phone && (
-                                        <div className="flex items-center gap-1 mt-2 text-sm text-slate-500">
-                                            <Phone className="w-3 h-3" />
-                                            {employee.phone}
+                                        <div>
+                                            <p className="text-xs text-slate-500">Telefon</p>
+                                            <p className="text-slate-300">{employee.phone}</p>
+                                        </div>
+                                    )}
+                                    {employee.birthday && (
+                                        <div>
+                                            <p className="text-xs text-slate-500">Geburtstag</p>
+                                            <p className="text-slate-300">
+                                                {format(new Date(employee.birthday), 'dd.MM.yyyy', { locale: de })}
+                                            </p>
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                            
-                            <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    className="flex-1 text-slate-300 hover:bg-slate-700"
-                                    onClick={() => openModal(employee)}
-                                >
-                                    <Pencil className="w-4 h-4 mr-1" />
-                                    Bearbeiten
-                                </Button>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                    onClick={() => handleDelete(employee.id)}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            {canEdit(employee) && (
+                                <div className="flex gap-2 mt-4 pt-3 border-t border-slate-700">
+                                    {permissions.isManager && employee.email && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleInvite(employee)}
+                                            className="flex-1 border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
+                                        >
+                                            <UserPlus className="w-4 h-4 mr-1" />
+                                            Einladen
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openModal(employee)}
+                                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                                    >
+                                        <Pencil className="w-4 h-4 mr-1" />
+                                        Bearbeiten
+                                    </Button>
+                                    {permissions.isManager && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleDelete(employee.id)}
+                                            className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
                         </Card>
                     ))}
                 </div>
 
                 {/* Inactive Employees */}
-                {inactiveEmployees.length > 0 && (
+                {permissions.isManager && inactiveEmployees.length > 0 && (
                     <div className="mt-8">
                         <h2 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-4">
                             Inaktive Mitarbeiter
@@ -282,7 +358,7 @@ export default function Employees() {
                             {inactiveEmployees.map(employee => (
                                 <Card 
                                     key={employee.id}
-                                    className="p-5 bg-slate-800/50 border-slate-700 opacity-60"
+                                    className="p-4 bg-slate-800/50 border-slate-700 opacity-60"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div 
@@ -299,6 +375,7 @@ export default function Employees() {
                                             variant="ghost" 
                                             size="sm"
                                             onClick={() => openModal(employee)}
+                                            className="text-slate-400"
                                         >
                                             <Pencil className="w-4 h-4" />
                                         </Button>
@@ -309,17 +386,9 @@ export default function Employees() {
                     </div>
                 )}
 
-                {employees.length === 0 && (
-                    <div className="text-center py-16 text-slate-400">
-                        <Users className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">Noch keine Mitarbeiter</p>
-                        <p className="text-sm mt-1">Füge dein Team hinzu, um loszulegen</p>
-                    </div>
-                )}
-
                 {/* Modal */}
                 <Dialog open={modalOpen} onOpenChange={closeModal}>
-                    <DialogContent className="sm:max-w-md">
+                    <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>
                                 {selectedEmployee ? 'Mitarbeiter bearbeiten' : 'Neuer Mitarbeiter'}
@@ -353,22 +422,25 @@ export default function Employees() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Telefon</Label>
-                                <Input
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+49 123 456789"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>E-Mail</Label>
+                                <Label>E-Mail (für Einladung)</Label>
                                 <Input
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="name@beispiel.de"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Mobilfunknummer</Label>
+                                <Input
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    placeholder="+49 123 456789"
+                                />
+                                <p className="text-xs text-slate-500">
+                                    Wird für Anrufe und WhatsApp verwendet
+                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -399,7 +471,7 @@ export default function Employees() {
                             </div>
 
                             <div className="pt-4 border-t space-y-4">
-                                <h4 className="font-semibold text-slate-800">Personalakte</h4>
+                                <h4 className="font-semibold text-slate-800">Weitere Daten</h4>
                                 
                                 <div className="space-y-2">
                                     <Label>Eintrittsdatum</Label>
@@ -410,63 +482,39 @@ export default function Employees() {
                                     />
                                 </div>
 
-                                <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
-                                        <Label>T-Shirt Größe</Label>
-                                        <div className="flex gap-2">
-                                            <Select value={formData.tshirt_size} onValueChange={(v) => setFormData({ ...formData, tshirt_size: v })}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Größe" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="XS">XS</SelectItem>
-                                                    <SelectItem value="S">S</SelectItem>
-                                                    <SelectItem value="M">M</SelectItem>
-                                                    <SelectItem value="L">L</SelectItem>
-                                                    <SelectItem value="XL">XL</SelectItem>
-                                                    <SelectItem value="XXL">XXL</SelectItem>
-                                                    <SelectItem value="XXXL">XXXL</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => handleOrderItem('tshirt', formData.tshirt_size, formData.name)}
-                                                className="shrink-0"
-                                            >
-                                                <ShoppingCart className="w-4 h-4" />
-                                            </Button>
-                                        </div>
+                                        <Label>T-Shirt</Label>
+                                        <Select value={formData.tshirt_size} onValueChange={(v) => setFormData({ ...formData, tshirt_size: v })}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Größe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="XS">XS</SelectItem>
+                                                <SelectItem value="S">S</SelectItem>
+                                                <SelectItem value="M">M</SelectItem>
+                                                <SelectItem value="L">L</SelectItem>
+                                                <SelectItem value="XL">XL</SelectItem>
+                                                <SelectItem value="XXL">XXL</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Pullovergröße</Label>
-                                        <div className="flex gap-2">
-                                            <Select value={formData.pullover_size} onValueChange={(v) => setFormData({ ...formData, pullover_size: v })}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Größe" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="XS">XS</SelectItem>
-                                                    <SelectItem value="S">S</SelectItem>
-                                                    <SelectItem value="M">M</SelectItem>
-                                                    <SelectItem value="L">L</SelectItem>
-                                                    <SelectItem value="XL">XL</SelectItem>
-                                                    <SelectItem value="XXL">XXL</SelectItem>
-                                                    <SelectItem value="XXXL">XXXL</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="icon"
-                                                onClick={() => handleOrderItem('pullover', formData.pullover_size, formData.name)}
-                                                className="shrink-0"
-                                            >
-                                                <ShoppingCart className="w-4 h-4" />
-                                            </Button>
-                                        </div>
+                                        <Label>Pullover</Label>
+                                        <Select value={formData.pullover_size} onValueChange={(v) => setFormData({ ...formData, pullover_size: v })}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Größe" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="XS">XS</SelectItem>
+                                                <SelectItem value="S">S</SelectItem>
+                                                <SelectItem value="M">M</SelectItem>
+                                                <SelectItem value="L">L</SelectItem>
+                                                <SelectItem value="XL">XL</SelectItem>
+                                                <SelectItem value="XXL">XXL</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                 </div>
 
@@ -481,7 +529,7 @@ export default function Employees() {
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
-                                        <Label>Postleitzahl</Label>
+                                        <Label>PLZ</Label>
                                         <Input
                                             value={formData.postal_code}
                                             onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
@@ -500,7 +548,7 @@ export default function Employees() {
                                 </div>
                             </div>
 
-                            {selectedEmployee && (
+                            {selectedEmployee && permissions.isManager && (
                                 <div className="flex items-center justify-between py-2">
                                     <Label>Aktiv</Label>
                                     <Switch
@@ -514,7 +562,7 @@ export default function Employees() {
                                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
+                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
                                     {selectedEmployee ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>

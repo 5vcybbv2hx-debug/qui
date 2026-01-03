@@ -6,58 +6,67 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 export default function BarcodeScanner({ onScan, open, onClose }) {
     const scannerRef = useRef(null);
-    const [scanner, setScanner] = useState(null);
+    const scannerInstanceRef = useRef(null);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
         if (!open) {
-            if (scanner) {
-                scanner.clear().catch(console.error);
-                setScanner(null);
+            // Cleanup when closing
+            if (scannerInstanceRef.current) {
+                scannerInstanceRef.current.clear()
+                    .then(() => {
+                        scannerInstanceRef.current = null;
+                        setIsInitialized(false);
+                    })
+                    .catch(console.error);
             }
             return;
         }
 
-        if (!scannerRef.current || scanner) return;
+        // Initialize scanner when opening
+        if (open && !isInitialized) {
+            const timer = setTimeout(() => {
+                try {
+                    const html5QrcodeScanner = new Html5QrcodeScanner(
+                        "barcode-scanner",
+                        { 
+                            fps: 10, 
+                            qrbox: { width: 250, height: 150 },
+                            aspectRatio: 1.0,
+                            showTorchButtonIfSupported: true,
+                            formatsToSupport: [
+                                0, // QR_CODE
+                                8, // CODE_128
+                                9, // CODE_39
+                                10, // EAN_13
+                                11, // EAN_8
+                                12, // UPC_A
+                                13  // UPC_E
+                            ]
+                        },
+                        false
+                    );
 
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            "barcode-scanner",
-            { 
-                fps: 10, 
-                qrbox: { width: 250, height: 150 },
-                aspectRatio: 1.0,
-                showTorchButtonIfSupported: true,
-                formatsToSupport: [
-                    0, // QR_CODE
-                    8, // CODE_128
-                    9, // CODE_39
-                    10, // EAN_13
-                    11, // EAN_8
-                    12, // UPC_A
-                    13  // UPC_E
-                ]
-            },
-            false
-        );
+                    html5QrcodeScanner.render(
+                        (decodedText) => {
+                            onScan(decodedText);
+                            onClose();
+                        },
+                        (error) => {
+                            // Ignore scanning errors (they happen frequently)
+                        }
+                    );
 
-        html5QrcodeScanner.render(
-            (decodedText) => {
-                onScan(decodedText);
-                html5QrcodeScanner.clear().catch(console.error);
-                setScanner(null);
-            },
-            (error) => {
-                // Ignore scanning errors (they happen frequently)
-            }
-        );
+                    scannerInstanceRef.current = html5QrcodeScanner;
+                    setIsInitialized(true);
+                } catch (error) {
+                    console.error('Scanner initialization error:', error);
+                }
+            }, 100);
 
-        setScanner(html5QrcodeScanner);
-
-        return () => {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().catch(console.error);
-            }
-        };
-    }, [open]);
+            return () => clearTimeout(timer);
+        }
+    }, [open, isInitialized, onScan, onClose]);
 
     return (
         <Dialog open={open} onOpenChange={onClose}>

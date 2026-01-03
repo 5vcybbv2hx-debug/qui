@@ -146,6 +146,34 @@ export default function Employees() {
         }
     };
 
+    const handleInvite = async (employee) => {
+        try {
+            const roleMapping = {
+                'Manager': 'admin',
+                'Barkeeper': 'user',
+                'Servicekraft': 'user',
+                'Aushilfe': 'user'
+            };
+            
+            await base44.users.inviteUser(employee.email, roleMapping[employee.role] || 'user');
+            alert(`Einladung an ${employee.email} wurde versendet!`);
+        } catch (error) {
+            alert('Fehler beim Versenden der Einladung: ' + error.message);
+        }
+    };
+
+    const isOwnProfile = (employee) => {
+        return currentUser?.email === employee.email;
+    };
+
+    const canViewDetails = (employee) => {
+        return permissions.isManager || isOwnProfile(employee);
+    };
+
+    const canEdit = (employee) => {
+        return permissions.isManager || isOwnProfile(employee);
+    };
+
     const handleOrderItem = (itemType, size, employeeName) => {
         if (!size) {
             alert(`Bitte zuerst ${itemType === 'tshirt' ? 'T-Shirt' : 'Pullover'}-Größe auswählen`);

@@ -279,26 +279,26 @@ export default function Restock() {
                     )}
                 </div>
 
-                {/* Today's Items */}
+                {/* Scanned Items List */}
                 <div className="mb-6">
                     <h2 className="text-lg font-semibold text-white mb-4">
-                        Heute aufgefüllt ({todayItems.length})
+                        Abgescannte Artikel ({todayItems.length})
                     </h2>
                     {todayItems.length > 0 ? (
                         <div className="grid gap-3">
                             {todayItems.map(item => (
-                                <Card key={item.id} className="p-4 bg-slate-800 border-slate-700 shadow-sm">
+                                <Card key={item.id} className="p-4 bg-slate-800 border-slate-700 shadow-sm border-l-4 border-l-green-500">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <Package className="w-4 h-4 text-slate-500" />
+                                                <Package className="w-4 h-4 text-green-500" />
                                                 <h3 className="font-medium text-white">
                                                     {item.article_name}
                                                 </h3>
                                             </div>
                                             <div className="text-sm text-slate-400 space-y-1">
                                                 <p>Barcode: {item.barcode}</p>
-                                                <p>Menge: <span className="font-semibold text-slate-300">{item.quantity}</span></p>
+                                                <p>Menge: <span className="font-semibold text-green-400">{item.quantity}</span></p>
                                                 <div className="flex items-center gap-1 text-xs text-slate-500">
                                                     <User className="w-3 h-3" />
                                                     {item.restocked_by} • {item.time} Uhr
@@ -308,7 +308,7 @@ export default function Restock() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-900/20"
                                             onClick={() => handleDelete(item.id)}
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -320,8 +320,9 @@ export default function Restock() {
                     ) : (
                         <Card className="p-8 bg-slate-800 border-slate-700 shadow-sm">
                             <div className="text-center text-slate-500">
-                                <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                <p>Noch keine Artikel heute aufgefüllt</p>
+                                <Scan className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                <p>Noch keine Artikel gescannt</p>
+                                <p className="text-xs mt-1">Scanne Artikel, um sie zur Liste hinzuzufügen</p>
                             </div>
                         </Card>
                     )}

@@ -16,6 +16,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         category: '',
         supplier: '',
         unit: '',
+        purchase_price: '',
         current_stock: '',
         min_stock: '',
         notes: ''
@@ -29,6 +30,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 category: article.category || '',
                 supplier: article.supplier || '',
                 unit: article.unit || '',
+                purchase_price: article.purchase_price || '',
                 current_stock: article.current_stock || '',
                 min_stock: article.min_stock || '',
                 notes: article.notes || ''
@@ -40,6 +42,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 category: '',
                 supplier: '',
                 unit: '',
+                purchase_price: '',
                 current_stock: '',
                 min_stock: '',
                 notes: ''
@@ -52,6 +55,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         
         const dataToSave = {
             ...formData,
+            purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
             current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
         };
@@ -157,9 +161,20 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                 <SelectItem value="kg">kg</SelectItem>
                             </SelectContent>
                         </Select>
-                    </div>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                        <Label>Netto-Einkaufspreis (€)</Label>
+                        <Input
+                            type="number"
+                            step="0.01"
+                            value={formData.purchase_price}
+                            onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
+                            placeholder="z.B. 12.50"
+                        />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
                             <Label>Aktueller Bestand</Label>
                             <Input
@@ -179,7 +194,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                 placeholder="z.B. 5"
                             />
                         </div>
-                    </div>
+                        </div>
 
                     <div className="space-y-2">
                         <Label>Notizen</Label>

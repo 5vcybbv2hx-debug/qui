@@ -207,6 +207,9 @@ export default function Articles() {
                                     {article.unit && (
                                         <p>📏 {article.unit}</p>
                                     )}
+                                    {article.purchase_price && (
+                                        <p className="font-semibold text-green-400">💰 {article.purchase_price.toFixed(2)} €</p>
+                                    )}
                                 </div>
                             </div>
                         </Card>

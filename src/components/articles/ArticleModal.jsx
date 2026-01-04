@@ -142,11 +142,20 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
 
                     <div className="space-y-2">
                         <Label>Einheit</Label>
-                        <Input
-                            value={formData.unit}
-                            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                            placeholder="z.B. Flasche, Kiste"
-                        />
+                        <Select value={formData.unit} onValueChange={(v) => setFormData({ ...formData, unit: v })}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Wählen..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Flasche">Flasche</SelectItem>
+                                <SelectItem value="Kiste">Kiste</SelectItem>
+                                <SelectItem value="Liter">Liter</SelectItem>
+                                <SelectItem value="Karton">Karton</SelectItem>
+                                <SelectItem value="Packung">Packung</SelectItem>
+                                <SelectItem value="Stück">Stück</SelectItem>
+                                <SelectItem value="kg">kg</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">

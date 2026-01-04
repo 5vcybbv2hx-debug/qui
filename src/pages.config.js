@@ -11,6 +11,7 @@ import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
+import PriceCalculator from './pages/PriceCalculator';
 import __Layout from './Layout.jsx';
 
 
@@ -28,6 +29,7 @@ export const PAGES = {
     "Shopping": Shopping,
     "TimeTracking": TimeTracking,
     "Todos": Todos,
+    "PriceCalculator": PriceCalculator,
 }
 
 export const pagesConfig = {

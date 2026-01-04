@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -10,6 +10,7 @@ const navigation = [
     { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
     { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
     { name: 'Analyse', page: 'ShiftAnalytics', icon: Calendar, permission: 'canViewShifts' },
+    { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
     { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
     { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },
     { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },

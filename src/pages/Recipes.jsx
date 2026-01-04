@@ -287,7 +287,6 @@ export default function Recipes() {
                         </div>
                     </Card>
                 )}
-                </div>
 
                 {/* Search and Filter */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">

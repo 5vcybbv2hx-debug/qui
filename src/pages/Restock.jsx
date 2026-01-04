@@ -129,8 +129,20 @@ export default function Restock() {
     const todayItems = restockItems
         .filter(item => item.date === format(new Date(), 'yyyy-MM-dd'))
         .sort((a, b) => {
-            if (a.is_completed === b.is_completed) return 0;
-            return a.is_completed ? 1 : -1;
+            // Erst nach erledigt/nicht erledigt
+            if (a.is_completed !== b.is_completed) {
+                return a.is_completed ? 1 : -1;
+            }
+            // Dann nach Kategorie
+            const articleA = articles.find(art => art.barcode === a.barcode);
+            const articleB = articles.find(art => art.barcode === b.barcode);
+            const categoryA = articleA?.category || 'Sonstiges';
+            const categoryB = articleB?.category || 'Sonstiges';
+            if (categoryA !== categoryB) {
+                return categoryA.localeCompare(categoryB);
+            }
+            // Dann nach Name
+            return a.article_name.localeCompare(b.article_name);
         });
 
     return (

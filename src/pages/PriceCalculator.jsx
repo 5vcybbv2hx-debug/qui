@@ -9,13 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function PriceCalculator() {
-    const [selectedArticle, setSelectedArticle] = useState(null);
+    const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [purchasePrice, setPurchasePrice] = useState('');
     const [margin, setMargin] = useState('200');
     const [vatRate, setVatRate] = useState('19');
-    const [portionSize, setPortionSize] = useState('');
-    const [bottleSize, setBottleSize] = useState('700');
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -27,36 +24,58 @@ export default function PriceCalculator() {
     );
 
     const handleArticleSelect = (article) => {
-        setSelectedArticle(article);
-        setPurchasePrice(article.purchase_price?.toString() || '');
-        setSearchTerm(article.name);
+        const newIngredient = {
+            id: Date.now(),
+            article,
+            amount: '',
+            unit: 'ml'
+        };
+        setIngredients([...ingredients, newIngredient]);
+        setSearchTerm('');
+    };
+
+    const updateIngredient = (id, field, value) => {
+        setIngredients(ingredients.map(ing => 
+            ing.id === id ? { ...ing, [field]: value } : ing
+        ));
+    };
+
+    const removeIngredient = (id) => {
+        setIngredients(ingredients.filter(ing => ing.id !== id));
     };
 
     // Berechnungen
     const calculatePrices = () => {
-        const purchase = parseFloat(purchasePrice) || 0;
         const marginPercent = parseFloat(margin) || 0;
         const vat = parseFloat(vatRate) || 0;
-        const portion = parseFloat(portionSize) || 0;
-        const bottle = parseFloat(bottleSize) || 0;
 
-        // Kosten pro Portion (wenn Portionsgröße angegeben)
-        const costPerPortion = portion > 0 && bottle > 0 
-            ? (purchase / bottle) * portion 
-            : purchase;
+        // Gesamtkosten aller Zutaten
+        const totalCost = ingredients.reduce((sum, ing) => {
+            const article = ing.article;
+            const amount = parseFloat(ing.amount) || 0;
+            
+            if (!article.purchase_price || amount === 0) return sum;
+            
+            // Annahme: Artikelpreis ist für die ganze Einheit (z.B. 700ml Flasche)
+            // Berechne Kosten basierend auf verwendeter Menge
+            const bottleSize = parseFloat(article.unit?.match(/\d+/)?.[0]) || 1000; // Standard 1000ml wenn nicht angegeben
+            const costForAmount = (article.purchase_price / bottleSize) * amount;
+            
+            return sum + costForAmount;
+        }, 0);
 
         // Verkaufspreis netto
-        const sellingPriceNet = costPerPortion * (1 + marginPercent / 100);
+        const sellingPriceNet = totalCost * (1 + marginPercent / 100);
 
         // Verkaufspreis brutto
         const sellingPriceGross = sellingPriceNet * (1 + vat / 100);
 
         // Gewinn
-        const profit = sellingPriceNet - costPerPortion;
-        const profitPercent = costPerPortion > 0 ? (profit / costPerPortion) * 100 : 0;
+        const profit = sellingPriceNet - totalCost;
+        const profitPercent = totalCost > 0 ? (profit / totalCost) * 100 : 0;
 
         return {
-            costPerPortion,
+            totalCost,
             sellingPriceNet,
             sellingPriceGross,
             profit,
@@ -114,64 +133,60 @@ export default function PriceCalculator() {
                                         ))}
                                     </div>
                                 )}
-
-                                {selectedArticle && (
-                                    <div className="p-3 bg-amber-900/20 border border-amber-700 rounded-lg">
-                                        <p className="text-sm text-amber-400 font-medium">{selectedArticle.name}</p>
-                                        <p className="text-xs text-amber-500 mt-1">
-                                            Einkauf: {selectedArticle.purchase_price?.toFixed(2)} €
-                                        </p>
-                                    </div>
-                                )}
                             </div>
                         </Card>
 
-                        {/* Parameter */}
+                        {/* Zutaten Liste */}
                         <Card className="p-6 bg-slate-800 border-slate-700">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center">
                                     <Calculator className="w-5 h-5 text-blue-400" />
                                 </div>
-                                <h2 className="text-lg font-semibold text-white">Kalkulation</h2>
+                                <h2 className="text-lg font-semibold text-white">Zutaten</h2>
                             </div>
 
+                            {ingredients.length > 0 ? (
+                                <div className="space-y-3">
+                                    {ingredients.map(ing => (
+                                        <div key={ing.id} className="p-3 bg-slate-900 rounded-lg border border-slate-700">
+                                            <div className="flex items-start justify-between mb-2">
+                                                <div>
+                                                    <p className="text-sm text-white font-medium">{ing.article.name}</p>
+                                                    <p className="text-xs text-slate-400">
+                                                        {ing.article.purchase_price?.toFixed(2)} € pro {ing.article.unit || 'Einheit'}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeIngredient(ing.id)}
+                                                    className="text-red-400 hover:text-red-300 h-6 w-6 p-0"
+                                                >
+                                                    ×
+                                                </Button>
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                value={ing.amount}
+                                                onChange={(e) => updateIngredient(ing.id, 'amount', e.target.value)}
+                                                placeholder="Menge (ml/g)"
+                                                className="bg-slate-800 border-slate-600 text-white text-sm"
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-slate-400 text-center py-4">
+                                    Noch keine Zutaten hinzugefügt
+                                </p>
+                            )}
+                        </Card>
+
+                        {/* Parameter */}
+                        <Card className="p-6 bg-slate-800 border-slate-700">
+                            <h3 className="text-sm font-semibold text-white mb-4">Kalkulation</h3>
+
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label className="text-slate-300">Netto-Einkaufspreis (€)</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={purchasePrice}
-                                        onChange={(e) => setPurchasePrice(e.target.value)}
-                                        placeholder="z.B. 12.50"
-                                        className="bg-slate-900 border-slate-600 text-white"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label className="text-slate-300">Flaschengröße (ml)</Label>
-                                        <Input
-                                            type="number"
-                                            value={bottleSize}
-                                            onChange={(e) => setBottleSize(e.target.value)}
-                                            placeholder="z.B. 700"
-                                            className="bg-slate-900 border-slate-600 text-white"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label className="text-slate-300">Portion (ml)</Label>
-                                        <Input
-                                            type="number"
-                                            value={portionSize}
-                                            onChange={(e) => setPortionSize(e.target.value)}
-                                            placeholder="z.B. 40"
-                                            className="bg-slate-900 border-slate-600 text-white"
-                                        />
-                                    </div>
-                                </div>
-
                                 <div className="space-y-2">
                                     <Label className="text-slate-300">Aufschlag (%)</Label>
                                     <Input
@@ -210,7 +225,7 @@ export default function PriceCalculator() {
                                 <h2 className="text-lg font-semibold text-white">Empfohlener Preis</h2>
                             </div>
 
-                            {purchasePrice ? (
+                            {ingredients.length > 0 ? (
                                 <div className="space-y-6">
                                     <div className="text-center py-6 border-b border-amber-700/50">
                                         <p className="text-sm text-amber-400 mb-2">Verkaufspreis (brutto)</p>
@@ -221,9 +236,9 @@ export default function PriceCalculator() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-slate-900/50 rounded-lg p-4">
-                                            <p className="text-xs text-slate-400 mb-1">Kosten</p>
+                                            <p className="text-xs text-slate-400 mb-1">Gesamtkosten</p>
                                             <p className="text-xl font-semibold text-white">
-                                                {prices.costPerPortion.toFixed(2)} €
+                                                {prices.totalCost.toFixed(2)} €
                                             </p>
                                         </div>
 
@@ -249,32 +264,37 @@ export default function PriceCalculator() {
                                         </div>
                                     </div>
 
-                                    {portionSize && bottleSize && (
-                                        <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                                            <p className="text-sm text-blue-400 font-medium mb-2">Portionsinfo</p>
-                                            <div className="space-y-1 text-xs text-blue-300">
-                                                <p>Portionen pro Flasche: {Math.floor(parseFloat(bottleSize) / parseFloat(portionSize))}</p>
-                                                <p>Umsatz pro Flasche: {(prices.sellingPriceGross * Math.floor(parseFloat(bottleSize) / parseFloat(portionSize))).toFixed(2)} €</p>
-                                                <p>Gewinn pro Flasche: {(prices.profit * Math.floor(parseFloat(bottleSize) / parseFloat(portionSize))).toFixed(2)} €</p>
-                                            </div>
+                                    <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
+                                        <p className="text-sm text-blue-400 font-medium mb-2">Zutatenübersicht</p>
+                                        <div className="space-y-1 text-xs text-blue-300">
+                                            {ingredients.map(ing => {
+                                                const amount = parseFloat(ing.amount) || 0;
+                                                const bottleSize = parseFloat(ing.article.unit?.match(/\d+/)?.[0]) || 1000;
+                                                const cost = (ing.article.purchase_price / bottleSize) * amount;
+                                                return (
+                                                    <p key={ing.id}>
+                                                        {ing.article.name}: {amount}ml → {cost.toFixed(2)} €
+                                                    </p>
+                                                );
+                                            })}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-12 text-slate-400">
                                     <Calculator className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                    <p>Gib einen Einkaufspreis ein,<br />um die Kalkulation zu starten</p>
+                                    <p>Füge Zutaten hinzu,<br />um die Kalkulation zu starten</p>
                                 </div>
                             )}
                         </Card>
 
                         {/* Schnellvergleich */}
-                        {purchasePrice && (
+                        {ingredients.length > 0 && (
                             <Card className="p-6 bg-slate-800 border-slate-700">
                                 <h3 className="text-sm font-semibold text-white mb-3">Aufschlag-Vergleich</h3>
                                 <div className="space-y-2">
                                     {[150, 200, 250, 300].map(m => {
-                                        const testPrice = prices.costPerPortion * (1 + m / 100) * (1 + parseFloat(vatRate) / 100);
+                                        const testPrice = prices.totalCost * (1 + m / 100) * (1 + parseFloat(vatRate) / 100);
                                         return (
                                             <button
                                                 key={m}

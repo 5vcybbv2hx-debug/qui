@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Scan, Camera, Check, Trash2 } from 'lucide-react';
+import { Scan, Camera, Check, Trash2, CheckCheck } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,6 +112,20 @@ export default function Restock() {
         }
     };
 
+    const handleDeleteCompleted = async () => {
+        const completedItems = todayItems.filter(item => item.is_completed);
+        if (completedItems.length === 0) {
+            alert('Keine erledigten Aufgaben zum Löschen');
+            return;
+        }
+        
+        if (confirm(`${completedItems.length} erledigte Aufgaben löschen?`)) {
+            for (const item of completedItems) {
+                await deleteMutation.mutateAsync(item.id);
+            }
+        }
+    };
+
     const todayItems = restockItems
         .filter(item => item.date === format(new Date(), 'yyyy-MM-dd'))
         .sort((a, b) => {
@@ -180,9 +194,22 @@ export default function Restock() {
 
                 {/* To-Do Liste */}
                 <div>
-                    <h2 className="text-lg font-semibold text-white mb-4">
-                        Heutige Auffüllliste
-                    </h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-white">
+                            Heutige Auffüllliste
+                        </h2>
+                        {todayItems.filter(i => i.is_completed).length > 0 && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDeleteCompleted}
+                                className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                            >
+                                <CheckCheck className="w-4 h-4 mr-2" />
+                                Erledigte löschen
+                            </Button>
+                        )}
+                    </div>
                     {todayItems.length > 0 ? (
                         <div className="space-y-2">
                             {todayItems.map(item => (

@@ -223,53 +223,77 @@ export default function Restock() {
                         )}
                     </div>
                     {todayItems.length > 0 ? (
-                        <div className="space-y-2">
-                            {todayItems.map(item => (
-                                <Card 
-                                    key={item.id} 
-                                    className={cn(
-                                        "p-4 bg-slate-800 border-slate-700 shadow-sm transition-all",
-                                        item.is_completed && "opacity-50 bg-slate-800/50"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={() => toggleComplete(item)}
-                                            className={cn(
-                                                "w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
-                                                item.is_completed 
-                                                    ? "bg-green-600 border-green-600" 
-                                                    : "border-slate-600 hover:border-green-500"
-                                            )}
-                                        >
-                                            {item.is_completed && <Check className="w-4 h-4 text-white" />}
-                                        </button>
-                                        
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className={cn(
-                                                "font-medium truncate",
-                                                item.is_completed ? "text-slate-500 line-through" : "text-white"
-                                            )}>
-                                                {item.article_name}
-                                            </h3>
-                                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                                                <span className="font-semibold text-amber-400">{item.quantity}x</span>
-                                                <span>•</span>
-                                                <span>{item.barcode}</span>
-                                            </div>
-                                        </div>
+                        <div className="space-y-4">
+                            {(() => {
+                                // Gruppiere Items nach Kategorie
+                                const groupedItems = todayItems.reduce((groups, item) => {
+                                    const article = articles.find(art => art.barcode === item.barcode);
+                                    const category = article?.category || 'Sonstiges';
+                                    if (!groups[category]) groups[category] = [];
+                                    groups[category].push(item);
+                                    return groups;
+                                }, {});
 
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-slate-500 hover:text-red-500 hover:bg-red-900/20"
-                                            onClick={() => handleDelete(item.id)}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                return Object.entries(groupedItems).map(([category, items]) => (
+                                    <div key={category}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="h-px bg-slate-700 flex-1" />
+                                            <h3 className="text-sm font-semibold text-amber-400 px-2">
+                                                {category}
+                                            </h3>
+                                            <div className="h-px bg-slate-700 flex-1" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            {items.map(item => (
+                                                <Card 
+                                                    key={item.id} 
+                                                    className={cn(
+                                                        "p-4 bg-slate-800 border-slate-700 shadow-sm transition-all",
+                                                        item.is_completed && "opacity-50 bg-slate-800/50"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            onClick={() => toggleComplete(item)}
+                                                            className={cn(
+                                                                "w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
+                                                                item.is_completed 
+                                                                    ? "bg-green-600 border-green-600" 
+                                                                    : "border-slate-600 hover:border-green-500"
+                                                            )}
+                                                        >
+                                                            {item.is_completed && <Check className="w-4 h-4 text-white" />}
+                                                        </button>
+
+                                                        <div className="flex-1 min-w-0">
+                                                            <h3 className={cn(
+                                                                "font-medium truncate",
+                                                                item.is_completed ? "text-slate-500 line-through" : "text-white"
+                                                            )}>
+                                                                {item.article_name}
+                                                            </h3>
+                                                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                                                                <span className="font-semibold text-amber-400">{item.quantity}x</span>
+                                                                <span>•</span>
+                                                                <span>{item.barcode}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-slate-500 hover:text-red-500 hover:bg-red-900/20"
+                                                            onClick={() => handleDelete(item.id)}
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </Card>
+                                            ))}
+                                        </div>
                                     </div>
-                                </Card>
-                            ))}
+                                ));
+                            })()}
                         </div>
                     ) : (
                         <Card className="p-8 bg-slate-800 border-slate-700 shadow-sm">

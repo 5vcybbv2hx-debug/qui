@@ -149,6 +149,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                             <SelectContent>
                                 <SelectItem value="Flasche">Flasche</SelectItem>
                                 <SelectItem value="Kiste">Kiste</SelectItem>
+                                <SelectItem value="Fass">Fass</SelectItem>
                                 <SelectItem value="Liter">Liter</SelectItem>
                                 <SelectItem value="Karton">Karton</SelectItem>
                                 <SelectItem value="Packung">Packung</SelectItem>

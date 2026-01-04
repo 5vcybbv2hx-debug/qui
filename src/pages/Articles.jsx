@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Pencil, Trash2, Package, Camera, AlertTriangle, TrendingDown } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Package, Camera } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -10,8 +10,7 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import ArticleModal from '@/components/articles/ArticleModal';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
-import LowStockAlert from '@/components/articles/LowStockAlert';
-import QuickStockUpdate from '@/components/articles/QuickStockUpdate';
+
 
 const categoryColors = {
     'Spirituosen': 'bg-purple-100 text-purple-700',
@@ -33,9 +32,6 @@ export default function Articles() {
     const [selectedArticle, setSelectedArticle] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
-    const [showLowStockOnly, setShowLowStockOnly] = useState(false);
-    const [quickUpdateOpen, setQuickUpdateOpen] = useState(false);
-    const [quickUpdateArticle, setQuickUpdateArticle] = useState(null);
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -92,25 +88,12 @@ export default function Articles() {
         }
     };
 
-    const handleQuickUpdate = (article, quantity) => {
-        const newStock = (article.current_stock || 0) + quantity;
-        updateMutation.mutate({ 
-            id: article.id, 
-            data: { ...article, current_stock: newStock }
-        });
-    };
-
-    const lowStockArticles = articles.filter(a => 
-        a.min_stock && a.current_stock !== undefined && a.current_stock < a.min_stock
-    );
-
     const filteredArticles = articles
         .filter(a => {
             const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 a.barcode?.includes(searchTerm);
             const matchesCategory = filterCategory === 'all' || a.category === filterCategory;
-            const matchesLowStock = !showLowStockOnly || (a.min_stock && a.current_stock !== undefined && a.current_stock < a.min_stock);
-            return matchesSearch && matchesCategory && matchesLowStock;
+            return matchesSearch && matchesCategory;
         });
 
     if (!permissions.canEditShopping) {
@@ -126,18 +109,10 @@ export default function Articles() {
                 <div className="flex flex-col gap-3 mb-6">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Artikeldatenbank</h1>
-                        <p className="text-slate-400 text-sm mt-1">
-                            {lowStockArticles.length > 0 && (
-                                <span className="text-red-400 font-medium">
-                                    ⚠️ {lowStockArticles.length} Artikel unter Mindestbestand
-                                </span>
-                            )}
-                            {lowStockArticles.length === 0 && 'Verwalte alle Artikel im Sortiment'}
-                        </p>
+                        <p className="text-slate-400 text-sm mt-1">Verwalte alle Artikel für die Auffüllliste</p>
                     </div>
                     
                     <div className="flex gap-2 flex-wrap">
-                        {lowStockArticles.length > 0 && <LowStockAlert articles={lowStockArticles} />}
                         <Button 
                             onClick={() => setScannerOpen(true)}
                             variant="outline"
@@ -172,15 +147,6 @@ export default function Articles() {
                     </div>
 
                     <div className="flex gap-2 overflow-x-auto pb-2">
-                        <Button
-                            variant={showLowStockOnly ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setShowLowStockOnly(!showLowStockOnly)}
-                            className={showLowStockOnly ? "bg-red-600 hover:bg-red-700" : "border-slate-600 hover:bg-slate-700 text-slate-300"}
-                        >
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            Niedriger Bestand
-                        </Button>
                         {categories.map(cat => (
                             <Button
                                 key={cat}
@@ -197,99 +163,54 @@ export default function Articles() {
 
                 {/* Articles Grid */}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredArticles.map(article => {
-                        const isLowStock = article.min_stock && article.current_stock !== undefined && article.current_stock < article.min_stock;
-                        const stockPercentage = article.min_stock ? (article.current_stock / article.min_stock) * 100 : 100;
-                        
-                        return (
-                            <Card key={article.id} className={`p-4 ${isLowStock ? 'bg-red-950 border-red-800' : 'bg-slate-800 border-slate-700'}`}>
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="font-semibold text-white text-sm">{article.name}</h3>
-                                            {isLowStock && (
-                                                <AlertTriangle className="w-4 h-4 text-red-400" />
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-slate-400 font-mono">{article.barcode}</p>
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                setQuickUpdateArticle(article);
-                                                setQuickUpdateOpen(true);
-                                            }}
-                                            className="h-8 w-8 text-slate-400 hover:text-white"
-                                        >
-                                            <Package className="w-3 h-3" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                setSelectedArticle(article);
-                                                setModalOpen(true);
-                                            }}
-                                            className="h-8 w-8 text-slate-400 hover:text-white"
-                                        >
-                                            <Pencil className="w-3 h-3" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleDelete(article.id)}
-                                            className="h-8 w-8 text-red-400 hover:text-red-300"
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                    </div>
+                    {filteredArticles.map(article => (
+                        <Card key={article.id} className="p-4 bg-slate-800 border-slate-700">
+                            <div className="flex items-start justify-between mb-3">
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-white text-sm mb-1">{article.name}</h3>
+                                    <p className="text-xs text-slate-400 font-mono">{article.barcode}</p>
                                 </div>
+                                <div className="flex gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                            setSelectedArticle(article);
+                                            setModalOpen(true);
+                                        }}
+                                        className="h-8 w-8 text-slate-400 hover:text-white"
+                                    >
+                                        <Pencil className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => handleDelete(article.id)}
+                                        className="h-8 w-8 text-red-400 hover:text-red-300"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                </div>
+                            </div>
 
-                                {/* Stock Level Bar */}
-                                {article.min_stock && article.current_stock !== undefined && (
-                                    <div className="mb-3">
-                                        <div className="flex justify-between text-xs mb-1">
-                                            <span className={isLowStock ? 'text-red-400 font-semibold' : 'text-slate-400'}>
-                                                Bestand: {article.current_stock}
-                                            </span>
-                                            <span className="text-slate-500">
-                                                Min: {article.min_stock}
-                                            </span>
-                                        </div>
-                                        <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                                            <div 
-                                                className={`h-full transition-all ${
-                                                    stockPercentage < 50 ? 'bg-red-500' :
-                                                    stockPercentage < 100 ? 'bg-yellow-500' :
-                                                    'bg-green-500'
-                                                }`}
-                                                style={{ width: `${Math.min(stockPercentage, 100)}%` }}
-                                            />
-                                        </div>
-                                    </div>
+                            <div className="space-y-2">
+                                {article.category && (
+                                    <Badge className={categoryColors[article.category]}>
+                                        {article.category}
+                                    </Badge>
                                 )}
-
-                                <div className="space-y-2">
-                                    {article.category && (
-                                        <Badge className={categoryColors[article.category]}>
-                                            {article.category}
-                                        </Badge>
+                                
+                                <div className="text-xs text-slate-400 space-y-1">
+                                    {article.supplier && (
+                                        <p>📦 {article.supplier}</p>
                                     )}
-                                    
-                                    <div className="text-xs text-slate-400 space-y-1">
-                                        {article.supplier && (
-                                            <p>📦 {article.supplier}</p>
-                                        )}
-                                        {article.unit && (
-                                            <p>📏 {article.unit}</p>
-                                        )}
-                                    </div>
+                                    {article.unit && (
+                                        <p>📏 {article.unit}</p>
+                                    )}
                                 </div>
-                            </Card>
-                        );
-                    })}
+                            </div>
+                        </Card>
+                    ))}
                 </div>
 
                 {filteredArticles.length === 0 && (
@@ -308,16 +229,6 @@ export default function Articles() {
                     }}
                     article={selectedArticle}
                     onSave={handleSave}
-                />
-
-                <QuickStockUpdate
-                    open={quickUpdateOpen}
-                    onClose={() => {
-                        setQuickUpdateOpen(false);
-                        setQuickUpdateArticle(null);
-                    }}
-                    article={quickUpdateArticle}
-                    onUpdate={handleQuickUpdate}
                 />
 
                 <BarcodeScanner

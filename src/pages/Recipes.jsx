@@ -19,6 +19,7 @@ const categoryColors = {
     'Shot': 'bg-orange-100 text-orange-700',
     'Longdrink': 'bg-blue-100 text-blue-700',
     'Mocktail': 'bg-green-100 text-green-700',
+    'Moonshiner-Cocktails': 'bg-amber-100 text-amber-700',
     'Sonstiges': 'bg-slate-100 text-slate-700'
 };
 
@@ -166,12 +167,13 @@ export default function Recipes() {
                         />
                     </div>
                     <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="w-full sm:w-auto">
-                        <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
+                        <TabsList className="grid grid-cols-3 sm:grid-cols-7 w-full">
                             <TabsTrigger value="alle">Alle</TabsTrigger>
                             <TabsTrigger value="Cocktail">Cocktails</TabsTrigger>
                             <TabsTrigger value="Shot">Shots</TabsTrigger>
                             <TabsTrigger value="Longdrink">Longdrinks</TabsTrigger>
                             <TabsTrigger value="Mocktail">Mocktails</TabsTrigger>
+                            <TabsTrigger value="Moonshiner-Cocktails">Moonshiner</TabsTrigger>
                             <TabsTrigger value="Sonstiges">Sonstiges</TabsTrigger>
                         </TabsList>
                     </Tabs>
@@ -283,6 +285,7 @@ export default function Recipes() {
                                         <SelectItem value="Shot">Shot</SelectItem>
                                         <SelectItem value="Longdrink">Longdrink</SelectItem>
                                         <SelectItem value="Mocktail">Mocktail</SelectItem>
+                                        <SelectItem value="Moonshiner-Cocktails">Moonshiner-Cocktails</SelectItem>
                                         <SelectItem value="Sonstiges">Sonstiges</SelectItem>
                                     </SelectContent>
                                 </Select>

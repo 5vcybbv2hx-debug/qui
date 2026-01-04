@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Wine, Trash2, Edit, Settings } from 'lucide-react';
+import { Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart, Lightbulb, CheckSquare } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,9 @@ export default function Recipes() {
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('alle');
     const [categoriesModalOpen, setCategoriesModalOpen] = useState(false);
+    const [selectedRecipes, setSelectedRecipes] = useState(new Set());
+    const [similarRecipesModal, setSimilarRecipesModal] = useState(false);
+    const [currentRecipeForSimilar, setCurrentRecipeForSimilar] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         category: 'Cocktail',
@@ -44,6 +47,11 @@ export default function Recipes() {
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes'],
         queryFn: () => base44.entities.Recipe.list('name')
+    });
+
+    const { data: shoppingList = [] } = useQuery({
+        queryKey: ['shopping-list'],
+        queryFn: () => base44.entities.ShoppingList.list()
     });
 
     const createMutation = useMutation({
@@ -66,6 +74,13 @@ export default function Recipes() {
         mutationFn: (id) => base44.entities.Recipe.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries(['recipes']);
+        }
+    });
+
+    const createShoppingItemMutation = useMutation({
+        mutationFn: (data) => base44.entities.ShoppingList.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shopping-list']);
         }
     });
 
@@ -123,6 +138,89 @@ export default function Recipes() {
         return matchesSearch && matchesCategory;
     });
 
+    const toggleRecipeSelection = (recipeId) => {
+        setSelectedRecipes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(recipeId)) {
+                newSet.delete(recipeId);
+            } else {
+                newSet.add(recipeId);
+            }
+            return newSet;
+        });
+    };
+
+    const generateShoppingList = async () => {
+        if (selectedRecipes.size === 0) return;
+
+        const selectedRecipeObjects = recipes.filter(r => selectedRecipes.has(r.id));
+        const ingredientsMap = new Map();
+
+        // Sammle alle Zutaten
+        selectedRecipeObjects.forEach(recipe => {
+            const ingredientLines = recipe.ingredients?.split('\n').filter(line => line.trim()) || [];
+            ingredientLines.forEach(line => {
+                const ingredient = line.trim();
+                if (ingredient) {
+                    if (ingredientsMap.has(ingredient)) {
+                        ingredientsMap.set(ingredient, ingredientsMap.get(ingredient) + 1);
+                    } else {
+                        ingredientsMap.set(ingredient, 1);
+                    }
+                }
+            });
+        });
+
+        // Füge zur Einkaufsliste hinzu
+        for (const [ingredient, count] of ingredientsMap) {
+            await createShoppingItemMutation.mutateAsync({
+                item_name: ingredient,
+                category: 'C+C',
+                quantity: count,
+                unit: 'Stück',
+                status: 'offen',
+                notes: `Für Rezepte: ${selectedRecipeObjects.map(r => r.name).join(', ')}`
+            });
+        }
+
+        alert(`${ingredientsMap.size} Zutaten zur Einkaufsliste hinzugefügt!`);
+        setSelectedRecipes(new Set());
+    };
+
+    const findSimilarRecipes = (recipe) => {
+        if (!recipe) return [];
+
+        const currentIngredients = recipe.ingredients?.toLowerCase().split('\n').map(i => i.trim()) || [];
+        
+        return recipes
+            .filter(r => r.id !== recipe.id)
+            .map(r => {
+                let score = 0;
+                
+                // Punkte für gleiche Kategorie
+                if (r.category === recipe.category) score += 3;
+                
+                // Punkte für gemeinsame Zutaten
+                const otherIngredients = r.ingredients?.toLowerCase().split('\n').map(i => i.trim()) || [];
+                currentIngredients.forEach(ing => {
+                    if (otherIngredients.some(other => other.includes(ing) || ing.includes(other))) {
+                        score += 1;
+                    }
+                });
+                
+                return { recipe: r, score };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5)
+            .map(item => item.recipe);
+    };
+
+    const showSimilarRecipes = (recipe) => {
+        setCurrentRecipeForSimilar(recipe);
+        setSimilarRecipesModal(true);
+    };
+
     return (
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-4 py-8">
@@ -155,6 +253,42 @@ export default function Recipes() {
                     )}
                 </div>
 
+                {/* Shopping List Generator */}
+                {selectedRecipes.size > 0 && (
+                    <Card className="p-4 bg-amber-900/20 border-amber-600/30 mb-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <CheckSquare className="w-5 h-5 text-amber-400" />
+                                <div>
+                                    <p className="font-semibold text-white">
+                                        {selectedRecipes.size} Rezept{selectedRecipes.size !== 1 ? 'e' : ''} ausgewählt
+                                    </p>
+                                    <p className="text-xs text-amber-300">
+                                        Generiere eine Einkaufsliste mit allen benötigten Zutaten
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setSelectedRecipes(new Set())}
+                                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                                >
+                                    Abbrechen
+                                </Button>
+                                <Button
+                                    onClick={generateShoppingList}
+                                    className="bg-amber-600 hover:bg-amber-700"
+                                >
+                                    <ShoppingCart className="w-4 h-4 mr-2" />
+                                    Einkaufsliste erstellen
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+                )}
+                </div>
+
                 {/* Search and Filter */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                     <div className="relative flex-1">
@@ -185,32 +319,58 @@ export default function Recipes() {
                         {filteredRecipes.map(recipe => (
                             <Card key={recipe.id} className="p-5 bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="flex items-start justify-between mb-3">
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-white mb-2">{recipe.name}</h3>
-                                        <Badge className={cn("text-xs", categoryColors[recipe.category])}>
-                                            {recipe.category}
-                                        </Badge>
-                                    </div>
-                                    {permissions.isManager && (
-                                        <div className="flex gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => openModal(recipe)}
-                                                className="h-8 w-8 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleDelete(recipe.id)}
-                                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-900/20"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
+                                    <div className="flex items-center gap-2 flex-1">
+                                        <button
+                                            onClick={() => toggleRecipeSelection(recipe.id)}
+                                            className={cn(
+                                                "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                                                selectedRecipes.has(recipe.id)
+                                                    ? "bg-amber-600 border-amber-600"
+                                                    : "border-slate-600 hover:border-amber-500"
+                                            )}
+                                        >
+                                            {selectedRecipes.has(recipe.id) && (
+                                                <CheckSquare className="w-3 h-3 text-white" />
+                                            )}
+                                        </button>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-white mb-2">{recipe.name}</h3>
+                                            <Badge className={cn("text-xs", categoryColors[recipe.category])}>
+                                                {recipe.category}
+                                            </Badge>
                                         </div>
-                                    )}
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => showSimilarRecipes(recipe)}
+                                            className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                                            title="Ähnliche Rezepte"
+                                        >
+                                            <Lightbulb className="w-4 h-4" />
+                                        </Button>
+                                        {permissions.isManager && (
+                                            <>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => openModal(recipe)}
+                                                    className="h-8 w-8 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleDelete(recipe.id)}
+                                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-900/20"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-3 text-sm">
@@ -379,6 +539,62 @@ export default function Recipes() {
                         <Button 
                             variant="outline" 
                             onClick={() => setCategoriesModalOpen(false)}
+                            className="w-full mt-4"
+                        >
+                            Schließen
+                        </Button>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Similar Recipes Modal */}
+                <Dialog open={similarRecipesModal} onOpenChange={setSimilarRecipesModal}>
+                    <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <Lightbulb className="w-5 h-5 text-amber-500" />
+                                Ähnliche Rezepte zu "{currentRecipeForSimilar?.name}"
+                            </DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="mt-4">
+                            {(() => {
+                                const similar = findSimilarRecipes(currentRecipeForSimilar);
+                                return similar.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {similar.map(recipe => (
+                                            <Card key={recipe.id} className="p-4 bg-slate-800 border-slate-700 hover:border-amber-600/50 transition-colors cursor-pointer"
+                                                onClick={() => {
+                                                    setSimilarRecipesModal(false);
+                                                    openModal(recipe);
+                                                }}>
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <h3 className="font-semibold text-white mb-1">{recipe.name}</h3>
+                                                        <Badge className={cn("text-xs mb-2", categoryColors[recipe.category])}>
+                                                            {recipe.category}
+                                                        </Badge>
+                                                        {recipe.ingredients && (
+                                                            <p className="text-xs text-slate-400 line-clamp-2">
+                                                                {recipe.ingredients.split('\n').slice(0, 3).join(', ')}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-slate-400">
+                                        <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                        <p>Keine ähnlichen Rezepte gefunden</p>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setSimilarRecipesModal(false)}
                             className="w-full mt-4"
                         >
                             Schließen

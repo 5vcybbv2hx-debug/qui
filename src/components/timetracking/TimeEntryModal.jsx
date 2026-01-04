@@ -123,13 +123,14 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
                     )}
 
                     <div className="space-y-2">
-                        <Label>Datum *</Label>
+                        <Label>Startdatum (Schichtbeginn) *</Label>
                         <Input
                             type="date"
                             value={formData.date}
                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                             required
                         />
+                        <p className="text-xs text-slate-500">Bei Nachtschichten: Datum des Schichtbeginns</p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
@@ -169,6 +170,9 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
                         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                             <p className="text-sm font-semibold text-amber-900">
                                 Gesamtzeit: {totalHours.toFixed(2)} Stunden
+                                {formData.start_time && formData.end_time && formData.end_time < formData.start_time && (
+                                    <span className="ml-2 text-xs text-amber-700">🌙 Nachtschicht (endet am Folgetag)</span>
+                                )}
                             </p>
                         </div>
                     )}

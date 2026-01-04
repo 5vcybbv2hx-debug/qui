@@ -9,8 +9,8 @@ import Restock from './pages/Restock';
 import ShiftAnalytics from './pages/ShiftAnalytics';
 import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
-import Todos from './pages/Todos';
 import TimeTracking from './pages/TimeTracking';
+import Todos from './pages/Todos';
 import __Layout from './Layout.jsx';
 
 
@@ -26,8 +26,8 @@ export const PAGES = {
     "ShiftAnalytics": ShiftAnalytics,
     "Shifts": Shifts,
     "Shopping": Shopping,
-    "Todos": Todos,
     "TimeTracking": TimeTracking,
+    "Todos": Todos,
 }
 
 export const pagesConfig = {

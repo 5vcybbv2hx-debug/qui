@@ -192,7 +192,10 @@ export default function TimeTracking() {
                                                                 </Badge>
                                                             </div>
                                                             <div className="flex items-center gap-4 text-sm text-slate-400">
-                                                                <span>{entry.start_time} - {entry.end_time}</span>
+                                                                <span>
+                                                                    {entry.start_time} - {entry.end_time}
+                                                                    {entry.end_time < entry.start_time && <span className="ml-1">🌙</span>}
+                                                                </span>
                                                                 {entry.break_minutes > 0 && (
                                                                     <span>Pause: {entry.break_minutes} Min</span>
                                                                 )}

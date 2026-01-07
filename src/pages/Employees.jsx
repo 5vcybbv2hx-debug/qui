@@ -36,6 +36,7 @@ export default function Employees() {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [formData, setFormData] = useState({
+        employee_number: '',
         name: '',
         role: 'Barkeeper',
         color: COLORS[0],
@@ -88,6 +89,7 @@ export default function Employees() {
         if (employee) {
             setSelectedEmployee(employee);
             setFormData({
+                employee_number: employee.employee_number || '',
                 name: employee.name,
                 role: employee.role,
                 color: employee.color || COLORS[0],
@@ -105,6 +107,7 @@ export default function Employees() {
         } else {
             setSelectedEmployee(null);
             setFormData({
+                employee_number: '',
                 name: '',
                 role: 'Barkeeper',
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
@@ -424,6 +427,15 @@ export default function Employees() {
                         </DialogHeader>
                         
                         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                                <Label>Mitarbeiternummer</Label>
+                                <Input
+                                    value={formData.employee_number}
+                                    onChange={(e) => setFormData({ ...formData, employee_number: e.target.value })}
+                                    placeholder="z.B. MA-001"
+                                />
+                            </div>
+
                             <div className="space-y-2">
                                 <Label>Name *</Label>
                                 <Input

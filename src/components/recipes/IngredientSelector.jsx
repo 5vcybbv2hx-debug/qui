@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function IngredientSelector({ ingredients = [], onChange, articles }) {
+export default function IngredientSelector({ ingredients, onChange, articles }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [showSearch, setShowSearch] = useState(false);
+
+    // Stelle sicher, dass ingredients immer ein Array ist
+    const safeIngredients = Array.isArray(ingredients) ? ingredients : [];
 
     const filteredArticles = articles.filter(a => 
         a.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -18,20 +21,20 @@ export default function IngredientSelector({ ingredients = [], onChange, article
             article_name: article.name,
             amount: 0
         };
-        onChange([...ingredients, newIngredient]);
+        onChange([...safeIngredients, newIngredient]);
         setSearchTerm('');
         setShowSearch(false);
     };
 
     const updateIngredient = (index, field, value) => {
-        const updated = ingredients.map((ing, i) => 
+        const updated = safeIngredients.map((ing, i) => 
             i === index ? { ...ing, [field]: value } : ing
         );
         onChange(updated);
     };
 
     const removeIngredient = (index) => {
-        onChange(ingredients.filter((_, i) => i !== index));
+        onChange(safeIngredients.filter((_, i) => i !== index));
     };
 
     return (
@@ -91,9 +94,9 @@ export default function IngredientSelector({ ingredients = [], onChange, article
             )}
 
             {/* Zutaten Liste */}
-            {ingredients.length > 0 ? (
+            {safeIngredients.length > 0 ? (
                 <div className="space-y-2">
-                    {ingredients.map((ing, index) => (
+                    {safeIngredients.map((ing, index) => (
                         <div key={index} className="flex gap-2 items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-slate-900">{ing.article_name}</p>

@@ -234,7 +234,6 @@ export default function Shifts() {
                         )}
                     </Card>
                 )}
-                </div>
 
                 {/* Calendar */}
                 <ShiftCalendar 

@@ -313,6 +313,21 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                     )}
 
                     <div className="space-y-2">
+                        <Label>Schichttyp</Label>
+                        <Select value={formData.shift_type} onValueChange={handleShiftTypeChange}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Aufmachen">Aufmachen (16:00 - 03:00)</SelectItem>
+                                <SelectItem value="Frühschicht">Frühschicht (20:00 - 05:00)</SelectItem>
+                                <SelectItem value="Spätschicht">Spätschicht (21:00 - 05:00)</SelectItem>
+                                <SelectItem value="Sonderschicht">Sonderschicht (manuell)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
                         <Label>Datum</Label>
                         <Input
                             type="date"
@@ -341,21 +356,6 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                             </div>
                         </div>
                     )}
-
-                    <div className="space-y-2">
-                        <Label>Schichttyp</Label>
-                        <Select value={formData.shift_type} onValueChange={handleShiftTypeChange}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Aufmachen">Aufmachen (16:00 - 03:00)</SelectItem>
-                                <SelectItem value="Frühschicht">Frühschicht (20:00 - 05:00)</SelectItem>
-                                <SelectItem value="Spätschicht">Spätschicht (21:00 - 05:00)</SelectItem>
-                                <SelectItem value="Sonderschicht">Sonderschicht (manuell)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
 
                     <div className="space-y-2">
                         <Label>Notizen</Label>

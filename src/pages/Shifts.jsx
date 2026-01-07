@@ -14,6 +14,7 @@ import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
 import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManager';
 import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
+import ShiftSuggestions from '@/components/shifts/ShiftSuggestions';
 import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Shifts() {
@@ -45,19 +46,25 @@ export default function Shifts() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
-        onSuccess: () => {
+        onSuccess: async (newShift, variables) => {
             queryClient.invalidateQueries(['shifts']);
             setModalOpen(false);
             setSelectedShift(null);
+            
+            // Sende Email-Benachrichtigung
+            await sendShiftNotification(variables, 'created');
         }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Shift.update(id, data),
-        onSuccess: () => {
+        onSuccess: async (updatedShift, variables) => {
             queryClient.invalidateQueries(['shifts']);
             setModalOpen(false);
             setSelectedShift(null);
+            
+            // Sende Email-Benachrichtigung
+            await sendShiftNotification(variables.data, 'updated');
         }
     });
 
@@ -96,6 +103,43 @@ export default function Shifts() {
         }
     };
 
+    const sendShiftNotification = async (shiftData, action) => {
+        try {
+            const employee = employees.find(e => e.id === shiftData.employee_id);
+            if (!employee?.email) return;
+
+            const actionText = action === 'created' ? 'erstellt' : 'geändert';
+            const subject = `Schichtplan: Neue Schicht ${actionText}`;
+            const body = `
+Hallo ${employee.name},
+
+deine Schicht wurde ${actionText}:
+
+📅 Datum: ${format(new Date(shiftData.date), 'dd.MM.yyyy', { locale: de })}
+⏰ Zeit: ${shiftData.start_time} - ${shiftData.end_time}
+💼 Typ: ${shiftData.shift_type}
+${shiftData.notes ? `📝 Notiz: ${shiftData.notes}` : ''}
+
+Viele Grüße
+Dein Bar-Team
+            `.trim();
+
+            await base44.integrations.Core.SendEmail({
+                to: employee.email,
+                subject: subject,
+                body: body
+            });
+        } catch (error) {
+            console.error('Fehler beim Senden der Benachrichtigung:', error);
+        }
+    };
+
+    const handleCreateMultipleShifts = async (suggestedShifts) => {
+        for (const shift of suggestedShifts) {
+            await createMutation.mutateAsync(shift);
+        }
+    };
+
     // Get shifts for selected date
     const selectedDateShifts = selectedDate 
         ? shifts
@@ -115,6 +159,13 @@ export default function Shifts() {
                     <div className="flex gap-2 flex-wrap overflow-x-auto pb-2">
                         <ShiftSwapManager />
                         {permissions.isAdmin && <MonthlyStaffingCheck />}
+                        {permissions.isManager && (
+                            <ShiftSuggestions 
+                                shifts={shifts} 
+                                employees={employees}
+                                onCreateShifts={handleCreateMultipleShifts}
+                            />
+                        )}
                         <ShiftRequirementsManager />
                         <OpeningHoursManager />
                         <LiveSyncInstructions />

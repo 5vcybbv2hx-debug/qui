@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, AlertTriangle, Palmtree } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

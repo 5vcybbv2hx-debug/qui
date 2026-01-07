@@ -41,6 +41,7 @@ export default function Employees() {
         role: 'Barkeeper',
         contract_type: '',
         hourly_rate: '',
+        vacation_days_per_year: '',
         color: COLORS[0],
         phone: '',
         email: '',
@@ -96,6 +97,7 @@ export default function Employees() {
                 role: employee.role,
                 contract_type: employee.contract_type || '',
                 hourly_rate: employee.hourly_rate || '',
+                vacation_days_per_year: employee.vacation_days_per_year || '',
                 color: employee.color || COLORS[0],
                 phone: employee.phone || '',
                 email: employee.email || '',
@@ -492,7 +494,19 @@ export default function Employees() {
                                         placeholder="z.B. 13.50"
                                     />
                                 </div>
-                            </div>
+                                </div>
+
+                                {formData.contract_type === 'Vollzeit' && (
+                                <div className="space-y-2">
+                                    <Label>Urlaubstage pro Jahr</Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.vacation_days_per_year}
+                                        onChange={(e) => setFormData({ ...formData, vacation_days_per_year: e.target.value })}
+                                        placeholder="z.B. 30"
+                                    />
+                                </div>
+                                )}
 
                             <div className="space-y-2">
                                 <Label>E-Mail (für Einladung)</Label>

@@ -167,7 +167,7 @@ export default function Vacation() {
             r.employee_id === emp.id && r.status === 'genehmigt' && r.type === 'Urlaub'
         );
         const usedDays = empRequests.reduce((sum, r) => sum + r.days_count, 0);
-        const totalDays = 30; // Standard Vollzeit
+        const totalDays = emp.vacation_days_per_year || 30; // Individuelle Tage oder Standard
         employeeStats[emp.id] = {
             name: emp.name,
             used: usedDays,

@@ -13,10 +13,16 @@ export default function PriceCalculator() {
     const [searchTerm, setSearchTerm] = useState('');
     const [margin, setMargin] = useState('200');
     const [vatRate, setVatRate] = useState('19');
+    const [selectedRecipe, setSelectedRecipe] = useState(null);
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
         queryFn: () => base44.entities.Article.list('name')
+    });
+
+    const { data: recipes = [] } = useQuery({
+        queryKey: ['recipes'],
+        queryFn: () => base44.entities.Recipe.list('name')
     });
 
     const filteredArticles = articles.filter(a => 
@@ -32,6 +38,23 @@ export default function PriceCalculator() {
         };
         setIngredients([...ingredients, newIngredient]);
         setSearchTerm('');
+    };
+
+    const loadRecipe = (recipe) => {
+        if (!recipe || !Array.isArray(recipe.ingredients)) return;
+        
+        const newIngredients = recipe.ingredients.map((ing, idx) => {
+            const article = articles.find(a => a.id === ing.article_id);
+            return {
+                id: Date.now() + idx,
+                article: article || { name: ing.article_name, purchase_price: 0, unit: 'ml' },
+                amount: ing.amount || '',
+                unit: 'ml'
+            };
+        }).filter(ing => ing.article);
+
+        setIngredients(newIngredients);
+        setSelectedRecipe(recipe);
     };
 
     const updateIngredient = (id, field, value) => {
@@ -93,6 +116,31 @@ export default function PriceCalculator() {
                     <h1 className="text-2xl font-bold text-white tracking-tight">Preiskalkulation</h1>
                     <p className="text-slate-400 text-sm mt-1">Berechne optimale Verkaufspreise für deine Getränke</p>
                 </div>
+
+                {/* Rezept-Auswahl */}
+                {recipes.length > 0 && (
+                    <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                        <div className="flex items-center gap-3 mb-3">
+                            <Wine className="w-5 h-5 text-amber-400" />
+                            <Label className="text-white font-semibold">Rezept laden</Label>
+                        </div>
+                        <Select value={selectedRecipe?.id || ''} onValueChange={(id) => {
+                            const recipe = recipes.find(r => r.id === id);
+                            if (recipe) loadRecipe(recipe);
+                        }}>
+                            <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
+                                <SelectValue placeholder="Wähle ein Rezept..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {recipes.filter(r => Array.isArray(r.ingredients) && r.ingredients.length > 0).map(recipe => (
+                                    <SelectItem key={recipe.id} value={recipe.id}>
+                                        {recipe.name} ({recipe.ingredients?.length || 0} Zutaten)
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </Card>
+                )}
 
                 <div className="grid lg:grid-cols-2 gap-6">
                     {/* Eingabe */}

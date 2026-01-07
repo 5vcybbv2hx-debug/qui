@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import IngredientSelector from '@/components/recipes/IngredientSelector';
 
 const categoryColors = {
     'Cocktail': 'bg-pink-100 text-pink-700',
@@ -37,7 +38,7 @@ export default function Recipes() {
     const [formData, setFormData] = useState({
         name: '',
         category: 'Cocktail',
-        ingredients: '',
+        ingredients: [],
         preparation: '',
         glass_type: '',
         garnish: '',
@@ -47,6 +48,11 @@ export default function Recipes() {
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes'],
         queryFn: () => base44.entities.Recipe.list('name')
+    });
+
+    const { data: articles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list('name')
     });
 
     const { data: shoppingList = [] } = useQuery({
@@ -90,7 +96,7 @@ export default function Recipes() {
             setFormData({
                 name: recipe.name,
                 category: recipe.category,
-                ingredients: recipe.ingredients || '',
+                ingredients: recipe.ingredients || [],
                 preparation: recipe.preparation || '',
                 glass_type: recipe.glass_type || '',
                 garnish: recipe.garnish || '',
@@ -101,7 +107,7 @@ export default function Recipes() {
             setFormData({
                 name: '',
                 category: categoryFilter !== 'alle' ? categoryFilter : 'Cocktail',
-                ingredients: '',
+                ingredients: [],
                 preparation: '',
                 glass_type: '',
                 garnish: '',
@@ -132,8 +138,11 @@ export default function Recipes() {
     };
 
     const filteredRecipes = recipes.filter(recipe => {
+        const ingredientNames = Array.isArray(recipe.ingredients) 
+            ? recipe.ingredients.map(i => i.article_name).join(' ')
+            : '';
         const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            recipe.ingredients?.toLowerCase().includes(searchQuery.toLowerCase());
+            ingredientNames.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = categoryFilter === 'alle' || recipe.category === categoryFilter;
         return matchesSearch && matchesCategory;
     });
@@ -158,39 +167,46 @@ export default function Recipes() {
 
         // Sammle alle Zutaten
         selectedRecipeObjects.forEach(recipe => {
-            const ingredientLines = recipe.ingredients?.split('\n').filter(line => line.trim()) || [];
-            ingredientLines.forEach(line => {
-                const ingredient = line.trim();
-                if (ingredient) {
-                    if (ingredientsMap.has(ingredient)) {
-                        ingredientsMap.set(ingredient, ingredientsMap.get(ingredient) + 1);
-                    } else {
-                        ingredientsMap.set(ingredient, 1);
-                    }
+            const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
+            ingredients.forEach(ing => {
+                const key = ing.article_name;
+                if (ingredientsMap.has(key)) {
+                    ingredientsMap.set(key, {
+                        ...ingredientsMap.get(key),
+                        amount: ingredientsMap.get(key).amount + ing.amount
+                    });
+                } else {
+                    ingredientsMap.set(key, {
+                        article_id: ing.article_id,
+                        article_name: ing.article_name,
+                        amount: ing.amount
+                    });
                 }
             });
         });
 
         // Füge zur Einkaufsliste hinzu
-        for (const [ingredient, count] of ingredientsMap) {
+        for (const [_, ingredient] of ingredientsMap) {
             await createShoppingItemMutation.mutateAsync({
-                item_name: ingredient,
+                item_name: ingredient.article_name,
                 category: 'C+C',
-                quantity: count,
+                quantity: Math.ceil(ingredient.amount / 100), // Umrechnung in größere Einheiten
                 unit: 'Stück',
                 status: 'offen',
-                notes: `Für Rezepte: ${selectedRecipeObjects.map(r => r.name).join(', ')}`
+                notes: `${ingredient.amount}ml gesamt · Für Rezepte: ${selectedRecipeObjects.map(r => r.name).join(', ')}`
             });
         }
 
-        alert(`${ingredientsMap.size} Zutaten zur Einkaufsliste hinzugefügt!`);
+        alert(`${ingredientsMap.size} Artikel zur Einkaufsliste hinzugefügt!`);
         setSelectedRecipes(new Set());
     };
 
     const findSimilarRecipes = (recipe) => {
         if (!recipe) return [];
 
-        const currentIngredients = recipe.ingredients?.toLowerCase().split('\n').map(i => i.trim()) || [];
+        const currentIngredients = Array.isArray(recipe.ingredients) 
+            ? recipe.ingredients.map(i => i.article_id)
+            : [];
         
         return recipes
             .filter(r => r.id !== recipe.id)
@@ -200,11 +216,13 @@ export default function Recipes() {
                 // Punkte für gleiche Kategorie
                 if (r.category === recipe.category) score += 3;
                 
-                // Punkte für gemeinsame Zutaten
-                const otherIngredients = r.ingredients?.toLowerCase().split('\n').map(i => i.trim()) || [];
-                currentIngredients.forEach(ing => {
-                    if (otherIngredients.some(other => other.includes(ing) || ing.includes(other))) {
-                        score += 1;
+                // Punkte für gemeinsame Artikel
+                const otherIngredients = Array.isArray(r.ingredients) 
+                    ? r.ingredients.map(i => i.article_id)
+                    : [];
+                currentIngredients.forEach(ingId => {
+                    if (otherIngredients.includes(ingId)) {
+                        score += 2;
                     }
                 });
                 
@@ -373,12 +391,17 @@ export default function Recipes() {
                                 </div>
 
                                 <div className="space-y-3 text-sm">
-                                    {recipe.ingredients && (
+                                    {recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
                                         <div>
                                             <p className="font-medium text-slate-300 mb-1">Zutaten:</p>
-                                            <p className="text-slate-400 whitespace-pre-line text-xs leading-relaxed">
-                                                {recipe.ingredients}
-                                            </p>
+                                            <div className="text-slate-400 text-xs leading-relaxed space-y-1">
+                                                {recipe.ingredients.map((ing, idx) => (
+                                                    <p key={idx}>
+                                                        {ing.amount > 0 && `${ing.amount}ml `}
+                                                        {ing.article_name}
+                                                    </p>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
@@ -450,16 +473,11 @@ export default function Recipes() {
                                 </Select>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Zutaten * (eine pro Zeile)</Label>
-                                <Textarea
-                                    value={formData.ingredients}
-                                    onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
-                                    placeholder="4 cl Rum&#10;3 cl Limettensaft&#10;2 cl Zuckersirup&#10;Minze&#10;Soda"
-                                    rows={6}
-                                    required
-                                />
-                            </div>
+                            <IngredientSelector
+                                ingredients={formData.ingredients}
+                                onChange={(newIngredients) => setFormData({ ...formData, ingredients: newIngredients })}
+                                articles={articles}
+                            />
 
                             <div className="space-y-2">
                                 <Label>Zubereitung</Label>
@@ -572,9 +590,9 @@ export default function Recipes() {
                                                         <Badge className={cn("text-xs mb-2", categoryColors[recipe.category])}>
                                                             {recipe.category}
                                                         </Badge>
-                                                        {recipe.ingredients && (
+                                                        {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
                                                             <p className="text-xs text-slate-400 line-clamp-2">
-                                                                {recipe.ingredients.split('\n').slice(0, 3).join(', ')}
+                                                                {recipe.ingredients.slice(0, 3).map(i => i.article_name).join(', ')}
                                                             </p>
                                                         )}
                                                     </div>

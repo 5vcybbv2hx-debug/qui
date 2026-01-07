@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export default function ShiftCalendar({ shifts, employees, requirements = [], onAddShift, onSelectShift, selectedDate, setSelectedDate }) {
+export default function ShiftCalendar({ shifts, employees, requirements = [], vacationRequests = [], onAddShift, onSelectShift, selectedDate, setSelectedDate }) {
     const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
     
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -73,6 +73,14 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], on
                     const required = getDayRequirement(day);
                     const understaffed = required && dayShifts.length < required;
                     
+                    // Check for vacations
+                    const dateStr = format(day, 'yyyy-MM-dd');
+                    const dayVacations = vacationRequests.filter(v => 
+                        v.status === 'genehmigt' &&
+                        dateStr >= v.start_date && 
+                        dateStr <= v.end_date
+                    );
+                    
                     return (
                         <div 
                             key={idx} 
@@ -132,6 +140,17 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], on
                                     <p className="text-[10px] text-slate-400 text-center">
                                         +{dayShifts.length - 3} mehr
                                     </p>
+                                )}
+                                
+                                {/* Vacations */}
+                                {dayVacations.length > 0 && (
+                                    <div className="px-2 py-1 bg-amber-900/30 rounded-lg text-[10px] text-amber-400 flex items-center gap-1 border border-amber-700/50">
+                                        <Palmtree className="w-3 h-3" />
+                                        {dayVacations.length === 1 
+                                            ? dayVacations[0].employee_name.split(' ')[0]
+                                            : `${dayVacations.length} Urlaub`
+                                        }
+                                    </div>
                                 )}
                             </div>
                             

@@ -44,6 +44,11 @@ export default function Shifts() {
         queryFn: () => base44.entities.ShiftRequirement.list()
     });
 
+    const { data: vacationRequests = [] } = useQuery({
+        queryKey: ['vacation-requests'],
+        queryFn: () => base44.entities.VacationRequest.list()
+    });
+
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
         onSuccess: () => {
@@ -148,6 +153,7 @@ export default function Shifts() {
                     shifts={shifts}
                     employees={employees}
                     requirements={requirements}
+                    vacationRequests={vacationRequests}
                     onAddShift={handleAddShift}
                     onSelectShift={handleSelectShift}
                     selectedDate={selectedDate}

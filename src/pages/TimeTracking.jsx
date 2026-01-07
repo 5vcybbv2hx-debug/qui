@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText } from 'lucide-react';
+import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +92,18 @@ export default function TimeTracking() {
         }
     });
 
+    const approveMutation = useMutation({
+        mutationFn: async (entryIds) => {
+            const promises = entryIds.map(id => 
+                base44.entities.TimeEntry.update(id, { status: 'genehmigt' })
+            );
+            return Promise.all(promises);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['time-entries']);
+        }
+    });
+
     const handleSave = (data, id) => {
         if (id) {
             updateMutation.mutate({ id, data });
@@ -103,6 +115,19 @@ export default function TimeTracking() {
     const handleDelete = (id) => {
         if (confirm('Zeiteintrag wirklich löschen?')) {
             deleteMutation.mutate(id);
+        }
+    };
+
+    const handleApprove = (id) => {
+        approveMutation.mutate([id]);
+    };
+
+    const handleApproveEmployee = (employeeName) => {
+        const pendingEntries = entriesByEmployee[employeeName]
+            .filter(e => e.status !== 'genehmigt')
+            .map(e => e.id);
+        if (pendingEntries.length > 0) {
+            approveMutation.mutate(pendingEntries);
         }
     };
 
@@ -269,11 +294,24 @@ export default function TimeTracking() {
                 <div className="space-y-6">
                     {Object.entries(entriesByEmployee).map(([employeeName, entries]) => {
                         const employeeTotal = entries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
+                        const pendingCount = entries.filter(e => e.status !== 'genehmigt').length;
                         return (
                             <div key={employeeName}>
                                 <div className="flex items-center justify-between mb-3">
-                                    <h2 className="text-lg font-semibold text-white">{employeeName}</h2>
-                                    <span className="text-sm text-slate-400">{employeeTotal.toFixed(2)}h</span>
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-lg font-semibold text-white">{employeeName}</h2>
+                                        <span className="text-sm text-slate-400">{employeeTotal.toFixed(2)}h</span>
+                                    </div>
+                                    {permissions.isManager && pendingCount > 0 && (
+                                        <Button
+                                            onClick={() => handleApproveEmployee(employeeName)}
+                                            size="sm"
+                                            className="bg-green-600 hover:bg-green-700"
+                                        >
+                                            <Check className="w-4 h-4 mr-1" />
+                                            Alle genehmigen ({pendingCount})
+                                        </Button>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     {entries
@@ -311,6 +349,17 @@ export default function TimeTracking() {
                                                         </div>
                                                         {canEdit(entry) && (
                                                             <div className="flex gap-1">
+                                                                {entry.status !== 'genehmigt' && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={() => handleApprove(entry.id)}
+                                                                        className="text-green-400 hover:text-green-300 hover:bg-green-900/20"
+                                                                        title="Genehmigen"
+                                                                    >
+                                                                        <CheckCircle2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"

@@ -138,53 +138,61 @@ export default function Dashboard() {
 
                 {/* Key Metrics Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center">
-                                <Calendar className="w-6 h-6 text-purple-500" />
+                    <Link to={createPageUrl('Shifts')}>
+                        <Card className="p-6 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center">
+                                    <Calendar className="w-6 h-6 text-purple-500" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-white">{todayShifts.length}</p>
+                                    <p className="text-sm text-slate-400">Schichten heute</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold text-white">{todayShifts.length}</p>
-                                <p className="text-sm text-slate-400">Schichten heute</p>
-                            </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center justify-center">
-                                <Clock className="w-6 h-6 text-amber-500" />
+                    <Link to={createPageUrl('TimeTracking')}>
+                        <Card className="p-6 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center justify-center">
+                                    <Clock className="w-6 h-6 text-amber-500" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-white">{weekHours}h</p>
+                                    <p className="text-sm text-slate-400">Stunden diese Woche</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold text-white">{weekHours}h</p>
-                                <p className="text-sm text-slate-400">Stunden diese Woche</p>
-                            </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-red-600/20 flex items-center justify-center">
-                                <AlertCircle className="w-6 h-6 text-red-500" />
+                    <Link to={createPageUrl('Todos')}>
+                        <Card className="p-6 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-red-600/20 flex items-center justify-center">
+                                    <AlertCircle className="w-6 h-6 text-red-500" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-white">{overdueTodos.length}</p>
+                                    <p className="text-sm text-slate-400">Überfällige Aufgaben</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold text-white">{overdueTodos.length}</p>
-                                <p className="text-sm text-slate-400">Überfällige Aufgaben</p>
-                            </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center">
-                                <Sparkles className="w-6 h-6 text-green-500" />
+                    <Link to={createPageUrl('Cleaning')}>
+                        <Card className="p-6 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center">
+                                    <Sparkles className="w-6 h-6 text-green-500" />
+                                </div>
+                                <div>
+                                    <p className="text-2xl font-bold text-white">{cleaningProgress.toFixed(0)}%</p>
+                                    <p className="text-sm text-slate-400">Putzfortschritt</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-2xl font-bold text-white">{cleaningProgress.toFixed(0)}%</p>
-                                <p className="text-sm text-slate-400">Putzfortschritt</p>
-                            </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
                 </div>
 
                 {/* Alerts & Warnings */}
@@ -196,26 +204,32 @@ export default function Dashboard() {
                         </h3>
                         <div className="space-y-2">
                             {overdueTodos.length > 0 && (
-                                <div className="flex items-center gap-3 p-3 bg-red-900/20 rounded-lg border border-red-800/30">
-                                    <AlertCircle className="w-4 h-4 text-red-500" />
-                                    <span className="text-sm text-slate-300">
-                                        {overdueTodos.length} überfällige Aufgabe{overdueTodos.length > 1 ? 'n' : ''}
-                                    </span>
-                                </div>
+                                <Link to={createPageUrl('Todos')}>
+                                    <div className="flex items-center gap-3 p-3 bg-red-900/20 rounded-lg border border-red-800/30 hover:bg-red-900/30 transition-colors cursor-pointer">
+                                        <AlertCircle className="w-4 h-4 text-red-500" />
+                                        <span className="text-sm text-slate-300">
+                                            {overdueTodos.length} überfällige Aufgabe{overdueTodos.length > 1 ? 'n' : ''}
+                                        </span>
+                                    </div>
+                                </Link>
                             )}
                             {todayShifts.length === 0 && (
-                                <div className="flex items-center gap-3 p-3 bg-amber-900/20 rounded-lg border border-amber-800/30">
-                                    <AlertCircle className="w-4 h-4 text-amber-500" />
-                                    <span className="text-sm text-slate-300">Keine Schichten für heute eingeplant</span>
-                                </div>
+                                <Link to={createPageUrl('Shifts')}>
+                                    <div className="flex items-center gap-3 p-3 bg-amber-900/20 rounded-lg border border-amber-800/30 hover:bg-amber-900/30 transition-colors cursor-pointer">
+                                        <AlertCircle className="w-4 h-4 text-amber-500" />
+                                        <span className="text-sm text-slate-300">Keine Schichten für heute eingeplant</span>
+                                    </div>
+                                </Link>
                             )}
                             {openShoppingItems.length > 10 && (
-                                <div className="flex items-center gap-3 p-3 bg-blue-900/20 rounded-lg border border-blue-800/30">
-                                    <ShoppingCart className="w-4 h-4 text-blue-500" />
-                                    <span className="text-sm text-slate-300">
-                                        {openShoppingItems.length} offene Artikel auf der Einkaufsliste
-                                    </span>
-                                </div>
+                                <Link to={createPageUrl('Shopping')}>
+                                    <div className="flex items-center gap-3 p-3 bg-blue-900/20 rounded-lg border border-blue-800/30 hover:bg-blue-900/30 transition-colors cursor-pointer">
+                                        <ShoppingCart className="w-4 h-4 text-blue-500" />
+                                        <span className="text-sm text-slate-300">
+                                            {openShoppingItems.length} offene Artikel auf der Einkaufsliste
+                                        </span>
+                                    </div>
+                                </Link>
                             )}
                         </div>
                     </Card>
@@ -405,55 +419,65 @@ export default function Dashboard() {
 
                 {/* Quick Stats Row */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <Users className="w-8 h-8 text-blue-500" />
-                            <div>
-                                <p className="text-xl font-bold text-white">{employees.length}</p>
-                                <p className="text-xs text-slate-400">Mitarbeiter</p>
+                    <Link to={createPageUrl('Employees')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <Users className="w-8 h-8 text-blue-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-white">{employees.length}</p>
+                                    <p className="text-xs text-slate-400">Mitarbeiter</p>
+                                </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
 
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <CalendarCheck className="w-8 h-8 text-indigo-500" />
-                            <div>
-                                <p className="text-xl font-bold text-white">{weekReservations.length}</p>
-                                <p className="text-xs text-slate-400">Reservierungen</p>
+                    <Link to={createPageUrl('Reservations')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <CalendarCheck className="w-8 h-8 text-indigo-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-white">{weekReservations.length}</p>
+                                    <p className="text-xs text-slate-400">Reservierungen</p>
+                                </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
 
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <ShoppingCart className="w-8 h-8 text-orange-500" />
-                            <div>
-                                <p className="text-xl font-bold text-white">{openShoppingItems.length}</p>
-                                <p className="text-xs text-slate-400">Einkaufsliste</p>
+                    <Link to={createPageUrl('Shopping')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <ShoppingCart className="w-8 h-8 text-orange-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-white">{openShoppingItems.length}</p>
+                                    <p className="text-xs text-slate-400">Einkaufsliste</p>
+                                </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
 
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <CheckSquare className="w-8 h-8 text-amber-500" />
-                            <div>
-                                <p className="text-xl font-bold text-white">{openTodos.length}</p>
-                                <p className="text-xs text-slate-400">Offene Aufgaben</p>
+                    <Link to={createPageUrl('Todos')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <CheckSquare className="w-8 h-8 text-amber-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-white">{openTodos.length}</p>
+                                    <p className="text-xs text-slate-400">Offene Aufgaben</p>
+                                </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
 
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <div className="flex items-center gap-3">
-                            <BookOpen className="w-8 h-8 text-pink-500" />
-                            <div>
-                                <p className="text-xl font-bold text-white">{recipes.length}</p>
-                                <p className="text-xs text-slate-400">Rezepte</p>
+                    <Link to={createPageUrl('Recipes')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-700 transition-colors cursor-pointer">
+                            <div className="flex items-center gap-3">
+                                <BookOpen className="w-8 h-8 text-pink-500" />
+                                <div>
+                                    <p className="text-xl font-bold text-white">{recipes.length}</p>
+                                    <p className="text-xs text-slate-400">Rezepte</p>
+                                </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
                 </div>
 
                 {/* Quick Links */}

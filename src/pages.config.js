@@ -3,6 +3,7 @@ import Cleaning from './pages/Cleaning';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
+import PriceCalculator from './pages/PriceCalculator';
 import Recipes from './pages/Recipes';
 import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
@@ -11,7 +12,6 @@ import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
-import PriceCalculator from './pages/PriceCalculator';
 import __Layout from './Layout.jsx';
 
 
@@ -21,6 +21,7 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "Employees": Employees,
     "Events": Events,
+    "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
     "Reservations": Reservations,
     "Restock": Restock,
@@ -29,7 +30,6 @@ export const PAGES = {
     "Shopping": Shopping,
     "TimeTracking": TimeTracking,
     "Todos": Todos,
-    "PriceCalculator": PriceCalculator,
 }
 
 export const pagesConfig = {

@@ -9,7 +9,6 @@ import { usePermissions } from '@/components/auth/usePermissions';
 const navigation = [
     { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
     { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
-    { name: 'Analyse', page: 'ShiftAnalytics', icon: Calendar, permission: 'canViewShifts' },
     { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
     { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
     { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },

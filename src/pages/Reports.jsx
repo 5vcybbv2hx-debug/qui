@@ -259,9 +259,20 @@ export default function Reports() {
                                             <tr key={i} className="hover:bg-slate-700/50 transition-colors">
                                                 <td className="px-4 py-3 text-sm font-medium text-white">
                                                     {row.employee}
+                                                    {row.contractType === 'Minijob' && parseFloat(row.approvedHours) >= 43 && (
+                                                        <div className="mt-1">
+                                                            <Badge className="bg-red-100 text-red-700 text-xs">
+                                                                ⚠️ Minijob-Grenze erreicht
+                                                            </Badge>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-xs text-center">
-                                                    <Badge className="bg-slate-700 text-slate-300">
+                                                    <Badge className={
+                                                        row.contractType === 'Minijob' && parseFloat(row.approvedHours) >= 43
+                                                            ? "bg-red-100 text-red-700"
+                                                            : "bg-slate-700 text-slate-300"
+                                                    }>
                                                         {row.contractType}
                                                     </Badge>
                                                 </td>
@@ -272,7 +283,11 @@ export default function Reports() {
                                                     {row.totalHours}h
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right">
-                                                    <Badge className="bg-green-100 text-green-700">
+                                                    <Badge className={
+                                                        row.contractType === 'Minijob' && parseFloat(row.approvedHours) >= 43
+                                                            ? "bg-red-100 text-red-700"
+                                                            : "bg-green-100 text-green-700"
+                                                    }>
                                                         {row.approvedHours}h
                                                     </Badge>
                                                 </td>

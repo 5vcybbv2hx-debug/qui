@@ -46,25 +46,19 @@ export default function Shifts() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
-        onSuccess: async (newShift, variables) => {
+        onSuccess: () => {
             queryClient.invalidateQueries(['shifts']);
             setModalOpen(false);
             setSelectedShift(null);
-            
-            // Sende Email-Benachrichtigung
-            await sendShiftNotification(variables, 'created');
         }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Shift.update(id, data),
-        onSuccess: async (updatedShift, variables) => {
+        onSuccess: () => {
             queryClient.invalidateQueries(['shifts']);
             setModalOpen(false);
             setSelectedShift(null);
-            
-            // Sende Email-Benachrichtigung
-            await sendShiftNotification(variables.data, 'updated');
         }
     });
 
@@ -100,37 +94,6 @@ export default function Shifts() {
     const handleDelete = (id) => {
         if (confirm('Schicht wirklich löschen?')) {
             deleteMutation.mutate(id);
-        }
-    };
-
-    const sendShiftNotification = async (shiftData, action) => {
-        try {
-            const employee = employees.find(e => e.id === shiftData.employee_id);
-            if (!employee?.email) return;
-
-            const actionText = action === 'created' ? 'erstellt' : 'geändert';
-            const subject = `Schichtplan: Neue Schicht ${actionText}`;
-            const body = `
-Hallo ${employee.name},
-
-deine Schicht wurde ${actionText}:
-
-📅 Datum: ${format(new Date(shiftData.date), 'dd.MM.yyyy', { locale: de })}
-⏰ Zeit: ${shiftData.start_time} - ${shiftData.end_time}
-💼 Typ: ${shiftData.shift_type}
-${shiftData.notes ? `📝 Notiz: ${shiftData.notes}` : ''}
-
-Viele Grüße
-Dein Bar-Team
-            `.trim();
-
-            await base44.integrations.Core.SendEmail({
-                to: employee.email,
-                subject: subject,
-                body: body
-            });
-        } catch (error) {
-            console.error('Fehler beim Senden der Benachrichtigung:', error);
         }
     };
 

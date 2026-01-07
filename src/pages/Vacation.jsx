@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, parseISO, differenceInBusinessDays, isWeekend } from 'date-fns';
+import { format, parseISO, differenceInBusinessDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Calendar, Plus, Check, X, Clock, AlertCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,9 @@ export default function Vacation() {
         const endDate = new Date(end);
         
         while (current <= endDate) {
-            if (!isWeekend(current)) {
+            const dayOfWeek = current.getDay();
+            // Nur Sonntag (0) ist kein Werktag, Montag-Samstag (1-6) sind Werktage
+            if (dayOfWeek !== 0) {
                 count++;
             }
             current.setDate(current.getDate() + 1);
@@ -402,7 +404,7 @@ export default function Vacation() {
                                         <span className="font-semibold">
                                             {calculateBusinessDays(formData.start_date, formData.end_date)} Arbeitstage
                                         </span>
-                                        {' '}(Wochenenden ausgeschlossen)
+                                        {' '}(Mo-Sa sind Werktage)
                                     </p>
                                 </div>
                             )}

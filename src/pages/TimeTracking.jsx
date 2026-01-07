@@ -228,77 +228,81 @@ export default function TimeTracking() {
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Zeiterfassung</h1>
-                    <p className="text-slate-400 text-sm mt-1">
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Zeiterfassung</h1>
+                    <p className="text-slate-400 text-xs sm:text-sm mt-1">
                         {format(selectedMonth, 'MMMM yyyy', { locale: de })} · {totalHours.toFixed(2)}h gesamt · {approvedHours.toFixed(2)}h genehmigt
                     </p>
                 </div>
 
                 {/* Stats Overview */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                    <Card className="p-4 bg-gradient-to-br from-blue-900/40 to-slate-800 border-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/40 to-slate-800 border-slate-700">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs text-slate-400 mb-1">Heute</p>
-                                <p className="text-2xl font-bold text-white">{todayHours.toFixed(1)}h</p>
+                                <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Heute</p>
+                                <p className="text-xl sm:text-2xl font-bold text-white">{todayHours.toFixed(1)}h</p>
                             </div>
-                            <TrendingUp className="w-8 h-8 text-blue-400 opacity-50" />
+                            <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 opacity-50" />
                         </div>
                     </Card>
 
-                    <Card className="p-4 bg-gradient-to-br from-purple-900/40 to-slate-800 border-slate-700">
+                    <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/40 to-slate-800 border-slate-700">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs text-slate-400 mb-1">Diese Woche</p>
-                                <p className="text-2xl font-bold text-white">{weekHours.toFixed(1)}h</p>
+                                <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Diese Woche</p>
+                                <p className="text-xl sm:text-2xl font-bold text-white">{weekHours.toFixed(1)}h</p>
                             </div>
-                            <Calendar className="w-8 h-8 text-purple-400 opacity-50" />
+                            <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 opacity-50" />
                         </div>
                     </Card>
 
-                    <Card className="p-4 bg-gradient-to-br from-amber-900/40 to-slate-800 border-slate-700">
+                    <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/40 to-slate-800 border-slate-700">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-xs text-slate-400 mb-1">Dieser Monat</p>
-                                <p className="text-2xl font-bold text-white">{totalHours.toFixed(1)}h</p>
-                                <p className="text-xs text-green-400 mt-0.5">{approvedHours.toFixed(1)}h genehmigt</p>
+                                <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Dieser Monat</p>
+                                <p className="text-xl sm:text-2xl font-bold text-white">{totalHours.toFixed(1)}h</p>
+                                <p className="text-[10px] sm:text-xs text-green-400 mt-0.5">{approvedHours.toFixed(1)}h genehmigt</p>
                             </div>
-                            <CheckCircle2 className="w-8 h-8 text-amber-400 opacity-50" />
+                            <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400 opacity-50" />
                         </div>
                     </Card>
                 </div>
 
                 {/* Month Selector */}
-                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
-                    <div className="flex items-center justify-between">
+                <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-4 sm:mb-6">
+                    <div className="flex items-center justify-between gap-2">
                         <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => setSelectedMonth(new Date(selectedMonth.setMonth(selectedMonth.getMonth() - 1)))}
-                            className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                            className="border-slate-600 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-2 sm:px-4"
                         >
-                            ← Vorheriger Monat
+                            <span className="hidden sm:inline">← Vorheriger</span>
+                            <span className="sm:hidden">←</span>
                         </Button>
-                        <div className="flex items-center gap-2 text-white">
-                            <Calendar className="w-5 h-5 text-amber-400" />
-                            <span className="font-semibold">{format(selectedMonth, 'MMMM yyyy', { locale: de })}</span>
+                        <div className="flex items-center gap-1 sm:gap-2 text-white">
+                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
+                            <span className="font-semibold text-sm sm:text-base">{format(selectedMonth, 'MMM yyyy', { locale: de })}</span>
                         </div>
                         <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => setSelectedMonth(new Date(selectedMonth.setMonth(selectedMonth.getMonth() + 1)))}
-                            className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                            className="border-slate-600 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-2 sm:px-4"
                         >
-                            Nächster Monat →
+                            <span className="hidden sm:inline">Nächster →</span>
+                            <span className="sm:hidden">→</span>
                         </Button>
                     </div>
                 </Card>
 
                 {/* Clock In/Out Buttons */}
                 {!permissions.isManager && currentEmployee && (
-                    <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 mb-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h3 className="text-lg font-semibold text-white mb-1">Zeiterfassung</h3>
+                    <Card className="p-4 sm:p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 mb-6">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="flex-1">
+                                <h3 className="text-base sm:text-lg font-semibold text-white mb-1">Zeiterfassung</h3>
                                 {activeShift ? (
                                     <div className="text-sm text-slate-400">
                                         Gestartet um {activeShift.start_time} Uhr
@@ -315,7 +319,7 @@ export default function TimeTracking() {
                                 <Button 
                                     onClick={handleEndShift}
                                     size="lg"
-                                    className="bg-red-600 hover:bg-red-700"
+                                    className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
                                 >
                                     <Clock className="w-5 h-5 mr-2" />
                                     Schicht beenden
@@ -324,7 +328,7 @@ export default function TimeTracking() {
                                 <Button 
                                     onClick={handleStartShift}
                                     size="lg"
-                                    className="bg-green-600 hover:bg-green-700"
+                                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                                 >
                                     <Clock className="w-5 h-5 mr-2" />
                                     Schicht starten
@@ -341,7 +345,7 @@ export default function TimeTracking() {
                             setSelectedEntry(null);
                             setModalOpen(true);
                         }}
-                        className="bg-amber-600 hover:bg-amber-700 mb-6 w-full sm:w-auto"
+                        className="bg-amber-600 hover:bg-amber-700 mb-4 sm:mb-6 w-full sm:w-auto text-sm"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Neue Zeiterfassung
@@ -349,24 +353,24 @@ export default function TimeTracking() {
                 )}
 
                 {/* Entries by Employee */}
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                     {Object.entries(entriesByEmployee).map(([employeeName, entries]) => {
                         const employeeTotal = entries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
                         const pendingCount = entries.filter(e => e.status !== 'genehmigt').length;
                         return (
                             <div key={employeeName}>
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <h2 className="text-lg font-semibold text-white">{employeeName}</h2>
-                                        <span className="text-sm text-slate-400">{employeeTotal.toFixed(2)}h</span>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <h2 className="text-base sm:text-lg font-semibold text-white">{employeeName}</h2>
+                                        <span className="text-xs sm:text-sm text-slate-400">{employeeTotal.toFixed(2)}h</span>
                                     </div>
                                     {permissions.isManager && pendingCount > 0 && (
                                         <Button
                                             onClick={() => handleApproveEmployee(employeeName)}
                                             size="sm"
-                                            className="bg-green-600 hover:bg-green-700"
+                                            className="bg-green-600 hover:bg-green-700 text-xs sm:text-sm w-full sm:w-auto"
                                         >
-                                            <Check className="w-4 h-4 mr-1" />
+                                            <Check className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                             Alle genehmigen ({pendingCount})
                                         </Button>
                                     )}
@@ -377,19 +381,19 @@ export default function TimeTracking() {
                                         .map(entry => {
                                             const StatusIcon = statusConfig[entry.status].icon;
                                             return (
-                                                <Card key={entry.id} className="p-4 bg-slate-800 border-slate-700">
-                                                    <div className="flex items-start justify-between">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <span className="font-semibold text-white">
+                                                <Card key={entry.id} className="p-3 sm:p-4 bg-slate-800 border-slate-700">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                                                                <span className="font-semibold text-white text-sm sm:text-base">
                                                                     {format(parseISO(entry.date), 'dd.MM.yyyy', { locale: de })}
                                                                 </span>
-                                                                <Badge className={statusConfig[entry.status].color}>
-                                                                    <StatusIcon className="w-3 h-3 mr-1" />
+                                                                <Badge className={cn(statusConfig[entry.status].color, "text-[10px] sm:text-xs")}>
+                                                                    <StatusIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
                                                                     {statusConfig[entry.status].label}
                                                                 </Badge>
                                                             </div>
-                                                            <div className="flex items-center gap-4 text-sm text-slate-400">
+                                                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-400">
                                                                 <span>
                                                                     {entry.start_time} - {entry.end_time}
                                                                     {entry.end_time < entry.start_time && <span className="ml-1">🌙</span>}
@@ -402,7 +406,7 @@ export default function TimeTracking() {
                                                                 </span>
                                                             </div>
                                                             {entry.notes && (
-                                                                <p className="text-xs text-slate-500 mt-2">{entry.notes}</p>
+                                                                <p className="text-[10px] sm:text-xs text-slate-500 mt-2">{entry.notes}</p>
                                                             )}
                                                         </div>
                                                         {canEdit(entry) && (

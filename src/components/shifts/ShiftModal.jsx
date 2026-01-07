@@ -24,9 +24,9 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
     });
 
     const [multipleShifts, setMultipleShifts] = useState([
-        { employee_id: '', start_time: '16:00', end_time: '03:00' },
-        { employee_id: '', start_time: '16:00', end_time: '03:00' },
-        { employee_id: '', start_time: '16:00', end_time: '03:00' }
+        { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
+        { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
+        { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' }
     ]);
     
     const [isMultiMode, setIsMultiMode] = useState(false);
@@ -58,9 +58,9 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 color: ''
             }));
             setMultipleShifts([
-                { employee_id: '', start_time: '16:00', end_time: '03:00' },
-                { employee_id: '', start_time: '16:00', end_time: '03:00' },
-                { employee_id: '', start_time: '16:00', end_time: '03:00' }
+                { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
+                { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
+                { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' }
             ]);
         }
     }, [shift, selectedDate, open]);
@@ -104,8 +104,9 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         if (multipleShifts.length < 9) {
             setMultipleShifts([...multipleShifts, { 
                 employee_id: '', 
-                start_time: formData.start_time, 
-                end_time: formData.end_time 
+                start_time: '16:00', 
+                end_time: '03:00',
+                shift_type: 'Aufmachen'
             }]);
         }
     };
@@ -119,6 +120,21 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
     const updateShiftSlot = (index, field, value) => {
         const updated = [...multipleShifts];
         updated[index][field] = value;
+        
+        // Auto-fill times when shift type changes
+        if (field === 'shift_type') {
+            if (value === 'Aufmachen') {
+                updated[index].start_time = '16:00';
+                updated[index].end_time = '03:00';
+            } else if (value === 'Frühschicht') {
+                updated[index].start_time = '20:00';
+                updated[index].end_time = '05:00';
+            } else if (value === 'Spätschicht') {
+                updated[index].start_time = '21:00';
+                updated[index].end_time = '05:00';
+            }
+        }
+        
         setMultipleShifts(updated);
     };
 
@@ -138,7 +154,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         date: formData.date,
                         start_time: s.start_time,
                         end_time: s.end_time,
-                        shift_type: formData.shift_type,
+                        shift_type: s.shift_type,
                         notes: formData.notes
                     };
                 });
@@ -259,8 +275,8 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                             </div>
                             <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                                 {multipleShifts.map((slot, index) => (
-                                    <div key={index} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                        <div className="flex gap-2 items-start mb-3">
+                                    <div key={index} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+                                        <div className="flex gap-2 items-start">
                                             <Select 
                                                 value={slot.employee_id} 
                                                 onValueChange={(value) => updateShiftSlot(index, 'employee_id', value)}
@@ -294,16 +310,32 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                 <Minus className="w-4 h-4" />
                                             </Button>
                                         </div>
+                                        <Select 
+                                            value={slot.shift_type} 
+                                            onValueChange={(value) => updateShiftSlot(index, 'shift_type', value)}
+                                        >
+                                            <SelectTrigger className="text-sm">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Aufmachen">Aufmachen (16:00 - 03:00)</SelectItem>
+                                                <SelectItem value="Frühschicht">Frühschicht (20:00 - 05:00)</SelectItem>
+                                                <SelectItem value="Spätschicht">Spätschicht (21:00 - 05:00)</SelectItem>
+                                                <SelectItem value="Sonderschicht">Sonderschicht (manuell)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                         <div className="grid grid-cols-2 gap-2">
                                             <Input
                                                 type="time"
                                                 value={slot.start_time}
                                                 onChange={(e) => updateShiftSlot(index, 'start_time', e.target.value)}
+                                                className="text-sm"
                                             />
                                             <Input
                                                 type="time"
                                                 value={slot.end_time}
                                                 onChange={(e) => updateShiftSlot(index, 'end_time', e.target.value)}
+                                                className="text-sm"
                                             />
                                         </div>
                                     </div>

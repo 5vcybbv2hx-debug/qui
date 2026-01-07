@@ -10,6 +10,7 @@ const navigation = [
     { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
     { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
     { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
+    { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },
     { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
     { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
     { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },

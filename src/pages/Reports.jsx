@@ -47,12 +47,17 @@ export default function Reports() {
         const totalHours = empEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
         const approvedHours = empEntries.filter(e => e.status === 'genehmigt').reduce((sum, e) => sum + (e.total_hours || 0), 0);
         const pendingHours = empEntries.filter(e => e.status !== 'genehmigt').reduce((sum, e) => sum + (e.total_hours || 0), 0);
+        const hourlyRate = emp.hourly_rate || 0;
+        const estimatedSalary = approvedHours * hourlyRate;
         
         return {
             employee: emp.name,
+            contractType: emp.contract_type || '-',
+            hourlyRate: hourlyRate.toFixed(2),
             totalHours: totalHours.toFixed(2),
             approvedHours: approvedHours.toFixed(2),
             pendingHours: pendingHours.toFixed(2),
+            estimatedSalary: estimatedSalary.toFixed(2),
             entryCount: empEntries.length
         };
     }).filter(e => e.entryCount > 0);
@@ -210,7 +215,7 @@ export default function Reports() {
                             <div className="p-4 border-b border-slate-700 flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <FileText className="w-5 h-5 text-amber-400" />
-                                    <h3 className="font-semibold text-white">Stundenauswertung pro Mitarbeiter</h3>
+                                    <h3 className="font-semibold text-white">Stundenauswertung & Gehaltsabrechnung</h3>
                                 </div>
                                 <Button
                                     onClick={() => exportToCSV(hoursByEmployee, 'stundenauswertung')}
@@ -229,6 +234,12 @@ export default function Reports() {
                                             <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                                                 Mitarbeiter
                                             </th>
+                                            <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                                                Vertrag
+                                            </th>
+                                            <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                                                €/h
+                                            </th>
                                             <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
                                                 Gesamt
                                             </th>
@@ -239,7 +250,7 @@ export default function Reports() {
                                                 Ausstehend
                                             </th>
                                             <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
-                                                Einträge
+                                                Gehalt
                                             </th>
                                         </tr>
                                     </thead>
@@ -248,6 +259,14 @@ export default function Reports() {
                                             <tr key={i} className="hover:bg-slate-700/50 transition-colors">
                                                 <td className="px-4 py-3 text-sm font-medium text-white">
                                                     {row.employee}
+                                                </td>
+                                                <td className="px-4 py-3 text-xs text-center">
+                                                    <Badge className="bg-slate-700 text-slate-300">
+                                                        {row.contractType}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-right text-slate-400">
+                                                    {row.hourlyRate}€
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-right text-slate-300">
                                                     {row.totalHours}h
@@ -262,11 +281,19 @@ export default function Reports() {
                                                         {row.pendingHours}h
                                                     </Badge>
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-right text-slate-400">
-                                                    {row.entryCount}
+                                                <td className="px-4 py-3 text-sm text-right font-semibold text-amber-400">
+                                                    {row.estimatedSalary}€
                                                 </td>
                                             </tr>
                                         ))}
+                                        <tr className="bg-slate-900/50 font-semibold">
+                                            <td colSpan="6" className="px-4 py-3 text-sm text-right text-white">
+                                                Gesamtsumme (genehmigte Stunden):
+                                            </td>
+                                            <td className="px-4 py-3 text-sm text-right text-amber-400 font-bold">
+                                                {hoursByEmployee.reduce((sum, row) => sum + parseFloat(row.estimatedSalary), 0).toFixed(2)}€
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>

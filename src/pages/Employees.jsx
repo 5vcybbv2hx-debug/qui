@@ -39,6 +39,8 @@ export default function Employees() {
         employee_number: '',
         name: '',
         role: 'Barkeeper',
+        contract_type: '',
+        hourly_rate: '',
         color: COLORS[0],
         phone: '',
         email: '',
@@ -92,6 +94,8 @@ export default function Employees() {
                 employee_number: employee.employee_number || '',
                 name: employee.name,
                 role: employee.role,
+                contract_type: employee.contract_type || '',
+                hourly_rate: employee.hourly_rate || '',
                 color: employee.color || COLORS[0],
                 phone: employee.phone || '',
                 email: employee.email || '',
@@ -110,6 +114,8 @@ export default function Employees() {
                 employee_number: '',
                 name: '',
                 role: 'Barkeeper',
+                contract_type: '',
+                hourly_rate: '',
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
                 phone: '',
                 email: '',
@@ -459,6 +465,33 @@ export default function Employees() {
                                         <SelectItem value="Aushilfe">Aushilfe</SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <Label>Vertragsart</Label>
+                                    <Select value={formData.contract_type} onValueChange={(v) => setFormData({ ...formData, contract_type: v })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Wählen..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Vollzeit">Vollzeit</SelectItem>
+                                            <SelectItem value="Teilzeit">Teilzeit</SelectItem>
+                                            <SelectItem value="Minijob">Minijob</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Stundensatz (€)</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.hourly_rate}
+                                        onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
+                                        placeholder="z.B. 13.50"
+                                    />
+                                </div>
                             </div>
 
                             <div className="space-y-2">

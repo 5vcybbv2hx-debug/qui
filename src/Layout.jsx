@@ -11,6 +11,7 @@ const navigation = [
     { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
     { name: 'Analyse', page: 'ShiftAnalytics', icon: Calendar, permission: 'canViewShifts' },
     { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
+    { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
     { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
     { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },
     { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },

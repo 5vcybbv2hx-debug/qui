@@ -12,6 +12,7 @@ import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
+import Reports from './pages/Reports';
 import __Layout from './Layout.jsx';
 
 
@@ -30,6 +31,7 @@ export const PAGES = {
     "Shopping": Shopping,
     "TimeTracking": TimeTracking,
     "Todos": Todos,
+    "Reports": Reports,
 }
 
 export const pagesConfig = {

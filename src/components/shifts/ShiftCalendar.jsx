@@ -1,15 +1,35 @@
 import React, { useState } from 'react';
-import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { format, startOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, isSameDay, isSameMonth, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, AlertTriangle, Palmtree } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Palmtree } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export default function ShiftCalendar({ shifts, employees, requirements = [], vacationRequests = [], onAddShift, onSelectShift, selectedDate, setSelectedDate }) {
-    const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
+    const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [draggedShift, setDraggedShift] = useState(null);
+
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    // Generate calendar days based on view mode
+    const calendarDays = viewMode === 'week'
+        ? Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+        : (() => {
+            const monthStart = startOfMonth(currentDate);
+            const monthEnd = endOfMonth(currentDate);
+            const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+            const calEnd = addDays(startOfWeek(monthEnd, { weekStartsOn: 1 }), 6);
+            
+            const days = [];
+            let day = calStart;
+            while (day <= calEnd) {
+                days.push(day);
+                day = addDays(day, 1);
+            }
+            return days;
+        })();
     
     const getShiftsForDay = (date) => {
         return shifts.filter(shift => isSameDay(new Date(shift.date), date));
@@ -39,6 +59,41 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], va
         return totalRequired;
     };
 
+    const handleNavigation = (direction) => {
+        if (viewMode === 'week') {
+            setCurrentDate(addWeeks(currentDate, direction));
+        } else {
+            setCurrentDate(addMonths(currentDate, direction));
+        }
+    };
+
+    const handleDragStart = (e, shift) => {
+        setDraggedShift(shift);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = (e, targetDate) => {
+        e.preventDefault();
+        if (draggedShift && onShiftMove) {
+            const currentDate = new Date(draggedShift.date);
+            const newDate = startOfDay(targetDate);
+            
+            if (!isSameDay(currentDate, newDate)) {
+                onShiftMove(draggedShift.id, newDate);
+            }
+        }
+        setDraggedShift(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedShift(null);
+    };
+
     return (
         <div className="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 overflow-hidden">
             {/* Header */}
@@ -46,18 +101,29 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], va
                 <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => setWeekStart(addDays(weekStart, -7))}
+                    onClick={() => handleNavigation(-1)}
                     className="hover:bg-slate-700 text-slate-300"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </Button>
-                <h3 className="font-semibold text-white text-sm sm:text-base">
-                    {format(weekStart, 'MMMM yyyy', { locale: de })}
-                </h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-white text-sm sm:text-base">
+                        {format(currentDate, viewMode === 'week' ? 'MMMM yyyy' : 'MMMM yyyy', { locale: de })}
+                    </h3>
+                    <Button
+                        variant={viewMode === 'week' ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setViewMode(viewMode === 'week' ? 'month' : 'week')}
+                        className="text-xs"
+                    >
+                        <CalendarIcon className="w-3 h-3 mr-1" />
+                        {viewMode === 'week' ? 'Monat' : 'Woche'}
+                    </Button>
+                </div>
                 <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => setWeekStart(addDays(weekStart, 7))}
+                    onClick={() => handleNavigation(1)}
                     className="hover:bg-slate-700 text-slate-300"
                 >
                     <ChevronRight className="w-5 h-5" />
@@ -65,13 +131,17 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], va
             </div>
 
             {/* Calendar Grid */}
-            <div className="grid grid-cols-7 divide-x divide-slate-700">
-                {weekDays.map((day, idx) => {
+            <div className={cn(
+                "grid divide-x divide-slate-700",
+                viewMode === 'week' ? "grid-cols-7" : "grid-cols-7"
+            )}>
+                {calendarDays.map((day, idx) => {
                     const dayShifts = getShiftsForDay(day);
                     const isToday = isSameDay(day, new Date());
                     const isSelected = selectedDate && isSameDay(day, selectedDate);
                     const required = getDayRequirement(day);
                     const understaffed = required && dayShifts.length < required;
+                    const isCurrentMonth = viewMode === 'month' ? isSameMonth(day, currentDate) : true;
                     
                     // Check for vacations
                     const dateStr = format(day, 'yyyy-MM-dd');
@@ -85,12 +155,16 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], va
                         <div 
                             key={idx} 
                             className={cn(
-                                "min-h-[120px] sm:min-h-[140px] p-2 cursor-pointer transition-colors",
+                                "p-2 cursor-pointer transition-colors",
+                                viewMode === 'week' ? "min-h-[120px] sm:min-h-[140px]" : "min-h-[80px] sm:min-h-[100px]",
                                 isToday && "bg-amber-900/20",
                                 isSelected && "bg-slate-700",
-                                understaffed && "border-l-2 border-red-500"
+                                understaffed && "border-l-2 border-red-500",
+                                !isCurrentMonth && "opacity-40"
                             )}
                             onClick={() => setSelectedDate(day)}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, day)}
                         >
                             {/* Day Header */}
                             <div className="text-center mb-2">
@@ -120,25 +194,31 @@ export default function ShiftCalendar({ shifts, employees, requirements = [], va
                             
                             {/* Shifts */}
                             <div className="space-y-1">
-                                {dayShifts.slice(0, 3).map((shift) => (
+                                {dayShifts.slice(0, viewMode === 'week' ? 3 : 2).map((shift) => (
                                     <div
                                         key={shift.id}
+                                        draggable
+                                        onDragStart={(e) => handleDragStart(e, shift)}
+                                        onDragEnd={handleDragEnd}
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onSelectShift(shift);
                                         }}
-                                        className="px-2 py-1 rounded-lg text-[10px] sm:text-xs font-medium truncate hover:opacity-80 transition-opacity"
+                                        className={cn(
+                                            "px-2 py-1 rounded-lg text-[10px] sm:text-xs font-medium truncate hover:opacity-80 transition-opacity cursor-move",
+                                            draggedShift?.id === shift.id && "opacity-50"
+                                        )}
                                         style={{ 
                                             backgroundColor: `${getEmployeeColor(shift.employee_id)}20`,
                                             color: getEmployeeColor(shift.employee_id)
                                         }}
                                     >
-                                        {shift.employee_name}
+                                        {viewMode === 'week' ? shift.employee_name : shift.employee_name.split(' ')[0]}
                                     </div>
                                 ))}
-                                {dayShifts.length > 3 && (
+                                {dayShifts.length > (viewMode === 'week' ? 3 : 2) && (
                                     <p className="text-[10px] text-slate-400 text-center">
-                                        +{dayShifts.length - 3} mehr
+                                        +{dayShifts.length - (viewMode === 'week' ? 3 : 2)} mehr
                                     </p>
                                 )}
                                 

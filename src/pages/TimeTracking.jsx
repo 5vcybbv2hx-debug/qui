@@ -24,6 +24,7 @@ export default function TimeTracking() {
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [currentEmployee, setCurrentEmployee] = useState(null);
+    const [activeShift, setActiveShift] = useState(null);
 
     useEffect(() => {
         const loadEmployee = async () => {
@@ -34,6 +35,18 @@ export default function TimeTracking() {
             });
             if (employees[0]) {
                 setCurrentEmployee(employees[0]);
+                // Prüfe ob eine aktive Schicht läuft
+                const today = format(new Date(), 'yyyy-MM-dd');
+                const allEntries = await base44.entities.TimeEntry.list('-created_date');
+                const todayDraft = allEntries.find(e => 
+                    e.employee_id === employees[0].id && 
+                    e.date === today && 
+                    e.status === 'entwurf' &&
+                    !e.end_time
+                );
+                if (todayDraft) {
+                    setActiveShift(todayDraft);
+                }
             }
         };
         loadEmployee();
@@ -94,8 +107,54 @@ export default function TimeTracking() {
     };
 
     const canEdit = (entry) => {
-        if (permissions.isManager) return true;
-        return entry.employee_id === currentEmployee?.id && entry.status === 'entwurf';
+        // Nur Admins dürfen bearbeiten
+        return permissions.isManager;
+    };
+
+    const handleStartShift = async () => {
+        if (!currentEmployee) return;
+        
+        const now = new Date();
+        const newEntry = {
+            employee_id: currentEmployee.id,
+            employee_name: currentEmployee.name,
+            date: format(now, 'yyyy-MM-dd'),
+            start_time: format(now, 'HH:mm'),
+            end_time: '',
+            break_minutes: 0,
+            notes: '',
+            status: 'entwurf',
+            total_hours: 0
+        };
+        
+        const created = await createMutation.mutateAsync(newEntry);
+        setActiveShift(created);
+    };
+
+    const handleEndShift = async () => {
+        if (!activeShift) return;
+        
+        const now = new Date();
+        const endTime = format(now, 'HH:mm');
+        
+        // Berechne Stunden
+        const [startH, startM] = activeShift.start_time.split(':').map(Number);
+        const [endH, endM] = endTime.split(':').map(Number);
+        let totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+        if (totalMinutes < 0) totalMinutes += 24 * 60;
+        const totalHours = totalMinutes / 60;
+        
+        await updateMutation.mutateAsync({
+            id: activeShift.id,
+            data: {
+                ...activeShift,
+                end_time: endTime,
+                total_hours: totalHours,
+                status: 'eingereicht' // Automatisch eingereicht
+            }
+        });
+        
+        setActiveShift(null);
     };
 
     // Filter entries based on permissions
@@ -151,17 +210,60 @@ export default function TimeTracking() {
                     </div>
                 </Card>
 
-                {/* Add Entry Button */}
-                <Button 
-                    onClick={() => {
-                        setSelectedEntry(null);
-                        setModalOpen(true);
-                    }}
-                    className="bg-amber-600 hover:bg-amber-700 mb-6 w-full sm:w-auto"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Neue Zeiterfassung
-                </Button>
+                {/* Clock In/Out Buttons */}
+                {!permissions.isManager && currentEmployee && (
+                    <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 mb-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold text-white mb-1">Zeiterfassung</h3>
+                                {activeShift ? (
+                                    <div className="text-sm text-slate-400">
+                                        Gestartet um {activeShift.start_time} Uhr
+                                        <span className="ml-2 inline-flex items-center gap-1 text-green-400">
+                                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                                            Aktiv
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-slate-400">Starte deine Schicht</p>
+                                )}
+                            </div>
+                            {activeShift ? (
+                                <Button 
+                                    onClick={handleEndShift}
+                                    size="lg"
+                                    className="bg-red-600 hover:bg-red-700"
+                                >
+                                    <Clock className="w-5 h-5 mr-2" />
+                                    Schicht beenden
+                                </Button>
+                            ) : (
+                                <Button 
+                                    onClick={handleStartShift}
+                                    size="lg"
+                                    className="bg-green-600 hover:bg-green-700"
+                                >
+                                    <Clock className="w-5 h-5 mr-2" />
+                                    Schicht starten
+                                </Button>
+                            )}
+                        </div>
+                    </Card>
+                )}
+
+                {/* Add Entry Button - nur für Admins */}
+                {permissions.isManager && (
+                    <Button 
+                        onClick={() => {
+                            setSelectedEntry(null);
+                            setModalOpen(true);
+                        }}
+                        className="bg-amber-600 hover:bg-amber-700 mb-6 w-full sm:w-auto"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Neue Zeiterfassung
+                    </Button>
+                )}
 
                 {/* Entries by Employee */}
                 <div className="space-y-6">

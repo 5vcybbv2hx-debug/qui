@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, parseISO, startOfWeek, endOfWeek, startOfDay, endOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check } from 'lucide-react';
+import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, TrendingUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -105,6 +105,11 @@ export default function TimeTracking() {
     });
 
     const handleSave = (data, id) => {
+        // Wenn ein Mitarbeiter bearbeitet, Status auf "entwurf" zurücksetzen
+        if (id && !permissions.isManager) {
+            data = { ...data, status: 'entwurf' };
+        }
+        
         if (id) {
             updateMutation.mutate({ id, data });
         } else {
@@ -132,8 +137,10 @@ export default function TimeTracking() {
     };
 
     const canEdit = (entry) => {
-        // Nur Admins dürfen bearbeiten
-        return permissions.isManager;
+        // Manager können immer bearbeiten, Mitarbeiter nur ihre eigenen Einträge im Entwurf oder eingereicht Status
+        if (permissions.isManager) return true;
+        if (entry.employee_id === currentEmployee?.id && entry.status !== 'genehmigt') return true;
+        return false;
     };
 
     const handleStartShift = async () => {
@@ -191,6 +198,23 @@ export default function TimeTracking() {
     const totalHours = visibleEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
     const approvedHours = visibleEntries.filter(e => e.status === 'genehmigt').reduce((sum, e) => sum + (e.total_hours || 0), 0);
 
+    // Calculate daily, weekly, and monthly stats
+    const now = new Date();
+    const todayStr = format(now, 'yyyy-MM-dd');
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+    
+    const todayHours = visibleEntries
+        .filter(e => e.date === todayStr)
+        .reduce((sum, e) => sum + (e.total_hours || 0), 0);
+    
+    const weekHours = visibleEntries
+        .filter(e => {
+            const entryDate = parseISO(e.date);
+            return entryDate >= weekStart && entryDate <= weekEnd;
+        })
+        .reduce((sum, e) => sum + (e.total_hours || 0), 0);
+
     // Group by employee
     const entriesByEmployee = visibleEntries.reduce((groups, entry) => {
         if (!groups[entry.employee_name]) {
@@ -209,6 +233,40 @@ export default function TimeTracking() {
                     <p className="text-slate-400 text-sm mt-1">
                         {format(selectedMonth, 'MMMM yyyy', { locale: de })} · {totalHours.toFixed(2)}h gesamt · {approvedHours.toFixed(2)}h genehmigt
                     </p>
+                </div>
+
+                {/* Stats Overview */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <Card className="p-4 bg-gradient-to-br from-blue-900/40 to-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs text-slate-400 mb-1">Heute</p>
+                                <p className="text-2xl font-bold text-white">{todayHours.toFixed(1)}h</p>
+                            </div>
+                            <TrendingUp className="w-8 h-8 text-blue-400 opacity-50" />
+                        </div>
+                    </Card>
+
+                    <Card className="p-4 bg-gradient-to-br from-purple-900/40 to-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs text-slate-400 mb-1">Diese Woche</p>
+                                <p className="text-2xl font-bold text-white">{weekHours.toFixed(1)}h</p>
+                            </div>
+                            <Calendar className="w-8 h-8 text-purple-400 opacity-50" />
+                        </div>
+                    </Card>
+
+                    <Card className="p-4 bg-gradient-to-br from-amber-900/40 to-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-xs text-slate-400 mb-1">Dieser Monat</p>
+                                <p className="text-2xl font-bold text-white">{totalHours.toFixed(1)}h</p>
+                                <p className="text-xs text-green-400 mt-0.5">{approvedHours.toFixed(1)}h genehmigt</p>
+                            </div>
+                            <CheckCircle2 className="w-8 h-8 text-amber-400 opacity-50" />
+                        </div>
+                    </Card>
                 </div>
 
                 {/* Month Selector */}
@@ -349,7 +407,7 @@ export default function TimeTracking() {
                                                         </div>
                                                         {canEdit(entry) && (
                                                             <div className="flex gap-1">
-                                                                {entry.status !== 'genehmigt' && (
+                                                                {permissions.isManager && entry.status !== 'genehmigt' && (
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
@@ -368,17 +426,20 @@ export default function TimeTracking() {
                                                                         setModalOpen(true);
                                                                     }}
                                                                     className="text-slate-400 hover:text-white"
+                                                                    title={!permissions.isManager && entry.status !== 'entwurf' ? 'Bearbeiten setzt Status zurück auf Entwurf' : 'Bearbeiten'}
                                                                 >
                                                                     <Pencil className="w-4 h-4" />
                                                                 </Button>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    onClick={() => handleDelete(entry.id)}
-                                                                    className="text-red-400 hover:text-red-300"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </Button>
+                                                                {permissions.isManager && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={() => handleDelete(entry.id)}
+                                                                        className="text-red-400 hover:text-red-300"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>

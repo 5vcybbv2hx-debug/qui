@@ -80,15 +80,18 @@ export default function Reports() {
         };
     }).filter(e => e.totalShifts > 0);
 
-    // Overtime calculation (placeholder for future)
+    // Overtime calculation
     const overtimeData = employees.map(emp => {
         const empEntries = monthTimeEntries.filter(e => e.employee_id === emp.id);
         const totalHours = empEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
-        const expectedHours = 160; // Beispiel: 160h pro Monat
+        
+        // Minijobs haben 43h/Monat, andere 160h
+        const expectedHours = emp.contract_type === 'Minijob' ? 43 : 160;
         const overtime = totalHours - expectedHours;
 
         return {
             employee: emp.name,
+            contractType: emp.contract_type || '-',
             totalHours: totalHours.toFixed(2),
             expectedHours: expectedHours.toFixed(2),
             overtime: overtime.toFixed(2)
@@ -418,7 +421,7 @@ export default function Reports() {
                             </div>
                             <div className="p-4 bg-blue-900/20 border-b border-slate-700">
                                 <p className="text-sm text-blue-300">
-                                    ℹ️ Diese Auswertung verwendet 160 Stunden als Referenz. Konfiguriere individuelle Sollstunden für präzisere Berechnungen.
+                                    ℹ️ Minijobs: 43 Stunden/Monat | Vollzeit/Teilzeit: 160 Stunden/Monat
                                 </p>
                             </div>
                             <div className="overflow-x-auto">
@@ -427,6 +430,9 @@ export default function Reports() {
                                         <tr>
                                             <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                                                 Mitarbeiter
+                                            </th>
+                                            <th className="px-4 py-3 text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+                                                Vertrag
                                             </th>
                                             <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
                                                 Gearbeitet
@@ -446,6 +452,11 @@ export default function Reports() {
                                                 <tr key={i} className="hover:bg-slate-700/50 transition-colors">
                                                     <td className="px-4 py-3 text-sm font-medium text-white">
                                                         {row.employee}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-xs text-center">
+                                                        <Badge className="bg-slate-700 text-slate-300">
+                                                            {row.contractType}
+                                                        </Badge>
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-right text-slate-300">
                                                         {row.totalHours}h

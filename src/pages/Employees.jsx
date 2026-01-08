@@ -23,6 +23,11 @@ const COLORS = [
     '#d946ef', '#ec4899', '#f43f5e', '#64748b'
 ];
 
+const HOURLY_RATES = {
+    FULLTIME: 13.50, // Vollzeit/Teilzeit Standard
+    MINIJOB: 12.41   // Minijob Standard (Mindestlohn 2024)
+};
+
 const roleColors = {
     'Barkeeper': 'bg-amber-100 text-amber-700',
     'Servicekraft': 'bg-blue-100 text-blue-700',
@@ -131,7 +136,7 @@ export default function Employees() {
                 name: '',
                 role: 'Barkeeper',
                 contract_type: '',
-                hourly_rate: '',
+                hourly_rate: HOURLY_RATES.FULLTIME, // Standard für Vollzeit
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
                 phone: '',
                 email: '',
@@ -514,7 +519,18 @@ export default function Employees() {
                                 <div className="space-y-2">
                                     <Label>Vertragsart</Label>
                                     {permissions.isAdmin ? (
-                                        <Select value={formData.contract_type} onValueChange={(v) => setFormData({ ...formData, contract_type: v })}>
+                                        <Select 
+                                            value={formData.contract_type} 
+                                            onValueChange={(v) => {
+                                                // Setze Standardsatz basierend auf Vertragsart
+                                                const newRate = v === 'Minijob' ? HOURLY_RATES.MINIJOB : HOURLY_RATES.FULLTIME;
+                                                setFormData({ 
+                                                    ...formData, 
+                                                    contract_type: v,
+                                                    hourly_rate: selectedEmployee ? formData.hourly_rate : newRate
+                                                });
+                                            }}
+                                        >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Wählen..." />
                                             </SelectTrigger>
@@ -544,6 +560,11 @@ export default function Employees() {
                                         disabled={!permissions.isAdmin}
                                         className={!permissions.isAdmin ? "bg-slate-700 text-slate-400" : ""}
                                     />
+                                    {permissions.isAdmin && (
+                                        <p className="text-xs text-slate-500">
+                                            Standard: Vollzeit/Teilzeit {HOURLY_RATES.FULLTIME}€ • Minijob {HOURLY_RATES.MINIJOB}€
+                                        </p>
+                                    )}
                                 </div>
                                 </div>
 

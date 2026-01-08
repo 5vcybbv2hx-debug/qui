@@ -500,6 +500,8 @@ export default function Employees() {
                                     value={formData.employee_number}
                                     onChange={(e) => setFormData({ ...formData, employee_number: e.target.value })}
                                     placeholder="z.B. MA-001"
+                                    disabled={!permissions.isAdmin}
+                                    className={!permissions.isAdmin ? "bg-slate-700 text-slate-400" : ""}
                                 />
                             </div>
 

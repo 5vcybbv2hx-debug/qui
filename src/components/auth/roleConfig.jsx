@@ -126,6 +126,12 @@ export const PERMISSIONS = {
     VIEW_ANALYTICS: {
         roles: [ROLES.ADMIN, ROLES.MANAGER],
         description: 'Analysen ansehen'
+    },
+    
+    // Preiskalkulation
+    VIEW_PRICE_CALCULATOR: {
+        roles: [ROLES.ADMIN],
+        description: 'Preiskalkulation ansehen'
     }
 };
 

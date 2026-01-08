@@ -19,7 +19,7 @@ const navigation = [
     { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
     { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },
     { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
-    { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewDashboard' },
+    { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
     { name: 'Artikel', page: 'Articles', icon: Package, permission: 'canEditShopping' },
     { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
     { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },

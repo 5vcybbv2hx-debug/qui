@@ -83,6 +83,7 @@ export function usePermissions() {
                     canViewRecipes: hasPermission(userRole, employeeRole, 'VIEW_RECIPES'),
                     canEditRecipes: hasPermission(userRole, employeeRole, 'EDIT_RECIPES'),
                     canViewAnalytics: hasPermission(userRole, employeeRole, 'VIEW_ANALYTICS'),
+                    canViewPriceCalculator: hasPermission(userRole, employeeRole, 'VIEW_PRICE_CALCULATOR'),
                 });
             } catch (error) {
                 console.error('Error loading permissions:', error);

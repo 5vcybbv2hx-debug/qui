@@ -320,20 +320,22 @@ export default function Dashboard() {
                         {todayShifts.length > 0 ? (
                             <div className="space-y-2">
                                 {todayShifts.slice(0, 4).map(shift => (
-                                    <div key={shift.id} className="flex items-center gap-3 p-3 bg-slate-900 rounded-lg">
-                                        <div 
-                                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-                                            style={{ backgroundColor: shift.color || '#64748b' }}
-                                        >
-                                            {shift.employee_name?.charAt(0)}
+                                    <Link to={createPageUrl('Shifts')} key={shift.id}>
+                                        <div className="flex items-center gap-3 p-3 bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer">
+                                            <div 
+                                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+                                                style={{ backgroundColor: shift.color || '#64748b' }}
+                                            >
+                                                {shift.employee_name?.charAt(0)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-white truncate">{shift.employee_name}</p>
+                                                <p className="text-xs text-slate-400">
+                                                    {shift.start_time} - {shift.end_time}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-white truncate">{shift.employee_name}</p>
-                                            <p className="text-xs text-slate-400">
-                                                {shift.start_time} - {shift.end_time}
-                                            </p>
-                                        </div>
-                                    </div>
+                                    </Link>
                                 ))}
                                 {todayReservations.length > 0 && (
                                     <div className="pt-2 border-t border-slate-700">

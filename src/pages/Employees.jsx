@@ -687,6 +687,7 @@ export default function Employees() {
                                                 <SelectItem value="L">L</SelectItem>
                                                 <SelectItem value="XL">XL</SelectItem>
                                                 <SelectItem value="XXL">XXL</SelectItem>
+                                                <SelectItem value="XXXL">XXXL</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -704,6 +705,7 @@ export default function Employees() {
                                                 <SelectItem value="L">L</SelectItem>
                                                 <SelectItem value="XL">XL</SelectItem>
                                                 <SelectItem value="XXL">XXL</SelectItem>
+                                                <SelectItem value="XXXL">XXXL</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>

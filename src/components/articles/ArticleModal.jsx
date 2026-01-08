@@ -1,21 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Camera } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
+import { Camera, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 
 export default function ArticleModal({ open, onClose, article, onSave }) {
+    const { data: categories = [] } = useQuery({
+        queryKey: ['article-categories'],
+        queryFn: () => base44.entities.ArticleCategory.list('order')
+    });
+
     const [scannerOpen, setScannerOpen] = useState(false);
+    const [newSupplier, setNewSupplier] = useState('');
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
         category: '',
-        supplier: '',
+        suppliers: [],
         unit: '',
+        quantity: '',
         purchase_price: '',
         current_stock: '',
         min_stock: '',
@@ -28,8 +38,9 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 barcode: article.barcode || '',
                 name: article.name || '',
                 category: article.category || '',
-                supplier: article.supplier || '',
+                suppliers: article.suppliers || [],
                 unit: article.unit || '',
+                quantity: article.quantity || '',
                 purchase_price: article.purchase_price || '',
                 current_stock: article.current_stock || '',
                 min_stock: article.min_stock || '',
@@ -40,14 +51,16 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 barcode: '',
                 name: '',
                 category: '',
-                supplier: '',
+                suppliers: [],
                 unit: '',
+                quantity: '',
                 purchase_price: '',
                 current_stock: '',
                 min_stock: '',
                 notes: ''
             });
         }
+        setNewSupplier('');
     }, [article, open]);
 
     const handleSubmit = (e) => {
@@ -55,6 +68,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         
         const dataToSave = {
             ...formData,
+            quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
             purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
             current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
@@ -68,9 +82,26 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         setScannerOpen(false);
     };
 
+    const addSupplier = () => {
+        if (newSupplier.trim() && !formData.suppliers.includes(newSupplier.trim())) {
+            setFormData({
+                ...formData,
+                suppliers: [...formData.suppliers, newSupplier.trim()]
+            });
+            setNewSupplier('');
+        }
+    };
+
+    const removeSupplier = (supplier) => {
+        setFormData({
+            ...formData,
+            suppliers: formData.suppliers.filter(s => s !== supplier)
+        });
+    };
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{article?.id ? 'Artikel bearbeiten' : 'Neuer Artikel'}</DialogTitle>
                 </DialogHeader>
@@ -106,64 +137,77 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                         />
                     </div>
 
+                    <div className="space-y-2">
+                        <Label>Kategorie</Label>
+                        <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Kategorie wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.name}>
+                                        <div className="flex items-center gap-2">
+                                            <div 
+                                                className="w-3 h-3 rounded-full"
+                                                style={{ backgroundColor: cat.color }}
+                                            />
+                                            {cat.name}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Lieferanten</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                value={newSupplier}
+                                onChange={(e) => setNewSupplier(e.target.value)}
+                                placeholder="Lieferant hinzufügen..."
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSupplier())}
+                            />
+                            <Button type="button" onClick={addSupplier} variant="outline">+</Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {formData.suppliers.map(supplier => (
+                                <Badge key={supplier} variant="secondary" className="flex items-center gap-1">
+                                    {supplier}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeSupplier(supplier)}
+                                        className="ml-1 hover:text-red-600"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </Badge>
+                            ))}
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                            <Label>Kategorie</Label>
-                            <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Wählen..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Spirituosen">Spirituosen</SelectItem>
-                                    <SelectItem value="Bier">Bier</SelectItem>
-                                    <SelectItem value="Wein">Wein</SelectItem>
-                                    <SelectItem value="Softdrinks">Softdrinks</SelectItem>
-                                    <SelectItem value="Saft">Saft</SelectItem>
-                                    <SelectItem value="Energy">Energy</SelectItem>
-                                    <SelectItem value="Wasser">Wasser</SelectItem>
-                                    <SelectItem value="Snacks">Snacks</SelectItem>
-                                    <SelectItem value="Sonstiges">Sonstiges</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Label>Menge</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={formData.quantity}
+                                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                placeholder="z.B. 24"
+                            />
                         </div>
-
                         <div className="space-y-2">
-                            <Label>Lieferant</Label>
-                            <Select value={formData.supplier} onValueChange={(v) => setFormData({ ...formData, supplier: v })}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Wählen..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="C+C">C+C</SelectItem>
-                                    <SelectItem value="Metro">Metro</SelectItem>
-                                    <SelectItem value="Wein-Bauer">Wein-Bauer</SelectItem>
-                                    <SelectItem value="Mebold">Mebold</SelectItem>
-                                    <SelectItem value="Sonstiger">Sonstiger</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Label>Einheit</Label>
+                            <Input
+                                value={formData.unit}
+                                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                                placeholder="z.B. Flaschen"
+                            />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Einheit</Label>
-                        <Select value={formData.unit} onValueChange={(v) => setFormData({ ...formData, unit: v })}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Wählen..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Flasche">Flasche</SelectItem>
-                                <SelectItem value="Kiste">Kiste</SelectItem>
-                                <SelectItem value="Fass">Fass</SelectItem>
-                                <SelectItem value="Liter">Liter</SelectItem>
-                                <SelectItem value="Karton">Karton</SelectItem>
-                                <SelectItem value="Packung">Packung</SelectItem>
-                                <SelectItem value="Stück">Stück</SelectItem>
-                                <SelectItem value="kg">kg</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        </div>
-
-                        <div className="space-y-2">
                         <Label>Netto-Einkaufspreis (€)</Label>
                         <Input
                             type="number"
@@ -172,9 +216,9 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                             onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
                             placeholder="z.B. 12.50"
                         />
-                        </div>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
                             <Label>Aktueller Bestand</Label>
                             <Input
@@ -194,7 +238,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                 placeholder="z.B. 5"
                             />
                         </div>
-                        </div>
+                    </div>
 
                     <div className="space-y-2">
                         <Label>Notizen</Label>

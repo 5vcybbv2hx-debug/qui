@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -75,9 +75,9 @@ export default function Layout({ children, currentPageName }) {
                     </nav>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-slate-800">
+                    <div className="p-4 border-t border-slate-800 space-y-3">
                         {permissions.isManager && currentUser && (
-                            <div className="mb-3 flex justify-center">
+                            <div className="flex justify-center">
                                 <NotificationBell userEmail={currentUser.email} />
                             </div>
                         )}
@@ -87,6 +87,13 @@ export default function Layout({ children, currentPageName }) {
                                 {permissions.employeeRole || 'Alles im Griff'}
                             </p>
                         </div>
+                        <button
+                            onClick={() => base44.auth.logout()}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-sm"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Abmelden
+                        </button>
                     </div>
                 </div>
             </aside>
@@ -115,7 +122,7 @@ export default function Layout({ children, currentPageName }) {
 
                 {/* Mobile Menu */}
                 {mobileMenuOpen && (
-                    <div className="absolute top-full left-0 right-0 bg-slate-950 border-b border-slate-800 shadow-lg">
+                    <div className="absolute top-full left-0 right-0 bg-slate-950 border-b border-slate-800 shadow-lg max-h-[calc(100vh-60px)] overflow-y-auto">
                         <nav className="p-3 space-y-1">
                             {navigation.filter(item => permissions[item.permission]).map((item) => {
                                 const isActive = currentPageName === item.page;
@@ -128,7 +135,7 @@ export default function Layout({ children, currentPageName }) {
                                             "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium",
                                             isActive 
                                                 ? "bg-amber-600 text-white" 
-                                                : "text-slate-400 hover:bg-slate-800"
+                                                : "text-slate-400 hover:bg-slate-800 active:bg-slate-700"
                                         )}
                                     >
                                         <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
@@ -137,6 +144,18 @@ export default function Layout({ children, currentPageName }) {
                                 );
                             })}
                         </nav>
+                        <div className="p-3 border-t border-slate-800">
+                            <button
+                                onClick={() => {
+                                    base44.auth.logout();
+                                    setMobileMenuOpen(false);
+                                }}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium"
+                            >
+                                <LogOut className="w-5 h-5" />
+                                Abmelden
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

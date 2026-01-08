@@ -56,11 +56,11 @@ export const PERMISSIONS = {
     
     // Einkauf
     VIEW_SHOPPING: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
         description: 'Einkaufsliste ansehen'
     },
     EDIT_SHOPPING: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
         description: 'Einkaufsliste bearbeiten'
     },
     

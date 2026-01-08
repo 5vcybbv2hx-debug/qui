@@ -271,13 +271,25 @@ export default function Shopping() {
                                         <Card key={item.id} className="p-4 bg-white border-0 shadow-sm">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <h4 className="font-semibold text-slate-800">
-                                                            {item.item_name}
-                                                        </h4>
-                                                        <Badge className={cn("text-xs", categoryColors[item.category])}>
-                                                            {item.category}
-                                                        </Badge>
+                                                    <div className="flex items-start gap-3 mb-2">
+                                                        {(() => {
+                                                            const article = articles.find(a => a.name === item.item_name);
+                                                            return article?.image_url ? (
+                                                                <img 
+                                                                    src={article.image_url} 
+                                                                    alt={item.item_name}
+                                                                    className="w-16 h-16 object-cover rounded"
+                                                                />
+                                                            ) : null;
+                                                        })()}
+                                                        <div className="flex-1">
+                                                            <h4 className="font-semibold text-slate-800">
+                                                                {item.item_name}
+                                                            </h4>
+                                                            <Badge className={cn("text-xs mt-1", categoryColors[item.category])}>
+                                                                {item.category}
+                                                            </Badge>
+                                                        </div>
                                                     </div>
                                                     <div className="text-sm text-slate-600 mb-3">
                                                         <span className="font-semibold">{item.quantity}</span>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, X } from 'lucide-react';
+import { Camera, X, Upload, Image as ImageIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
 
     const [scannerOpen, setScannerOpen] = useState(false);
     const [newSupplier, setNewSupplier] = useState('');
+    const [uploading, setUploading] = useState(false);
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
@@ -29,6 +30,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         purchase_price: '',
         current_stock: '',
         min_stock: '',
+        image_url: '',
         notes: ''
     });
 
@@ -44,6 +46,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 purchase_price: article.purchase_price || '',
                 current_stock: article.current_stock || '',
                 min_stock: article.min_stock || '',
+                image_url: article.image_url || '',
                 notes: article.notes || ''
             });
         } else {
@@ -57,6 +60,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 purchase_price: '',
                 current_stock: '',
                 min_stock: '',
+                image_url: '',
                 notes: ''
             });
         }
@@ -97,6 +101,21 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
             ...formData,
             suppliers: formData.suppliers.filter(s => s !== supplier)
         });
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            setFormData({ ...formData, image_url: file_url });
+        } catch (error) {
+            alert('Fehler beim Hochladen: ' + error.message);
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
@@ -238,6 +257,45 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                 placeholder="z.B. 5"
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Artikelbild</Label>
+                        {formData.image_url ? (
+                            <div className="relative">
+                                <img 
+                                    src={formData.image_url} 
+                                    alt="Vorschau"
+                                    className="w-full h-32 object-cover rounded-lg"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-2 right-2"
+                                    onClick={() => setFormData({ ...formData, image_url: '' })}
+                                >
+                                    <X className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                    id="image-upload"
+                                    disabled={uploading}
+                                />
+                                <label htmlFor="image-upload" className="cursor-pointer">
+                                    <ImageIcon className="w-10 h-10 mx-auto mb-2 text-slate-400" />
+                                    <p className="text-sm text-slate-600">
+                                        {uploading ? 'Lädt hoch...' : 'Bild hochladen'}
+                                    </p>
+                                </label>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">

@@ -362,19 +362,21 @@ export default function Dashboard() {
                         {upcomingEvents.length > 0 ? (
                             <div className="space-y-2">
                                 {upcomingEvents.map(event => (
-                                    <div key={event.id} className="p-3 bg-slate-900 rounded-lg">
-                                        <p className="text-sm font-medium text-white">{event.title}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <p className="text-xs text-slate-400">
-                                                {format(parseISO(event.date), 'dd.MM.yyyy')}
-                                            </p>
-                                            {event.expected_guests && (
-                                                <span className="text-xs text-slate-500">
-                                                    • {event.expected_guests} Gäste
-                                                </span>
-                                            )}
+                                    <Link to={createPageUrl('Events')} key={event.id}>
+                                        <div className="p-3 bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors">
+                                            <p className="text-sm font-medium text-white">{event.title}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <p className="text-xs text-slate-400">
+                                                    {format(parseISO(event.date), 'dd.MM.yyyy')}
+                                                </p>
+                                                {event.expected_guests && (
+                                                    <span className="text-xs text-slate-500">
+                                                        • {event.expected_guests} Gäste
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         ) : (

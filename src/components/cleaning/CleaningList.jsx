@@ -1,5 +1,7 @@
 import React from 'react';
-import { Check, Clock, RotateCcw } from 'lucide-react';
+import { Check, Clock, RotateCcw, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -121,10 +123,15 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                                     {frequencyLabels[task.frequency]}
                                                 </span>
                                                 {task.is_completed && task.completed_by && (
-                                                    <span className="text-[10px] text-slate-500">
+                                                    <Link 
+                                                        to={createPageUrl('Employees')}
+                                                        className="text-[10px] text-slate-500 hover:text-amber-500 transition-colors flex items-center gap-1"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
                                                         • {task.completed_by.split(' ')[0]}
                                                         {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
-                                                    </span>
+                                                        <ExternalLink className="w-2 h-2" />
+                                                    </Link>
                                                 )}
                                             </div>
                                         </div>

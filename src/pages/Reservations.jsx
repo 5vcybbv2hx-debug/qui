@@ -3,7 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isSameDay, startOfWeek, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Calendar, Users, Phone, Mail, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Plus, Calendar, Users, Phone, Mail, ChevronLeft, ChevronRight, Download, PartyPopper } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -26,6 +28,11 @@ export default function Reservations() {
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
         queryFn: () => base44.entities.Reservation.list('-date', 200)
+    });
+
+    const { data: events = [] } = useQuery({
+        queryKey: ['events'],
+        queryFn: () => base44.entities.Event.list('-date', 50)
     });
 
     const createMutation = useMutation({
@@ -126,6 +133,10 @@ export default function Reservations() {
 
     const selectedDateReservations = getReservationsForDay(selectedDate)
         .sort((a, b) => a.time.localeCompare(b.time));
+
+    const selectedDateEvents = events.filter(e => 
+        isSameDay(new Date(e.date), selectedDate) && e.status !== 'abgesagt'
+    );
 
     const statusColors = {
         'vorgemerkt': 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -239,6 +250,26 @@ export default function Reservations() {
                         })}
                     </div>
                 </Card>
+
+                {/* Selected Date Events */}
+                {selectedDateEvents.length > 0 && (
+                    <Card className="p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-700/50 mb-4">
+                        <div className="flex items-center gap-3">
+                            <PartyPopper className="w-5 h-5 text-purple-400" />
+                            <div className="flex-1">
+                                <p className="font-semibold text-white">Event: {selectedDateEvents[0].title}</p>
+                                <p className="text-sm text-purple-300">
+                                    {selectedDateEvents[0].expected_guests && `${selectedDateEvents[0].expected_guests} erwartete Gäste`}
+                                </p>
+                            </div>
+                            <Link to={createPageUrl('Events')}>
+                                <Button variant="outline" size="sm" className="border-purple-600 text-purple-300 hover:bg-purple-900/30">
+                                    Details
+                                </Button>
+                            </Link>
+                        </div>
+                    </Card>
+                )}
 
                 {/* Selected Date Details */}
                 <Card className="p-6 bg-white border-0 shadow-sm">

@@ -14,6 +14,7 @@ const navigation = [
     { name: 'Kalenderintegration', page: 'CalendarIntegration', icon: Calendar, permission: 'canViewDashboard' },
     { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
     { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },
+    { name: 'Budget', page: 'Budget', icon: TrendingUp, permission: 'canViewAnalytics' },
     { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
     { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
     { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },

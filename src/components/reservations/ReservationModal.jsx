@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format } from 'date-fns';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { format, isSameDay } from 'date-fns';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 
 export default function ReservationModal({ open, onClose, reservation, selectedDate, onSave, onDelete }) {
     const [formData, setFormData] = useState({
@@ -20,6 +23,16 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
         notes: '',
         status: 'vorgemerkt'
     });
+
+    const { data: events = [] } = useQuery({
+        queryKey: ['events'],
+        queryFn: () => base44.entities.Event.list('-date', 50),
+        enabled: open
+    });
+
+    const hasEventOnDate = formData.date && events.some(e => 
+        isSameDay(new Date(e.date), new Date(formData.date)) && e.status !== 'abgesagt'
+    );
 
     useEffect(() => {
         if (reservation) {
@@ -52,6 +65,9 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (hasEventOnDate) {
+            return;
+        }
         onSave(formData, reservation?.id);
     };
 
@@ -65,6 +81,15 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
                 </DialogHeader>
                 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                    {hasEventOnDate && (
+                        <Alert className="bg-red-50 border-red-200">
+                            <AlertCircle className="w-4 h-4 text-red-600" />
+                            <AlertDescription className="text-red-800">
+                                An diesem Tag findet ein Event statt. Reservierungen können nicht angenommen werden.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     <div className="space-y-2">
                         <Label>Name *</Label>
                         <Input
@@ -72,6 +97,7 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
                             onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
                             placeholder="Name des Gastes"
                             required
+                            disabled={hasEventOnDate}
                         />
                     </div>
 
@@ -177,7 +203,11 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
                         <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                             Abbrechen
                         </Button>
-                        <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
+                        <Button 
+                            type="submit" 
+                            className="flex-1 bg-slate-800 hover:bg-slate-900"
+                            disabled={hasEventOnDate}
+                        >
                             {reservation ? 'Speichern' : 'Hinzufügen'}
                         </Button>
                     </div>

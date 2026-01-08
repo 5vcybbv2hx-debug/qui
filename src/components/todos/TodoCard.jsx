@@ -23,7 +23,7 @@ const categoryColors = {
     'Sonstiges': 'bg-slate-100 text-slate-700'
 };
 
-export default function TodoCard({ todo, onStatusChange, onEdit, onDelete }) {
+export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArchive, showArchiveButton }) {
     const priority = priorityConfig[todo.priority] || priorityConfig['mittel'];
     const isCompleted = todo.status === 'erledigt';
     const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && !isCompleted;

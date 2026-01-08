@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Sparkles, RefreshCw } from 'lucide-react';
+import { Plus, Sparkles, RefreshCw, FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import AreasManager from '@/components/cleaning/AreasManager';
 export default function Cleaning() {
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
+    const [reportsModalOpen, setReportsModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         area: 'Theke',
@@ -35,6 +36,11 @@ export default function Cleaning() {
     const { data: allAreas = [] } = useQuery({
         queryKey: ['cleaning-areas'],
         queryFn: () => base44.entities.CleaningArea.list('order')
+    });
+
+    const { data: reports = [] } = useQuery({
+        queryKey: ['cleaning-reports'],
+        queryFn: () => base44.entities.CleaningReport.list('-created_date', 20)
     });
 
     // Filtere saisonale Bereiche (April-Oktober)
@@ -100,6 +106,41 @@ export default function Cleaning() {
         createMutation.mutate(formData);
     };
 
+    const generateWeeklyReport = async () => {
+        if (!confirm('Wochenbericht erstellen? Dies archiviert alle erledigten Aufgaben der letzten Woche.')) return;
+
+        const today = new Date();
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - 7);
+        
+        const completedTasks = tasks.filter(t => 
+            t.is_completed && 
+            t.completed_at && 
+            new Date(t.completed_at) >= weekStart
+        );
+
+        const reportData = completedTasks.map(task => ({
+            task_title: task.title,
+            area: task.area,
+            frequency: task.frequency,
+            completed_by: task.completed_by,
+            completed_at: task.completed_at
+        }));
+
+        const report = {
+            week_start: format(weekStart, 'yyyy-MM-dd'),
+            week_end: format(today, 'yyyy-MM-dd'),
+            report_data: reportData,
+            total_tasks: tasks.length,
+            completed_tasks: completedTasks.length,
+            completion_rate: tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0
+        };
+
+        await base44.entities.CleaningReport.create(report);
+        queryClient.invalidateQueries(['cleaning-reports']);
+        alert('Wochenbericht erstellt!');
+    };
+
     const completedCount = tasks.filter(t => t.is_completed).length;
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
@@ -115,6 +156,22 @@ export default function Cleaning() {
                         </p>
                     </div>
                     <div className="flex gap-2 flex-wrap">
+                        <Button 
+                            variant="outline"
+                            onClick={() => setReportsModalOpen(true)}
+                            className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                        >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Berichte
+                        </Button>
+                        <Button 
+                            variant="outline"
+                            onClick={generateWeeklyReport}
+                            className="text-green-300 border-green-600 hover:bg-green-900/20"
+                        >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Wochenbericht
+                        </Button>
                         <AreasManager />
                         <Button 
                             variant="outline"
@@ -225,6 +282,58 @@ export default function Cleaning() {
                                 </Button>
                             </div>
                         </form>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Reports Modal */}
+                <Dialog open={reportsModalOpen} onOpenChange={setReportsModalOpen}>
+                    <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Putzberichte</DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4 mt-4">
+                            {reports.length === 0 ? (
+                                <div className="text-center py-8 text-slate-500">
+                                    <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                    <p>Noch keine Berichte vorhanden</p>
+                                </div>
+                            ) : (
+                                reports.map(report => (
+                                    <div key={report.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div>
+                                                <h3 className="font-semibold text-slate-900">
+                                                    Woche vom {format(new Date(report.week_start), 'dd.MM.', { locale: de })} - {format(new Date(report.week_end), 'dd.MM.yyyy', { locale: de })}
+                                                </h3>
+                                                <p className="text-sm text-slate-600 mt-1">
+                                                    {report.completed_tasks} von {report.total_tasks} Aufgaben · {report.completion_rate}% erledigt
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        {report.report_data && report.report_data.length > 0 && (
+                                            <div className="space-y-2">
+                                                <p className="text-xs font-medium text-slate-700 uppercase tracking-wider">Erledigte Aufgaben:</p>
+                                                {report.report_data.map((task, idx) => (
+                                                    <div key={idx} className="text-sm text-slate-600 pl-3 border-l-2 border-slate-300">
+                                                        <span className="font-medium">{task.task_title}</span>
+                                                        {task.completed_by && (
+                                                            <span className="text-slate-500"> · {task.completed_by}</span>
+                                                        )}
+                                                        {task.completed_at && (
+                                                            <span className="text-xs text-slate-400 ml-1">
+                                                                ({format(new Date(task.completed_at), 'dd.MM. HH:mm', { locale: de })})
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </DialogContent>
                 </Dialog>
             </div>

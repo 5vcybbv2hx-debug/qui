@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Filter, CheckSquare } from 'lucide-react';
+import { Plus, Filter, CheckSquare, Archive } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,16 @@ export default function Todos() {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTodo, setSelectedTodo] = useState(null);
     const [filter, setFilter] = useState('offen');
+    const [showArchived, setShowArchived] = useState(false);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
+    });
+
+    const { data: user } = useQuery({
+        queryKey: ['current-user'],
+        queryFn: () => base44.auth.me()
     });
 
     const { data: todos = [], isLoading } = useQuery({
@@ -60,10 +66,27 @@ export default function Todos() {
     };
 
     const handleStatusChange = (todo, newStatus) => {
+        const updates = { ...todo, status: newStatus };
+        
+        // Wenn Status auf "erledigt" gesetzt wird, speichere wer und wann
+        if (newStatus === 'erledigt' && todo.status !== 'erledigt') {
+            updates.completed_by = user?.full_name || user?.email;
+            updates.completed_at = new Date().toISOString();
+        }
+        
         updateMutation.mutate({
             id: todo.id,
-            data: { ...todo, status: newStatus }
+            data: updates
         });
+    };
+
+    const handleArchive = (id) => {
+        if (confirm('Aufgabe archivieren?')) {
+            updateMutation.mutate({
+                id,
+                data: { is_archived: true }
+            });
+        }
     };
 
     const handleEdit = (todo) => {
@@ -77,15 +100,20 @@ export default function Todos() {
         }
     };
 
-    const filteredTodos = todos.filter(todo => {
+    const activeTodos = todos.filter(t => !t.is_archived);
+    const archivedTodos = todos.filter(t => t.is_archived);
+
+    const displayTodos = showArchived ? archivedTodos : activeTodos;
+
+    const filteredTodos = displayTodos.filter(todo => {
         if (filter === 'alle') return true;
         if (filter === 'offen') return todo.status !== 'erledigt';
         return todo.status === filter;
     });
 
-    const openCount = todos.filter(t => t.status === 'offen').length;
-    const inProgressCount = todos.filter(t => t.status === 'in_bearbeitung').length;
-    const doneCount = todos.filter(t => t.status === 'erledigt').length;
+    const openCount = activeTodos.filter(t => t.status === 'offen').length;
+    const inProgressCount = activeTodos.filter(t => t.status === 'in_bearbeitung').length;
+    const doneCount = activeTodos.filter(t => t.status === 'erledigt').length;
 
     if (!permissions.canViewTodos) {
         return <PermissionDenied message="Du hast keine Berechtigung, Aufgaben zu sehen." />;
@@ -116,15 +144,36 @@ export default function Todos() {
                     )}
                 </div>
 
+                {/* Archive Toggle */}
+                <div className="flex gap-2 mb-6">
+                    <Button
+                        variant={!showArchived ? "secondary" : "outline"}
+                        onClick={() => setShowArchived(false)}
+                        className="flex-1 border-slate-700"
+                    >
+                        Aktiv ({activeTodos.length})
+                    </Button>
+                    <Button
+                        variant={showArchived ? "secondary" : "outline"}
+                        onClick={() => setShowArchived(true)}
+                        className="flex-1 border-slate-700"
+                    >
+                        <Archive className="w-4 h-4 mr-2" />
+                        Archiv ({archivedTodos.length})
+                    </Button>
+                </div>
+
                 {/* Filter Tabs */}
-                <Tabs value={filter} onValueChange={setFilter} className="mb-6">
-                    <TabsList className="bg-slate-800 shadow-sm w-full grid grid-cols-4 border border-slate-700">
-                        <TabsTrigger value="offen" className="text-xs sm:text-sm">Offen ({openCount})</TabsTrigger>
-                        <TabsTrigger value="in_bearbeitung" className="text-xs sm:text-sm">In Arb. ({inProgressCount})</TabsTrigger>
-                        <TabsTrigger value="erledigt" className="text-xs sm:text-sm">Erledigt ({doneCount})</TabsTrigger>
-                        <TabsTrigger value="alle" className="text-xs sm:text-sm">Alle</TabsTrigger>
-                    </TabsList>
-                </Tabs>
+                {!showArchived && (
+                    <Tabs value={filter} onValueChange={setFilter} className="mb-6">
+                        <TabsList className="bg-slate-800 shadow-sm w-full grid grid-cols-4 border border-slate-700">
+                            <TabsTrigger value="offen" className="text-xs sm:text-sm">Offen ({openCount})</TabsTrigger>
+                            <TabsTrigger value="in_bearbeitung" className="text-xs sm:text-sm">In Arb. ({inProgressCount})</TabsTrigger>
+                            <TabsTrigger value="erledigt" className="text-xs sm:text-sm">Erledigt ({doneCount})</TabsTrigger>
+                            <TabsTrigger value="alle" className="text-xs sm:text-sm">Alle</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                )}
 
                 {/* Todo List */}
                 <div className="space-y-3">
@@ -135,6 +184,8 @@ export default function Todos() {
                             onStatusChange={handleStatusChange}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
+                            onArchive={handleArchive}
+                            showArchiveButton={!showArchived && todo.status === 'erledigt'}
                         />
                     ))}
                     

@@ -9,8 +9,8 @@ import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
 
 const navigation = [
-    { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
     { name: 'Mein Dashboard', page: 'MyDashboard', icon: Home, permission: 'canViewDashboard' },
+    { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
     { name: 'Stempeluhr', page: 'ClockIn', icon: Clock, permission: 'canViewDashboard' },
     { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
     { name: 'Kalenderintegration', page: 'CalendarIntegration', icon: Calendar, permission: 'canViewDashboard' },
@@ -45,7 +45,7 @@ export default function Layout({ children, currentPageName }) {
             <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
                 <div className="flex flex-col flex-grow bg-slate-950 border-r border-slate-800 pt-5 overflow-y-auto">
                     {/* Logo */}
-                    <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-8 hover:opacity-80 transition-opacity">
+                    <Link to={createPageUrl(permissions.isManager ? 'Dashboard' : 'MyDashboard')} className="flex items-center gap-3 px-6 mb-8 hover:opacity-80 transition-opacity">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                             <span className="text-white font-bold text-lg">B</span>
                         </div>
@@ -101,7 +101,7 @@ export default function Layout({ children, currentPageName }) {
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-800">
                 <div className="flex items-center justify-between px-4 py-3">
-                    <Link to={createPageUrl('Dashboard')} className="flex items-center gap-2">
+                    <Link to={createPageUrl(permissions.isManager ? 'Dashboard' : 'MyDashboard')} className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                             <span className="text-white font-bold">B</span>
                         </div>

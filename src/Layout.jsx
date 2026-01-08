@@ -11,7 +11,6 @@ import { usePermissions } from '@/components/auth/usePermissions';
 const navigation = [
     { name: 'Mein Dashboard', page: 'MyDashboard', icon: Home, permission: 'canViewDashboard' },
     { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
-    { name: 'Stempeluhr', page: 'ClockIn', icon: Clock, permission: 'canViewDashboard' },
     { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
     { name: 'Kalenderintegration', page: 'CalendarIntegration', icon: Calendar, permission: 'canViewDashboard' },
     { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },

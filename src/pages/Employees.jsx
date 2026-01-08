@@ -513,16 +513,24 @@ export default function Employees() {
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <Label>Vertragsart</Label>
-                                    <Select value={formData.contract_type} onValueChange={(v) => setFormData({ ...formData, contract_type: v })}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Wählen..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Vollzeit">Vollzeit</SelectItem>
-                                            <SelectItem value="Teilzeit">Teilzeit</SelectItem>
-                                            <SelectItem value="Minijob">Minijob</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    {permissions.isAdmin ? (
+                                        <Select value={formData.contract_type} onValueChange={(v) => setFormData({ ...formData, contract_type: v })}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Wählen..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Vollzeit">Vollzeit</SelectItem>
+                                                <SelectItem value="Teilzeit">Teilzeit</SelectItem>
+                                                <SelectItem value="Minijob">Minijob</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Input
+                                            value={formData.contract_type || 'Nicht festgelegt'}
+                                            disabled
+                                            className="bg-slate-700 text-slate-400"
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
@@ -533,6 +541,8 @@ export default function Employees() {
                                         value={formData.hourly_rate}
                                         onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
                                         placeholder="z.B. 13.50"
+                                        disabled={!permissions.isAdmin}
+                                        className={!permissions.isAdmin ? "bg-slate-700 text-slate-400" : ""}
                                     />
                                 </div>
                                 </div>

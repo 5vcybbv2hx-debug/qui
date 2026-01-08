@@ -27,6 +27,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         suppliers: [],
         unit: '',
         quantity: '',
+        content_amount: '',
+        content_unit: '',
         purchase_price: '',
         current_stock: '',
         min_stock: '',
@@ -43,6 +45,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 suppliers: article.suppliers || [],
                 unit: article.unit || '',
                 quantity: article.quantity || '',
+                content_amount: article.content_amount || '',
+                content_unit: article.content_unit || '',
                 purchase_price: article.purchase_price || '',
                 current_stock: article.current_stock || '',
                 min_stock: article.min_stock || '',
@@ -57,6 +61,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 suppliers: [],
                 unit: '',
                 quantity: '',
+                content_amount: '',
+                content_unit: '',
                 purchase_price: '',
                 current_stock: '',
                 min_stock: '',
@@ -73,6 +79,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         const dataToSave = {
             ...formData,
             quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
+            content_amount: formData.content_amount ? parseFloat(formData.content_amount) : undefined,
             purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
             current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
@@ -223,6 +230,33 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                                 placeholder="z.B. Flaschen"
                             />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <Label>Inhaltsmenge</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={formData.content_amount}
+                                onChange={(e) => setFormData({ ...formData, content_amount: e.target.value })}
+                                placeholder="z.B. 700"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Einheit</Label>
+                            <Select value={formData.content_unit} onValueChange={(v) => setFormData({ ...formData, content_unit: v })}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Wählen..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ml">ml (Milliliter)</SelectItem>
+                                    <SelectItem value="l">l (Liter)</SelectItem>
+                                    <SelectItem value="g">g (Gramm)</SelectItem>
+                                    <SelectItem value="kg">kg (Kilogramm)</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import ArticleModal from '@/components/articles/ArticleModal';
+import CategoryManager from '@/components/articles/CategoryManager';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 
 
@@ -36,6 +37,11 @@ export default function Articles() {
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
         queryFn: () => base44.entities.Article.list('name')
+    });
+
+    const { data: categories = [] } = useQuery({
+        queryKey: ['article-categories'],
+        queryFn: () => base44.entities.ArticleCategory.list('order')
     });
 
     const createMutation = useMutation({
@@ -100,7 +106,7 @@ export default function Articles() {
         return <PermissionDenied />;
     }
 
-    const categories = ['all', ...new Set(articles.map(a => a.category).filter(Boolean))];
+    const filterCategories = ['all', ...categories.map(c => c.name)];
 
     return (
         <div className="min-h-screen bg-slate-900">
@@ -113,6 +119,7 @@ export default function Articles() {
                     </div>
                     
                     <div className="flex gap-2 flex-wrap">
+                        <CategoryManager />
                         <Button 
                             onClick={() => setScannerOpen(true)}
                             variant="outline"
@@ -147,7 +154,7 @@ export default function Articles() {
                     </div>
 
                     <div className="flex gap-2 overflow-x-auto pb-2">
-                        {categories.map(cat => (
+                        {filterCategories.map(cat => (
                             <Button
                                 key={cat}
                                 variant={filterCategory === cat ? "default" : "outline"}
@@ -195,17 +202,20 @@ export default function Articles() {
 
                             <div className="space-y-2">
                                 {article.category && (
-                                    <Badge className={categoryColors[article.category]}>
+                                    <Badge style={{ 
+                                        backgroundColor: categories.find(c => c.name === article.category)?.color + '20',
+                                        color: categories.find(c => c.name === article.category)?.color || '#64748b'
+                                    }}>
                                         {article.category}
                                     </Badge>
                                 )}
                                 
                                 <div className="text-xs text-slate-400 space-y-1">
-                                    {article.supplier && (
-                                        <p>📦 {article.supplier}</p>
+                                    {article.suppliers?.length > 0 && (
+                                        <p>📦 {article.suppliers.join(', ')}</p>
                                     )}
-                                    {article.unit && (
-                                        <p>📏 {article.unit}</p>
+                                    {article.quantity && article.unit && (
+                                        <p>📦 {article.quantity} {article.unit}</p>
                                     )}
                                     {article.purchase_price && (
                                         <p className="font-semibold text-green-400">💰 {article.purchase_price.toFixed(2)} €</p>

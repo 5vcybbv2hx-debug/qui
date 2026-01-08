@@ -1,4 +1,5 @@
 import Articles from './pages/Articles';
+import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
@@ -14,12 +15,12 @@ import Shopping from './pages/Shopping';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import CalendarIntegration from './pages/CalendarIntegration';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Articles": Articles,
+    "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
     "Dashboard": Dashboard,
     "Employees": Employees,
@@ -35,7 +36,6 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "CalendarIntegration": CalendarIntegration,
 }
 
 export const pagesConfig = {

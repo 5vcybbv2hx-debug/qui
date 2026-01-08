@@ -129,13 +129,33 @@ export default function Shopping() {
         }
     };
 
+    const { data: articles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list('name')
+    });
+
     const handleBarcodeScan = (barcode) => {
         setScannerOpen(false);
-        setFormData({
-            ...formData,
-            item_name: barcode,
-            notes: `Barcode: ${barcode}`
-        });
+        
+        // Find article by barcode
+        const article = articles.find(a => a.barcode === barcode);
+        
+        if (article) {
+            setFormData({
+                item_name: article.name,
+                category: article.suppliers?.[0] || 'C+C',
+                quantity: article.quantity || '',
+                unit: article.unit || '',
+                status: 'offen',
+                notes: `${article.name} (${barcode})`
+            });
+        } else {
+            setFormData({
+                ...formData,
+                item_name: barcode,
+                notes: `Barcode: ${barcode}`
+            });
+        }
         setModalOpen(true);
     };
 

@@ -128,32 +128,32 @@ export default function MyDashboard() {
 
     return (
         <div className="min-h-screen bg-slate-900">
-            <div className="max-w-6xl mx-auto px-4 py-8">
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Welcome Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                         Willkommen, {currentEmployee.name}!
                     </h1>
-                    <p className="text-slate-400">
+                    <p className="text-sm sm:text-base text-slate-400">
                         {format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}
                     </p>
                 </div>
 
                 {/* Clock Status Banner */}
                 {activeClockEntry && (
-                    <Card className="p-4 mb-6 bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-700">
-                        <div className="flex items-center justify-between">
+                    <Card className="p-3 sm:p-4 mb-4 sm:mb-6 bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-700">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shrink-0" />
                                 <div>
-                                    <p className="text-white font-semibold">Aktuell eingestempelt</p>
-                                    <p className="text-green-300 text-sm">
-                                        Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} Uhr • {getWorkingDuration(activeClockEntry.clock_in)}
+                                    <p className="text-white font-semibold text-sm sm:text-base">Aktuell eingestempelt</p>
+                                    <p className="text-green-300 text-xs sm:text-sm">
+                                        Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
                                     </p>
                                 </div>
                             </div>
-                            <Link to={createPageUrl('ClockIn')}>
-                                <Button variant="outline" className="border-green-600 text-green-300 hover:bg-green-800">
+                            <Link to={createPageUrl('ClockIn')} className="w-full sm:w-auto">
+                                <Button variant="outline" className="w-full sm:w-auto border-green-600 text-green-300 hover:bg-green-800">
                                     <LogOut className="w-4 h-4 mr-2" />
                                     Ausstempeln
                                 </Button>
@@ -163,20 +163,20 @@ export default function MyDashboard() {
                 )}
 
                 {/* Quick Actions */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <Link to={createPageUrl('ClockIn')} className="block">
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
+                        <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-green-600/20 flex items-center justify-center shrink-0">
                                     {activeClockEntry ? (
-                                        <LogOut className="w-6 h-6 text-green-500" />
+                                        <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                                     ) : (
-                                        <LogIn className="w-6 h-6 text-green-500" />
+                                        <LogIn className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                                     )}
                                 </div>
-                                <div>
-                                    <p className="text-sm text-slate-400">Stempeluhr</p>
-                                    <p className="font-semibold text-white">
+                                <div className="min-w-0">
+                                    <p className="text-xs sm:text-sm text-slate-400">Stempeluhr</p>
+                                    <p className="font-semibold text-sm sm:text-base text-white truncate">
                                         {activeClockEntry ? 'Ausstempeln' : 'Einstempeln'}
                                     </p>
                                 </div>
@@ -185,42 +185,42 @@ export default function MyDashboard() {
                     </Link>
 
                     <Link to={createPageUrl('Shifts')} className="block">
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                                    <Calendar className="w-6 h-6 text-blue-500" />
+                        <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-600/20 flex items-center justify-center shrink-0">
+                                    <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-slate-400">Schichtplan</p>
-                                    <p className="font-semibold text-white">Ansehen</p>
+                                <div className="min-w-0">
+                                    <p className="text-xs sm:text-sm text-slate-400">Schichtplan</p>
+                                    <p className="font-semibold text-sm sm:text-base text-white">Ansehen</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
                     <Link to={createPageUrl('Vacation')} className="block">
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
-                                    <Umbrella className="w-6 h-6 text-purple-500" />
+                        <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-purple-600/20 flex items-center justify-center shrink-0">
+                                    <Umbrella className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-slate-400">Urlaub</p>
-                                    <p className="font-semibold text-white">Beantragen</p>
+                                <div className="min-w-0">
+                                    <p className="text-xs sm:text-sm text-slate-400">Urlaub</p>
+                                    <p className="font-semibold text-sm sm:text-base text-white">Beantragen</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
                     <Link to={createPageUrl('TimeTracking')} className="block">
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-amber-600/20 flex items-center justify-center">
-                                    <FileText className="w-6 h-6 text-amber-500" />
+                        <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
+                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-amber-600/20 flex items-center justify-center shrink-0">
+                                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
                                 </div>
-                                <div>
-                                    <p className="text-sm text-slate-400">Zeiteinträge</p>
-                                    <p className="font-semibold text-white">Ansehen</p>
+                                <div className="min-w-0">
+                                    <p className="text-xs sm:text-sm text-slate-400">Zeiteinträge</p>
+                                    <p className="font-semibold text-sm sm:text-base text-white">Ansehen</p>
                                 </div>
                             </div>
                         </Card>
@@ -228,46 +228,46 @@ export default function MyDashboard() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid md:grid-cols-3 gap-6 mb-6">
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
-                                <Clock className="w-6 h-6 text-blue-500" />
+                <div className="grid sm:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
+                    <Card className="p-4 sm:p-6 bg-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                             </div>
-                            <Badge className="bg-blue-600/20 text-blue-400">Diese Woche</Badge>
+                            <Badge className="bg-blue-600/20 text-blue-400 text-xs">Woche</Badge>
                         </div>
-                        <p className="text-3xl font-bold text-white mb-1">{hoursThisWeek.toFixed(1)}h</p>
-                        <p className="text-sm text-slate-400">Gearbeitete Stunden</p>
-                        <p className="text-xs text-slate-500 mt-2">
+                        <p className="text-2xl sm:text-3xl font-bold text-white mb-1">{hoursThisWeek.toFixed(1)}h</p>
+                        <p className="text-xs sm:text-sm text-slate-400">Gearbeitete Stunden</p>
+                        <p className="text-xs text-slate-500 mt-1 sm:mt-2">
                             Monat: {hoursThisMonth.toFixed(1)}h
                         </p>
                     </Card>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
-                                <Umbrella className="w-6 h-6 text-purple-500" />
+                    <Card className="p-4 sm:p-6 bg-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                                <Umbrella className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
                             </div>
-                            <Badge className="bg-purple-600/20 text-purple-400">Urlaub</Badge>
+                            <Badge className="bg-purple-600/20 text-purple-400 text-xs">Urlaub</Badge>
                         </div>
-                        <p className="text-3xl font-bold text-white mb-1">{remainingVacationDays}</p>
-                        <p className="text-sm text-slate-400">Verbleibende Tage</p>
-                        <p className="text-xs text-slate-500 mt-2">
-                            Von {totalVacationDays} Tagen gesamt
+                        <p className="text-2xl sm:text-3xl font-bold text-white mb-1">{remainingVacationDays}</p>
+                        <p className="text-xs sm:text-sm text-slate-400">Verbleibende Tage</p>
+                        <p className="text-xs text-slate-500 mt-1 sm:mt-2">
+                            Von {totalVacationDays} gesamt
                         </p>
                     </Card>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
-                                <Calendar className="w-6 h-6 text-green-500" />
+                    <Card className="p-4 sm:p-6 bg-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between mb-3 sm:mb-4">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
+                                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
                             </div>
-                            <Badge className="bg-green-600/20 text-green-400">Nächste</Badge>
+                            <Badge className="bg-green-600/20 text-green-400 text-xs">Nächste</Badge>
                         </div>
-                        <p className="text-3xl font-bold text-white mb-1">{myUpcomingShifts.length}</p>
-                        <p className="text-sm text-slate-400">Kommende Schichten</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-white mb-1">{myUpcomingShifts.length}</p>
+                        <p className="text-xs sm:text-sm text-slate-400">Kommende Schichten</p>
                         {myUpcomingShifts[0] && (
-                            <p className="text-xs text-slate-500 mt-2">
+                            <p className="text-xs text-slate-500 mt-1 sm:mt-2">
                                 Nächste: {format(parseISO(myUpcomingShifts[0].date), 'EEE, dd.MM', { locale: de })}
                             </p>
                         )}
@@ -275,12 +275,12 @@ export default function MyDashboard() {
                 </div>
 
                 {/* Upcoming Shifts */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-white">Kommende Schichten</h2>
+                        <h2 className="text-lg sm:text-xl font-bold text-white">Kommende Schichten</h2>
                         <Link to={createPageUrl('Shifts')}>
-                            <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700">
-                                Alle anzeigen
+                            <Button variant="outline" size="sm" className="border-slate-600 text-slate-300 hover:bg-slate-700 text-xs sm:text-sm">
+                                Alle
                             </Button>
                         </Link>
                     </div>
@@ -291,36 +291,34 @@ export default function MyDashboard() {
                             <p className="text-slate-400">Keine kommenden Schichten geplant</p>
                         </Card>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                             {myUpcomingShifts.map(shift => (
-                                <Card key={shift.id} className="p-4 bg-slate-800 border-slate-700">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-center">
-                                                <p className="text-2xl font-bold text-white">
+                                <Card key={shift.id} className="p-3 sm:p-4 bg-slate-800 border-slate-700">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                                            <div className="text-center shrink-0">
+                                                <p className="text-xl sm:text-2xl font-bold text-white">
                                                     {format(parseISO(shift.date), 'dd')}
                                                 </p>
                                                 <p className="text-xs text-slate-400 uppercase">
                                                     {format(parseISO(shift.date), 'MMM', { locale: de })}
                                                 </p>
                                             </div>
-                                            <div>
-                                                <p className="font-semibold text-white">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-semibold text-white text-sm sm:text-base">
                                                     {format(parseISO(shift.date), 'EEEE', { locale: de })}
                                                 </p>
-                                                <p className="text-sm text-slate-400">
-                                                    {shift.start_time} - {shift.end_time} Uhr
+                                                <p className="text-xs sm:text-sm text-slate-400">
+                                                    {shift.start_time} - {shift.end_time}
                                                 </p>
+                                                {shift.notes && (
+                                                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">{shift.notes}</p>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <Badge className="bg-amber-600/20 text-amber-400">
-                                                {shift.shift_type}
-                                            </Badge>
-                                            {shift.notes && (
-                                                <p className="text-xs text-slate-500 mt-1">{shift.notes}</p>
-                                            )}
-                                        </div>
+                                        <Badge className="bg-amber-600/20 text-amber-400 text-xs shrink-0">
+                                            {shift.shift_type}
+                                        </Badge>
                                     </div>
                                 </Card>
                             ))}

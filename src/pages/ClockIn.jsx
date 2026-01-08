@@ -150,68 +150,68 @@ export default function ClockIn() {
 
     return (
         <div className="min-h-screen bg-slate-900">
-            <div className="max-w-4xl mx-auto px-4 py-8">
+            <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <div className="flex items-center justify-center gap-3 mb-2">
-                        <Clock className="w-8 h-8 text-amber-500" />
-                        <h1 className="text-3xl font-bold text-white">Stempeluhr</h1>
+                <div className="text-center mb-6 sm:mb-8">
+                    <div className="flex items-center justify-center gap-2 sm:gap-3 mb-2">
+                        <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500" />
+                        <h1 className="text-2xl sm:text-3xl font-bold text-white">Stempeluhr</h1>
                     </div>
-                    <p className="text-slate-400">
+                    <p className="text-sm sm:text-base text-slate-400">
                         {format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}
                     </p>
-                    <p className="text-2xl font-mono text-white mt-2">
+                    <p className="text-xl sm:text-2xl font-mono text-white mt-2">
                         {format(new Date(), 'HH:mm:ss')}
                     </p>
                 </div>
 
                 {/* Main Clock Card */}
-                <Card className="p-8 mb-6 bg-slate-800 border-slate-700">
+                <Card className="p-6 sm:p-8 mb-4 sm:mb-6 bg-slate-800 border-slate-700">
                     <div className="text-center">
-                        <div className="mb-6">
+                        <div className="mb-4 sm:mb-6">
                             <div 
-                                className="w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-3xl mx-auto mb-4"
+                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white font-bold text-2xl sm:text-3xl mx-auto mb-3 sm:mb-4"
                                 style={{ backgroundColor: currentEmployee.color || '#64748b' }}
                             >
                                 {currentEmployee.name?.charAt(0).toUpperCase()}
                             </div>
-                            <h2 className="text-2xl font-bold text-white mb-1">{currentEmployee.name}</h2>
-                            <p className="text-slate-400">{currentEmployee.role}</p>
+                            <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{currentEmployee.name}</h2>
+                            <p className="text-sm sm:text-base text-slate-400">{currentEmployee.role}</p>
                         </div>
 
                         {activeEntry ? (
-                            <div className="space-y-4">
-                                <Badge className="bg-green-600 text-white text-lg px-4 py-2">
-                                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                            <div className="space-y-3 sm:space-y-4">
+                                <Badge className="bg-green-600 text-white text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2">
+                                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                     Eingestempelt
                                 </Badge>
                                 <div className="text-slate-300">
-                                    <p className="text-sm">Eingestempelt um</p>
-                                    <p className="text-2xl font-bold text-white">
+                                    <p className="text-xs sm:text-sm">Eingestempelt um</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-white">
                                         {format(new Date(activeEntry.clock_in), 'HH:mm')} Uhr
                                     </p>
-                                    <p className="text-sm text-slate-400 mt-2">
+                                    <p className="text-sm sm:text-base text-slate-400 mt-2">
                                         Arbeitszeit: {getWorkingDuration(activeEntry.clock_in)}
                                     </p>
                                 </div>
                                 <Button 
                                     onClick={() => handleClockOut(activeEntry)}
                                     size="lg"
-                                    className="bg-red-600 hover:bg-red-700 text-white mt-4"
+                                    className="bg-red-600 hover:bg-red-700 text-white mt-3 sm:mt-4 w-full sm:w-auto"
                                 >
                                     <LogOut className="w-5 h-5 mr-2" />
                                     Ausstempeln
                                 </Button>
                             </div>
                         ) : (
-                            <div className="space-y-4">
-                                <Badge className="bg-slate-600 text-white text-lg px-4 py-2">
+                            <div className="space-y-3 sm:space-y-4">
+                                <Badge className="bg-slate-600 text-white text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2">
                                     Nicht eingestempelt
                                 </Badge>
                                 <Button 
                                     onClick={handleClockIn}
                                     size="lg"
-                                    className="bg-green-600 hover:bg-green-700 text-white mt-4"
+                                    className="bg-green-600 hover:bg-green-700 text-white mt-3 sm:mt-4 w-full sm:w-auto"
                                     disabled={clockInMutation.isPending}
                                 >
                                     <LogIn className="w-5 h-5 mr-2" />
@@ -223,45 +223,45 @@ export default function ClockIn() {
                 </Card>
 
                 {/* Today's Entries */}
-                <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-white">Heutige Stempelungen</h3>
+                <div className="space-y-3 sm:space-y-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-white">Heutige Stempelungen</h3>
                     {todayEntries.length === 0 ? (
                         <Card className="p-6 text-center bg-slate-800 border-slate-700">
-                            <p className="text-slate-400">Noch keine Stempelungen heute</p>
+                            <p className="text-sm sm:text-base text-slate-400">Noch keine Stempelungen heute</p>
                         </Card>
                     ) : (
                         todayEntries.map(entry => (
-                            <Card key={entry.id} className="p-4 bg-slate-800 border-slate-700">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="font-semibold text-white">{entry.employee_name}</p>
-                                        <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
+                            <Card key={entry.id} className="p-3 sm:p-4 bg-slate-800 border-slate-700">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-white text-sm sm:text-base truncate">{entry.employee_name}</p>
+                                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-slate-400">
                                             <span className="flex items-center gap-1">
-                                                <LogIn className="w-4 h-4 text-green-500" />
+                                                <LogIn className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
                                                 {format(new Date(entry.clock_in), 'HH:mm')}
                                             </span>
                                             {entry.clock_out && (
                                                 <>
                                                     <span className="flex items-center gap-1">
-                                                        <LogOut className="w-4 h-4 text-red-500" />
+                                                        <LogOut className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                                                         {format(new Date(entry.clock_out), 'HH:mm')}
                                                     </span>
                                                     {entry.break_minutes > 0 && (
                                                         <span className="flex items-center gap-1">
-                                                            <Coffee className="w-4 h-4 text-amber-500" />
-                                                            {entry.break_minutes} min
+                                                            <Coffee className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
+                                                            {entry.break_minutes}m
                                                         </span>
                                                     )}
                                                 </>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <Badge className={entry.status === 'clocked_in' ? 'bg-green-600' : 'bg-slate-600'}>
+                                    <div className="text-right shrink-0">
+                                        <Badge className={entry.status === 'clocked_in' ? 'bg-green-600 text-xs' : 'bg-slate-600 text-xs'}>
                                             {entry.status === 'clocked_in' ? 'Aktiv' : 'Beendet'}
                                         </Badge>
                                         {entry.total_hours && (
-                                            <p className="text-lg font-bold text-white mt-1">
+                                            <p className="text-base sm:text-lg font-bold text-white mt-1">
                                                 {entry.total_hours}h
                                             </p>
                                         )}

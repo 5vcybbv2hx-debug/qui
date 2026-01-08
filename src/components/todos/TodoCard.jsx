@@ -1,5 +1,7 @@
 import React from 'react';
-import { Check, Calendar, Flag, MoreHorizontal, Pencil, Trash2, Archive, Clock, User } from 'lucide-react';
+import { Check, Calendar, Flag, MoreHorizontal, Pencil, Trash2, Archive, Clock, User, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -116,9 +118,13 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
                         )}
                         
                         {todo.assigned_to && (
-                            <span className="text-[10px] text-slate-400">
+                            <Link 
+                                to={createPageUrl('Employees')}
+                                className="text-[10px] text-slate-400 hover:text-amber-500 transition-colors flex items-center gap-1"
+                            >
                                 → {todo.assigned_to}
-                            </span>
+                                <ExternalLink className="w-2 h-2" />
+                            </Link>
                         )}
 
                         {todo.completed_by && (

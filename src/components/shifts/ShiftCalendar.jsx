@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { format, startOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, isSameDay, isSameMonth, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Palmtree } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Palmtree, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -224,13 +226,18 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 
                                 {/* Vacations */}
                                 {dayVacations.length > 0 && (
-                                    <div className="px-2 py-1 bg-amber-900/30 rounded-lg text-[10px] text-amber-400 flex items-center gap-1 border border-amber-700/50">
+                                    <Link
+                                        to={createPageUrl('Vacation')}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="px-2 py-1 bg-amber-900/30 rounded-lg text-[10px] text-amber-400 flex items-center gap-1 border border-amber-700/50 hover:bg-amber-900/40 transition-colors"
+                                    >
                                         <Palmtree className="w-3 h-3" />
                                         {dayVacations.length === 1 
                                             ? dayVacations[0].employee_name.split(' ')[0]
                                             : `${dayVacations.length} Urlaub`
                                         }
-                                    </div>
+                                        <ExternalLink className="w-2 h-2" />
+                                    </Link>
                                 )}
                             </div>
                             

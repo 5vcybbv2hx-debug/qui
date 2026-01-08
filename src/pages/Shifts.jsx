@@ -3,7 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Users, Filter, X } from 'lucide-react';
+import { Plus, Users, Filter, X, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ShiftCalendar from '@/components/shifts/ShiftCalendar';
@@ -271,7 +273,16 @@ export default function Shifts() {
                                             {shift.employee_name?.charAt(0)}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-medium text-white">{shift.employee_name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium text-white">{shift.employee_name}</p>
+                                                <Link 
+                                                    to={createPageUrl('Employees')}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="text-amber-500 hover:text-amber-400"
+                                                >
+                                                    <ExternalLink className="w-3 h-3" />
+                                                </Link>
+                                            </div>
                                             <p className="text-sm text-slate-400">
                                                 {shift.start_time} - {shift.end_time} · {shift.shift_type}
                                             </p>

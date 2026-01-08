@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { X, Trash2, Plus, Minus } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -181,8 +182,26 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 }
             }
             
-            // Save all shifts
-            shiftsToSave.forEach(shiftData => onSave(shiftData, null));
+            // Save all shifts and create notifications
+            shiftsToSave.forEach(async (shiftData) => {
+                await onSave(shiftData, null);
+                
+                // Create notification for employee
+                try {
+                    const employee = employees.find(e => e.id === shiftData.employee_id);
+                    if (employee?.email) {
+                        await base44.entities.Notification.create({
+                            type: 'general',
+                            title: 'Neue Schicht zugewiesen',
+                            message: `Du wurdest für eine Schicht am ${format(new Date(shiftData.date), 'dd.MM.yyyy', { locale: de })} (${shiftData.start_time} - ${shiftData.end_time}) eingeteilt.`,
+                            related_id: shiftData.employee_id,
+                            read_by: []
+                        });
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+                }
+            });
             onClose();
         } else {
             // Single shift validation (only for new shifts)
@@ -199,6 +218,24 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
             }
             
             onSave(formData, shift?.id);
+            
+            // Create notification for new shift
+            if (!shift && formData.employee_id) {
+                try {
+                    const employee = employees.find(e => e.id === formData.employee_id);
+                    if (employee?.email) {
+                        await base44.entities.Notification.create({
+                            type: 'general',
+                            title: 'Neue Schicht zugewiesen',
+                            message: `Du wurdest für eine Schicht am ${format(new Date(formData.date), 'dd.MM.yyyy', { locale: de })} (${formData.start_time} - ${formData.end_time}) eingeteilt.`,
+                            related_id: formData.employee_id,
+                            read_by: []
+                        });
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+                }
+            }
         }
     };
 

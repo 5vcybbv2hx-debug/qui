@@ -33,7 +33,25 @@ export default function ShiftSwapManager() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.ShiftSwapRequest.update(id, data),
+        mutationFn: async ({ id, data, request }) => {
+            await base44.entities.ShiftSwapRequest.update(id, data);
+            
+            // Create notification for requesting employee
+            try {
+                const requestingEmployee = await base44.entities.Employee.filter({ id: request.requesting_employee_id });
+                if (requestingEmployee[0]?.email) {
+                    await base44.entities.Notification.create({
+                        type: 'shift_swap',
+                        title: 'Schichttausch abgelehnt',
+                        message: `Dein Schichttausch für ${format(new Date(request.shift_date), 'dd.MM.yyyy', { locale: de })} wurde abgelehnt.`,
+                        related_id: id,
+                        read_by: []
+                    });
+                }
+            } catch (error) {
+                console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+            }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['shift-swap-requests']);
             setSelectedRequest(null);
@@ -69,6 +87,34 @@ export default function ShiftSwapManager() {
                     employee_id: newEmployeeId,
                     employee_name: request.target_employee_name
                 });
+
+                // Create notifications for both employees
+                try {
+                    const requestingEmployee = await base44.entities.Employee.filter({ id: request.requesting_employee_id });
+                    const targetEmployee = await base44.entities.Employee.filter({ id: request.target_employee_id });
+                    
+                    if (requestingEmployee[0]?.email) {
+                        await base44.entities.Notification.create({
+                            type: 'shift_swap',
+                            title: 'Schichttausch genehmigt',
+                            message: `Dein Schichttausch für ${format(new Date(request.shift_date), 'dd.MM.yyyy', { locale: de })} wurde genehmigt.`,
+                            related_id: requestId,
+                            read_by: []
+                        });
+                    }
+                    
+                    if (targetEmployee[0]?.email) {
+                        await base44.entities.Notification.create({
+                            type: 'shift_swap',
+                            title: 'Schichttausch genehmigt',
+                            message: `Der Schichttausch mit ${request.requesting_employee_name} am ${format(new Date(request.shift_date), 'dd.MM.yyyy', { locale: de })} wurde genehmigt.`,
+                            related_id: requestId,
+                            read_by: []
+                        });
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+                }
 
                 return { success: true };
             } catch (error) {
@@ -108,7 +154,8 @@ export default function ShiftSwapManager() {
                     approved_by: currentUser?.full_name || currentUser?.email,
                     response_date: new Date().toISOString(),
                     response_note: responseNote
-                }
+                },
+                request: request
             });
         }
     };

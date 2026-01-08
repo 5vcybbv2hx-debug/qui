@@ -60,7 +60,7 @@ export default function Employees() {
         is_active: true
     });
     
-    const [whatsappGroupLink, setWhatsappGroupLink] = useState('https://chat.whatsapp.com/DEIN_GRUPPENLINK');
+    const [whatsappGroupLink, setWhatsappGroupLink] = useState('https://chat.whatsapp.com/FrOmvmQFvvBJvqo4CJaBPA');
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],

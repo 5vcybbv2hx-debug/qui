@@ -7,8 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 
 export default function PriceCalculator() {
+    const permissions = usePermissions();
+
+    if (!permissions.canViewPriceCalculator) {
+        return <PermissionDenied message="Nur Administratoren haben Zugriff auf die Preiskalkulation." />;
+    }
     const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [margin, setMargin] = useState('200');

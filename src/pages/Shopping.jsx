@@ -19,7 +19,8 @@ import BarcodeScanner from '../components/restock/BarcodeScanner';
 const categoryColors = {
     'C+C': 'bg-blue-100 text-blue-700 border-blue-200',
     'Metro': 'bg-orange-100 text-orange-700 border-orange-200',
-    'Wein-Bauer': 'bg-purple-100 text-purple-700 border-purple-200'
+    'Wein-Bauer': 'bg-purple-100 text-purple-700 border-purple-200',
+    'Toom': 'bg-red-100 text-red-700 border-red-200'
 };
 
 const statusConfig = {
@@ -252,11 +253,12 @@ export default function Shopping() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                    <TabsList className="grid w-full grid-cols-4 mb-6">
+                    <TabsList className="grid w-full grid-cols-5 mb-6">
                         <TabsTrigger value="alle">Alle</TabsTrigger>
                         <TabsTrigger value="C+C">C+C</TabsTrigger>
                         <TabsTrigger value="Metro">Metro</TabsTrigger>
                         <TabsTrigger value="Wein-Bauer">Wein-Bauer</TabsTrigger>
+                        <TabsTrigger value="Toom">Toom</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value={activeTab} className="space-y-6">
@@ -474,6 +476,7 @@ export default function Shopping() {
                                         <SelectItem value="C+C">C+C</SelectItem>
                                         <SelectItem value="Metro">Metro</SelectItem>
                                         <SelectItem value="Wein-Bauer">Wein-Bauer</SelectItem>
+                                        <SelectItem value="Toom">Toom</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

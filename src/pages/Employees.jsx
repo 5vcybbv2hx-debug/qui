@@ -234,9 +234,10 @@ export default function Employees() {
     const activeEmployees = employees.filter(e => e.is_active !== false);
     const inactiveEmployees = employees.filter(e => e.is_active === false);
 
-    if (!permissions.canViewEmployees) {
-        return <PermissionDenied message="Du hast keine Berechtigung, die Mitarbeiterliste zu sehen." />;
-    }
+    // Alle Mitarbeiter dürfen die Team-Seite nutzen
+    // if (!permissions.canViewEmployees) {
+    //     return <PermissionDenied message="Du hast keine Berechtigung, die Mitarbeiterliste zu sehen." />;
+    // }
 
     return (
         <div className="min-h-screen bg-slate-900">

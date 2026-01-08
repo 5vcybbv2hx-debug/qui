@@ -100,7 +100,7 @@ export const PERMISSIONS = {
     
     // Team / Mitarbeiter
     VIEW_EMPLOYEES: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
         description: 'Mitarbeiter ansehen'
     },
     EDIT_EMPLOYEES: {

@@ -60,34 +60,16 @@ export default function ClockIn() {
             const workMinutes = totalMinutes - breakMinutes;
             const totalHours = Math.round((workMinutes / 60) * 100) / 100;
 
-            // Update Clock Entry
+            // Update Clock Entry only
             await base44.entities.ClockEntry.update(entryId, {
                 clock_out: clockOutTime.toISOString(),
                 break_minutes: breakMinutes,
                 total_hours: totalHours,
                 status: 'clocked_out'
             });
-
-            // Create Time Entry automatically
-            const clockInDate = new Date(entry.clock_in);
-            const clockInTime = format(clockInDate, 'HH:mm');
-            const clockOutTimeStr = format(clockOutTime, 'HH:mm');
-
-            await base44.entities.TimeEntry.create({
-                employee_id: entry.employee_id,
-                employee_name: entry.employee_name,
-                date: format(clockInDate, 'yyyy-MM-dd'),
-                start_time: clockInTime,
-                end_time: clockOutTimeStr,
-                break_minutes: breakMinutes,
-                total_hours: totalHours,
-                status: 'eingereicht',
-                notes: 'Automatisch via Stempeluhr erfasst'
-            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['clockEntries']);
-            queryClient.invalidateQueries(['timeEntries']);
             setBreakModalOpen(false);
             setClockOutEntry(null);
             setBreakMinutes(30);

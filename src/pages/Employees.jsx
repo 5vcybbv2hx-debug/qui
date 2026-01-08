@@ -24,8 +24,8 @@ const COLORS = [
 ];
 
 const HOURLY_RATES = {
-    FULLTIME: 13.50, // Vollzeit/Teilzeit Standard
-    MINIJOB: 12.41   // Minijob Standard (Mindestlohn 2024)
+    FULLTIME: 16.00, // Vollzeit/Teilzeit Standard
+    MINIJOB: 15.00   // Minijob Standard
 };
 
 const roleColors = {

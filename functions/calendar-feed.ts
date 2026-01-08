@@ -1,7 +1,9 @@
-import { base44 } from "@/api/base44Client";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-export default async function handler(req, res) {
+Deno.serve(async (req) => {
     try {
+        const base44 = createClientFromRequest(req);
+        
         // Fetch all shifts
         const shifts = await base44.asServiceRole.entities.Shift.list('-date', 500);
         
@@ -47,7 +49,7 @@ export default async function handler(req, res) {
             lines.push(`DTEND:${endDate}T${endTime}`);
             lines.push(`SUMMARY:${shift.employee_name} - ${shift.shift_type}`);
             if (shift.notes) {
-                lines.push(`DESCRIPTION:${shift.notes}`);
+                lines.push(`DESCRIPTION:${shift.notes.replace(/\n/g, '\\n')}`);
             }
             lines.push('STATUS:CONFIRMED');
             lines.push('END:VEVENT');
@@ -99,13 +101,17 @@ export default async function handler(req, res) {
         
         const icsContent = lines.join('\r\n');
         
-        res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-        res.setHeader('Content-Disposition', 'inline; filename="calendar.ics"');
-        res.setHeader('Cache-Control', 'public, max-age=3600');
-        res.status(200).send(icsContent);
+        return new Response(icsContent, {
+            status: 200,
+            headers: {
+                'Content-Type': 'text/calendar; charset=utf-8',
+                'Content-Disposition': 'inline; filename="calendar.ics"',
+                'Cache-Control': 'public, max-age=3600'
+            }
+        });
         
     } catch (error) {
         console.error('Calendar feed error:', error);
-        res.status(500).json({ error: 'Failed to generate calendar feed' });
+        return Response.json({ error: 'Failed to generate calendar feed' }, { status: 500 });
     }
-}
+});

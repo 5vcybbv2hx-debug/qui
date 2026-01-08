@@ -2,9 +2,11 @@ import Articles from './pages/Articles';
 import Budget from './pages/Budget';
 import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
+import ClockIn from './pages/ClockIn';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
+import MyDashboard from './pages/MyDashboard';
 import PriceCalculator from './pages/PriceCalculator';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
@@ -16,8 +18,6 @@ import Shopping from './pages/Shopping';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import ClockIn from './pages/ClockIn';
-import MyDashboard from './pages/MyDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -26,9 +26,11 @@ export const PAGES = {
     "Budget": Budget,
     "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
+    "ClockIn": ClockIn,
     "Dashboard": Dashboard,
     "Employees": Employees,
     "Events": Events,
+    "MyDashboard": MyDashboard,
     "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
     "Reports": Reports,
@@ -40,8 +42,6 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "ClockIn": ClockIn,
-    "MyDashboard": MyDashboard,
 }
 
 export const pagesConfig = {

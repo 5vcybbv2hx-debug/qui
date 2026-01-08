@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -240,6 +241,7 @@ export default function Employees() {
 
     const activeEmployees = employees.filter(e => e.is_active !== false);
     const inactiveEmployees = employees.filter(e => e.is_active === false);
+    const employeesWithoutEmail = activeEmployees.filter(e => !e.email);
 
     // Alle Mitarbeiter dürfen die Team-Seite nutzen
     // if (!permissions.canViewEmployees) {
@@ -277,10 +279,25 @@ export default function Employees() {
                             </Button>
                         )}
                     </div>
-                </div>
+                    </div>
 
-                {/* Employee Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Missing Email Alert */}
+                    {employeesWithoutEmail.length > 0 && (
+                    <Alert className="bg-amber-900/20 border-amber-700 mb-6">
+                        <AlertDescription className="text-amber-300">
+                            <p className="font-semibold mb-2">⚠️ {employeesWithoutEmail.length} Mitarbeiter ohne E-Mail-Adresse:</p>
+                            <p className="text-sm">
+                                {employeesWithoutEmail.map(e => e.name).join(', ')}
+                            </p>
+                            <p className="text-xs text-amber-400 mt-2">
+                                Bitte in der Team-WhatsApp-Gruppe persönlich ansprechen, damit diese ihre E-Mail-Adresse hinterlegen.
+                            </p>
+                        </AlertDescription>
+                    </Alert>
+                    )}
+
+                    {/* Employee Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {activeEmployees.map(employee => (
                         <Card 
                             key={employee.id}

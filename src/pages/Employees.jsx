@@ -74,7 +74,21 @@ export default function Employees() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.Employee.update(id, data),
+        mutationFn: async ({ id, data, isOwnProfile }) => {
+            await base44.entities.Employee.update(id, data);
+            
+            // Benachrichtigung für Manager erstellen, wenn Mitarbeiter eigene Daten bearbeitet
+            if (isOwnProfile && !permissions.isManager) {
+                await base44.entities.Notification.create({
+                    type: 'employee_update',
+                    title: 'Mitarbeiterdaten geändert',
+                    message: `${data.name} hat seine/ihre Profildaten aktualisiert.`,
+                    related_id: id,
+                    target_roles: ['admin', 'Manager'],
+                    read_by: []
+                });
+            }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['employees']);
             closeModal();
@@ -142,7 +156,8 @@ export default function Employees() {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (selectedEmployee) {
-            updateMutation.mutate({ id: selectedEmployee.id, data: formData });
+            const isOwnProfile = currentUser?.email === selectedEmployee.email;
+            updateMutation.mutate({ id: selectedEmployee.id, data: formData, isOwnProfile });
         } else {
             createMutation.mutate(formData);
         }
@@ -258,6 +273,14 @@ export default function Employees() {
                                 </div>
                             </div>
 
+                            {/* Contact Info */}
+                            {canViewDetails(employee) && employee.email && (
+                                <div className="mb-3 pb-3 border-b border-slate-700">
+                                    <p className="text-xs text-slate-500 mb-1">E-Mail</p>
+                                    <p className="text-xs text-slate-300 truncate">{employee.email}</p>
+                                </div>
+                            )}
+
                             {/* Contact Icons - visible to all */}
                             <div className="flex gap-2 mb-3">
                                 {employee.phone && (
@@ -294,30 +317,24 @@ export default function Employees() {
                                 )}
                             </div>
 
-                            {/* Details - only for Manager or own profile */}
+                            {/* Additional Details - only for Manager or own profile */}
                             {canViewDetails(employee) && (
                                 <div className="space-y-2 pt-3 border-t border-slate-700 text-sm">
-                                    {employee.email && (
-                                        <div>
-                                            <p className="text-xs text-slate-500">E-Mail</p>
-                                            <p className="text-slate-300 truncate">{employee.email}</p>
-                                        </div>
-                                    )}
-                                    {employee.phone && (
-                                        <div>
-                                            <p className="text-xs text-slate-500">Telefon</p>
-                                            <p className="text-slate-300">{employee.phone}</p>
-                                        </div>
-                                    )}
                                     {employee.birthday && (
                                         <div>
                                             <p className="text-xs text-slate-500">Geburtstag</p>
-                                            <p className="text-slate-300">
+                                            <p className="text-slate-300 text-xs">
                                                 {format(new Date(employee.birthday), 'dd.MM.yyyy', { locale: de })}
                                             </p>
                                         </div>
                                     )}
-                                    
+                                    {permissions.isManager && employee.contract_type && (
+                                        <div>
+                                            <p className="text-xs text-slate-500">Vertragsart</p>
+                                            <p className="text-slate-300 text-xs">{employee.contract_type}</p>
+                                        </div>
+                                    )}
+
                                     {/* Order Buttons */}
                                     {permissions.isManager && (employee.tshirt_size || employee.pullover_size) && (
                                         <div className="flex gap-2 pt-2">

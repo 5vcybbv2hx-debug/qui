@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp } from 'lucide-react';
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -27,6 +28,11 @@ const navigation = [
 export default function Layout({ children, currentPageName }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const permissions = usePermissions();
+    const [currentUser, setCurrentUser] = React.useState(null);
+
+    React.useEffect(() => {
+        base44.auth.me().then(setCurrentUser).catch(() => {});
+    }, []);
 
     return (
         <div className="min-h-screen bg-slate-900">
@@ -65,6 +71,11 @@ export default function Layout({ children, currentPageName }) {
 
                     {/* Footer */}
                     <div className="p-4 border-t border-slate-800">
+                        {permissions.isManager && currentUser && (
+                            <div className="mb-3 flex justify-center">
+                                <NotificationBell userEmail={currentUser.email} />
+                            </div>
+                        )}
                         <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-900/20 to-orange-900/20 border border-amber-800/30">
                             <p className="text-xs font-medium text-amber-500">Bar Management</p>
                             <p className="text-[10px] text-amber-600/70 mt-0.5">
@@ -84,12 +95,17 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                         <span className="font-bold text-white">BarManager</span>
                     </Link>
-                    <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
-                    >
-                        {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {permissions.isManager && currentUser && (
+                            <NotificationBell userEmail={currentUser.email} />
+                        )}
+                        <button
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
+                        >
+                            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Mobile Menu */}

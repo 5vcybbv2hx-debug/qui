@@ -35,6 +35,7 @@ export default function Shopping() {
     const [selectedItem, setSelectedItem] = useState(null);
     const [activeTab, setActiveTab] = useState('alle');
     const [scannerOpen, setScannerOpen] = useState(false);
+    const [eanInput, setEanInput] = useState('');
     const [formData, setFormData] = useState({
         item_name: '',
         category: 'C+C',
@@ -134,29 +135,49 @@ export default function Shopping() {
         queryFn: () => base44.entities.Article.list('name')
     });
 
-    const handleBarcodeScan = (barcode) => {
-        setScannerOpen(false);
-        
-        // Find article by barcode
+    const handleEanSubmit = async (e) => {
+        e.preventDefault();
+        if (!eanInput.trim()) return;
+
+        const barcode = eanInput.trim();
         const article = articles.find(a => a.barcode === barcode);
-        
-        if (article) {
-            setFormData({
-                item_name: article.name,
-                category: article.suppliers?.[0] || 'C+C',
-                quantity: article.quantity || '',
-                unit: article.unit || '',
-                status: 'offen',
-                notes: `${article.name} (${barcode})`
+
+        if (!article) {
+            alert('Artikel mit diesem EAN-Code nicht gefunden');
+            setEanInput('');
+            return;
+        }
+
+        // Check if item already exists in shopping list
+        const existingItem = items.find(
+            item => item.item_name === article.name && item.status === 'offen'
+        );
+
+        if (existingItem) {
+            // Increase quantity
+            const newQuantity = parseFloat(existingItem.quantity || 0) + parseFloat(article.quantity || 1);
+            await updateMutation.mutateAsync({
+                id: existingItem.id,
+                data: { ...existingItem, quantity: newQuantity }
             });
         } else {
-            setFormData({
-                ...formData,
-                item_name: barcode,
-                notes: `Barcode: ${barcode}`
+            // Add new item
+            await createMutation.mutateAsync({
+                item_name: article.name,
+                category: article.suppliers?.[0] || 'C+C',
+                quantity: parseFloat(article.quantity || 1),
+                unit: article.unit || '',
+                status: 'offen',
+                notes: `EAN: ${barcode}`
             });
         }
-        setModalOpen(true);
+
+        setEanInput('');
+    };
+
+    const handleBarcodeScan = (barcode) => {
+        setScannerOpen(false);
+        setEanInput(barcode);
     };
 
     const filteredItems = activeTab === 'alle' 
@@ -175,31 +196,49 @@ export default function Shopping() {
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-5xl mx-auto px-4 py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Einkaufsliste</h1>
-                        <p className="text-slate-400 text-sm mt-1">
-                            {openItems.length} offene Artikel
-                        </p>
-                    </div>
-                    {permissions.canEditShopping && (
-                        <div className="flex gap-2">
-                            <Button 
-                                onClick={() => setScannerOpen(true)}
-                                variant="outline"
-                                className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                            >
-                                <Camera className="w-4 h-4 mr-2" />
-                                Barcode
-                            </Button>
-                            <Button 
-                                onClick={() => openModal()}
-                                className="bg-amber-600 hover:bg-amber-700"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Artikel
-                            </Button>
+                <div className="flex flex-col gap-4 mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl font-bold text-white tracking-tight">Einkaufsliste</h1>
+                            <p className="text-slate-400 text-sm mt-1">
+                                {openItems.length} offene Artikel
+                            </p>
                         </div>
+                        {permissions.canEditShopping && (
+                            <div className="flex gap-2">
+                                <Button 
+                                    onClick={() => setScannerOpen(true)}
+                                    variant="outline"
+                                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                                >
+                                    <Camera className="w-4 h-4 mr-2" />
+                                    Scannen
+                                </Button>
+                                <Button 
+                                    onClick={() => openModal()}
+                                    className="bg-amber-600 hover:bg-amber-700"
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Manuell
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* EAN Input */}
+                    {permissions.canEditShopping && (
+                        <form onSubmit={handleEanSubmit} className="flex gap-2">
+                            <Input
+                                value={eanInput}
+                                onChange={(e) => setEanInput(e.target.value)}
+                                placeholder="EAN-Code eingeben oder scannen..."
+                                className="bg-slate-800 border-slate-700 text-white"
+                            />
+                            <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
+                                <Plus className="w-4 h-4 mr-2" />
+                                Hinzufügen
+                            </Button>
+                        </form>
                     )}
                 </div>
 

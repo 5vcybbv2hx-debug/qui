@@ -30,9 +30,6 @@ export default function TimeTracking() {
     const [currentEmployee, setCurrentEmployee] = useState(null);
     const [activeShift, setActiveShift] = useState(null);
     const [activeTab, setActiveTab] = useState('zeiterfassung');
-    const [breakModalOpen, setBreakModalOpen] = useState(false);
-    const [breakMinutes, setBreakMinutes] = useState(30);
-    const [clockOutEntry, setClockOutEntry] = useState(null);
 
     useEffect(() => {
         const loadEmployee = async () => {
@@ -256,26 +253,22 @@ export default function TimeTracking() {
     });
 
     const clockOutMutation = useMutation({
-        mutationFn: async ({ entryId, breakMinutes }) => {
+        mutationFn: async (entryId) => {
             const entry = clockEntries.find(e => e.id === entryId);
             const clockOutTime = new Date();
             const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
-            const workMinutes = totalMinutes - breakMinutes;
-            const totalHours = Math.round((workMinutes / 60) * 100) / 100;
+            const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
 
-            // Update Clock Entry only
+            // Update Clock Entry only (keine Pause)
             await base44.entities.ClockEntry.update(entryId, {
                 clock_out: clockOutTime.toISOString(),
-                break_minutes: breakMinutes,
+                break_minutes: 0,
                 total_hours: totalHours,
                 status: 'clocked_out'
             });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['clockEntries']);
-            setBreakModalOpen(false);
-            setClockOutEntry(null);
-            setBreakMinutes(30);
         }
     });
 
@@ -296,16 +289,8 @@ export default function TimeTracking() {
     };
 
     const handleClockOut = (entry) => {
-        setClockOutEntry(entry);
-        setBreakModalOpen(true);
-    };
-
-    const confirmClockOut = () => {
-        if (clockOutEntry) {
-            clockOutMutation.mutate({
-                entryId: clockOutEntry.id,
-                breakMinutes: parseInt(breakMinutes) || 0
-            });
+        if (confirm('Möchtest du jetzt ausstempeln?')) {
+            clockOutMutation.mutate(entry.id);
         }
     };
 
@@ -691,12 +676,7 @@ export default function TimeTracking() {
                                                                         <LogOut className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
                                                                         {format(new Date(entry.clock_out), 'HH:mm')}
                                                                     </span>
-                                                                    {entry.break_minutes > 0 && (
-                                                                        <span className="flex items-center gap-1">
-                                                                            <Coffee className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
-                                                                            {entry.break_minutes}m
-                                                                        </span>
-                                                                    )}
+
                                                                 </>
                                                             )}
                                                         </div>
@@ -729,52 +709,7 @@ export default function TimeTracking() {
                     </TabsContent>
                 </Tabs>
 
-                {/* Break Modal */}
-                <Dialog open={breakModalOpen} onOpenChange={setBreakModalOpen}>
-                    <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700">
-                        <DialogHeader>
-                            <DialogTitle className="text-white">
-                                <Coffee className="w-5 h-5 inline mr-2 text-amber-500" />
-                                Pausenzeit angeben
-                            </DialogTitle>
-                        </DialogHeader>
-                        
-                        <div className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <Label className="text-slate-300">Pausenzeit (Minuten)</Label>
-                                <Input
-                                    type="number"
-                                    value={breakMinutes}
-                                    onChange={(e) => setBreakMinutes(e.target.value)}
-                                    min="0"
-                                    step="5"
-                                    className="bg-slate-700 border-slate-600 text-white"
-                                />
-                                <p className="text-xs text-slate-400">
-                                    Gib deine Pausenzeit in Minuten an
-                                </p>
-                            </div>
 
-                            <div className="flex gap-2 pt-4">
-                                <Button 
-                                    variant="outline" 
-                                    onClick={() => setBreakModalOpen(false)}
-                                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
-                                >
-                                    Abbrechen
-                                </Button>
-                                <Button 
-                                    onClick={confirmClockOut}
-                                    className="flex-1 bg-red-600 hover:bg-red-700"
-                                    disabled={clockOutMutation.isPending}
-                                >
-                                    <LogOut className="w-4 h-4 mr-2" />
-                                    Ausstempeln
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
 
                 {/* Modal */}
                 <TimeEntryModal

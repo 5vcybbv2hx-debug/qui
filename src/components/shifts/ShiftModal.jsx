@@ -139,7 +139,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         setMultipleShifts(updated);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
         if (isMultiMode) {

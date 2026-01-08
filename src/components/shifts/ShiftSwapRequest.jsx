@@ -33,7 +33,18 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.ShiftSwapRequest.create(data),
+        mutationFn: async (data) => {
+            // Benachrichtigung für Manager erstellen
+            await base44.entities.ShiftSwapRequest.create(data);
+            await base44.entities.Notification.create({
+                type: 'shift_swap',
+                title: 'Neue Schichttausch-Anfrage',
+                message: `${data.requesting_employee_name} möchte die Schicht am ${format(new Date(data.shift_date), 'dd.MM.yyyy', { locale: de })} mit ${data.target_employee_name} tauschen.`,
+                related_id: shift.id,
+                target_roles: ['admin', 'Manager'],
+                read_by: []
+            });
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['shift-swap-requests']);
             toast.success('Tauschanfrage wurde versendet');

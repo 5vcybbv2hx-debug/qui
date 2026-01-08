@@ -155,11 +155,18 @@ export default function Employees() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        const cleanedData = {
+            ...formData,
+            hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : undefined,
+            vacation_days_per_year: formData.vacation_days_per_year ? parseInt(formData.vacation_days_per_year) : undefined
+        };
+        
         if (selectedEmployee) {
             const isOwnProfile = currentUser?.email === selectedEmployee.email;
-            updateMutation.mutate({ id: selectedEmployee.id, data: formData, isOwnProfile });
+            updateMutation.mutate({ id: selectedEmployee.id, data: cleanedData, isOwnProfile });
         } else {
-            createMutation.mutate(formData);
+            createMutation.mutate(cleanedData);
         }
     };
 

@@ -130,6 +130,14 @@ export default function Shopping() {
         }
     };
 
+    const handleDeleteReceived = async () => {
+        if (confirm(`${receivedItems.length} erledigte Artikel wirklich löschen?`)) {
+            for (const item of receivedItems) {
+                await deleteMutation.mutateAsync(item.id);
+            }
+        }
+    };
+
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
         queryFn: () => base44.entities.Article.list('name')
@@ -364,9 +372,20 @@ export default function Shopping() {
                         {/* Received Items */}
                         {receivedItems.length > 0 && (
                             <div>
-                                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3">
-                                    Erhalten ({receivedItems.length})
-                                </h3>
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                                        Erhalten ({receivedItems.length})
+                                    </h3>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleDeleteReceived}
+                                        className="text-red-600 hover:text-red-700 border-red-300 hover:bg-red-50"
+                                    >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Alle löschen
+                                    </Button>
+                                </div>
                                 <div className="grid gap-3">
                                     {receivedItems.map(item => (
                                         <Card key={item.id} className="p-4 bg-green-50 border-green-100 opacity-75">

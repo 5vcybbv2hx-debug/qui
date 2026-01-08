@@ -1,4 +1,5 @@
 import Articles from './pages/Articles';
+import Budget from './pages/Budget';
 import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
 import Dashboard from './pages/Dashboard';
@@ -15,12 +16,12 @@ import Shopping from './pages/Shopping';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import Budget from './pages/Budget';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Articles": Articles,
+    "Budget": Budget,
     "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
     "Dashboard": Dashboard,
@@ -37,7 +38,6 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "Budget": Budget,
 }
 
 export const pagesConfig = {

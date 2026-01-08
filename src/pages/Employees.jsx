@@ -202,10 +202,12 @@ export default function Employees() {
     };
 
     const canViewDetails = (employee) => {
-        return permissions.isManager || isOwnProfile(employee);
+        // Jeder Mitarbeiter kann seine eigenen Daten sehen
+        return isOwnProfile(employee);
     };
 
     const canEdit = (employee) => {
+        // Jeder Mitarbeiter kann seine eigenen Daten bearbeiten, Manager können alle bearbeiten
         return permissions.isManager || isOwnProfile(employee);
     };
 
@@ -274,13 +276,15 @@ export default function Employees() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-white truncate">{employee.name}</h3>
-                                    <Badge className={cn("mt-1 text-xs", roleColors[employee.role] || 'bg-slate-100 text-slate-700')}>
-                                        {employee.role}
-                                    </Badge>
+                                    {(canViewDetails(employee) || permissions.isManager) && (
+                                        <Badge className={cn("mt-1 text-xs", roleColors[employee.role] || 'bg-slate-100 text-slate-700')}>
+                                            {employee.role}
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Contact Info */}
+                            {/* Contact Info - nur bei eigenem Profil oder Manager */}
                             {canViewDetails(employee) && employee.email && (
                                 <div className="mb-3 pb-3 border-b border-slate-700">
                                     <p className="text-xs text-slate-500 mb-1">E-Mail</p>
@@ -324,7 +328,7 @@ export default function Employees() {
                                 )}
                             </div>
 
-                            {/* Additional Details - only for Manager or own profile */}
+                            {/* Additional Details - nur bei eigenem Profil */}
                             {canViewDetails(employee) && (
                                 <div className="space-y-2 pt-3 border-t border-slate-700 text-sm">
                                     {employee.birthday && (
@@ -335,39 +339,51 @@ export default function Employees() {
                                             </p>
                                         </div>
                                     )}
-                                    {permissions.isManager && employee.contract_type && (
+                                    {employee.contract_type && (
                                         <div>
                                             <p className="text-xs text-slate-500">Vertragsart</p>
                                             <p className="text-slate-300 text-xs">{employee.contract_type}</p>
                                         </div>
                                     )}
-
-                                    {/* Order Buttons */}
-                                    {permissions.isManager && (employee.tshirt_size || employee.pullover_size) && (
-                                        <div className="flex gap-2 pt-2">
-                                            {employee.tshirt_size && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleOrderItem('tshirt', employee.tshirt_size, employee.name)}
-                                                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
-                                                >
-                                                    <ShoppingBag className="w-3 h-3 mr-1" />
-                                                    T-Shirt
-                                                </Button>
-                                            )}
-                                            {employee.pullover_size && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleOrderItem('pullover', employee.pullover_size, employee.name)}
-                                                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
-                                                >
-                                                    <ShoppingBag className="w-3 h-3 mr-1" />
-                                                    Pullover
-                                                </Button>
-                                            )}
+                                    {employee.tshirt_size && (
+                                        <div>
+                                            <p className="text-xs text-slate-500">T-Shirt Größe</p>
+                                            <p className="text-slate-300 text-xs">{employee.tshirt_size}</p>
                                         </div>
+                                    )}
+                                    {employee.pullover_size && (
+                                        <div>
+                                            <p className="text-xs text-slate-500">Pullover Größe</p>
+                                            <p className="text-slate-300 text-xs">{employee.pullover_size}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Order Buttons - nur für Manager */}
+                            {permissions.isManager && !canViewDetails(employee) && (employee.tshirt_size || employee.pullover_size) && (
+                                <div className="flex gap-2 pt-3 border-t border-slate-700">
+                                    {employee.tshirt_size && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleOrderItem('tshirt', employee.tshirt_size, employee.name)}
+                                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                                        >
+                                            <ShoppingBag className="w-3 h-3 mr-1" />
+                                            T-Shirt
+                                        </Button>
+                                    )}
+                                    {employee.pullover_size && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleOrderItem('pullover', employee.pullover_size, employee.name)}
+                                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                                        >
+                                            <ShoppingBag className="w-3 h-3 mr-1" />
+                                            Pullover
+                                        </Button>
                                     )}
                                 </div>
                             )}

@@ -68,7 +68,25 @@ export default function TimeTracking() {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.TimeEntry.create(data),
+        mutationFn: async (data) => {
+            await base44.entities.TimeEntry.create(data);
+            
+            // Create notification for managers when employee submits time entry
+            if (data.status === 'eingereicht' && !permissions.isManager) {
+                try {
+                    await base44.entities.Notification.create({
+                        type: 'general',
+                        title: 'Neue Zeiterfassung eingereicht',
+                        message: `${data.employee_name} hat eine Zeiterfassung für ${format(new Date(data.date), 'dd.MM.yyyy', { locale: de })} eingereicht (${data.total_hours}h).`,
+                        related_id: data.employee_id,
+                        target_roles: ['admin', 'Manager'],
+                        read_by: []
+                    });
+                } catch (error) {
+                    console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+                }
+            }
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['time-entries']);
             setModalOpen(false);
@@ -94,9 +112,28 @@ export default function TimeTracking() {
 
     const approveMutation = useMutation({
         mutationFn: async (entryIds) => {
-            const promises = entryIds.map(id => 
-                base44.entities.TimeEntry.update(id, { status: 'genehmigt' })
-            );
+            const promises = entryIds.map(async (id) => {
+                const entry = timeEntries.find(e => e.id === id);
+                await base44.entities.TimeEntry.update(id, { status: 'genehmigt' });
+                
+                // Create notification for employee
+                if (entry) {
+                    try {
+                        const employee = await base44.entities.Employee.filter({ id: entry.employee_id });
+                        if (employee[0]?.email) {
+                            await base44.entities.Notification.create({
+                                type: 'general',
+                                title: 'Zeiterfassung genehmigt',
+                                message: `Deine Zeiterfassung vom ${format(new Date(entry.date), 'dd.MM.yyyy', { locale: de })} wurde genehmigt (${entry.total_hours}h).`,
+                                related_id: entry.id,
+                                read_by: []
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+                    }
+                }
+            });
             return Promise.all(promises);
         },
         onSuccess: () => {

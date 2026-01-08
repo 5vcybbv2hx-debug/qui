@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Calendar, Flag, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Check, Calendar, Flag, MoreHorizontal, Pencil, Trash2, Archive, Clock, User } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,12 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
                                     <Pencil className="w-4 h-4 mr-2" />
                                     Bearbeiten
                                 </DropdownMenuItem>
+                                {showArchiveButton && (
+                                    <DropdownMenuItem onClick={() => onArchive(todo.id)}>
+                                        <Archive className="w-4 h-4 mr-2" />
+                                        Archivieren
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem 
                                     onClick={() => onDelete(todo.id)}
                                     className="text-red-600"
@@ -113,6 +119,21 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
                             <span className="text-[10px] text-slate-400">
                                 → {todo.assigned_to}
                             </span>
+                        )}
+
+                        {todo.completed_by && (
+                            <div className="flex items-center gap-1 text-green-600">
+                                <User className="w-3 h-3" />
+                                <span className="text-[10px]">{todo.completed_by}</span>
+                                {todo.completed_at && (
+                                    <>
+                                        <Clock className="w-3 h-3 ml-1" />
+                                        <span className="text-[10px]">
+                                            {format(new Date(todo.completed_at), 'dd.MM. HH:mm', { locale: de })}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>

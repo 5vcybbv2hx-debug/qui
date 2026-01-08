@@ -50,6 +50,7 @@ export default function Employees() {
         color: COLORS[0],
         phone: '',
         email: '',
+        whatsapp_group_link: '',
         birthday: '',
         entry_date: '',
         tshirt_size: '',
@@ -120,6 +121,7 @@ export default function Employees() {
                 color: employee.color || COLORS[0],
                 phone: employee.phone || '',
                 email: employee.email || '',
+                whatsapp_group_link: employee.whatsapp_group_link || '',
                 birthday: employee.birthday || '',
                 entry_date: employee.entry_date || '',
                 tshirt_size: employee.tshirt_size || '',
@@ -320,6 +322,22 @@ export default function Employees() {
                                             <MessageCircle className="w-4 h-4" />
                                             <span className="hidden sm:inline">WhatsApp</span>
                                         </a>
+                                        </>
+                                        )}
+                                        {employee.whatsapp_group_link && (
+                                        <a
+                                        href={employee.whatsapp_group_link}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-green-700 hover:bg-green-600 text-white transition-colors text-sm"
+                                        title="WhatsApp Gruppe"
+                                        >
+                                        <MessageCircle className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Gruppe</span>
+                                        </a>
+                                        )}
+                                        {!employee.whatsapp_group_link && employee.phone && (
+                                        <>
                                     </>
                                 )}
                                 {employee.email && !employee.phone && (
@@ -599,6 +617,18 @@ export default function Employees() {
                                 />
                                 <p className="text-xs text-slate-500">
                                     Wird für Anrufe und WhatsApp verwendet
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>WhatsApp Gruppen-Link</Label>
+                                <Input
+                                    value={formData.whatsapp_group_link}
+                                    onChange={(e) => setFormData({ ...formData, whatsapp_group_link: e.target.value })}
+                                    placeholder="https://chat.whatsapp.com/..."
+                                />
+                                <p className="text-xs text-slate-500">
+                                    Link zur WhatsApp-Gruppe für direkten Zugriff
                                 </p>
                             </div>
 

@@ -396,8 +396,8 @@ export default function Employees() {
                                 </div>
                             )}
 
-                            {/* Order Buttons - nur für Manager */}
-                            {permissions.isManager && !canViewDetails(employee) && (employee.tshirt_size || employee.pullover_size) && (
+                            {/* Order Buttons - für alle Mitarbeiter */}
+                            {(canViewDetails(employee) || permissions.isManager) && (employee.tshirt_size || employee.pullover_size) && (
                                 <div className="flex gap-2 pt-3 border-t border-slate-700">
                                     {employee.tshirt_size && (
                                         <Button

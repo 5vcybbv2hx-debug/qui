@@ -7,6 +7,9 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
+import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
+import OfflineIndicator from '@/components/pwa/OfflineIndicator';
+import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
 
 const navigation = [
     { name: 'Mein Dashboard', page: 'MyDashboard', icon: Home, permission: 'canViewDashboard' },
@@ -40,6 +43,9 @@ export default function Layout({ children, currentPageName }) {
 
     return (
         <div className="min-h-screen bg-slate-900">
+            <ServiceWorkerRegistration />
+            <PWAInstallPrompt />
+            <OfflineIndicator />
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
                 <div className="flex flex-col flex-grow bg-slate-950 border-r border-slate-800 pt-5 overflow-y-auto">
@@ -160,7 +166,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Main Content */}
-            <main className="md:pl-64 pt-14 md:pt-0">
+            <main className="md:pl-64 pt-14 md:pt-0 pb-safe">
                 {children}
             </main>
         </div>

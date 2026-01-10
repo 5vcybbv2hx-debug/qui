@@ -58,6 +58,40 @@ export default function MyDashboard() {
         }
     });
 
+    const clockOutMutation = useMutation({
+        mutationFn: async (entryId) => {
+            const entry = clockEntries.find(e => e.id === entryId);
+            const clockOutTime = new Date();
+            const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
+            const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+
+            // Update Clock Entry
+            await base44.entities.ClockEntry.update(entryId, {
+                clock_out: clockOutTime.toISOString(),
+                break_minutes: 0,
+                total_hours: totalHours,
+                status: 'clocked_out'
+            });
+
+            // Erstelle automatisch einen TimeEntry
+            await base44.entities.TimeEntry.create({
+                employee_id: entry.employee_id,
+                employee_name: entry.employee_name,
+                date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+                start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                end_time: format(clockOutTime, 'HH:mm'),
+                break_minutes: 0,
+                total_hours: totalHours,
+                notes: 'Automatisch von Stempeluhr übertragen',
+                status: 'eingereicht'
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['clockEntries']);
+            queryClient.invalidateQueries(['timeEntries']);
+        }
+    });
+
     const currentEmployee = employees.find(e => e.email === currentUser?.email);
     
     if (!currentEmployee) {
@@ -122,8 +156,14 @@ export default function MyDashboard() {
         return `${hours}h ${mins}m`;
     };
 
-    const handleQuickClockIn = () => {
+    const handleClockIn = () => {
         clockInMutation.mutate(currentEmployee.id);
+    };
+
+    const handleClockOut = (entry) => {
+        if (confirm('Möchtest du jetzt ausstempeln?')) {
+            clockOutMutation.mutate(entry.id);
+        }
     };
 
     return (
@@ -140,49 +180,59 @@ export default function MyDashboard() {
                 </div>
 
                 {/* Clock Status Banner */}
-                {activeClockEntry && (
-                    <Card className="p-3 sm:p-4 mb-4 sm:mb-6 bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-700">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shrink-0" />
-                                <div>
-                                    <p className="text-white font-semibold text-sm sm:text-base">Aktuell eingestempelt</p>
-                                    <p className="text-green-300 text-xs sm:text-sm">
-                                        Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
-                                    </p>
-                                </div>
+                <Card className="p-4 sm:p-6 mb-4 sm:mb-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div 
+                                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-2xl shrink-0"
+                                style={{ backgroundColor: currentEmployee.color || '#64748b' }}
+                            >
+                                {currentEmployee.name?.charAt(0).toUpperCase()}
                             </div>
-                            <Link to={createPageUrl('ClockIn')} className="w-full sm:w-auto">
-                                <Button variant="outline" className="w-full sm:w-auto border-green-600 text-green-300 hover:bg-green-800">
-                                    <LogOut className="w-4 h-4 mr-2" />
+                            <div>
+                                {activeClockEntry ? (
+                                    <>
+                                        <p className="text-white font-semibold text-sm sm:text-base">Eingestempelt</p>
+                                        <p className="text-green-400 text-xs sm:text-sm">
+                                            Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} Uhr • {getWorkingDuration(activeClockEntry.clock_in)}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-white font-semibold text-sm sm:text-base">Nicht eingestempelt</p>
+                                        <p className="text-slate-400 text-xs sm:text-sm">Bereit zum Einstempeln</p>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            {activeClockEntry ? (
+                                <Button 
+                                    onClick={() => handleClockOut(activeClockEntry)}
+                                    size="lg"
+                                    className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                                    disabled={clockOutMutation.isPending}
+                                >
+                                    <LogOut className="w-5 h-5 mr-2" />
                                     Ausstempeln
                                 </Button>
-                            </Link>
+                            ) : (
+                                <Button 
+                                    onClick={handleClockIn}
+                                    size="lg"
+                                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                                    disabled={clockInMutation.isPending}
+                                >
+                                    <LogIn className="w-5 h-5 mr-2" />
+                                    Einstempeln
+                                </Button>
+                            )}
                         </div>
-                    </Card>
-                )}
+                    </div>
+                </Card>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                    <Link to={createPageUrl('ClockIn')} className="block">
-                        <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
-                            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2 sm:gap-3 text-center sm:text-left">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-green-600/20 flex items-center justify-center shrink-0">
-                                    {activeClockEntry ? (
-                                        <LogOut className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
-                                    ) : (
-                                        <LogIn className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
-                                    )}
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-xs sm:text-sm text-slate-400">Stempeluhr</p>
-                                    <p className="font-semibold text-sm sm:text-base text-white truncate">
-                                        {activeClockEntry ? 'Ausstempeln' : 'Einstempeln'}
-                                    </p>
-                                </div>
-                            </div>
-                        </Card>
-                    </Link>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
 
                     <Link to={createPageUrl('Shifts')} className="block">
                         <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">

@@ -7,7 +7,7 @@ import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, T
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,8 +28,6 @@ export default function TimeTracking() {
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [currentEmployee, setCurrentEmployee] = useState(null);
-    const [activeShift, setActiveShift] = useState(null);
-    const [activeTab, setActiveTab] = useState('stempeluhr');
 
     useEffect(() => {
         const loadEmployee = async () => {
@@ -40,18 +38,6 @@ export default function TimeTracking() {
             });
             if (employees[0]) {
                 setCurrentEmployee(employees[0]);
-                // Prüfe ob eine aktive Schicht läuft
-                const today = format(new Date(), 'yyyy-MM-dd');
-                const allEntries = await base44.entities.TimeEntry.list('-created_date');
-                const todayDraft = allEntries.find(e => 
-                    e.employee_id === employees[0].id && 
-                    e.date === today && 
-                    e.status === 'entwurf' &&
-                    !e.end_time
-                );
-                if (todayDraft) {
-                    setActiveShift(todayDraft);
-                }
             }
         };
         loadEmployee();
@@ -190,51 +176,7 @@ export default function TimeTracking() {
         return false;
     };
 
-    const handleStartShift = async () => {
-        if (!currentEmployee) return;
-        
-        const now = new Date();
-        const newEntry = {
-            employee_id: currentEmployee.id,
-            employee_name: currentEmployee.name,
-            date: format(now, 'yyyy-MM-dd'),
-            start_time: format(now, 'HH:mm'),
-            end_time: '',
-            break_minutes: 0,
-            notes: '',
-            status: 'entwurf',
-            total_hours: 0
-        };
-        
-        const created = await createMutation.mutateAsync(newEntry);
-        setActiveShift(created);
-    };
 
-    const handleEndShift = async () => {
-        if (!activeShift) return;
-        
-        const now = new Date();
-        const endTime = format(now, 'HH:mm');
-        
-        // Berechne Stunden
-        const [startH, startM] = activeShift.start_time.split(':').map(Number);
-        const [endH, endM] = endTime.split(':').map(Number);
-        let totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
-        if (totalMinutes < 0) totalMinutes += 24 * 60;
-        const totalHours = totalMinutes / 60;
-        
-        await updateMutation.mutateAsync({
-            id: activeShift.id,
-            data: {
-                ...activeShift,
-                end_time: endTime,
-                total_hours: totalHours,
-                status: 'eingereicht' // Automatisch eingereicht
-            }
-        });
-        
-        setActiveShift(null);
-    };
 
     // Stempeluhr functions
     const clockInMutation = useMutation({
@@ -259,16 +201,30 @@ export default function TimeTracking() {
             const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
             const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
 
-            // Update Clock Entry only (keine Pause)
+            // Update Clock Entry
             await base44.entities.ClockEntry.update(entryId, {
                 clock_out: clockOutTime.toISOString(),
                 break_minutes: 0,
                 total_hours: totalHours,
                 status: 'clocked_out'
             });
+
+            // Erstelle automatisch einen TimeEntry
+            await base44.entities.TimeEntry.create({
+                employee_id: entry.employee_id,
+                employee_name: entry.employee_name,
+                date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+                start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                end_time: format(clockOutTime, 'HH:mm'),
+                break_minutes: 0,
+                total_hours: totalHours,
+                notes: 'Automatisch von Stempeluhr übertragen',
+                status: 'eingereicht'
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['clockEntries']);
+            queryClient.invalidateQueries(['time-entries']);
         }
     });
 
@@ -345,28 +301,107 @@ export default function TimeTracking() {
                 <div className="mb-6 sm:mb-8">
                     <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Zeit & Stempeluhr</h1>
                     <p className="text-slate-400 text-xs sm:text-sm mt-1">
-                        Zeiterfassung und Stempeluhr an einem Ort
+                        Stempeln und Zeiterfassung in einer Übersicht
                     </p>
                 </div>
 
-                {/* Tabs */}
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                    <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-800 border-slate-700">
-                        <TabsTrigger value="stempeluhr" className="text-sm sm:text-base">
-                            <LogIn className="w-4 h-4 mr-2" />
-                            Stempeluhr
-                        </TabsTrigger>
-                        <TabsTrigger value="zeiterfassung" className="text-sm sm:text-base">
-                            <Clock className="w-4 h-4 mr-2" />
-                            Zeiterfassung
-                        </TabsTrigger>
-                    </TabsList>
+                {/* Stempeluhr Section - für alle sichtbar */}
+                {currentEmployee && (
+                    <Card className="p-4 sm:p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 mb-6">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <div 
+                                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-2xl"
+                                    style={{ backgroundColor: currentEmployee.color || '#64748b' }}
+                                >
+                                    {currentEmployee.name?.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h2 className="text-lg sm:text-xl font-bold text-white">{currentEmployee.name}</h2>
+                                    <p className="text-xs sm:text-sm text-slate-400">{currentEmployee.role}</p>
+                                    {activeClockEntry && (
+                                        <p className="text-xs sm:text-sm text-green-400 mt-1">
+                                            Eingestempelt um {format(new Date(activeClockEntry.clock_in), 'HH:mm')} Uhr
+                                            <span className="ml-2">⏱️ {getWorkingDuration(activeClockEntry.clock_in)}</span>
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                {activeClockEntry ? (
+                                    <Button 
+                                        onClick={() => handleClockOut(activeClockEntry)}
+                                        size="lg"
+                                        className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                                    >
+                                        <LogOut className="w-5 h-5 mr-2" />
+                                        Ausstempeln
+                                    </Button>
+                                ) : (
+                                    <Button 
+                                        onClick={handleClockIn}
+                                        size="lg"
+                                        className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                                        disabled={clockInMutation.isPending}
+                                    >
+                                        <LogIn className="w-5 h-5 mr-2" />
+                                        Einstempeln
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+                )}
 
-                    {/* Zeiterfassung Tab */}
-                    <TabsContent value="zeiterfassung" className="space-y-6">{/* ... existing content ... */}
+                {/* Today's Clock Entries */}
+                {todayClockEntries.length > 0 && (
+                    <div className="mb-6">
+                        <h3 className="text-sm sm:text-base font-semibold text-white mb-3">Heutige Stempelungen</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {todayClockEntries.map(entry => (
+                                <Card key={entry.id} className="p-3 bg-slate-800 border-slate-700">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-white text-sm truncate">{entry.employee_name}</p>
+                                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                                                <span className="flex items-center gap-1">
+                                                    <LogIn className="w-3 h-3 text-green-500" />
+                                                    {format(new Date(entry.clock_in), 'HH:mm')}
+                                                </span>
+                                                {entry.clock_out && (
+                                                    <span className="flex items-center gap-1">
+                                                        <LogOut className="w-3 h-3 text-red-500" />
+                                                        {format(new Date(entry.clock_out), 'HH:mm')}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <Badge className={entry.status === 'clocked_in' ? 'bg-green-600 text-xs' : 'bg-slate-600 text-xs'}>
+                                                {entry.status === 'clocked_in' ? 'Aktiv' : 'Fertig'}
+                                            </Badge>
+                                            {entry.total_hours && (
+                                                <p className="text-sm font-bold text-white mt-1">
+                                                    {entry.total_hours}h
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
-                        {/* Stats Overview */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                {/* Zeiterfassung Section */}
+                <div className="space-y-6">
+
+        
+
+                <h2 className="text-lg sm:text-xl font-bold text-white mb-4">Zeiterfassung</h2>
+                
+                {/* Stats Overview */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
                     <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/40 to-slate-800 border-slate-700">
                         <div className="flex items-center justify-between">
                             <div>
@@ -400,7 +435,7 @@ export default function TimeTracking() {
                 </div>
 
                 {/* Month Selector */}
-                <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-4 sm:mb-6">
+                <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-4">
                     <div className="flex items-center justify-between gap-2">
                         <Button
                             variant="outline"
@@ -427,60 +462,19 @@ export default function TimeTracking() {
                     </div>
                 </Card>
 
-                {/* Clock In/Out Buttons */}
-                {!permissions.isManager && currentEmployee && (
-                    <Card className="p-4 sm:p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 mb-6">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="flex-1">
-                                <h3 className="text-base sm:text-lg font-semibold text-white mb-1">Zeiterfassung</h3>
-                                {activeShift ? (
-                                    <div className="text-sm text-slate-400">
-                                        Gestartet um {activeShift.start_time} Uhr
-                                        <span className="ml-2 inline-flex items-center gap-1 text-green-400">
-                                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                                            Aktiv
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-slate-400">Starte deine Schicht</p>
-                                )}
-                            </div>
-                            {activeShift ? (
-                                <Button 
-                                    onClick={handleEndShift}
-                                    size="lg"
-                                    className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
-                                >
-                                    <Clock className="w-5 h-5 mr-2" />
-                                    Schicht beenden
-                                </Button>
-                            ) : (
-                                <Button 
-                                    onClick={handleStartShift}
-                                    size="lg"
-                                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-                                >
-                                    <Clock className="w-5 h-5 mr-2" />
-                                    Schicht starten
-                                </Button>
-                            )}
-                        </div>
-                    </Card>
-                )}
-
-                {/* Add Entry Button - nur für Admins */}
-                {permissions.isManager && (
+                {/* Add Entry Button */}
+                <div className="mb-4">
                     <Button 
                         onClick={() => {
                             setSelectedEntry(null);
                             setModalOpen(true);
                         }}
-                        className="bg-amber-600 hover:bg-amber-700 mb-4 sm:mb-6 w-full sm:w-auto text-sm"
+                        className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto text-sm"
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Neue Zeiterfassung
+                        {permissions.isManager ? 'Neue Zeiterfassung' : 'Manueller Zeiteintrag'}
                     </Button>
-                )}
+                </div>
 
                 {/* Entries by Employee */}
                 <div className="space-y-4 sm:space-y-6">
@@ -586,134 +580,16 @@ export default function TimeTracking() {
                     })}
                 </div>
 
-                        {visibleEntries.length === 0 && (
-                            <Card className="p-12 bg-slate-800 border-slate-700">
-                                <div className="text-center text-slate-500">
-                                    <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                    <p>Noch keine Zeiteinträge für diesen Monat</p>
-                                    <p className="text-xs mt-1">Erstelle deinen ersten Eintrag</p>
-                                </div>
-                            </Card>
-                        )}
-                    </TabsContent>
-
-                    {/* Stempeluhr Tab */}
-                    <TabsContent value="stempeluhr" className="space-y-6">
-                        {currentEmployee ? (
-                            <>
-                                {/* Clock Card */}
-                                <Card className="p-6 sm:p-8 bg-slate-800 border-slate-700">
-                                    <div className="text-center">
-                                        <div className="mb-4 sm:mb-6">
-                                            <div 
-                                                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center text-white font-bold text-2xl sm:text-3xl mx-auto mb-3 sm:mb-4"
-                                                style={{ backgroundColor: currentEmployee.color || '#64748b' }}
-                                            >
-                                                {currentEmployee.name?.charAt(0).toUpperCase()}
-                                            </div>
-                                            <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">{currentEmployee.name}</h2>
-                                            <p className="text-sm sm:text-base text-slate-400">{currentEmployee.role}</p>
-                                        </div>
-
-                                        {activeClockEntry ? (
-                                            <div className="space-y-3 sm:space-y-4">
-                                                <Badge className="bg-green-600 text-white text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2">
-                                                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                                                    Eingestempelt
-                                                </Badge>
-                                                <div className="text-slate-300">
-                                                    <p className="text-xs sm:text-sm">Eingestempelt um</p>
-                                                    <p className="text-xl sm:text-2xl font-bold text-white">
-                                                        {format(new Date(activeClockEntry.clock_in), 'HH:mm')} Uhr
-                                                    </p>
-                                                    <p className="text-sm sm:text-base text-slate-400 mt-2">
-                                                        Arbeitszeit: {getWorkingDuration(activeClockEntry.clock_in)}
-                                                    </p>
-                                                </div>
-                                                <Button 
-                                                    onClick={() => handleClockOut(activeClockEntry)}
-                                                    size="lg"
-                                                    className="bg-red-600 hover:bg-red-700 text-white mt-3 sm:mt-4 w-full sm:w-auto"
-                                                >
-                                                    <LogOut className="w-5 h-5 mr-2" />
-                                                    Ausstempeln
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-3 sm:space-y-4">
-                                                <Badge className="bg-slate-600 text-white text-base sm:text-lg px-3 sm:px-4 py-1.5 sm:py-2">
-                                                    Nicht eingestempelt
-                                                </Badge>
-                                                <Button 
-                                                    onClick={handleClockIn}
-                                                    size="lg"
-                                                    className="bg-green-600 hover:bg-green-700 text-white mt-3 sm:mt-4 w-full sm:w-auto"
-                                                    disabled={clockInMutation.isPending}
-                                                >
-                                                    <LogIn className="w-5 h-5 mr-2" />
-                                                    Einstempeln
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </Card>
-
-                                {/* Today's Clock Entries */}
-                                <div className="space-y-3 sm:space-y-4">
-                                    <h3 className="text-base sm:text-lg font-semibold text-white">Heutige Stempelungen</h3>
-                                    {todayClockEntries.length === 0 ? (
-                                        <Card className="p-6 text-center bg-slate-800 border-slate-700">
-                                            <p className="text-sm sm:text-base text-slate-400">Noch keine Stempelungen heute</p>
-                                        </Card>
-                                    ) : (
-                                        todayClockEntries.map(entry => (
-                                            <Card key={entry.id} className="p-3 sm:p-4 bg-slate-800 border-slate-700">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-semibold text-white text-sm sm:text-base truncate">{entry.employee_name}</p>
-                                                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs sm:text-sm text-slate-400">
-                                                            <span className="flex items-center gap-1">
-                                                                <LogIn className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-                                                                {format(new Date(entry.clock_in), 'HH:mm')}
-                                                            </span>
-                                                            {entry.clock_out && (
-                                                                <>
-                                                                    <span className="flex items-center gap-1">
-                                                                        <LogOut className="w-3 h-3 sm:w-4 sm:h-4 text-red-500" />
-                                                                        {format(new Date(entry.clock_out), 'HH:mm')}
-                                                                    </span>
-
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <Badge className={entry.status === 'clocked_in' ? 'bg-green-600 text-xs' : 'bg-slate-600 text-xs'}>
-                                                            {entry.status === 'clocked_in' ? 'Aktiv' : 'Beendet'}
-                                                        </Badge>
-                                                        {entry.total_hours && (
-                                                            <p className="text-base sm:text-lg font-bold text-white mt-1">
-                                                                {entry.total_hours}h
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        ))
-                                    )}
-                                </div>
-                            </>
-                        ) : (
-                            <Card className="p-8 text-center bg-slate-800 border-slate-700">
-                                <Clock className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-                                <h2 className="text-xl font-bold text-white mb-2">Kein Mitarbeiterprofil</h2>
-                                <p className="text-slate-400">
-                                    Du musst als Mitarbeiter registriert sein, um die Stempeluhr zu nutzen.
-                                </p>
-                            </Card>
-                        )}
-                    </TabsContent>
-                </Tabs>
+                {visibleEntries.length === 0 && (
+                    <Card className="p-12 bg-slate-800 border-slate-700">
+                        <div className="text-center text-slate-500">
+                            <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                            <p>Noch keine Zeiteinträge für diesen Monat</p>
+                            <p className="text-xs mt-1">Stempelzeiten werden automatisch übertragen</p>
+                        </div>
+                    </Card>
+                )}
+            </div>
 
 
 

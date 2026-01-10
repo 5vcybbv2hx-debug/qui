@@ -29,7 +29,7 @@ export default function TimeTracking() {
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [currentEmployee, setCurrentEmployee] = useState(null);
     const [activeShift, setActiveShift] = useState(null);
-    const [activeTab, setActiveTab] = useState('zeiterfassung');
+    const [activeTab, setActiveTab] = useState('stempeluhr');
 
     useEffect(() => {
         const loadEmployee = async () => {
@@ -343,17 +343,23 @@ export default function TimeTracking() {
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Zeiterfassung</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Zeit & Stempeluhr</h1>
                     <p className="text-slate-400 text-xs sm:text-sm mt-1">
-                        {format(selectedMonth, 'MMMM yyyy', { locale: de })} · {totalHours.toFixed(2)}h gesamt · {approvedHours.toFixed(2)}h genehmigt
+                        Zeiterfassung und Stempeluhr an einem Ort
                     </p>
                 </div>
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
                     <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-800 border-slate-700">
-                        <TabsTrigger value="zeiterfassung">Zeiterfassung</TabsTrigger>
-                        <TabsTrigger value="stempeluhr">Stempeluhr</TabsTrigger>
+                        <TabsTrigger value="stempeluhr" className="text-sm sm:text-base">
+                            <LogIn className="w-4 h-4 mr-2" />
+                            Stempeluhr
+                        </TabsTrigger>
+                        <TabsTrigger value="zeiterfassung" className="text-sm sm:text-base">
+                            <Clock className="w-4 h-4 mr-2" />
+                            Zeiterfassung
+                        </TabsTrigger>
                     </TabsList>
 
                     {/* Zeiterfassung Tab */}

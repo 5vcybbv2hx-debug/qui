@@ -2,7 +2,6 @@ import Articles from './pages/Articles';
 import Budget from './pages/Budget';
 import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
-import ClockIn from './pages/ClockIn';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
@@ -26,7 +25,6 @@ export const PAGES = {
     "Budget": Budget,
     "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
-    "ClockIn": ClockIn,
     "Dashboard": Dashboard,
     "Employees": Employees,
     "Events": Events,

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import TimeEntryModal from '@/components/timetracking/TimeEntryModal';
+import MonthlyReportExport from '@/components/timetracking/MonthlyReportExport';
 
 const statusConfig = {
     'entwurf': { label: 'Entwurf', color: 'bg-slate-100 text-slate-700', icon: FileText },
@@ -462,8 +463,8 @@ export default function TimeTracking() {
                     </div>
                 </Card>
 
-                {/* Add Entry Button */}
-                <div className="mb-4">
+                {/* Add Entry Button and Report Export */}
+                <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <Button 
                         onClick={() => {
                             setSelectedEntry(null);
@@ -474,6 +475,7 @@ export default function TimeTracking() {
                         <Plus className="w-4 h-4 mr-2" />
                         {permissions.isManager ? 'Neue Zeiterfassung' : 'Manueller Zeiteintrag'}
                     </Button>
+                    <MonthlyReportExport isVisible={permissions.isManager} />
                 </div>
 
                 {/* Entries by Employee */}

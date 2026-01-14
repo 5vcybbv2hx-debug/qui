@@ -2,11 +2,13 @@ import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Scan, Camera, Check, Trash2, CheckCheck } from 'lucide-react';
+import { Scan, Camera, Check, Trash2, CheckCheck, Plus, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import BarcodeScanner from '../components/restock/BarcodeScanner';
 
@@ -15,6 +17,11 @@ export default function Restock() {
     const barcodeInputRef = useRef(null);
     const [barcode, setBarcode] = useState('');
     const [scannerOpen, setScannerOpen] = useState(false);
+    const [manualAddOpen, setManualAddOpen] = useState(false);
+    const [selectedArticle, setSelectedArticle] = useState('');
+    const [manualQuantity, setManualQuantity] = useState(1);
+    const [editingItem, setEditingItem] = useState(null);
+    const [editQuantity, setEditQuantity] = useState('');
 
     const { data: restockItems = [] } = useQuery({
         queryKey: ['restock-items'],
@@ -126,6 +133,68 @@ export default function Restock() {
         }
     };
 
+    const handleManualAdd = async () => {
+        if (!selectedArticle) return;
+
+        const article = articles.find(a => a.id === selectedArticle);
+        if (!article) return;
+
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const existingItem = restockItems.find(
+            item => item.barcode === article.barcode && item.date === today && !item.is_completed
+        );
+
+        if (existingItem) {
+            updateMutation.mutate({
+                id: existingItem.id,
+                data: {
+                    ...existingItem,
+                    quantity: existingItem.quantity + manualQuantity
+                }
+            });
+        } else {
+            const user = await base44.auth.me();
+            createMutation.mutate({
+                barcode: article.barcode,
+                article_name: article.name,
+                quantity: manualQuantity,
+                restocked_by: user?.full_name || user?.email || 'Unbekannt',
+                date: today,
+                time: format(new Date(), 'HH:mm'),
+                is_completed: false
+            });
+        }
+
+        setManualAddOpen(false);
+        setSelectedArticle('');
+        setManualQuantity(1);
+    };
+
+    const handleQuantityEdit = (item) => {
+        setEditingItem(item);
+        setEditQuantity(String(item.quantity));
+    };
+
+    const saveQuantityEdit = () => {
+        if (!editingItem) return;
+        const newQuantity = parseInt(editQuantity);
+        if (isNaN(newQuantity) || newQuantity < 1) {
+            alert('Bitte gültige Menge eingeben');
+            return;
+        }
+
+        updateMutation.mutate({
+            id: editingItem.id,
+            data: {
+                ...editingItem,
+                quantity: newQuantity
+            }
+        });
+
+        setEditingItem(null);
+        setEditQuantity('');
+    };
+
     const todayItems = restockItems
         .filter(item => item.date === format(new Date(), 'yyyy-MM-dd'))
         .sort((a, b) => {
@@ -210,17 +279,28 @@ export default function Restock() {
                         <h2 className="text-lg font-semibold text-white">
                             Heutige Auffüllliste
                         </h2>
-                        {todayItems.filter(i => i.is_completed).length > 0 && (
+                        <div className="flex gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={handleDeleteCompleted}
-                                className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                                onClick={() => setManualAddOpen(true)}
+                                className="border-amber-600 text-amber-400 hover:bg-amber-600/20"
                             >
-                                <CheckCheck className="w-4 h-4 mr-2" />
-                                Erledigte löschen
+                                <Plus className="w-4 h-4 mr-2" />
+                                Manuell hinzufügen
                             </Button>
-                        )}
+                            {todayItems.filter(i => i.is_completed).length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleDeleteCompleted}
+                                    className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                                >
+                                    <CheckCheck className="w-4 h-4 mr-2" />
+                                    Erledigte löschen
+                                </Button>
+                            )}
+                        </div>
                     </div>
                     {todayItems.length > 0 ? (
                         <div className="space-y-4">
@@ -273,7 +353,13 @@ export default function Restock() {
                                                                 {item.article_name}
                                                             </h3>
                                                             <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                                                                <span className="font-semibold text-amber-400">{item.quantity}x</span>
+                                                                <button
+                                                                    onClick={() => handleQuantityEdit(item)}
+                                                                    className="font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                                                                >
+                                                                    {item.quantity}x
+                                                                    <Pencil className="w-3 h-3" />
+                                                                </button>
                                                                 <span>•</span>
                                                                 <span>{item.barcode}</span>
                                                             </div>
@@ -312,6 +398,111 @@ export default function Restock() {
                     onClose={() => setScannerOpen(false)}
                     onScan={handleCameraScan}
                 />
+
+                {/* Manual Add Dialog */}
+                <Dialog open={manualAddOpen} onOpenChange={setManualAddOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Artikel manuell hinzufügen</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                                <Label>Artikel auswählen</Label>
+                                <Select value={selectedArticle} onValueChange={setSelectedArticle}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Artikel wählen..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {articles
+                                            .sort((a, b) => {
+                                                const catCompare = (a.category || '').localeCompare(b.category || '');
+                                                if (catCompare !== 0) return catCompare;
+                                                return a.name.localeCompare(b.name);
+                                            })
+                                            .map(article => (
+                                                <SelectItem key={article.id} value={article.id}>
+                                                    {article.category && `[${article.category}] `}{article.name}
+                                                </SelectItem>
+                                            ))
+                                        }
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Menge</Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={manualQuantity}
+                                    onChange={(e) => setManualQuantity(parseInt(e.target.value) || 1)}
+                                />
+                            </div>
+
+                            <div className="flex gap-2 pt-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setManualAddOpen(false)}
+                                    className="flex-1"
+                                >
+                                    Abbrechen
+                                </Button>
+                                <Button
+                                    onClick={handleManualAdd}
+                                    disabled={!selectedArticle}
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                >
+                                    Hinzufügen
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Quantity Dialog */}
+                <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Menge ändern</DialogTitle>
+                        </DialogHeader>
+                        {editingItem && (
+                            <div className="space-y-4 mt-4">
+                                <div className="p-3 bg-slate-800 rounded-lg">
+                                    <p className="font-medium text-white">{editingItem.article_name}</p>
+                                    <p className="text-xs text-slate-400 mt-1">Barcode: {editingItem.barcode}</p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Neue Menge</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={editQuantity}
+                                        onChange={(e) => setEditQuantity(e.target.value)}
+                                        autoFocus
+                                        onKeyDown={(e) => e.key === 'Enter' && saveQuantityEdit()}
+                                    />
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setEditingItem(null)}
+                                        className="flex-1"
+                                    >
+                                        Abbrechen
+                                    </Button>
+                                    <Button
+                                        onClick={saveQuantityEdit}
+                                        className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                    >
+                                        Speichern
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );

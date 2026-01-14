@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { X, Trash2, Plus, Minus } from 'lucide-react';
+import { X, Trash2, Plus, Minus, Users, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,230 +14,136 @@ import { cn } from "@/lib/utils";
 import ShiftSwapRequest from './ShiftSwapRequest';
 
 export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete, existingShifts = [] }) {
+    const { data: shiftTypes = [] } = useQuery({
+        queryKey: ['shift-types'],
+        queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order')
+    });
+
+    const getColorForOrder = (order, totalTypes) => {
+        const hue = 120 - (order / Math.max(totalTypes - 1, 1)) * 120;
+        return `hsl(${hue}, 70%, 50%)`;
+    };
+
     const [formData, setFormData] = useState({
         employee_id: '',
         employee_name: '',
         date: '',
         start_time: '16:00',
         end_time: '03:00',
-        shift_type: 'Aufmachen',
+        shift_type: '',
         notes: '',
         color: ''
     });
 
-    const [multipleShifts, setMultipleShifts] = useState([
-        { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
-        { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
-        { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' }
-    ]);
-    
-    const [isMultiMode, setIsMultiMode] = useState(false);
+    const [selectedEmployees, setSelectedEmployees] = useState([]);
 
     useEffect(() => {
         if (shift) {
-            setIsMultiMode(false);
             setFormData({
                 employee_id: shift.employee_id || '',
                 employee_name: shift.employee_name || '',
                 date: shift.date || '',
                 start_time: shift.start_time || '18:00',
                 end_time: shift.end_time || '02:00',
-                shift_type: shift.shift_type || 'Spätschicht',
+                shift_type: shift.shift_type || '',
                 notes: shift.notes || '',
                 color: shift.color || ''
             });
+            setSelectedEmployees([]);
         } else if (selectedDate) {
-            setIsMultiMode(false);
-            setFormData(prev => ({
-                ...prev,
+            const defaultType = shiftTypes[0];
+            setFormData({
                 employee_id: '',
                 employee_name: '',
                 date: format(selectedDate, 'yyyy-MM-dd'),
-                start_time: '16:00',
-                end_time: '03:00',
-                shift_type: 'Aufmachen',
+                start_time: defaultType?.start_time || '16:00',
+                end_time: defaultType?.end_time || '03:00',
+                shift_type: defaultType?.name || '',
                 notes: '',
                 color: ''
-            }));
-            setMultipleShifts([
-                { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
-                { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' },
-                { employee_id: '', start_time: '16:00', end_time: '03:00', shift_type: 'Aufmachen' }
-            ]);
+            });
+            setSelectedEmployees([]);
         }
-    }, [shift, selectedDate, open]);
+    }, [shift, selectedDate, open, shiftTypes]);
 
-    const handleEmployeeChange = (employeeId) => {
-        const employee = employees.find(e => e.id === employeeId);
+    const toggleEmployee = (employeeId) => {
+        setSelectedEmployees(prev => 
+            prev.includes(employeeId) 
+                ? prev.filter(id => id !== employeeId)
+                : [...prev, employeeId]
+        );
+    };
+
+    const handleShiftTypeChange = (shiftTypeName) => {
+        const shiftType = shiftTypes.find(t => t.name === shiftTypeName);
         setFormData(prev => ({
             ...prev,
-            employee_id: employeeId,
-            employee_name: employee?.name || '',
-            color: employee?.color || ''
+            shift_type: shiftTypeName,
+            start_time: shiftType?.start_time || prev.start_time,
+            end_time: shiftType?.end_time || prev.end_time
         }));
-    };
-
-    const handleShiftTypeChange = (shiftType) => {
-        let start_time = formData.start_time;
-        let end_time = formData.end_time;
-
-        // Auto-fill times based on shift type
-        if (shiftType === 'Aufmachen') {
-            start_time = '16:00';
-            end_time = '03:00';
-        } else if (shiftType === 'Frühschicht') {
-            start_time = '20:00';
-            end_time = '05:00';
-        } else if (shiftType === 'Spätschicht') {
-            start_time = '21:00';
-            end_time = '05:00';
-        }
-        // For Sonderschicht, keep current times (manual entry)
-
-        setFormData(prev => ({
-            ...prev,
-            shift_type: shiftType,
-            start_time,
-            end_time
-        }));
-    };
-
-    const addShiftSlot = () => {
-        if (multipleShifts.length < 9) {
-            setMultipleShifts([...multipleShifts, { 
-                employee_id: '', 
-                start_time: '16:00', 
-                end_time: '03:00',
-                shift_type: 'Aufmachen'
-            }]);
-        }
-    };
-
-    const removeShiftSlot = (index) => {
-        if (multipleShifts.length > 1) {
-            setMultipleShifts(multipleShifts.filter((_, i) => i !== index));
-        }
-    };
-
-    const updateShiftSlot = (index, field, value) => {
-        const updated = [...multipleShifts];
-        updated[index][field] = value;
-        
-        // Auto-fill times when shift type changes
-        if (field === 'shift_type') {
-            if (value === 'Aufmachen') {
-                updated[index].start_time = '16:00';
-                updated[index].end_time = '03:00';
-            } else if (value === 'Frühschicht') {
-                updated[index].start_time = '20:00';
-                updated[index].end_time = '05:00';
-            } else if (value === 'Spätschicht') {
-                updated[index].start_time = '21:00';
-                updated[index].end_time = '05:00';
-            }
-        }
-        
-        setMultipleShifts(updated);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (isMultiMode) {
-            // Validate: No employee can have multiple shifts on the same day
-            const shiftsToSave = multipleShifts
-                .filter(s => s.employee_id)
-                .map(s => {
-                    const employee = employees.find(e => e.id === s.employee_id);
-                    return {
-                        employee_id: s.employee_id,
-                        employee_name: employee?.name || '',
-                        color: employee?.color || '',
-                        date: formData.date,
-                        start_time: s.start_time,
-                        end_time: s.end_time,
-                        shift_type: s.shift_type,
-                        notes: formData.notes
-                    };
-                });
+        if (shift) {
+            // Edit existing shift
+            onSave(formData, shift.id);
+            return;
+        }
 
-            // Check for duplicates within the new shifts
-            const employeeIds = shiftsToSave.map(s => s.employee_id);
-            const duplicates = employeeIds.filter((id, index) => employeeIds.indexOf(id) !== index);
-            if (duplicates.length > 0) {
-                const employee = employees.find(e => e.id === duplicates[0]);
-                alert(`Fehler: ${employee?.name} wurde mehrmals für denselben Tag eingetragen.`);
+        // Create shifts for all selected employees
+        if (selectedEmployees.length === 0) {
+            alert('Bitte wähle mindestens einen Mitarbeiter aus.');
+            return;
+        }
+
+        // Check for existing shifts
+        for (const employeeId of selectedEmployees) {
+            const hasExisting = existingShifts.some(
+                s => s.employee_id === employeeId && s.date === formData.date
+            );
+            if (hasExisting) {
+                const employee = employees.find(e => e.id === employeeId);
+                alert(`Fehler: ${employee?.name} hat bereits eine Schicht an diesem Tag.`);
                 return;
             }
+        }
 
-            // Check against existing shifts
-            for (const newShift of shiftsToSave) {
-                const hasExisting = existingShifts.some(
-                    s => s.employee_id === newShift.employee_id && 
-                         s.date === newShift.date
-                );
-                if (hasExisting) {
-                    const employee = employees.find(e => e.id === newShift.employee_id);
-                    alert(`Fehler: ${employee?.name} hat bereits eine Schicht an diesem Tag.`);
-                    return;
-                }
-            }
+        // Create shifts
+        for (const employeeId of selectedEmployees) {
+            const employee = employees.find(e => e.id === employeeId);
+            const shiftData = {
+                employee_id: employeeId,
+                employee_name: employee?.name || '',
+                color: employee?.color || '',
+                date: formData.date,
+                start_time: formData.start_time,
+                end_time: formData.end_time,
+                shift_type: formData.shift_type,
+                notes: formData.notes
+            };
             
-            // Save all shifts and create notifications
-            shiftsToSave.forEach(async (shiftData) => {
-                await onSave(shiftData, null);
-                
-                // Create notification for employee
-                try {
-                    const employee = employees.find(e => e.id === shiftData.employee_id);
-                    if (employee?.email) {
-                        await base44.entities.Notification.create({
-                            type: 'general',
-                            title: 'Neue Schicht zugewiesen',
-                            message: `Du wurdest für eine Schicht am ${format(new Date(shiftData.date), 'dd.MM.yyyy', { locale: de })} (${shiftData.start_time} - ${shiftData.end_time}) eingeteilt.`,
-                            related_id: shiftData.employee_id,
-                            read_by: []
-                        });
-                    }
-                } catch (error) {
-                    console.error('Fehler beim Erstellen der Benachrichtigung:', error);
-                }
-            });
-            onClose();
-        } else {
-            // Single shift validation (only for new shifts)
-            if (!shift) {
-                const hasExisting = existingShifts.some(
-                    s => s.employee_id === formData.employee_id && 
-                         s.date === formData.date
-                );
-                if (hasExisting) {
-                    const employee = employees.find(e => e.id === formData.employee_id);
-                    alert(`Fehler: ${employee?.name} hat bereits eine Schicht an diesem Tag.`);
-                    return;
-                }
-            }
+            await onSave(shiftData, null);
             
-            onSave(formData, shift?.id);
-            
-            // Create notification for new shift
-            if (!shift && formData.employee_id) {
-                try {
-                    const employee = employees.find(e => e.id === formData.employee_id);
-                    if (employee?.email) {
-                        await base44.entities.Notification.create({
-                            type: 'general',
-                            title: 'Neue Schicht zugewiesen',
-                            message: `Du wurdest für eine Schicht am ${format(new Date(formData.date), 'dd.MM.yyyy', { locale: de })} (${formData.start_time} - ${formData.end_time}) eingeteilt.`,
-                            related_id: formData.employee_id,
-                            read_by: []
-                        });
-                    }
-                } catch (error) {
-                    console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+            // Create notification
+            try {
+                if (employee?.email) {
+                    await base44.entities.Notification.create({
+                        type: 'general',
+                        title: 'Neue Schicht zugewiesen',
+                        message: `Du wurdest für eine Schicht am ${format(new Date(shiftData.date), 'dd.MM.yyyy', { locale: de })} (${shiftData.start_time} - ${shiftData.end_time}) eingeteilt.`,
+                        related_id: employeeId,
+                        read_by: []
+                    });
                 }
+            } catch (error) {
+                console.error('Fehler beim Erstellen der Benachrichtigung:', error);
             }
         }
+        
+        onClose();
     };
 
     return (
@@ -248,183 +155,130 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                     </DialogTitle>
                 </DialogHeader>
                 
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <form onSubmit={handleSubmit} className="space-y-5 mt-4">
                     {!shift && (
-                        <div className="flex gap-2 pb-2 border-b">
-                            <Button
-                                type="button"
-                                variant={!isMultiMode ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setIsMultiMode(false)}
-                                className={cn(!isMultiMode && "bg-amber-600 hover:bg-amber-700")}
-                            >
-                                Einzeln
-                            </Button>
-                            <Button
-                                type="button"
-                                variant={isMultiMode ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setIsMultiMode(true)}
-                                className={cn(isMultiMode && "bg-amber-600 hover:bg-amber-700")}
-                            >
-                                Mehrere ({multipleShifts.length})
-                            </Button>
-                        </div>
-                    )}
-
-                    {!isMultiMode ? (
-                        <div className="space-y-2">
-                            <Label>Mitarbeiter</Label>
-                            <Select value={formData.employee_id} onValueChange={handleEmployeeChange}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Mitarbeiter auswählen" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {employees.map(emp => (
-                                        <SelectItem key={emp.id} value={emp.id}>
-                                            <div className="flex items-center gap-2">
-                                                <div 
-                                                    className="w-3 h-3 rounded-full"
-                                                    style={{ backgroundColor: emp.color }}
-                                                />
-                                                {emp.name}
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    ) : (
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <Label>Mitarbeiter</Label>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={addShiftSlot}
-                                    disabled={multipleShifts.length >= 9}
-                                    className="h-7 text-xs"
-                                >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    Hinzufügen
-                                </Button>
+                                <Label className="flex items-center gap-2">
+                                    <Users className="w-4 h-4" />
+                                    Mitarbeiter wählen
+                                </Label>
+                                <span className="text-xs text-slate-500">
+                                    {selectedEmployees.length} ausgewählt
+                                </span>
                             </div>
-                            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                                {multipleShifts.map((slot, index) => (
-                                    <div key={index} className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
-                                        <div className="flex gap-2 items-start">
-                                            <Select 
-                                                value={slot.employee_id} 
-                                                onValueChange={(value) => updateShiftSlot(index, 'employee_id', value)}
-                                                className="flex-1"
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Wählen..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {employees.map(emp => (
-                                                        <SelectItem key={emp.id} value={emp.id}>
-                                                            <div className="flex items-center gap-2">
-                                                                <div 
-                                                                    className="w-2 h-2 rounded-full"
-                                                                    style={{ backgroundColor: emp.color }}
-                                                                />
-                                                                {emp.name}
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => removeShiftSlot(index)}
-                                                disabled={multipleShifts.length === 1}
-                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                            >
-                                                <Minus className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                        <Select 
-                                            value={slot.shift_type} 
-                                            onValueChange={(value) => updateShiftSlot(index, 'shift_type', value)}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 rounded-lg">
+                                {employees.map(emp => {
+                                    const isSelected = selectedEmployees.includes(emp.id);
+                                    return (
+                                        <button
+                                            key={emp.id}
+                                            type="button"
+                                            onClick={() => toggleEmployee(emp.id)}
+                                            className={cn(
+                                                "flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-left",
+                                                isSelected 
+                                                    ? "border-amber-500 bg-amber-50" 
+                                                    : "border-slate-200 hover:border-slate-300 bg-white"
+                                            )}
                                         >
-                                            <SelectTrigger className="text-sm">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Aufmachen">Aufmachen (16:00 - 03:00)</SelectItem>
-                                                <SelectItem value="Frühschicht">Frühschicht (20:00 - 05:00)</SelectItem>
-                                                <SelectItem value="Spätschicht">Spätschicht (21:00 - 05:00)</SelectItem>
-                                                <SelectItem value="Sonderschicht">Sonderschicht (manuell)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <Input
-                                                type="time"
-                                                value={slot.start_time}
-                                                onChange={(e) => updateShiftSlot(index, 'start_time', e.target.value)}
-                                                className="text-sm"
+                                            <div 
+                                                className={cn(
+                                                    "w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0",
+                                                    isSelected && "ring-2 ring-amber-500 ring-offset-2"
+                                                )}
+                                                style={{ backgroundColor: emp.color }}
+                                            >
+                                                {emp.name?.charAt(0)}
+                                            </div>
+                                            <span className="text-sm font-medium text-slate-800 truncate">{emp.name}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {shift && (
+                        <div className="space-y-2">
+                            <Label>Mitarbeiter</Label>
+                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                                <div 
+                                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                                    style={{ backgroundColor: formData.color }}
+                                >
+                                    {formData.employee_name?.charAt(0)}
+                                </div>
+                                <span className="font-medium">{formData.employee_name}</span>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        <Label className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            Schichttyp & Zeiten
+                        </Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {shiftTypes.map((type, index) => {
+                                const isSelected = formData.shift_type === type.name;
+                                const color = getColorForOrder(type.order || 0, shiftTypes.length);
+                                return (
+                                    <button
+                                        key={type.id}
+                                        type="button"
+                                        onClick={() => handleShiftTypeChange(type.name)}
+                                        className={cn(
+                                            "p-3 rounded-lg border-2 transition-all text-left",
+                                            isSelected 
+                                                ? "border-amber-500 bg-amber-50" 
+                                                : "border-slate-200 hover:border-slate-300 bg-white"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div 
+                                                className="w-3 h-3 rounded"
+                                                style={{ backgroundColor: color }}
                                             />
-                                            <Input
-                                                type="time"
-                                                value={slot.end_time}
-                                                onChange={(e) => updateShiftSlot(index, 'end_time', e.target.value)}
-                                                className="text-sm"
-                                            />
+                                            <span className="font-medium text-sm">{type.name}</span>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                        {type.start_time && (
+                                            <p className="text-xs text-slate-500">
+                                                {type.start_time} - {type.end_time}
+                                            </p>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
-                    )}
-
-                    <div className="space-y-2">
-                        <Label>Schichttyp</Label>
-                        <Select value={formData.shift_type} onValueChange={handleShiftTypeChange}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Aufmachen">Aufmachen (16:00 - 03:00)</SelectItem>
-                                <SelectItem value="Frühschicht">Frühschicht (20:00 - 05:00)</SelectItem>
-                                <SelectItem value="Spätschicht">Spätschicht (21:00 - 05:00)</SelectItem>
-                                <SelectItem value="Sonderschicht">Sonderschicht (manuell)</SelectItem>
-                            </SelectContent>
-                        </Select>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Datum</Label>
-                        <Input
-                            type="date"
-                            value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                        />
-                    </div>
-
-                    {!isMultiMode && (
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                                <Label>Startzeit</Label>
-                                <Input
-                                    type="time"
-                                    value={formData.start_time}
-                                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Endzeit</Label>
-                                <Input
-                                    type="time"
-                                    value={formData.end_time}
-                                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                                />
-                            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="space-y-2 sm:col-span-1">
+                            <Label>Datum</Label>
+                            <Input
+                                type="date"
+                                value={formData.date}
+                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                            />
                         </div>
-                    )}
+                        <div className="space-y-2">
+                            <Label>Startzeit</Label>
+                            <Input
+                                type="time"
+                                value={formData.start_time}
+                                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Endzeit</Label>
+                            <Input
+                                type="time"
+                                value={formData.end_time}
+                                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                            />
+                        </div>
+                    </div>
 
                     <div className="space-y-2">
                         <Label>Notizen</Label>
@@ -456,8 +310,12 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                             Abbrechen
                         </Button>
-                        <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
-                            {shift ? 'Speichern' : isMultiMode ? 'Alle hinzufügen' : 'Hinzufügen'}
+                        <Button 
+                            type="submit" 
+                            className="flex-1 bg-amber-600 hover:bg-amber-700"
+                            disabled={!shift && selectedEmployees.length === 0}
+                        >
+                            {shift ? 'Speichern' : `${selectedEmployees.length} Schicht${selectedEmployees.length !== 1 ? 'en' : ''} erstellen`}
                         </Button>
                     </div>
                 </form>

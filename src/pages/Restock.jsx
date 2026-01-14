@@ -17,9 +17,7 @@ export default function Restock() {
     const barcodeInputRef = useRef(null);
     const [barcode, setBarcode] = useState('');
     const [scannerOpen, setScannerOpen] = useState(false);
-    const [manualAddOpen, setManualAddOpen] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState('');
-    const [manualQuantity, setManualQuantity] = useState(1);
     const [editingItem, setEditingItem] = useState(null);
     const [editQuantity, setEditQuantity] = useState('');
 
@@ -95,8 +93,20 @@ export default function Restock() {
         }
     };
 
-    const handleBarcodeSubmit = (e) => {
+    const handleBarcodeSubmit = async (e) => {
         e.preventDefault();
+        
+        // Check if article is selected from dropdown
+        if (selectedArticle) {
+            const article = articles.find(a => a.id === selectedArticle);
+            if (article) {
+                await handleScan(article.barcode);
+                setSelectedArticle('');
+            }
+            return;
+        }
+        
+        // Otherwise use barcode input
         if (!barcode.trim()) return;
         handleScan(barcode);
     };
@@ -131,43 +141,6 @@ export default function Restock() {
                 await deleteMutation.mutateAsync(item.id);
             }
         }
-    };
-
-    const handleManualAdd = async () => {
-        if (!selectedArticle) return;
-
-        const article = articles.find(a => a.id === selectedArticle);
-        if (!article) return;
-
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const existingItem = restockItems.find(
-            item => item.barcode === article.barcode && item.date === today && !item.is_completed
-        );
-
-        if (existingItem) {
-            updateMutation.mutate({
-                id: existingItem.id,
-                data: {
-                    ...existingItem,
-                    quantity: existingItem.quantity + manualQuantity
-                }
-            });
-        } else {
-            const user = await base44.auth.me();
-            createMutation.mutate({
-                barcode: article.barcode,
-                article_name: article.name,
-                quantity: manualQuantity,
-                restocked_by: user?.full_name || user?.email || 'Unbekannt',
-                date: today,
-                time: format(new Date(), 'HH:mm'),
-                is_completed: false
-            });
-        }
-
-        setManualAddOpen(false);
-        setSelectedArticle('');
-        setManualQuantity(1);
     };
 
     const handleQuantityEdit = (item) => {
@@ -239,16 +212,45 @@ export default function Restock() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-slate-300">Barcode</Label>
+                            <Label className="text-slate-300">Barcode / Artikel</Label>
                             <Input
                                 ref={barcodeInputRef}
                                 type="text"
                                 value={barcode}
-                                onChange={(e) => setBarcode(e.target.value)}
+                                onChange={(e) => {
+                                    setBarcode(e.target.value);
+                                    if (e.target.value) setSelectedArticle('');
+                                }}
                                 placeholder="Barcode eingeben oder scannen..."
                                 className="text-lg bg-slate-900 border-slate-600 text-white"
                                 autoFocus
                             />
+                            <div className="text-xs text-slate-500 text-center">oder</div>
+                            <Select 
+                                value={selectedArticle} 
+                                onValueChange={(val) => {
+                                    setSelectedArticle(val);
+                                    setBarcode('');
+                                }}
+                            >
+                                <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
+                                    <SelectValue placeholder="Artikel aus Liste wählen..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {articles
+                                        .sort((a, b) => {
+                                            const catCompare = (a.category || '').localeCompare(b.category || '');
+                                            if (catCompare !== 0) return catCompare;
+                                            return a.name.localeCompare(b.name);
+                                        })
+                                        .map(article => (
+                                            <SelectItem key={article.id} value={article.id}>
+                                                {article.category && `[${article.category}] `}{article.name}
+                                            </SelectItem>
+                                        ))
+                                    }
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
@@ -264,9 +266,9 @@ export default function Restock() {
                             <Button 
                                 type="submit" 
                                 className="bg-amber-600 hover:bg-amber-700"
-                                disabled={!barcode.trim()}
+                                disabled={!barcode.trim() && !selectedArticle}
                             >
-                                <Scan className="w-4 h-4 mr-2" />
+                                <Plus className="w-4 h-4 mr-2" />
                                 Hinzufügen
                             </Button>
                         </div>
@@ -279,28 +281,17 @@ export default function Restock() {
                         <h2 className="text-lg font-semibold text-white">
                             Heutige Auffüllliste
                         </h2>
-                        <div className="flex gap-2">
+                        {todayItems.filter(i => i.is_completed).length > 0 && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setManualAddOpen(true)}
-                                className="border-amber-600 text-amber-400 hover:bg-amber-600/20"
+                                onClick={handleDeleteCompleted}
+                                className="border-slate-600 hover:bg-slate-700 text-slate-300"
                             >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Manuell hinzufügen
+                                <CheckCheck className="w-4 h-4 mr-2" />
+                                Erledigte löschen
                             </Button>
-                            {todayItems.filter(i => i.is_completed).length > 0 && (
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleDeleteCompleted}
-                                    className="border-slate-600 hover:bg-slate-700 text-slate-300"
-                                >
-                                    <CheckCheck className="w-4 h-4 mr-2" />
-                                    Erledigte löschen
-                                </Button>
-                            )}
-                        </div>
+                        )}
                     </div>
                     {todayItems.length > 0 ? (
                         <div className="space-y-4">
@@ -398,66 +389,6 @@ export default function Restock() {
                     onClose={() => setScannerOpen(false)}
                     onScan={handleCameraScan}
                 />
-
-                {/* Manual Add Dialog */}
-                <Dialog open={manualAddOpen} onOpenChange={setManualAddOpen}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Artikel manuell hinzufügen</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <Label>Artikel auswählen</Label>
-                                <Select value={selectedArticle} onValueChange={setSelectedArticle}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Artikel wählen..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {articles
-                                            .sort((a, b) => {
-                                                const catCompare = (a.category || '').localeCompare(b.category || '');
-                                                if (catCompare !== 0) return catCompare;
-                                                return a.name.localeCompare(b.name);
-                                            })
-                                            .map(article => (
-                                                <SelectItem key={article.id} value={article.id}>
-                                                    {article.category && `[${article.category}] `}{article.name}
-                                                </SelectItem>
-                                            ))
-                                        }
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Menge</Label>
-                                <Input
-                                    type="number"
-                                    min="1"
-                                    value={manualQuantity}
-                                    onChange={(e) => setManualQuantity(parseInt(e.target.value) || 1)}
-                                />
-                            </div>
-
-                            <div className="flex gap-2 pt-4">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setManualAddOpen(false)}
-                                    className="flex-1"
-                                >
-                                    Abbrechen
-                                </Button>
-                                <Button
-                                    onClick={handleManualAdd}
-                                    disabled={!selectedArticle}
-                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
-                                >
-                                    Hinzufügen
-                                </Button>
-                            </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
 
                 {/* Edit Quantity Dialog */}
                 <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>

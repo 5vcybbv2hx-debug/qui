@@ -26,9 +26,16 @@ export default function ShiftRequirementsManager() {
     });
     const [typeFormData, setTypeFormData] = useState({
         name: '',
-        color: '#3b82f6',
+        start_time: '',
+        end_time: '',
         order: 0
     });
+
+    const getColorForOrder = (order, totalTypes) => {
+        // Grün (120°) nach Rot (0°) in HSL
+        const hue = 120 - (order / Math.max(totalTypes - 1, 1)) * 120;
+        return `hsl(${hue}, 70%, 50%)`;
+    };
 
     const { data: requirements = [] } = useQuery({
         queryKey: ['shift-requirements'],
@@ -132,14 +139,16 @@ export default function ShiftRequirementsManager() {
             setEditingType(type);
             setTypeFormData({
                 name: type.name,
-                color: type.color || '#3b82f6',
+                start_time: type.start_time || '',
+                end_time: type.end_time || '',
                 order: type.order || 0
             });
         } else {
             setEditingType(null);
             setTypeFormData({
                 name: '',
-                color: '#3b82f6',
+                start_time: '',
+                end_time: '',
                 order: shiftTypes.length
             });
         }
@@ -286,9 +295,10 @@ export default function ShiftRequirementsManager() {
                                                 <div className="flex items-center gap-2">
                                                     <div 
                                                         className="w-3 h-3 rounded"
-                                                        style={{ backgroundColor: type.color }}
+                                                        style={{ backgroundColor: getColorForOrder(type.order || 0, shiftTypes.length) }}
                                                     />
                                                     {type.name}
+                                                    {type.start_time && ` (${type.start_time}${type.end_time ? ` - ${type.end_time}` : ''})`}
                                                 </div>
                                             </SelectItem>
                                         ))}
@@ -352,9 +362,16 @@ export default function ShiftRequirementsManager() {
                                         <div className="flex items-center gap-3">
                                             <div 
                                                 className="w-4 h-4 rounded"
-                                                style={{ backgroundColor: type.color }}
+                                                style={{ backgroundColor: getColorForOrder(type.order || 0, shiftTypes.length) }}
                                             />
-                                            <span className="font-medium text-slate-800">{type.name}</span>
+                                            <div>
+                                                <span className="font-medium text-slate-800">{type.name}</span>
+                                                {type.start_time && (
+                                                    <p className="text-xs text-slate-500">
+                                                        {type.start_time}{type.end_time && ` - ${type.end_time}`}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex gap-1">
                                             <Button
@@ -396,30 +413,39 @@ export default function ShiftRequirementsManager() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Farbe</Label>
-                                <div className="flex gap-2">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <Label>Startzeit</Label>
                                     <Input
-                                        type="color"
-                                        value={typeFormData.color}
-                                        onChange={(e) => setTypeFormData({ ...typeFormData, color: e.target.value })}
-                                        className="w-20"
+                                        type="time"
+                                        value={typeFormData.start_time}
+                                        onChange={(e) => setTypeFormData({ ...typeFormData, start_time: e.target.value })}
                                     />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Endzeit</Label>
                                     <Input
-                                        value={typeFormData.color}
-                                        onChange={(e) => setTypeFormData({ ...typeFormData, color: e.target.value })}
-                                        placeholder="#3b82f6"
+                                        type="time"
+                                        value={typeFormData.end_time}
+                                        onChange={(e) => setTypeFormData({ ...typeFormData, end_time: e.target.value })}
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Sortierung</Label>
-                                <Input
-                                    type="number"
-                                    value={typeFormData.order}
-                                    onChange={(e) => setTypeFormData({ ...typeFormData, order: parseInt(e.target.value) || 0 })}
-                                />
+                                <Label>Sortierung (Farbe: Grün → Rot)</Label>
+                                <div className="flex gap-2 items-center">
+                                    <Input
+                                        type="number"
+                                        value={typeFormData.order}
+                                        onChange={(e) => setTypeFormData({ ...typeFormData, order: parseInt(e.target.value) || 0 })}
+                                        className="flex-1"
+                                    />
+                                    <div 
+                                        className="w-8 h-8 rounded border border-slate-300"
+                                        style={{ backgroundColor: getColorForOrder(typeFormData.order, shiftTypes.length + 1) }}
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex gap-2 pt-4">

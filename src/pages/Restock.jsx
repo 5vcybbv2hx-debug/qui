@@ -212,61 +212,57 @@ export default function Restock() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-slate-300">Barcode / Artikel suchen</Label>
-                            <Input
-                                ref={barcodeInputRef}
-                                type="text"
-                                value={barcode}
-                                onChange={(e) => {
-                                    setBarcode(e.target.value);
-                                    if (e.target.value) setSelectedArticle('');
-                                }}
-                                placeholder="Barcode oder Artikelname eingeben..."
-                                className="text-lg bg-slate-900 border-slate-600 text-white"
-                                autoFocus
-                            />
-                            {barcode && !articles.find(a => a.barcode === barcode) && (
-                                <div className="max-h-48 overflow-y-auto bg-slate-900 border border-slate-600 rounded-lg">
-                                    {articles
-                                        .filter(a => 
-                                            a.name.toLowerCase().includes(barcode.toLowerCase()) ||
-                                            a.barcode.includes(barcode) ||
-                                            (a.category && a.category.toLowerCase().includes(barcode.toLowerCase()))
-                                        )
-                                        .sort((a, b) => {
-                                            const catCompare = (a.category || '').localeCompare(b.category || '');
-                                            if (catCompare !== 0) return catCompare;
-                                            return a.name.localeCompare(b.name);
-                                        })
-                                        .slice(0, 10)
-                                        .map(article => (
-                                            <button
-                                                key={article.id}
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedArticle(article.id);
-                                                    setBarcode('');
-                                                }}
-                                                className="w-full px-3 py-2 text-left hover:bg-slate-800 text-white text-sm border-b border-slate-700 last:border-0"
-                                            >
-                                                <div className="font-medium">{article.name}</div>
-                                                <div className="text-xs text-slate-400">
-                                                    {article.category && `${article.category} • `}{article.barcode}
-                                                </div>
-                                            </button>
-                                        ))
-                                    }
-                                    {articles.filter(a => 
-                                        a.name.toLowerCase().includes(barcode.toLowerCase()) ||
-                                        a.barcode.includes(barcode) ||
-                                        (a.category && a.category.toLowerCase().includes(barcode.toLowerCase()))
-                                    ).length === 0 && (
-                                        <div className="px-3 py-4 text-center text-slate-500 text-sm">
-                                            Keine Artikel gefunden
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            <Label className="text-slate-300">Artikel hinzufügen</Label>
+                            <div className="relative">
+                                <Input
+                                    ref={barcodeInputRef}
+                                    type="text"
+                                    value={barcode}
+                                    onChange={(e) => {
+                                        setBarcode(e.target.value);
+                                        setSelectedArticle('');
+                                    }}
+                                    placeholder="Barcode scannen oder Artikel suchen..."
+                                    className="text-lg bg-slate-900 border-slate-600 text-white"
+                                    autoFocus
+                                />
+                                {barcode && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-10">
+                                        {(() => {
+                                            const matches = articles.filter(a => 
+                                                a.barcode === barcode ||
+                                                a.name.toLowerCase().includes(barcode.toLowerCase()) ||
+                                                a.barcode.includes(barcode)
+                                            );
+                                            
+                                            if (matches.length === 0) {
+                                                return (
+                                                    <div className="px-4 py-3 text-center text-slate-400 text-sm">
+                                                        Kein Artikel gefunden
+                                                    </div>
+                                                );
+                                            }
+                                            
+                                            return matches.slice(0, 8).map(article => (
+                                                <button
+                                                    key={article.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedArticle(article.id);
+                                                        setBarcode('');
+                                                    }}
+                                                    className="w-full px-4 py-2.5 text-left hover:bg-slate-700 border-b border-slate-700 last:border-0 transition-colors"
+                                                >
+                                                    <div className="font-medium text-white">{article.name}</div>
+                                                    <div className="text-xs text-slate-400 mt-0.5">
+                                                        {article.category} • {article.barcode}
+                                                    </div>
+                                                </button>
+                                            ));
+                                        })()}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">

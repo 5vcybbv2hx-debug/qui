@@ -76,7 +76,6 @@ export default function OpeningHoursManager() {
                 notes: hour.notes || ''
             });
         } else {
-            setEditingHour(null);
             setFormData({
                 day_of_week: 'Montag',
                 open_time: '18:00',
@@ -87,6 +86,7 @@ export default function OpeningHoursManager() {
                 special_name: '',
                 notes: ''
             });
+            setEditingHour('new');
         }
         setModalOpen(true);
     };
@@ -98,7 +98,7 @@ export default function OpeningHoursManager() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (editingHour) {
+        if (editingHour && editingHour !== 'new') {
             updateMutation.mutate({ id: editingHour.id, data: formData });
         } else {
             createMutation.mutate(formData);
@@ -122,13 +122,18 @@ export default function OpeningHoursManager() {
                 Öffnungszeiten
             </Button>
 
-            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            <Dialog open={modalOpen} onOpenChange={(open) => {
+                setModalOpen(open);
+                if (!open) {
+                    setEditingHour(null);
+                }
+            }}>
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Öffnungszeiten verwalten</DialogTitle>
                     </DialogHeader>
 
-                    {!editingHour ? (
+                    {editingHour ? (
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
                             <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="regular">Regulär</TabsTrigger>

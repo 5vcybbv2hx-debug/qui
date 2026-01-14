@@ -212,7 +212,7 @@ export default function Restock() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-slate-300">Barcode / Artikel</Label>
+                            <Label className="text-slate-300">Barcode / Artikel suchen</Label>
                             <Input
                                 ref={barcodeInputRef}
                                 type="text"
@@ -221,36 +221,52 @@ export default function Restock() {
                                     setBarcode(e.target.value);
                                     if (e.target.value) setSelectedArticle('');
                                 }}
-                                placeholder="Barcode eingeben oder scannen..."
+                                placeholder="Barcode oder Artikelname eingeben..."
                                 className="text-lg bg-slate-900 border-slate-600 text-white"
                                 autoFocus
                             />
-                            <div className="text-xs text-slate-500 text-center">oder</div>
-                            <Select 
-                                value={selectedArticle} 
-                                onValueChange={(val) => {
-                                    setSelectedArticle(val);
-                                    setBarcode('');
-                                }}
-                            >
-                                <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
-                                    <SelectValue placeholder="Artikel aus Liste wählen..." />
-                                </SelectTrigger>
-                                <SelectContent>
+                            {barcode && !articles.find(a => a.barcode === barcode) && (
+                                <div className="max-h-48 overflow-y-auto bg-slate-900 border border-slate-600 rounded-lg">
                                     {articles
+                                        .filter(a => 
+                                            a.name.toLowerCase().includes(barcode.toLowerCase()) ||
+                                            a.barcode.includes(barcode) ||
+                                            (a.category && a.category.toLowerCase().includes(barcode.toLowerCase()))
+                                        )
                                         .sort((a, b) => {
                                             const catCompare = (a.category || '').localeCompare(b.category || '');
                                             if (catCompare !== 0) return catCompare;
                                             return a.name.localeCompare(b.name);
                                         })
+                                        .slice(0, 10)
                                         .map(article => (
-                                            <SelectItem key={article.id} value={article.id}>
-                                                {article.category && `[${article.category}] `}{article.name}
-                                            </SelectItem>
+                                            <button
+                                                key={article.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedArticle(article.id);
+                                                    setBarcode('');
+                                                }}
+                                                className="w-full px-3 py-2 text-left hover:bg-slate-800 text-white text-sm border-b border-slate-700 last:border-0"
+                                            >
+                                                <div className="font-medium">{article.name}</div>
+                                                <div className="text-xs text-slate-400">
+                                                    {article.category && `${article.category} • `}{article.barcode}
+                                                </div>
+                                            </button>
                                         ))
                                     }
-                                </SelectContent>
-                            </Select>
+                                    {articles.filter(a => 
+                                        a.name.toLowerCase().includes(barcode.toLowerCase()) ||
+                                        a.barcode.includes(barcode) ||
+                                        (a.category && a.category.toLowerCase().includes(barcode.toLowerCase()))
+                                    ).length === 0 && (
+                                        <div className="px-3 py-4 text-center text-slate-500 text-sm">
+                                            Keine Artikel gefunden
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">

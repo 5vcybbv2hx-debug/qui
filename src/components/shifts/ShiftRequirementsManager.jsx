@@ -194,7 +194,12 @@ export default function ShiftRequirementsManager() {
                 Soll-Besetzung
             </Button>
 
-            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            <Dialog open={modalOpen} onOpenChange={(open) => {
+                setModalOpen(open);
+                if (!open) {
+                    setEditingReq(null);
+                }
+            }}>
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <div className="flex items-center justify-between">
@@ -202,7 +207,10 @@ export default function ShiftRequirementsManager() {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => openTypeModal()}
+                                onClick={() => {
+                                    setModalOpen(false);
+                                    setTimeout(() => openTypeModal(), 100);
+                                }}
                                 className="text-xs"
                             >
                                 <Tag className="w-3 h-3 mr-1" />
@@ -348,7 +356,12 @@ export default function ShiftRequirementsManager() {
             </Dialog>
 
             {/* Schichtarten Modal */}
-            <Dialog open={typesModalOpen} onOpenChange={setTypesModalOpen}>
+            <Dialog open={typesModalOpen} onOpenChange={(open) => {
+                setTypesModalOpen(open);
+                if (!open) {
+                    setEditingType(null);
+                }
+            }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Schichtarten verwalten</DialogTitle>

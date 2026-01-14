@@ -133,7 +133,7 @@ export default function OpeningHoursManager() {
                         <DialogTitle>Öffnungszeiten verwalten</DialogTitle>
                     </DialogHeader>
 
-                    {editingHour ? (
+                    {!editingHour ? (
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
                             <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="regular">Regulär</TabsTrigger>
@@ -247,7 +247,7 @@ export default function OpeningHoursManager() {
                             </TabsContent>
                         </Tabs>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                        <form onSubmit={handleSubmit} className="space-y-5 mt-4">
                             {formData.is_special_day ? (
                                 <>
                                     <div className="space-y-2">
@@ -256,6 +256,7 @@ export default function OpeningHoursManager() {
                                             value={formData.special_name}
                                             onChange={(e) => setFormData({ ...formData, special_name: e.target.value })}
                                             placeholder="z.B. Silvester, Feiertag"
+                                            className="text-base"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -265,6 +266,7 @@ export default function OpeningHoursManager() {
                                             value={formData.special_date}
                                             onChange={(e) => setFormData({ ...formData, special_date: e.target.value })}
                                             required
+                                            className="text-base"
                                         />
                                     </div>
                                 </>
@@ -272,7 +274,7 @@ export default function OpeningHoursManager() {
                                 <div className="space-y-2">
                                     <Label>Wochentag</Label>
                                     <Select value={formData.day_of_week} onValueChange={(v) => setFormData({ ...formData, day_of_week: v })}>
-                                        <SelectTrigger>
+                                        <SelectTrigger className="text-base">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -284,8 +286,8 @@ export default function OpeningHoursManager() {
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between py-2">
-                                <Label>Geschlossen</Label>
+                            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                <Label className="text-base">Geschlossen</Label>
                                 <Switch
                                     checked={formData.is_closed}
                                     onCheckedChange={(checked) => setFormData({ ...formData, is_closed: checked })}
@@ -293,13 +295,14 @@ export default function OpeningHoursManager() {
                             </div>
 
                             {!formData.is_closed && (
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label>Öffnung</Label>
                                         <Input
                                             type="time"
                                             value={formData.open_time}
                                             onChange={(e) => setFormData({ ...formData, open_time: e.target.value })}
+                                            className="text-base"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -308,6 +311,7 @@ export default function OpeningHoursManager() {
                                             type="time"
                                             value={formData.close_time}
                                             onChange={(e) => setFormData({ ...formData, close_time: e.target.value })}
+                                            className="text-base"
                                         />
                                     </div>
                                 </div>
@@ -319,10 +323,11 @@ export default function OpeningHoursManager() {
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="Besondere Hinweise..."
+                                    className="text-base"
                                 />
                             </div>
 
-                            <div className="flex gap-2 pt-4">
+                            <div className="flex gap-3 pt-4">
                                 <Button 
                                     type="button" 
                                     variant="outline" 
@@ -335,7 +340,7 @@ export default function OpeningHoursManager() {
                                     type="submit"
                                     className="flex-1 bg-amber-600 hover:bg-amber-700"
                                 >
-                                    Speichern
+                                    {editingHour === 'new' ? 'Hinzufügen' : 'Speichern'}
                                 </Button>
                             </div>
                         </form>

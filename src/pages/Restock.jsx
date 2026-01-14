@@ -212,7 +212,7 @@ export default function Restock() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-slate-300">Artikel hinzufügen</Label>
+                            <Label className="text-slate-300">Artikel scannen</Label>
                             <div className="relative">
                                 <Input
                                     ref={barcodeInputRef}
@@ -222,7 +222,7 @@ export default function Restock() {
                                         setBarcode(e.target.value);
                                         setSelectedArticle('');
                                     }}
-                                    placeholder="Barcode scannen oder Artikel suchen..."
+                                    placeholder="Barcode eingeben oder Artikel suchen..."
                                     className="text-lg bg-slate-900 border-slate-600 text-white"
                                     autoFocus
                                 />

@@ -284,7 +284,7 @@ export default function ShiftRequirementsManager() {
 
                             <div className="space-y-2">
                                 <Label>Schichttyp (optional)</Label>
-                                <Select value={formData.shift_type} onValueChange={(v) => setFormData({ ...formData, shift_type: v })}>
+                                <Select value={formData.shift_type || ""} onValueChange={(v) => setFormData({ ...formData, shift_type: v })}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Alle Schichten" />
                                     </SelectTrigger>

@@ -93,7 +93,7 @@ export default function ShiftRequirementsManager() {
         }
     });
 
-    const openModal = (req = null) => {
+    const openModal = (req = null, dayOfWeek = null) => {
         if (req) {
             setEditingReq(req);
             setFormData({
@@ -105,7 +105,7 @@ export default function ShiftRequirementsManager() {
         } else {
             setEditingReq(null);
             setFormData({
-                day_of_week: 'Montag',
+                day_of_week: dayOfWeek || 'Montag',
                 shift_type: '',
                 required_employees: 2,
                 notes: ''
@@ -184,7 +184,10 @@ export default function ShiftRequirementsManager() {
         <>
             <Button 
                 variant="outline" 
-                onClick={() => setModalOpen(true)}
+                onClick={() => {
+                    setEditingReq(null);
+                    setModalOpen(true);
+                }}
                 className="border-slate-600 hover:bg-slate-700 text-slate-300"
             >
                 <Users className="w-4 h-4 mr-2" />
@@ -217,10 +220,7 @@ export default function ShiftRequirementsManager() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => {
-                                                setFormData({ ...formData, day_of_week: day });
-                                                openModal(null);
-                                            }}
+                                            onClick={() => openModal(null, day)}
                                         >
                                             <Plus className="w-4 h-4" />
                                         </Button>

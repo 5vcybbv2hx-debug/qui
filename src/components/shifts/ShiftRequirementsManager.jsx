@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Users, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, Settings, Tag } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,22 +11,33 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const WEEKDAYS = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
-const SHIFT_TYPES = ['Aufmachen', 'Frühschicht', 'Spätschicht', 'Sonderschicht'];
 
 export default function ShiftRequirementsManager() {
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [editingReq, setEditingReq] = useState(null);
+    const [typesModalOpen, setTypesModalOpen] = useState(false);
+    const [editingType, setEditingType] = useState(null);
     const [formData, setFormData] = useState({
         day_of_week: 'Montag',
         shift_type: '',
         required_employees: 2,
         notes: ''
     });
+    const [typeFormData, setTypeFormData] = useState({
+        name: '',
+        color: '#3b82f6',
+        order: 0
+    });
 
     const { data: requirements = [] } = useQuery({
         queryKey: ['shift-requirements'],
         queryFn: () => base44.entities.ShiftRequirement.list()
+    });
+
+    const { data: shiftTypes = [] } = useQuery({
+        queryKey: ['shift-types'],
+        queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order')
     });
 
     const createMutation = useMutation({
@@ -49,6 +60,29 @@ export default function ShiftRequirementsManager() {
         mutationFn: (id) => base44.entities.ShiftRequirement.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries(['shift-requirements']);
+        }
+    });
+
+    const createTypeMutation = useMutation({
+        mutationFn: (data) => base44.entities.ShiftType.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shift-types']);
+            closeTypeModal();
+        }
+    });
+
+    const updateTypeMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.ShiftType.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shift-types']);
+            closeTypeModal();
+        }
+    });
+
+    const deleteTypeMutation = useMutation({
+        mutationFn: (id) => base44.entities.ShiftType.update(id, { is_active: false }),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shift-types']);
         }
     });
 
@@ -93,6 +127,45 @@ export default function ShiftRequirementsManager() {
         }
     };
 
+    const openTypeModal = (type = null) => {
+        if (type) {
+            setEditingType(type);
+            setTypeFormData({
+                name: type.name,
+                color: type.color || '#3b82f6',
+                order: type.order || 0
+            });
+        } else {
+            setEditingType(null);
+            setTypeFormData({
+                name: '',
+                color: '#3b82f6',
+                order: shiftTypes.length
+            });
+        }
+        setTypesModalOpen(true);
+    };
+
+    const closeTypeModal = () => {
+        setTypesModalOpen(false);
+        setEditingType(null);
+    };
+
+    const handleTypeSubmit = (e) => {
+        e.preventDefault();
+        if (editingType) {
+            updateTypeMutation.mutate({ id: editingType.id, data: typeFormData });
+        } else {
+            createTypeMutation.mutate(typeFormData);
+        }
+    };
+
+    const handleTypeDelete = (id) => {
+        if (confirm('Schichtart wirklich löschen?')) {
+            deleteTypeMutation.mutate(id);
+        }
+    };
+
     const groupedRequirements = WEEKDAYS.map(day => ({
         day,
         requirements: requirements.filter(r => r.day_of_week === day)
@@ -112,7 +185,18 @@ export default function ShiftRequirementsManager() {
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>Soll-Besetzung pro Schicht</DialogTitle>
+                        <div className="flex items-center justify-between">
+                            <DialogTitle>Soll-Besetzung pro Schicht</DialogTitle>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openTypeModal()}
+                                className="text-xs"
+                            >
+                                <Tag className="w-3 h-3 mr-1" />
+                                Schichtarten
+                            </Button>
+                        </div>
                     </DialogHeader>
 
                     {!editingReq ? (
@@ -197,8 +281,16 @@ export default function ShiftRequirementsManager() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value={null}>Alle Schichten</SelectItem>
-                                        {SHIFT_TYPES.map(type => (
-                                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                                        {shiftTypes.map(type => (
+                                            <SelectItem key={type.id} value={type.name}>
+                                                <div className="flex items-center gap-2">
+                                                    <div 
+                                                        className="w-3 h-3 rounded"
+                                                        style={{ backgroundColor: type.color }}
+                                                    />
+                                                    {type.name}
+                                                </div>
+                                            </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -229,6 +321,112 @@ export default function ShiftRequirementsManager() {
                                     type="button" 
                                     variant="outline" 
                                     onClick={closeModal}
+                                    className="flex-1"
+                                >
+                                    Abbrechen
+                                </Button>
+                                <Button 
+                                    type="submit"
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                >
+                                    Speichern
+                                </Button>
+                            </div>
+                        </form>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Schichtarten Modal */}
+            <Dialog open={typesModalOpen} onOpenChange={setTypesModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Schichtarten verwalten</DialogTitle>
+                    </DialogHeader>
+
+                    {!editingType ? (
+                        <div className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                                {shiftTypes.map(type => (
+                                    <div key={type.id} className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-200">
+                                        <div className="flex items-center gap-3">
+                                            <div 
+                                                className="w-4 h-4 rounded"
+                                                style={{ backgroundColor: type.color }}
+                                            />
+                                            <span className="font-medium text-slate-800">{type.name}</span>
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => openTypeModal(type)}
+                                            >
+                                                <Pencil className="w-3 h-3" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-500"
+                                                onClick={() => handleTypeDelete(type.id)}
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <Button
+                                onClick={() => openTypeModal()}
+                                className="w-full bg-amber-600 hover:bg-amber-700"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Neue Schichtart
+                            </Button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleTypeSubmit} className="space-y-4 mt-4">
+                            <div className="space-y-2">
+                                <Label>Name *</Label>
+                                <Input
+                                    value={typeFormData.name}
+                                    onChange={(e) => setTypeFormData({ ...typeFormData, name: e.target.value })}
+                                    placeholder="z.B. Frühschicht"
+                                    required
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Farbe</Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        type="color"
+                                        value={typeFormData.color}
+                                        onChange={(e) => setTypeFormData({ ...typeFormData, color: e.target.value })}
+                                        className="w-20"
+                                    />
+                                    <Input
+                                        value={typeFormData.color}
+                                        onChange={(e) => setTypeFormData({ ...typeFormData, color: e.target.value })}
+                                        placeholder="#3b82f6"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Sortierung</Label>
+                                <Input
+                                    type="number"
+                                    value={typeFormData.order}
+                                    onChange={(e) => setTypeFormData({ ...typeFormData, order: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
+
+                            <div className="flex gap-2 pt-4">
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={closeTypeModal}
                                     className="flex-1"
                                 >
                                     Abbrechen

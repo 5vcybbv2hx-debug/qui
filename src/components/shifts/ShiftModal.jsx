@@ -67,10 +67,35 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
     }, [shift, selectedDate, open, shiftTypes]);
 
     const toggleEmployee = (employeeId) => {
+        setSelectedEmployees(prev => {
+            const exists = prev.find(e => e.employee_id === employeeId);
+            if (exists) {
+                return prev.filter(e => e.employee_id !== employeeId);
+            } else {
+                const defaultType = shiftTypes[0];
+                return [...prev, { 
+                    employee_id: employeeId, 
+                    shift_type: defaultType?.name || '',
+                    start_time: defaultType?.start_time || '16:00',
+                    end_time: defaultType?.end_time || '03:00'
+                }];
+            }
+        });
+    };
+
+    const updateEmployeeShiftType = (employeeId, shiftTypeName) => {
+        const shiftType = shiftTypes.find(t => t.name === shiftTypeName);
         setSelectedEmployees(prev => 
-            prev.includes(employeeId) 
-                ? prev.filter(id => id !== employeeId)
-                : [...prev, employeeId]
+            prev.map(e => 
+                e.employee_id === employeeId 
+                    ? { 
+                        ...e, 
+                        shift_type: shiftTypeName,
+                        start_time: shiftType?.start_time || e.start_time,
+                        end_time: shiftType?.end_time || e.end_time
+                    }
+                    : e
+            )
         );
     };
 
@@ -100,28 +125,28 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         }
 
         // Check for existing shifts
-        for (const employeeId of selectedEmployees) {
+        for (const empData of selectedEmployees) {
             const hasExisting = existingShifts.some(
-                s => s.employee_id === employeeId && s.date === formData.date
+                s => s.employee_id === empData.employee_id && s.date === formData.date
             );
             if (hasExisting) {
-                const employee = employees.find(e => e.id === employeeId);
+                const employee = employees.find(e => e.id === empData.employee_id);
                 alert(`Fehler: ${employee?.name} hat bereits eine Schicht an diesem Tag.`);
                 return;
             }
         }
 
         // Create shifts
-        for (const employeeId of selectedEmployees) {
-            const employee = employees.find(e => e.id === employeeId);
+        for (const empData of selectedEmployees) {
+            const employee = employees.find(e => e.id === empData.employee_id);
             const shiftData = {
-                employee_id: employeeId,
+                employee_id: empData.employee_id,
                 employee_name: employee?.name || '',
                 color: employee?.color || '',
                 date: formData.date,
-                start_time: formData.start_time,
-                end_time: formData.end_time,
-                shift_type: formData.shift_type,
+                start_time: empData.start_time,
+                end_time: empData.end_time,
+                shift_type: empData.shift_type,
                 notes: formData.notes
             };
             
@@ -134,7 +159,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         type: 'general',
                         title: 'Neue Schicht zugewiesen',
                         message: `Du wurdest für eine Schicht am ${format(new Date(shiftData.date), 'dd.MM.yyyy', { locale: de })} (${shiftData.start_time} - ${shiftData.end_time}) eingeteilt.`,
-                        related_id: employeeId,
+                        related_id: empData.employee_id,
                         read_by: []
                     });
                 }
@@ -157,46 +182,96 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 
                 <form onSubmit={handleSubmit} className="space-y-5 mt-4">
                     {!shift && (
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <Label className="flex items-center gap-2">
-                                    <Users className="w-4 h-4" />
-                                    Mitarbeiter wählen
-                                </Label>
-                                <span className="text-xs text-slate-500">
-                                    {selectedEmployees.length} ausgewählt
-                                </span>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 rounded-lg">
-                                {employees.map(emp => {
-                                    const isSelected = selectedEmployees.includes(emp.id);
-                                    return (
-                                        <button
-                                            key={emp.id}
-                                            type="button"
-                                            onClick={() => toggleEmployee(emp.id)}
-                                            className={cn(
-                                                "flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-left",
-                                                isSelected 
-                                                    ? "border-amber-500 bg-amber-50" 
-                                                    : "border-slate-200 hover:border-slate-300 bg-white"
-                                            )}
-                                        >
-                                            <div 
+                        <>
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label className="flex items-center gap-2">
+                                        <Users className="w-4 h-4" />
+                                        Mitarbeiter wählen
+                                    </Label>
+                                    <span className="text-xs text-slate-500">
+                                        {selectedEmployees.length} ausgewählt
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 rounded-lg">
+                                    {employees.map(emp => {
+                                        const isSelected = selectedEmployees.some(e => e.employee_id === emp.id);
+                                        return (
+                                            <button
+                                                key={emp.id}
+                                                type="button"
+                                                onClick={() => toggleEmployee(emp.id)}
                                                 className={cn(
-                                                    "w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0",
-                                                    isSelected && "ring-2 ring-amber-500 ring-offset-2"
+                                                    "flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-left",
+                                                    isSelected 
+                                                        ? "border-amber-500 bg-amber-50" 
+                                                        : "border-slate-200 hover:border-slate-300 bg-white"
                                                 )}
-                                                style={{ backgroundColor: emp.color }}
                                             >
-                                                {emp.name?.charAt(0)}
-                                            </div>
-                                            <span className="text-sm font-medium text-slate-800 truncate">{emp.name}</span>
-                                        </button>
-                                    );
-                                })}
+                                                <div 
+                                                    className={cn(
+                                                        "w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0",
+                                                        isSelected && "ring-2 ring-amber-500 ring-offset-2"
+                                                    )}
+                                                    style={{ backgroundColor: emp.color }}
+                                                >
+                                                    {emp.name?.charAt(0)}
+                                                </div>
+                                                <span className="text-sm font-medium text-slate-800 truncate">{emp.name}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
+
+                            {selectedEmployees.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4" />
+                                        Schichttypen zuweisen
+                                    </Label>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {selectedEmployees.map(empData => {
+                                            const employee = employees.find(e => e.id === empData.employee_id);
+                                            return (
+                                                <div key={empData.employee_id} className="p-3 bg-white rounded-lg border border-slate-200">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <div 
+                                                            className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                                                            style={{ backgroundColor: employee?.color }}
+                                                        >
+                                                            {employee?.name?.charAt(0)}
+                                                        </div>
+                                                        <span className="text-sm font-medium">{employee?.name}</span>
+                                                    </div>
+                                                    <div className="flex gap-1 flex-wrap">
+                                                        {shiftTypes.map(type => {
+                                                            const isSelected = empData.shift_type === type.name;
+                                                            const color = getColorForOrder(type.order || 0, shiftTypes.length);
+                                                            return (
+                                                                <button
+                                                                    key={type.id}
+                                                                    type="button"
+                                                                    onClick={() => updateEmployeeShiftType(empData.employee_id, type.name)}
+                                                                    className={cn(
+                                                                        "px-2 py-1 rounded text-xs font-medium transition-all",
+                                                                        isSelected 
+                                                                            ? "bg-amber-500 text-white" 
+                                                                            : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                                                    )}
+                                                                >
+                                                                    {type.name}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {shift && (
@@ -214,71 +289,76 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         </div>
                     )}
 
-                    <div className="space-y-3">
-                        <Label className="flex items-center gap-2">
-                            <Clock className="w-4 h-4" />
-                            Schichttyp & Zeiten
-                        </Label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {shiftTypes.map((type, index) => {
-                                const isSelected = formData.shift_type === type.name;
-                                const color = getColorForOrder(type.order || 0, shiftTypes.length);
-                                return (
-                                    <button
-                                        key={type.id}
-                                        type="button"
-                                        onClick={() => handleShiftTypeChange(type.name)}
-                                        className={cn(
-                                            "p-3 rounded-lg border-2 transition-all text-left",
-                                            isSelected 
-                                                ? "border-amber-500 bg-amber-50" 
-                                                : "border-slate-200 hover:border-slate-300 bg-white"
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <div 
-                                                className="w-3 h-3 rounded"
-                                                style={{ backgroundColor: color }}
-                                            />
-                                            <span className="font-medium text-sm">{type.name}</span>
-                                        </div>
-                                        {type.start_time && (
-                                            <p className="text-xs text-slate-500">
-                                                {type.start_time} - {type.end_time}
-                                            </p>
-                                        )}
-                                    </button>
-                                );
-                            })}
+                    {shift && (
+                        <div className="space-y-3">
+                            <Label className="flex items-center gap-2">
+                                <Clock className="w-4 h-4" />
+                                Schichttyp & Zeiten
+                            </Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {shiftTypes.map((type, index) => {
+                                    const isSelected = formData.shift_type === type.name;
+                                    const color = getColorForOrder(type.order || 0, shiftTypes.length);
+                                    return (
+                                        <button
+                                            key={type.id}
+                                            type="button"
+                                            onClick={() => handleShiftTypeChange(type.name)}
+                                            className={cn(
+                                                "p-3 rounded-lg border-2 transition-all text-left",
+                                                isSelected 
+                                                    ? "border-amber-500 bg-amber-50" 
+                                                    : "border-slate-200 hover:border-slate-300 bg-white"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <div 
+                                                    className="w-3 h-3 rounded"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                                <span className="font-medium text-sm">{type.name}</span>
+                                            </div>
+                                            {type.start_time && (
+                                                <p className="text-xs text-slate-500">
+                                                    {type.start_time} - {type.end_time}
+                                                </p>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
+                    )}
+
+                    <div className="space-y-2">
+                        <Label>Datum</Label>
+                        <Input
+                            type="date"
+                            value={formData.date}
+                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="space-y-2 sm:col-span-1">
-                            <Label>Datum</Label>
-                            <Input
-                                type="date"
-                                value={formData.date}
-                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            />
+                    {shift && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label>Startzeit</Label>
+                                <Input
+                                    type="time"
+                                    value={formData.start_time}
+                                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Endzeit</Label>
+                                <Input
+                                    type="time"
+                                    value={formData.end_time}
+                                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                                />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label>Startzeit</Label>
-                            <Input
-                                type="time"
-                                value={formData.start_time}
-                                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Endzeit</Label>
-                            <Input
-                                type="time"
-                                value={formData.end_time}
-                                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                            />
-                        </div>
-                    </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label>Notizen</Label>

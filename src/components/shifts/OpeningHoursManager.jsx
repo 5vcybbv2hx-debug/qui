@@ -140,126 +140,108 @@ export default function OpeningHoursManager() {
                                 <TabsTrigger value="special">Sondertage</TabsTrigger>
                             </TabsList>
 
-                            <TabsContent value="regular" className="space-y-3 mt-4">
+                            <TabsContent value="regular" className="space-y-2 mt-4">
                                 {WEEKDAYS.map(day => {
                                     const dayHour = regularHours.find(h => h.day_of_week === day);
                                     return (
-                                        <Card key={day} className="p-4 bg-slate-50">
+                                        <button
+                                            key={day}
+                                            onClick={() => dayHour ? openModal(dayHour) : openModal(null, false)}
+                                            className="w-full p-4 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition-all text-left group"
+                                        >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex-1">
-                                                    <p className="font-medium text-slate-800">{day}</p>
+                                                    <p className="font-semibold text-slate-800 mb-1">{day}</p>
                                                     {dayHour ? (
                                                         dayHour.is_closed ? (
-                                                            <p className="text-sm text-slate-500">Geschlossen</p>
+                                                            <p className="text-sm text-red-500 font-medium">Geschlossen</p>
                                                         ) : (
-                                                            <p className="text-sm text-slate-600">
+                                                            <p className="text-sm text-slate-600 font-medium">
                                                                 {dayHour.open_time} - {dayHour.close_time}
                                                             </p>
                                                         )
                                                     ) : (
-                                                        <p className="text-sm text-slate-400">Nicht festgelegt</p>
+                                                        <p className="text-sm text-slate-400">Nicht festgelegt - Klicken zum Hinzufügen</p>
                                                     )}
                                                 </div>
-                                                <div className="flex gap-2">
-                                                    {dayHour ? (
-                                                        <>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => openModal(dayHour)}
-                                                            >
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="text-red-500 hover:text-red-600"
-                                                                onClick={() => handleDelete(dayHour.id)}
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
-                                                        </>
-                                                    ) : (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                setFormData({ ...formData, day_of_week: day, is_special_day: false });
-                                                                openModal(null, false);
+                                                <div className="flex items-center gap-2">
+                                                    {dayHour && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(dayHour.id);
                                                             }}
+                                                            className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                                         >
-                                                            <Plus className="w-4 h-4" />
-                                                        </Button>
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
                                                     )}
+                                                    <Pencil className="w-4 h-4 text-slate-400" />
                                                 </div>
                                             </div>
-                                        </Card>
+                                        </button>
                                     );
                                 })}
                             </TabsContent>
 
                             <TabsContent value="special" className="space-y-3 mt-4">
-                                {specialDays.length > 0 ? (
-                                    specialDays.map(special => (
-                                        <Card key={special.id} className="p-4 bg-amber-50 border-amber-200">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <Calendar className="w-4 h-4 text-amber-600" />
-                                                        <p className="font-medium text-slate-800">
-                                                            {special.special_name || 'Sonderöffnungstag'}
+                                {specialDays.length > 0 && (
+                                    <div className="space-y-2">
+                                        {specialDays.map(special => (
+                                            <button
+                                                key={special.id}
+                                                onClick={() => openModal(special)}
+                                                className="w-full p-4 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-all text-left group"
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <Calendar className="w-4 h-4 text-amber-600" />
+                                                            <p className="font-semibold text-slate-800">
+                                                                {special.special_name || 'Sonderöffnungstag'}
+                                                            </p>
+                                                        </div>
+                                                        <p className="text-sm text-slate-700 mb-1">
+                                                            {new Date(special.special_date).toLocaleDateString('de-DE', { 
+                                                                weekday: 'long', 
+                                                                day: 'numeric',
+                                                                month: 'long',
+                                                                year: 'numeric'
+                                                            })}
                                                         </p>
+                                                        {special.is_closed ? (
+                                                            <p className="text-sm text-red-500 font-medium">Geschlossen</p>
+                                                        ) : (
+                                                            <p className="text-sm text-slate-600 font-medium">
+                                                                {special.open_time} - {special.close_time}
+                                                            </p>
+                                                        )}
+                                                        {special.notes && (
+                                                            <p className="text-xs text-slate-500 mt-1 italic">{special.notes}</p>
+                                                        )}
                                                     </div>
-                                                    <p className="text-sm text-slate-600">
-                                                        {new Date(special.special_date).toLocaleDateString('de-DE', { 
-                                                            weekday: 'long', 
-                                                            year: 'numeric', 
-                                                            month: 'long', 
-                                                            day: 'numeric' 
-                                                        })}
-                                                    </p>
-                                                    {special.is_closed ? (
-                                                        <p className="text-sm text-slate-500 mt-1">Geschlossen</p>
-                                                    ) : (
-                                                        <p className="text-sm text-slate-600 mt-1">
-                                                            {special.open_time} - {special.close_time}
-                                                        </p>
-                                                    )}
-                                                    {special.notes && (
-                                                        <p className="text-xs text-slate-500 mt-1 italic">{special.notes}</p>
-                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDelete(special.id);
+                                                            }}
+                                                            className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                        <Pencil className="w-4 h-4 text-amber-600" />
+                                                    </div>
                                                 </div>
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => openModal(special)}
-                                                    >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-red-500 hover:text-red-600"
-                                                        onClick={() => handleDelete(special.id)}
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-8 text-slate-500">
-                                        <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                                        <p>Keine Sonderöffnungstage</p>
+                                            </button>
+                                        ))}
                                     </div>
                                 )}
                                 <Button 
                                     onClick={() => openModal(null, true)}
-                                    className="w-full bg-amber-600 hover:bg-amber-700"
+                                    className="w-full bg-amber-600 hover:bg-amber-700 h-12 text-base"
                                 >
-                                    <Plus className="w-4 h-4 mr-2" />
+                                    <Plus className="w-5 h-5 mr-2" />
                                     Sonderöffnungstag hinzufügen
                                 </Button>
                             </TabsContent>

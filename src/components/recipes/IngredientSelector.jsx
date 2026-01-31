@@ -19,7 +19,8 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
         const newIngredient = {
             article_id: article.id,
             article_name: article.name,
-            amount: 0
+            amount: 0,
+            article_content_unit: article.content_unit || 'ml'
         };
         onChange([...safeIngredients, newIngredient]);
         setSearchTerm('');
@@ -31,6 +32,35 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
             i === index ? { ...ing, [field]: value } : ing
         );
         onChange(updated);
+    };
+
+    const getDisplayUnit = (ingredient) => {
+        const unit = ingredient.article_content_unit;
+        if (unit === 'l') return 'ml';
+        if (unit === 'kg') return 'g';
+        return unit || 'ml';
+    };
+
+    const getConversionInfo = (ingredient) => {
+        const article = articles.find(a => a.id === ingredient.article_id);
+        if (!article || !article.content_unit) return null;
+
+        const sourceUnit = article.content_unit;
+        const displayUnit = getDisplayUnit(ingredient);
+        
+        if (sourceUnit === displayUnit) return null;
+
+        // Konvertierungsfaktor berechnen
+        let factor = 1;
+        if (sourceUnit === 'l' && displayUnit === 'ml') factor = 1000;
+        if (sourceUnit === 'kg' && displayUnit === 'g') factor = 1000;
+
+        return {
+            sourceUnit,
+            displayUnit,
+            factor,
+            articleAmount: article.content_amount
+        };
     };
 
     const removeIngredient = (index) => {
@@ -71,15 +101,15 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
                         <div className="max-h-48 overflow-y-auto space-y-1">
                             {filteredArticles.slice(0, 8).map(article => (
                                 <button
-                                    key={article.id}
-                                    type="button"
-                                    onClick={() => addIngredient(article)}
-                                    className="w-full text-left px-3 py-2 rounded hover:bg-slate-200 transition-colors"
+                                   key={article.id}
+                                   type="button"
+                                   onClick={() => addIngredient(article)}
+                                   className="w-full text-left px-3 py-2 rounded hover:bg-slate-200 transition-colors"
                                 >
-                                    <p className="text-sm font-medium text-slate-900">{article.name}</p>
-                                    <p className="text-xs text-slate-500">
-                                        {article.category} · {article.unit || 'Einheit'}
-                                    </p>
+                                   <p className="text-sm font-medium text-slate-900">{article.name}</p>
+                                   <p className="text-xs text-slate-500">
+                                       {article.category} {article.content_amount && article.content_unit ? `· ${article.content_amount} ${article.content_unit}` : ''}
+                                   </p>
                                 </button>
                             ))}
                         </div>
@@ -96,31 +126,41 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
             {/* Zutaten Liste */}
             {safeIngredients.length > 0 ? (
                 <div className="space-y-2">
-                    {safeIngredients.map((ing, index) => (
-                        <div key={index} className="flex gap-2 items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
-                            <div className="flex-1">
-                                <p className="text-sm font-medium text-slate-900">{ing.article_name}</p>
+                    {safeIngredients.map((ing, index) => {
+                        const conversionInfo = getConversionInfo(ing);
+                        const displayUnit = getDisplayUnit(ing);
+                        
+                        return (
+                            <div key={index} className="flex gap-2 items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-slate-900">{ing.article_name}</p>
+                                    {conversionInfo && (
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            Artikel: {conversionInfo.articleAmount} {conversionInfo.sourceUnit} = {conversionInfo.articleAmount * conversionInfo.factor} {conversionInfo.displayUnit}
+                                        </p>
+                                    )}
+                                </div>
+                                <Input
+                                    type="number"
+                                    value={ing.amount}
+                                    onChange={(e) => updateIngredient(index, 'amount', parseFloat(e.target.value) || 0)}
+                                    placeholder="Menge"
+                                    className="w-24 h-9"
+                                    step="0.1"
+                                />
+                                <span className="text-sm text-slate-500 w-12">{displayUnit}</span>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeIngredient(index)}
+                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                >
+                                    <X className="w-4 h-4" />
+                                </Button>
                             </div>
-                            <Input
-                                type="number"
-                                value={ing.amount}
-                                onChange={(e) => updateIngredient(index, 'amount', parseFloat(e.target.value) || 0)}
-                                placeholder="Menge"
-                                className="w-24 h-9"
-                                step="0.1"
-                            />
-                            <span className="text-sm text-slate-500 w-8">ml</span>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeIngredient(index)}
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
-                            >
-                                <X className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="text-center py-6 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">

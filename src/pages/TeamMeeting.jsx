@@ -50,7 +50,15 @@ export default function TeamMeeting() {
 
     const { data: topics = [] } = useQuery({
         queryKey: ['team-meeting-topics'],
-        queryFn: () => base44.entities.TeamMeetingTopic.list('-created_date')
+        queryFn: async () => {
+            const allTopics = await base44.entities.TeamMeetingTopic.list('-created_date');
+            // Nur Manager sehen alle Themen, normale Mitarbeiter nur ihre eigenen
+            if (!permissions.isManager && currentEmployee) {
+                return allTopics.filter(t => t.employee_id === currentEmployee.id);
+            }
+            return allTopics;
+        },
+        enabled: !!currentEmployee || permissions.isManager
     });
 
     const createMutation = useMutation({
@@ -59,6 +67,7 @@ export default function TeamMeeting() {
             queryClient.invalidateQueries(['team-meeting-topics']);
             setModalOpen(false);
             setFormData({ topic: '', description: '', priority: 'normal' });
+            alert('✓ Dein Thema wurde erfolgreich eingereicht und an die Manager weitergeleitet.');
         }
     });
 
@@ -186,6 +195,21 @@ export default function TeamMeeting() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Info für Mitarbeiter */}
+                {!permissions.isManager && (
+                    <Card className="bg-blue-900/20 border-blue-700 p-4 mb-6">
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-sm text-blue-300 font-medium mb-1">Vertrauliche Themen</p>
+                                <p className="text-xs text-blue-400">
+                                    Eingereichte Themen werden direkt an die Manager weitergeleitet und sind nur für dich und das Management einsehbar. Du siehst hier nur deine eigenen Einreichungen.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                )}
 
                 {/* Topics by Status */}
                 {['offen', 'besprochen', 'erledigt'].map(status => (

@@ -391,19 +391,39 @@ export default function Recipes() {
                                 </div>
 
                                 <div className="space-y-3 text-sm">
-                                    {recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
-                                        <div>
-                                            <p className="font-medium text-slate-300 mb-1">Zutaten:</p>
-                                            <div className="text-slate-400 text-xs leading-relaxed space-y-1">
-                                                {recipe.ingredients.map((ing, idx) => (
-                                                    <p key={idx}>
-                                                        {ing.amount > 0 && `${ing.amount}ml `}
-                                                        {ing.article_name}
-                                                    </p>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                   {recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
+                                       <div>
+                                           <p className="font-medium text-slate-300 mb-1">Zutaten:</p>
+                                           <div className="text-slate-400 text-xs leading-relaxed space-y-1">
+                                               {recipe.ingredients.map((ing, idx) => (
+                                                   <p key={idx}>
+                                                       {ing.amount > 0 && `${ing.amount}ml `}
+                                                       {ing.article_name}
+                                                   </p>
+                                               ))}
+                                           </div>
+                                       </div>
+                                   )}
+
+                                   {permissions.isManager && recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
+                                       <div className="pt-2 border-t border-slate-700">
+                                           <p className="font-medium text-green-400 mb-1">Kosten (EK netto):</p>
+                                           <div className="text-green-300 text-xs">
+                                               {(() => {
+                                                   let totalCost = 0;
+                                                   recipe.ingredients.forEach(ing => {
+                                                       const article = articles.find(a => a.id === ing.article_id);
+                                                       if (article && article.purchase_price && article.content_amount) {
+                                                           const pricePerUnit = article.purchase_price / article.content_amount;
+                                                           const ingredientCost = pricePerUnit * ing.amount;
+                                                           totalCost += ingredientCost;
+                                                       }
+                                                   });
+                                                   return totalCost > 0 ? `${totalCost.toFixed(2)} €` : 'Keine Preise hinterlegt';
+                                               })()}
+                                           </div>
+                                       </div>
+                                   )}
 
                                     {recipe.preparation && (
                                         <div>

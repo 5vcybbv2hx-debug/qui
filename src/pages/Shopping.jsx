@@ -151,11 +151,15 @@ export default function Shopping() {
         e.preventDefault();
         if (!eanInput.trim()) return;
 
-        const barcode = eanInput.trim();
-        const article = articles.find(a => a.barcode === barcode);
+        const input = eanInput.trim();
+        const article = articles.find(a => 
+            a.barcode === input || 
+            a.name.toLowerCase() === input.toLowerCase() ||
+            a.name.toLowerCase().includes(input.toLowerCase())
+        );
 
         if (!article) {
-            alert('Artikel mit diesem EAN-Code nicht gefunden');
+            alert('Artikel nicht gefunden');
             setEanInput('');
             return;
         }
@@ -243,9 +247,15 @@ export default function Shopping() {
                             <Input
                                 value={eanInput}
                                 onChange={(e) => setEanInput(e.target.value)}
-                                placeholder="EAN-Code eingeben oder scannen..."
+                                placeholder="EAN-Code oder Artikelname eingeben..."
                                 className="bg-slate-800 border-slate-700 text-white"
+                                list="quick-articles-list"
                             />
+                            <datalist id="quick-articles-list">
+                                {articles.slice(0, 50).map(article => (
+                                    <option key={article.id} value={article.name} />
+                                ))}
+                            </datalist>
                             <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Hinzufügen

@@ -14,7 +14,8 @@ export default function Todos() {
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTodo, setSelectedTodo] = useState(null);
-    const [filter, setFilter] = useState('offen');
+    const [statusFilter, setStatusFilter] = useState('offen');
+    const [categoryFilter, setCategoryFilter] = useState('alle');
     const [showArchived, setShowArchived] = useState(false);
 
     const { data: employees = [] } = useQuery({
@@ -106,9 +107,11 @@ export default function Todos() {
     const displayTodos = showArchived ? archivedTodos : activeTodos;
 
     const filteredTodos = displayTodos.filter(todo => {
-        if (filter === 'alle') return true;
-        if (filter === 'offen') return todo.status !== 'erledigt';
-        return todo.status === filter;
+        const statusMatch = statusFilter === 'alle' || 
+                           (statusFilter === 'offen' && todo.status !== 'erledigt') ||
+                           todo.status === statusFilter;
+        const categoryMatch = categoryFilter === 'alle' || todo.category === categoryFilter;
+        return statusMatch && categoryMatch;
     });
 
     const openCount = activeTodos.filter(t => t.status === 'offen').length;
@@ -144,61 +147,95 @@ export default function Todos() {
                     )}
                 </div>
 
-                {/* Archive Toggle */}
-                <div className="flex gap-2 mb-6">
-                    <Button
-                        variant={!showArchived ? "secondary" : "outline"}
-                        onClick={() => setShowArchived(false)}
-                        className="flex-1 border-slate-700"
-                    >
-                        Aktiv ({activeTodos.length})
-                    </Button>
-                    <Button
-                        variant={showArchived ? "secondary" : "outline"}
-                        onClick={() => setShowArchived(true)}
-                        className="flex-1 border-slate-700"
-                    >
-                        <Archive className="w-4 h-4 mr-2" />
-                        Archiv ({archivedTodos.length})
-                    </Button>
-                </div>
-
-                {/* Filter Tabs */}
-                {!showArchived && (
-                    <Tabs value={filter} onValueChange={setFilter} className="mb-6">
-                        <TabsList className="bg-slate-800 shadow-sm w-full grid grid-cols-4 border border-slate-700">
-                            <TabsTrigger value="offen" className="text-xs sm:text-sm">Offen ({openCount})</TabsTrigger>
-                            <TabsTrigger value="in_bearbeitung" className="text-xs sm:text-sm">In Arb. ({inProgressCount})</TabsTrigger>
-                            <TabsTrigger value="erledigt" className="text-xs sm:text-sm">Erledigt ({doneCount})</TabsTrigger>
-                            <TabsTrigger value="alle" className="text-xs sm:text-sm">Alle</TabsTrigger>
+                {/* Filters */}
+                <div className="flex flex-col gap-3 mb-6">
+                    <Tabs value={showArchived ? 'archiv' : 'aktiv'} onValueChange={(v) => setShowArchived(v === 'archiv')}>
+                        <TabsList className="bg-slate-800 w-full grid grid-cols-2">
+                            <TabsTrigger value="aktiv">Aktiv ({activeTodos.length})</TabsTrigger>
+                            <TabsTrigger value="archiv">Archiv ({archivedTodos.length})</TabsTrigger>
                         </TabsList>
                     </Tabs>
-                )}
-
-                {/* Todo List */}
-                <div className="space-y-3">
-                    {filteredTodos.map(todo => (
-                        <TodoCard
-                            key={todo.id}
-                            todo={todo}
-                            onStatusChange={handleStatusChange}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onArchive={handleArchive}
-                            showArchiveButton={!showArchived && todo.status === 'erledigt'}
-                        />
-                    ))}
                     
-                    {filteredTodos.length === 0 && (
-                        <div className="text-center py-12 text-slate-400">
-                            <CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p className="text-lg font-medium">Keine Aufgaben</p>
-                            <p className="text-sm mt-1">
-                                {filter === 'offen' ? 'Alle Aufgaben sind erledigt!' : 'Keine Aufgaben in dieser Kategorie'}
-                            </p>
+                    {!showArchived && (
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                            {['alle', 'Einkauf', 'Reparatur', 'Event', 'Sonstiges'].map(cat => {
+                                const count = activeTodos.filter(t => cat === 'alle' || t.category === cat).length;
+                                return (
+                                    <Button
+                                        key={cat}
+                                        variant={categoryFilter === cat ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setCategoryFilter(cat)}
+                                        className={categoryFilter === cat ? "bg-amber-600 hover:bg-amber-700" : "border-slate-700"}
+                                    >
+                                        {cat === 'alle' ? 'Alle' : cat} ({count})
+                                    </Button>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
+
+                {/* Todo List - Grouped by Status */}
+                {!showArchived ? (
+                    <div className="space-y-6">
+                        {['offen', 'in_bearbeitung', 'erledigt'].map(status => {
+                            const statusTodos = filteredTodos.filter(t => t.status === status);
+                            if (statusTodos.length === 0) return null;
+                            
+                            const statusLabels = {
+                                'offen': '📋 Offen',
+                                'in_bearbeitung': '⚡ In Bearbeitung',
+                                'erledigt': '✅ Erledigt'
+                            };
+                            
+                            return (
+                                <div key={status}>
+                                    <h3 className="text-sm font-semibold text-slate-400 mb-3">
+                                        {statusLabels[status]} ({statusTodos.length})
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {statusTodos.map(todo => (
+                                            <TodoCard
+                                                key={todo.id}
+                                                todo={todo}
+                                                onStatusChange={handleStatusChange}
+                                                onEdit={handleEdit}
+                                                onDelete={handleDelete}
+                                                onArchive={handleArchive}
+                                                showArchiveButton={todo.status === 'erledigt'}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {filteredTodos.map(todo => (
+                            <TodoCard
+                                key={todo.id}
+                                todo={todo}
+                                onStatusChange={handleStatusChange}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                                onArchive={handleArchive}
+                                showArchiveButton={false}
+                            />
+                        ))}
+                    </div>
+                )}
+                    
+                {filteredTodos.length === 0 && (
+                    <div className="text-center py-12 text-slate-400">
+                        <CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p className="text-lg font-medium">Keine Aufgaben</p>
+                        <p className="text-sm mt-1">
+                            {categoryFilter !== 'alle' ? 'Keine Aufgaben in dieser Kategorie' : 'Alle Aufgaben erledigt!'}
+                        </p>
+                    </div>
+                )}
 
                 {/* Modal */}
                 <TodoModal

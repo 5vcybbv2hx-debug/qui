@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
+import PushNotificationManager from '@/components/notifications/PushNotificationManager';
 
 const typeIcons = {
     'general': Info,
@@ -139,6 +140,13 @@ export default function Notifications() {
                         Alle wichtigen Updates und Ereignisse an einem Ort
                     </p>
                 </div>
+
+                {/* Push Notification Manager */}
+                {currentUser && (
+                    <div className="mb-6">
+                        <PushNotificationManager userEmail={currentUser.email} />
+                    </div>
+                )}
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">

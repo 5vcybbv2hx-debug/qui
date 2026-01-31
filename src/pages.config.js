@@ -55,6 +55,7 @@ import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
 import MyDashboard from './pages/MyDashboard';
+import Notifications from './pages/Notifications';
 import PriceCalculator from './pages/PriceCalculator';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
@@ -68,7 +69,6 @@ import TeamMeeting from './pages/TeamMeeting';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import Notifications from './pages/Notifications';
 import __Layout from './Layout.jsx';
 
 
@@ -81,6 +81,7 @@ export const PAGES = {
     "Employees": Employees,
     "Events": Events,
     "MyDashboard": MyDashboard,
+    "Notifications": Notifications,
     "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
     "Reports": Reports,
@@ -94,7 +95,6 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "Notifications": Notifications,
 }
 
 export const pagesConfig = {

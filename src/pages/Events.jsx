@@ -168,17 +168,17 @@ export default function Events() {
                 <div className="grid lg:grid-cols-3 gap-6">
                     {/* Calendar */}
                     <div className="lg:col-span-2">
-                        <Card className="p-6 bg-slate-800 border-slate-700 shadow-sm">
+                        <Card className="p-4 bg-slate-800 border-slate-700">
                             {/* Month Navigation */}
-                            <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center justify-between mb-4">
                                 <Button 
                                     variant="ghost" 
                                     size="icon"
                                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                                 >
-                                    <ChevronLeft className="w-5 h-5" />
+                                    <ChevronLeft className="w-4 h-4" />
                                 </Button>
-                                <h2 className="text-xl font-semibold text-white">
+                                <h2 className="text-lg font-semibold text-white">
                                     {format(currentMonth, 'MMMM yyyy', { locale: de })}
                                 </h2>
                                 <Button 
@@ -186,21 +186,21 @@ export default function Events() {
                                     size="icon"
                                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                                 >
-                                    <ChevronRight className="w-5 h-5" />
+                                    <ChevronRight className="w-4 h-4" />
                                 </Button>
                             </div>
 
                             {/* Weekday Headers */}
-                            <div className="grid grid-cols-7 gap-2 mb-2">
+                            <div className="grid grid-cols-7 gap-1 mb-2">
                                 {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(day => (
-                                    <div key={day} className="text-center text-xs font-medium text-slate-500 py-2">
+                                    <div key={day} className="text-center text-xs text-slate-500 py-1">
                                         {day}
                                     </div>
                                 ))}
                             </div>
 
                             {/* Calendar Grid */}
-                            <div className="grid grid-cols-7 gap-2">
+                            <div className="grid grid-cols-7 gap-1">
                                 {calendarDays.map((day, idx) => {
                                     const dayEvents = getEventsForDay(day);
                                     const isToday = isSameDay(day, new Date());
@@ -208,46 +208,27 @@ export default function Events() {
                                     const isSelected = selectedDate && isSameDay(day, selectedDate);
 
                                     return (
-                                        <div
+                                        <button
                                             key={idx}
                                             onClick={() => setSelectedDate(day)}
                                             className={cn(
-                                                "min-h-24 p-2 rounded-lg border-2 cursor-pointer transition-all",
-                                                isToday && "border-amber-500",
-                                                isSelected && "bg-slate-700 border-slate-600",
-                                                !isToday && !isSelected && "border-slate-700 hover:border-slate-600",
+                                                "min-h-16 p-1 rounded text-left transition-colors",
+                                                isToday && "bg-amber-900/30",
+                                                isSelected && "bg-slate-700",
+                                                !isToday && !isSelected && "hover:bg-slate-700/50",
                                                 !isCurrentMonth && "opacity-30"
                                             )}
                                         >
                                             <div className={cn(
-                                                "text-sm font-medium mb-1",
-                                                isToday ? "text-amber-500" : "text-slate-300"
+                                                "text-xs mb-1",
+                                                isToday ? "text-amber-400 font-semibold" : "text-slate-400"
                                             )}>
                                                 {format(day, 'd')}
                                             </div>
-                                            <div className="space-y-1">
-                                                {dayEvents.slice(0, 2).map(event => (
-                                                    <div
-                                                        key={event.id}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            openModal(event);
-                                                        }}
-                                                        className={cn(
-                                                            "text-[10px] px-1.5 py-0.5 rounded border truncate font-medium",
-                                                            eventTypeColors[event.event_type]
-                                                        )}
-                                                    >
-                                                        {event.title}
-                                                    </div>
-                                                ))}
-                                                {dayEvents.length > 2 && (
-                                                    <div className="text-[9px] text-slate-400 text-center">
-                                                        +{dayEvents.length - 2}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+                                            {dayEvents.length > 0 && (
+                                                <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                            )}
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -255,106 +236,57 @@ export default function Events() {
                     </div>
 
                     {/* Selected Day Events */}
-                    <div className="space-y-4">
-                        <Card className="p-4 bg-slate-800 border-slate-700 shadow-sm">
-                            <h3 className="font-semibold text-white mb-3">
-                                {selectedDate ? format(selectedDate, 'dd. MMMM yyyy', { locale: de }) : 'Wähle ein Datum'}
+                    <div>
+                        <Card className="p-4 bg-slate-800 border-slate-700">
+                            <h3 className="font-medium text-white mb-3 text-sm">
+                                {selectedDate ? format(selectedDate, 'dd. MMM yyyy', { locale: de }) : 'Datum wählen'}
                             </h3>
                             
                             {selectedDayEvents.length > 0 ? (
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     {selectedDayEvents.map(event => (
-                                        <Card key={event.id} className="p-3 bg-slate-900 border-slate-700">
-                                            <div className="flex items-start justify-between mb-2">
-                                                <div className="flex-1">
-                                                    <h4 className="font-semibold text-white text-sm mb-1">
-                                                        {event.title}
-                                                    </h4>
-                                                    <div className="flex flex-wrap gap-1 mb-2">
-                                                        <Badge className={cn("text-xs", eventTypeColors[event.event_type])}>
-                                                            {event.event_type}
-                                                        </Badge>
-                                                        <Badge className={cn("text-xs", statusColors[event.status])}>
-                                                            {event.status}
-                                                        </Badge>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => openModal(event)}
-                                                        className="h-7 w-7"
-                                                    >
-                                                        <Edit className="w-3 h-3" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDelete(event.id)}
-                                                        className="h-7 w-7 text-red-500"
-                                                    >
-                                                        <Trash2 className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
+                                        <div key={event.id} 
+                                            onClick={() => openModal(event)}
+                                            className="p-3 bg-slate-900 rounded border border-slate-700 hover:border-slate-600 cursor-pointer"
+                                        >
+                                            <div className="flex items-start justify-between mb-1">
+                                                <p className="font-medium text-white text-sm">{event.title}</p>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDelete(event.id);
+                                                    }}
+                                                    className="h-6 w-6 text-slate-400 hover:text-red-400"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                </Button>
                                             </div>
-                                            
-                                            {event.start_time && (
-                                                <p className="text-xs text-slate-600 mb-1">
-                                                    🕐 {event.start_time} {event.end_time && `- ${event.end_time}`}
-                                                </p>
-                                            )}
-                                            {event.expected_guests && (
-                                                <p className="text-xs text-slate-600 mb-1">
-                                                    <Users className="w-3 h-3 inline mr-1" />
-                                                    {event.expected_guests} Gäste erwartet
-                                                </p>
-                                            )}
-                                            {event.description && (
-                                                <p className="text-xs text-slate-500 mt-2">
-                                                    {event.description}
-                                                </p>
-                                            )}
-                                        </Card>
+                                            <p className="text-xs text-slate-400">
+                                                {event.start_time || 'Keine Zeit'}
+                                                {event.expected_guests && ` · ${event.expected_guests} Gäste`}
+                                            </p>
+                                        </div>
                                     ))}
                                 </div>
                             ) : selectedDate ? (
-                                <div className="text-center py-8 text-slate-400">
-                                    <CalendarIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                <div className="text-center py-6 text-slate-500">
                                     <p className="text-sm">Keine Events</p>
                                     <Button
                                         variant="link"
                                         size="sm"
                                         onClick={() => openModal(null, selectedDate)}
-                                        className="mt-2"
+                                        className="mt-1 text-xs"
                                     >
-                                        Event hinzufügen
+                                        Hinzufügen
                                     </Button>
                                 </div>
                             ) : (
-                                <p className="text-sm text-slate-400 text-center py-8">
-                                    Wähle ein Datum im Kalender
+                                <p className="text-sm text-slate-500 text-center py-6">
+                                    Datum wählen
                                 </p>
                             )}
-                        </Card>
-
-                        {/* Quick Stats */}
-                        <Card className="p-4 bg-gradient-to-br from-purple-900/20 to-pink-900/20 border-slate-700">
-                            <h4 className="font-semibold text-white text-sm mb-3">Events diesen Monat</h4>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-slate-300">Geplant</span>
-                                    <span className="font-semibold text-yellow-700">
-                                        {events.filter(e => e.status === 'geplant' && isSameMonth(new Date(e.date), currentMonth)).length}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-slate-300">Bestätigt</span>
-                                    <span className="font-semibold text-green-700">
-                                        {events.filter(e => e.status === 'bestätigt' && isSameMonth(new Date(e.date), currentMonth)).length}
-                                    </span>
-                                </div>
-                            </div>
                         </Card>
                     </div>
                 </div>

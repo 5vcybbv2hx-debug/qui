@@ -190,16 +190,16 @@ export default function Reservations() {
                 </div>
 
                 {/* Week Calendar */}
-                <Card className="p-6 mb-6 bg-white border-0 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
+                <Card className="p-4 mb-4 bg-slate-800 border-slate-700">
+                    <div className="flex items-center justify-between mb-3">
                         <Button 
                             variant="ghost" 
                             size="icon"
                             onClick={() => setWeekStart(addDays(weekStart, -7))}
                         >
-                            <ChevronLeft className="w-5 h-5" />
+                            <ChevronLeft className="w-4 h-4" />
                         </Button>
-                        <h3 className="font-semibold text-slate-800">
+                        <h3 className="font-medium text-white text-sm">
                             {format(weekStart, 'MMMM yyyy', { locale: de })}
                         </h3>
                         <Button 
@@ -207,11 +207,11 @@ export default function Reservations() {
                             size="icon"
                             onClick={() => setWeekStart(addDays(weekStart, 7))}
                         >
-                            <ChevronRight className="w-5 h-5" />
+                            <ChevronRight className="w-4 h-4" />
                         </Button>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-2">
+                    <div className="grid grid-cols-7 gap-1">
                         {weekDays.map((day, idx) => {
                             const dayReservations = getReservationsForDay(day).filter(r => r.status !== 'storniert');
                             const isToday = isSameDay(day, new Date());
@@ -222,28 +222,23 @@ export default function Reservations() {
                                     key={idx}
                                     onClick={() => setSelectedDate(day)}
                                     className={cn(
-                                        "p-3 rounded-xl text-center transition-all",
-                                        isToday && "bg-amber-50",
-                                        isSelected && "bg-slate-800 text-white",
-                                        !isSelected && !isToday && "hover:bg-slate-50"
+                                        "p-2 rounded text-center transition-colors",
+                                        isToday && "bg-amber-900/30",
+                                        isSelected && "bg-slate-700",
+                                        !isSelected && !isToday && "hover:bg-slate-700/50"
                                     )}
                                 >
-                                    <p className="text-xs uppercase text-slate-400 mb-1">
+                                    <p className="text-xs text-slate-500 mb-1">
                                         {format(day, 'EEE', { locale: de })}
                                     </p>
                                     <p className={cn(
-                                        "text-xl font-semibold mb-1",
-                                        isSelected ? "text-white" : isToday ? "text-amber-600" : "text-slate-700"
+                                        "text-lg font-semibold",
+                                        isSelected ? "text-white" : isToday ? "text-amber-400" : "text-slate-300"
                                     )}>
                                         {format(day, 'd')}
                                     </p>
                                     {dayReservations.length > 0 && (
-                                        <div className={cn(
-                                            "text-xs font-medium mt-1",
-                                            isSelected ? "text-white/80" : "text-slate-500"
-                                        )}>
-                                            {dayReservations.length} Res.
-                                        </div>
+                                        <div className="w-1 h-1 rounded-full bg-green-500 mx-auto mt-1" />
                                     )}
                                 </button>
                             );
@@ -253,17 +248,12 @@ export default function Reservations() {
 
                 {/* Selected Date Events */}
                 {selectedDateEvents.length > 0 && (
-                    <Card className="p-4 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border-purple-700/50 mb-4">
-                        <div className="flex items-center gap-3">
-                            <PartyPopper className="w-5 h-5 text-purple-400" />
-                            <div className="flex-1">
-                                <p className="font-semibold text-white">Event: {selectedDateEvents[0].title}</p>
-                                <p className="text-sm text-purple-300">
-                                    {selectedDateEvents[0].expected_guests && `${selectedDateEvents[0].expected_guests} erwartete Gäste`}
-                                </p>
-                            </div>
+                    <Card className="p-3 bg-purple-900/20 border-purple-800/30 mb-4">
+                        <div className="flex items-center gap-2">
+                            <PartyPopper className="w-4 h-4 text-purple-400" />
+                            <p className="text-sm text-white flex-1">Event: {selectedDateEvents[0].title}</p>
                             <Link to={createPageUrl('Events')}>
-                                <Button variant="outline" size="sm" className="border-purple-600 text-purple-300 hover:bg-purple-900/30">
+                                <Button variant="ghost" size="sm" className="text-purple-400 h-7 text-xs">
                                     Details
                                 </Button>
                             </Link>
@@ -272,27 +262,27 @@ export default function Reservations() {
                 )}
 
                 {/* Selected Date Details */}
-                <Card className="p-6 bg-white border-0 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
+                <Card className="p-4 bg-slate-800 border-slate-700">
+                    <div className="flex items-center justify-between mb-3">
                         <div>
-                            <h3 className="font-semibold text-slate-800">
-                                {format(selectedDate, "EEEE, d. MMMM", { locale: de })}
+                            <h3 className="font-medium text-white text-sm">
+                                {format(selectedDate, "d. MMM", { locale: de })}
                             </h3>
-                            <p className="text-sm text-slate-500 mt-0.5">
-                                {selectedDateReservations.filter(r => r.status !== 'storniert').length} Reservierungen · {totalGuests} Gäste
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                {selectedDateReservations.filter(r => r.status !== 'storniert').length} Reservierungen
                             </p>
                         </div>
                         <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-                            <TabsList className="bg-slate-100">
-                                <TabsTrigger value="alle">Alle</TabsTrigger>
-                                <TabsTrigger value="bestätigt">Bestätigt</TabsTrigger>
-                                <TabsTrigger value="vorgemerkt">Vorgemerkt</TabsTrigger>
+                            <TabsList className="bg-slate-900 h-8">
+                                <TabsTrigger value="alle" className="text-xs h-7">Alle</TabsTrigger>
+                                <TabsTrigger value="bestätigt" className="text-xs h-7">OK</TabsTrigger>
+                                <TabsTrigger value="vorgemerkt" className="text-xs h-7">Offen</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>
 
                     {selectedDateReservations.length > 0 ? (
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {selectedDateReservations.map(res => (
                                 <div
                                     key={res.id}
@@ -300,54 +290,39 @@ export default function Reservations() {
                                         setSelectedReservation(res);
                                         setModalOpen(true);
                                     }}
-                                    className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                                    className="flex items-center gap-3 p-3 rounded bg-slate-900 hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700"
                                 >
-                                    <div className="text-center min-w-[60px]">
-                                        <p className="text-2xl font-bold text-slate-800">{res.time}</p>
+                                    <div className="text-center min-w-[50px]">
+                                        <p className="text-lg font-semibold text-white">{res.time}</p>
                                     </div>
-                                    <div className="h-12 w-px bg-slate-200" />
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <p className="font-semibold text-slate-800">{res.customer_name}</p>
-                                            <Badge variant="outline" className={cn("text-xs", statusColors[res.status])}>
-                                                {res.status}
-                                            </Badge>
-                                        </div>
-                                        <div className="flex items-center gap-3 text-sm text-slate-500">
-                                            <span className="flex items-center gap-1">
-                                                <Users className="w-3 h-3" />
-                                                {res.guests} {res.guests === 1 ? 'Person' : 'Personen'}
-                                            </span>
-                                            {res.table && <span>· Tisch {res.table}</span>}
-                                            {res.phone && (
-                                                <span className="flex items-center gap-1">
-                                                    · <Phone className="w-3 h-3" /> {res.phone}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {res.notes && (
-                                            <p className="text-xs text-slate-400 mt-1 italic">"{res.notes}"</p>
-                                        )}
+                                    <div className="flex-1">
+                                        <p className="font-medium text-white text-sm">{res.customer_name}</p>
+                                        <p className="text-xs text-slate-400">
+                                            {res.guests} Pers.
+                                            {res.table && ` · Tisch ${res.table}`}
+                                        </p>
                                     </div>
+                                    <Badge className={cn("text-xs", statusColors[res.status])}>
+                                        {res.status === 'bestätigt' ? '✓' : res.status === 'vorgemerkt' ? '?' : 'X'}
+                                    </Badge>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-12 text-slate-400">
-                            <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p className="text-lg font-medium">Keine Reservierungen</p>
+                        <div className="text-center py-8 text-slate-500">
+                            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Keine Reservierungen</p>
                             {permissions.canEditReservations && (
                                 <Button 
-                                    variant="outline" 
+                                    variant="link" 
                                     size="sm" 
-                                    className="mt-3"
+                                    className="mt-1 text-xs"
                                     onClick={() => {
                                         setSelectedReservation(null);
                                         setModalOpen(true);
                                     }}
                                 >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Reservierung hinzufügen
+                                    Hinzufügen
                                 </Button>
                             )}
                         </div>

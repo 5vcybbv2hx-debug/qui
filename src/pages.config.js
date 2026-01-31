@@ -61,13 +61,13 @@ import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
 import ShiftAnalytics from './pages/ShiftAnalytics';
+import ShiftSwaps from './pages/ShiftSwaps';
 import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
+import TeamMeeting from './pages/TeamMeeting';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import ShiftSwaps from './pages/ShiftSwaps';
-import TeamMeeting from './pages/TeamMeeting';
 import __Layout from './Layout.jsx';
 
 
@@ -86,13 +86,13 @@ export const PAGES = {
     "Reservations": Reservations,
     "Restock": Restock,
     "ShiftAnalytics": ShiftAnalytics,
+    "ShiftSwaps": ShiftSwaps,
     "Shifts": Shifts,
     "Shopping": Shopping,
+    "TeamMeeting": TeamMeeting,
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "ShiftSwaps": ShiftSwaps,
-    "TeamMeeting": TeamMeeting,
 }
 
 export const pagesConfig = {

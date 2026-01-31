@@ -97,9 +97,9 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
     };
 
     return (
-        <div className="bg-slate-800 rounded-2xl shadow-sm border border-slate-700 overflow-hidden">
+        <div className="bg-slate-800 rounded-xl shadow-sm border border-slate-700 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-slate-700">
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-slate-900/50 border-b border-slate-700">
                 <Button 
                     variant="ghost" 
                     size="icon"
@@ -108,18 +108,21 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </Button>
-                <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-white text-sm sm:text-base">
-                        {format(currentDate, viewMode === 'week' ? 'MMMM yyyy' : 'MMMM yyyy', { locale: de })}
+                <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-white text-base sm:text-lg">
+                        {format(currentDate, 'MMMM yyyy', { locale: de })}
                     </h3>
                     <Button
-                        variant={viewMode === 'week' ? 'secondary' : 'ghost'}
+                        variant={viewMode === 'week' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setViewMode(viewMode === 'week' ? 'month' : 'week')}
-                        className="text-xs"
+                        className={cn(
+                            "text-xs h-7",
+                            viewMode === 'week' && "bg-amber-600 hover:bg-amber-700"
+                        )}
                     >
                         <CalendarIcon className="w-3 h-3 mr-1" />
-                        {viewMode === 'week' ? 'Monat' : 'Woche'}
+                        {viewMode === 'week' ? 'Woche' : 'Monat'}
                     </Button>
                 </div>
                 <Button 
@@ -132,11 +135,19 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                 </Button>
             </div>
 
+            {/* Weekday Headers */}
+            <div className="grid grid-cols-7 border-b border-slate-700 bg-slate-900/30">
+                {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, idx) => (
+                    <div key={idx} className="py-2 text-center border-r border-slate-700 last:border-r-0">
+                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            {day}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
             {/* Calendar Grid */}
-            <div className={cn(
-                "grid divide-x divide-slate-700",
-                viewMode === 'week' ? "grid-cols-7" : "grid-cols-7"
-            )}>
+            <div className="grid grid-cols-7 divide-x divide-y divide-slate-700">
                 {calendarDays.map((day, idx) => {
                     const dayShifts = getShiftsForDay(day);
                     const isToday = isSameDay(day, new Date());
@@ -145,7 +156,6 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                     const understaffed = required && dayShifts.length < required;
                     const isCurrentMonth = viewMode === 'month' ? isSameMonth(day, currentDate) : true;
                     
-                    // Check for vacations
                     const dateStr = format(day, 'yyyy-MM-dd');
                     const dayVacations = vacationRequests.filter(v => 
                         v.status === 'genehmigt' &&
@@ -157,35 +167,34 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                         <div 
                             key={idx} 
                             className={cn(
-                                "p-2 cursor-pointer transition-colors",
-                                viewMode === 'week' ? "min-h-[120px] sm:min-h-[140px]" : "min-h-[80px] sm:min-h-[100px]",
-                                isToday && "bg-amber-900/20",
-                                isSelected && "bg-slate-700",
-                                understaffed && "border-l-2 border-red-500",
-                                !isCurrentMonth && "opacity-40"
+                                "relative group cursor-pointer transition-all",
+                                viewMode === 'week' ? "min-h-[140px]" : "min-h-[100px]",
+                                isToday && "bg-amber-500/5 ring-2 ring-inset ring-amber-500/30",
+                                isSelected && "bg-amber-600/10 ring-2 ring-inset ring-amber-600",
+                                understaffed && "bg-red-500/5",
+                                !isCurrentMonth && "opacity-40 bg-slate-900/30"
                             )}
                             onClick={() => setSelectedDate(day)}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, day)}
                         >
-                            {/* Day Header */}
-                            <div className="text-center mb-2">
-                                <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-slate-500">
-                                    {format(day, 'EEE', { locale: de })}
-                                </p>
-                                <div className="flex items-center justify-center gap-1">
-                                    <p className={cn(
-                                        "text-base sm:text-lg font-semibold mt-1",
-                                        isToday ? "text-amber-500" : "text-slate-300"
-                                    )}>
+                            {/* Day Number Badge */}
+                            <div className="absolute top-2 right-2 z-10">
+                                <div className={cn(
+                                    "flex items-center gap-1 px-2 py-1 rounded-lg",
+                                    isToday ? "bg-amber-600 text-white" : "bg-slate-900/50 text-slate-300"
+                                )}>
+                                    <span className="text-sm font-bold">
                                         {format(day, 'd')}
-                                    </p>
+                                    </span>
                                     {required && (
                                         <Badge 
                                             variant="outline" 
                                             className={cn(
-                                                "text-[9px] px-1 h-4 mt-1",
-                                                understaffed ? "border-red-500 text-red-500" : "border-green-500 text-green-500"
+                                                "text-[10px] px-1.5 h-4 border",
+                                                understaffed 
+                                                    ? "bg-red-500/10 border-red-500 text-red-400" 
+                                                    : "bg-green-500/10 border-green-500 text-green-400"
                                             )}
                                         >
                                             {dayShifts.length}/{required}
@@ -194,9 +203,10 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 </div>
                             </div>
                             
-                            {/* Shifts */}
-                            <div className="space-y-1">
-                                {dayShifts.slice(0, viewMode === 'week' ? 3 : 2).map((shift) => (
+                            {/* Content Area */}
+                            <div className="p-2 pt-12 h-full flex flex-col gap-1">
+                                {/* Shifts */}
+                                {dayShifts.slice(0, viewMode === 'week' ? 4 : 2).map((shift) => (
                                     <div
                                         key={shift.id}
                                         draggable
@@ -207,21 +217,34 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                             onSelectShift(shift);
                                         }}
                                         className={cn(
-                                            "px-2 py-1 rounded-lg text-[10px] sm:text-xs font-medium truncate hover:opacity-80 transition-opacity cursor-move",
-                                            draggedShift?.id === shift.id && "opacity-50"
+                                            "px-2 py-1.5 rounded-md font-medium cursor-move hover:scale-105 transition-transform flex items-center gap-2",
+                                            draggedShift?.id === shift.id && "opacity-50 scale-95"
                                         )}
                                         style={{ 
-                                            backgroundColor: `${getEmployeeColor(shift.employee_id)}20`,
-                                            color: getEmployeeColor(shift.employee_id)
+                                            backgroundColor: getEmployeeColor(shift.employee_id),
+                                            color: '#ffffff'
                                         }}
                                     >
-                                        {viewMode === 'week' ? shift.employee_name : shift.employee_name.split(' ')[0]}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs truncate font-semibold">
+                                                {shift.employee_name.split(' ')[0]}
+                                            </p>
+                                            <p className="text-[10px] opacity-90">
+                                                {shift.start_time.slice(0,5)} - {shift.end_time.slice(0,5)}
+                                            </p>
+                                        </div>
+                                        {shift.shift_type && (
+                                            <Badge className="text-[9px] h-4 bg-white/20 border-0 text-white">
+                                                {shift.shift_type.slice(0,3)}
+                                            </Badge>
+                                        )}
                                     </div>
                                 ))}
-                                {dayShifts.length > (viewMode === 'week' ? 3 : 2) && (
-                                    <p className="text-[10px] text-slate-400 text-center">
-                                        +{dayShifts.length - (viewMode === 'week' ? 3 : 2)} mehr
-                                    </p>
+                                
+                                {dayShifts.length > (viewMode === 'week' ? 4 : 2) && (
+                                    <div className="px-2 py-1 text-[11px] text-slate-400 text-center bg-slate-900/30 rounded-md">
+                                        +{dayShifts.length - (viewMode === 'week' ? 4 : 2)} weitere
+                                    </div>
                                 )}
                                 
                                 {/* Vacations */}
@@ -229,31 +252,34 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                     <Link
                                         to={createPageUrl('Vacation')}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="px-2 py-1 bg-amber-900/30 rounded-lg text-[10px] text-amber-400 flex items-center gap-1 border border-amber-700/50 hover:bg-amber-900/40 transition-colors"
+                                        className="px-2 py-1 bg-amber-600/20 border border-amber-600/30 rounded-md text-[10px] text-amber-400 flex items-center gap-1.5 hover:bg-amber-600/30 transition-colors font-medium"
                                     >
                                         <Palmtree className="w-3 h-3" />
-                                        {dayVacations.length === 1 
-                                            ? dayVacations[0].employee_name.split(' ')[0]
-                                            : `${dayVacations.length} Urlaub`
-                                        }
-                                        <ExternalLink className="w-2 h-2" />
+                                        <span className="truncate">
+                                            {dayVacations.length === 1 
+                                                ? dayVacations[0].employee_name.split(' ')[0]
+                                                : `${dayVacations.length} Urlaub`
+                                            }
+                                        </span>
                                     </Link>
                                 )}
                             </div>
                             
-                            {/* Add Button */}
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full mt-2 h-6 text-xs text-slate-500 hover:text-slate-300 opacity-0 hover:opacity-100 transition-opacity hover:bg-slate-700"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onAddShift(day);
-                                }}
-                            >
-                                <Plus className="w-3 h-3 mr-1" />
-                                Schicht
-                            </Button>
+                            {/* Hover Add Button */}
+                            <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full h-8 rounded-none bg-slate-900/90 hover:bg-amber-600 text-slate-400 hover:text-white border-t border-slate-700"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onAddShift(day);
+                                    }}
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Schicht
+                                </Button>
+                            </div>
                         </div>
                     );
                 })}

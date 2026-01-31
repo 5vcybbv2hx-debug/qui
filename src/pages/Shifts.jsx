@@ -241,61 +241,66 @@ export default function Shifts() {
 
                 {/* Selected Date Details */}
                 {selectedDate && (
-                    <Card className="mt-6 p-6 bg-slate-800 border-slate-700 shadow-sm">
-                        <h3 className="font-semibold text-white mb-4">
-                            {format(selectedDate, "EEEE, d. MMMM", { locale: de })}
-                        </h3>
+                    <Card className="mt-6 p-5 bg-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-white text-lg">
+                                {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
+                            </h3>
+                            <Button 
+                                size="sm" 
+                                className="bg-amber-600 hover:bg-amber-700"
+                                onClick={() => handleAddShift(selectedDate)}
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Schicht hinzufügen
+                            </Button>
+                        </div>
                         
                         {selectedDateShifts.length > 0 ? (
-                            <div className="grid gap-3">
-                                {selectedDateShifts.map(shift => (
-                                    <div 
-                                        key={shift.id}
-                                        onClick={() => handleSelectShift(shift)}
-                                        className="flex items-center gap-4 p-4 rounded-xl bg-slate-900 cursor-pointer hover:bg-slate-700 transition-colors"
-                                    >
+                            <div className="grid gap-2">
+                                {selectedDateShifts.map(shift => {
+                                    const employee = employees.find(e => e.id === shift.employee_id);
+                                    return (
                                         <div 
-                                            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold"
-                                            style={{ backgroundColor: shift.color || '#64748b' }}
+                                            key={shift.id}
+                                            onClick={() => handleSelectShift(shift)}
+                                            className="flex items-center gap-3 p-3 rounded-lg bg-slate-900 cursor-pointer hover:bg-slate-700 transition-colors border border-slate-700 hover:border-amber-600"
                                         >
-                                            {shift.employee_name?.charAt(0)}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-medium text-white">{shift.employee_name}</p>
-                                                <Link 
-                                                    to={createPageUrl('Employees')}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="text-amber-500 hover:text-amber-400"
-                                                >
-                                                    <ExternalLink className="w-3 h-3" />
-                                                </Link>
+                                            <div 
+                                                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                                style={{ backgroundColor: employee?.color || '#64748b' }}
+                                            >
+                                                {shift.employee_name?.charAt(0)}
                                             </div>
-                                            <p className="text-sm text-slate-400">
-                                                {shift.start_time} - {shift.end_time} · {shift.shift_type}
-                                            </p>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-semibold text-white truncate">{shift.employee_name}</p>
+                                                    {shift.shift_type && (
+                                                        <Badge className="bg-amber-600/20 text-amber-400 border-amber-600/30 text-[10px]">
+                                                            {shift.shift_type}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-slate-400 font-mono">
+                                                    {shift.start_time} - {shift.end_time}
+                                                </p>
+                                                {shift.notes && (
+                                                    <p className="text-xs text-slate-500 mt-1 italic truncate">
+                                                        {shift.notes}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                        {shift.notes && (
-                                            <p className="text-sm text-slate-400 italic hidden md:block">
-                                                "{shift.notes}"
-                                            </p>
-                                        )}
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <div className="text-center py-8 text-slate-400">
-                                <Users className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                                <p>Keine Schichten an diesem Tag</p>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className="mt-3"
-                                    onClick={() => handleAddShift(selectedDate)}
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Schicht hinzufügen
-                                </Button>
+                            <div className="text-center py-12 text-slate-400">
+                                <div className="w-16 h-16 rounded-full bg-slate-900/50 flex items-center justify-center mx-auto mb-3">
+                                    <Users className="w-8 h-8 text-slate-600" />
+                                </div>
+                                <p className="text-base mb-2">Keine Schichten geplant</p>
+                                <p className="text-sm text-slate-500">Klicke oben auf "Schicht hinzufügen"</p>
                             </div>
                         )}
                     </Card>

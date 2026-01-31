@@ -204,9 +204,9 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             </div>
                             
                             {/* Content Area */}
-                            <div className="p-1.5 pt-8 h-full flex flex-col gap-0.5">
+                            <div className="p-1.5 pt-8 h-full flex flex-col gap-0.5 overflow-y-auto max-h-[200px]">
                                 {/* Shifts */}
-                                {dayShifts.slice(0, viewMode === 'week' ? 4 : 2).map((shift) => (
+                                {dayShifts.map((shift) => (
                                     <div
                                         key={shift.id}
                                         draggable
@@ -217,7 +217,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                             onSelectShift(shift);
                                         }}
                                         className={cn(
-                                            "px-1.5 py-1 rounded text-[10px] font-medium cursor-move hover:scale-105 transition-transform flex items-center gap-1",
+                                            "px-1.5 py-1 rounded text-[10px] font-medium cursor-move hover:scale-105 transition-transform flex items-center gap-1 flex-shrink-0",
                                             draggedShift?.id === shift.id && "opacity-50 scale-95"
                                         )}
                                         style={{ 
@@ -241,18 +241,12 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                     </div>
                                 ))}
                                 
-                                {dayShifts.length > (viewMode === 'week' ? 4 : 2) && (
-                                    <div className="px-1.5 py-0.5 text-[9px] text-slate-400 text-center bg-slate-900/30 rounded">
-                                        +{dayShifts.length - (viewMode === 'week' ? 4 : 2)}
-                                    </div>
-                                )}
-                                
                                 {/* Vacations */}
                                 {dayVacations.length > 0 && (
                                     <Link
                                         to={createPageUrl('Vacation')}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="px-1.5 py-0.5 bg-amber-600/20 border border-amber-600/30 rounded text-[9px] text-amber-400 flex items-center gap-1 hover:bg-amber-600/30 transition-colors font-medium"
+                                        className="px-1.5 py-0.5 bg-amber-600/20 border border-amber-600/30 rounded text-[9px] text-amber-400 flex items-center gap-1 hover:bg-amber-600/30 transition-colors font-medium flex-shrink-0"
                                     >
                                         <Palmtree className="w-2.5 h-2.5" />
                                         <span className="truncate">

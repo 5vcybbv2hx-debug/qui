@@ -168,7 +168,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             key={idx} 
                             className={cn(
                                 "relative group cursor-pointer transition-all",
-                                viewMode === 'week' ? "min-h-[140px]" : "min-h-[100px]",
+                                viewMode === 'week' ? "min-h-[110px]" : "min-h-[80px]",
                                 isToday && "bg-amber-500/5 ring-2 ring-inset ring-amber-500/30",
                                 isSelected && "bg-amber-600/10 ring-2 ring-inset ring-amber-600",
                                 understaffed && "bg-red-500/5",
@@ -179,19 +179,19 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             onDrop={(e) => handleDrop(e, day)}
                         >
                             {/* Day Number Badge */}
-                            <div className="absolute top-2 right-2 z-10">
+                            <div className="absolute top-1.5 right-1.5 z-10">
                                 <div className={cn(
-                                    "flex items-center gap-1 px-2 py-1 rounded-lg",
+                                    "flex items-center gap-1 px-1.5 py-0.5 rounded-md",
                                     isToday ? "bg-amber-600 text-white" : "bg-slate-900/50 text-slate-300"
                                 )}>
-                                    <span className="text-sm font-bold">
+                                    <span className="text-xs font-bold">
                                         {format(day, 'd')}
                                     </span>
                                     {required && (
                                         <Badge 
                                             variant="outline" 
                                             className={cn(
-                                                "text-[10px] px-1.5 h-4 border",
+                                                "text-[9px] px-1 h-3.5 border",
                                                 understaffed 
                                                     ? "bg-red-500/10 border-red-500 text-red-400" 
                                                     : "bg-green-500/10 border-green-500 text-green-400"
@@ -204,7 +204,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             </div>
                             
                             {/* Content Area */}
-                            <div className="p-2 pt-12 h-full flex flex-col gap-1">
+                            <div className="p-1.5 pt-8 h-full flex flex-col gap-0.5">
                                 {/* Shifts */}
                                 {dayShifts.slice(0, viewMode === 'week' ? 4 : 2).map((shift) => (
                                     <div
@@ -217,7 +217,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                             onSelectShift(shift);
                                         }}
                                         className={cn(
-                                            "px-2 py-1.5 rounded-md font-medium cursor-move hover:scale-105 transition-transform flex items-center gap-2",
+                                            "px-1.5 py-1 rounded text-[10px] font-medium cursor-move hover:scale-105 transition-transform flex items-center gap-1",
                                             draggedShift?.id === shift.id && "opacity-50 scale-95"
                                         )}
                                         style={{ 
@@ -226,15 +226,15 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                         }}
                                     >
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs truncate font-semibold">
+                                            <p className="text-[10px] truncate font-semibold leading-tight">
                                                 {shift.employee_name.split(' ')[0]}
                                             </p>
-                                            <p className="text-[10px] opacity-90">
-                                                {shift.start_time.slice(0,5)} - {shift.end_time.slice(0,5)}
+                                            <p className="text-[9px] opacity-80 leading-tight">
+                                                {shift.start_time.slice(0,5)}-{shift.end_time.slice(0,5)}
                                             </p>
                                         </div>
                                         {shift.shift_type && (
-                                            <Badge className="text-[9px] h-4 bg-white/20 border-0 text-white">
+                                            <Badge className="text-[8px] h-3.5 px-1 bg-white/20 border-0 text-white">
                                                 {shift.shift_type.slice(0,3)}
                                             </Badge>
                                         )}
@@ -242,8 +242,8 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 ))}
                                 
                                 {dayShifts.length > (viewMode === 'week' ? 4 : 2) && (
-                                    <div className="px-2 py-1 text-[11px] text-slate-400 text-center bg-slate-900/30 rounded-md">
-                                        +{dayShifts.length - (viewMode === 'week' ? 4 : 2)} weitere
+                                    <div className="px-1.5 py-0.5 text-[9px] text-slate-400 text-center bg-slate-900/30 rounded">
+                                        +{dayShifts.length - (viewMode === 'week' ? 4 : 2)}
                                     </div>
                                 )}
                                 
@@ -252,13 +252,13 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                     <Link
                                         to={createPageUrl('Vacation')}
                                         onClick={(e) => e.stopPropagation()}
-                                        className="px-2 py-1 bg-amber-600/20 border border-amber-600/30 rounded-md text-[10px] text-amber-400 flex items-center gap-1.5 hover:bg-amber-600/30 transition-colors font-medium"
+                                        className="px-1.5 py-0.5 bg-amber-600/20 border border-amber-600/30 rounded text-[9px] text-amber-400 flex items-center gap-1 hover:bg-amber-600/30 transition-colors font-medium"
                                     >
-                                        <Palmtree className="w-3 h-3" />
+                                        <Palmtree className="w-2.5 h-2.5" />
                                         <span className="truncate">
                                             {dayVacations.length === 1 
                                                 ? dayVacations[0].employee_name.split(' ')[0]
-                                                : `${dayVacations.length} Urlaub`
+                                                : `${dayVacations.length}`
                                             }
                                         </span>
                                     </Link>
@@ -270,14 +270,14 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="w-full h-8 rounded-none bg-slate-900/90 hover:bg-amber-600 text-slate-400 hover:text-white border-t border-slate-700"
+                                    className="w-full h-6 rounded-none bg-slate-900/90 hover:bg-amber-600 text-slate-400 hover:text-white border-t border-slate-700"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onAddShift(day);
                                     }}
                                 >
-                                    <Plus className="w-4 h-4 mr-1" />
-                                    Schicht
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    <span className="text-[10px]">Schicht</span>
                                 </Button>
                             </div>
                         </div>

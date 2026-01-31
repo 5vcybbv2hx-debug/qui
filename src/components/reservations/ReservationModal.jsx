@@ -11,7 +11,7 @@ import { format, isSameDay } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
-export default function ReservationModal({ open, onClose, reservation, selectedDate, onSave, onDelete }) {
+export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false }) {
     const [formData, setFormData] = useState({
         customer_name: '',
         phone: '',
@@ -47,21 +47,20 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
                 notes: reservation.notes || '',
                 status: reservation.status || 'vorgemerkt'
             });
-        } else if (selectedDate) {
-            setFormData(prev => ({
-                ...prev,
+        } else {
+            setFormData({
                 customer_name: '',
                 phone: '',
                 email: '',
-                date: format(selectedDate, 'yyyy-MM-dd'),
+                date: '',
                 time: '19:00',
                 guests: 2,
                 table: '',
                 notes: '',
                 status: 'vorgemerkt'
-            }));
+            });
         }
-    }, [reservation, selectedDate, open]);
+    }, [reservation, open]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -190,7 +189,7 @@ export default function ReservationModal({ open, onClose, reservation, selectedD
                     </div>
 
                     <div className="flex gap-2 pt-4">
-                        {reservation && (
+                        {reservation && canDelete && (
                             <Button
                                 type="button"
                                 variant="outline"

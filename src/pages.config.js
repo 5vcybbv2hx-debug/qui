@@ -67,6 +67,7 @@ import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import ShiftSwaps from './pages/ShiftSwaps';
+import TeamMeeting from './pages/TeamMeeting';
 import __Layout from './Layout.jsx';
 
 
@@ -91,6 +92,7 @@ export const PAGES = {
     "Todos": Todos,
     "Vacation": Vacation,
     "ShiftSwaps": ShiftSwaps,
+    "TeamMeeting": TeamMeeting,
 }
 
 export const pagesConfig = {

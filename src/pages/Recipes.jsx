@@ -505,8 +505,16 @@ export default function Recipes() {
                                                    scaledIngredients.forEach(ing => {
                                                        const article = articles.find(a => a.id === ing.article_id);
                                                        if (article && article.purchase_price && article.content_amount) {
-                                                           const pricePerUnit = article.purchase_price / article.content_amount;
-                                                           const ingredientCost = pricePerUnit * ing.amount;
+                                                           // Umrechnung in ml
+                                                           let contentInMl = article.content_amount;
+                                                           if (article.content_unit === 'l') {
+                                                               contentInMl = article.content_amount * 1000;
+                                                           } else if (article.content_unit === 'kg') {
+                                                               contentInMl = article.content_amount * 1000;
+                                                           }
+                                                           
+                                                           const pricePerMl = article.purchase_price / contentInMl;
+                                                           const ingredientCost = pricePerMl * ing.amount;
                                                            totalCost += ingredientCost;
                                                        }
                                                    });

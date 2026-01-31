@@ -84,12 +84,18 @@ export default function PriceCalculator() {
             const article = ing.article;
             const amount = parseFloat(ing.amount) || 0;
             
-            if (!article.purchase_price || amount === 0) return sum;
+            if (!article.purchase_price || !article.content_amount || amount === 0) return sum;
             
-            // Annahme: Artikelpreis ist für die ganze Einheit (z.B. 700ml Flasche)
-            // Berechne Kosten basierend auf verwendeter Menge
-            const bottleSize = parseFloat(article.unit?.match(/\d+/)?.[0]) || 1000; // Standard 1000ml wenn nicht angegeben
-            const costForAmount = (article.purchase_price / bottleSize) * amount;
+            // Umrechnung in ml
+            let contentInMl = article.content_amount;
+            if (article.content_unit === 'l') {
+                contentInMl = article.content_amount * 1000;
+            } else if (article.content_unit === 'kg') {
+                contentInMl = article.content_amount * 1000;
+            }
+            
+            const pricePerMl = article.purchase_price / contentInMl;
+            const costForAmount = pricePerMl * amount;
             
             return sum + costForAmount;
         }, 0);
@@ -324,8 +330,13 @@ export default function PriceCalculator() {
                                         <div className="space-y-1 text-xs text-blue-300">
                                             {ingredients.map(ing => {
                                                 const amount = parseFloat(ing.amount) || 0;
-                                                const bottleSize = parseFloat(ing.article.unit?.match(/\d+/)?.[0]) || 1000;
-                                                const cost = (ing.article.purchase_price / bottleSize) * amount;
+                                                let contentInMl = ing.article.content_amount || 1000;
+                                                if (ing.article.content_unit === 'l') {
+                                                    contentInMl = ing.article.content_amount * 1000;
+                                                } else if (ing.article.content_unit === 'kg') {
+                                                    contentInMl = ing.article.content_amount * 1000;
+                                                }
+                                                const cost = (ing.article.purchase_price / contentInMl) * amount;
                                                 return (
                                                     <p key={ing.id}>
                                                         {ing.article.name}: {amount}ml → {cost.toFixed(2)} €

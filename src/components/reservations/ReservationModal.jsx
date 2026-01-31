@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertCircle } from 'lucide-react';
+import { X, Trash2, AlertCircle, RepeatIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, addWeeks, addMonths } from 'date-fns';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Switch } from "@/components/ui/switch";
 
 export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false }) {
+    const queryClient = useQueryClient();
     const [formData, setFormData] = useState({
         customer_name: '',
         phone: '',
@@ -21,13 +23,50 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
         guests: 2,
         table: '',
         notes: '',
-        status: 'vorgemerkt'
+        status: 'vorgemerkt',
+        is_recurring: false,
+        recurring_pattern: 'weekly',
+        recurring_end_date: ''
     });
 
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('-date', 50),
         enabled: open
+    });
+
+    const createRecurringMutation = useMutation({
+        mutationFn: async (data) => {
+            const seriesId = `series_${Date.now()}`;
+            const reservations = [];
+            let currentDate = new Date(data.date);
+            const endDate = data.recurring_end_date ? new Date(data.recurring_end_date) : addMonths(currentDate, 6);
+            
+            while (currentDate <= endDate) {
+                const resData = {
+                    ...data,
+                    date: format(currentDate, 'yyyy-MM-dd'),
+                    is_recurring: true,
+                    recurring_series_id: seriesId
+                };
+                delete resData.recurring_end_date;
+                reservations.push(resData);
+                
+                if (data.recurring_pattern === 'weekly') {
+                    currentDate = addWeeks(currentDate, 1);
+                } else if (data.recurring_pattern === 'biweekly') {
+                    currentDate = addWeeks(currentDate, 2);
+                } else if (data.recurring_pattern === 'monthly') {
+                    currentDate = addMonths(currentDate, 1);
+                }
+            }
+            
+            return await base44.entities.Reservation.bulkCreate(reservations);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['reservations']);
+            onClose();
+        }
     });
 
     const hasEventOnDate = formData.date && events.some(e => 
@@ -45,7 +84,10 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                 guests: reservation.guests || 2,
                 table: reservation.table || '',
                 notes: reservation.notes || '',
-                status: reservation.status || 'vorgemerkt'
+                status: reservation.status || 'vorgemerkt',
+                is_recurring: false,
+                recurring_pattern: 'weekly',
+                recurring_end_date: ''
             });
         } else {
             setFormData({
@@ -57,7 +99,10 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                 guests: 2,
                 table: '',
                 notes: '',
-                status: 'vorgemerkt'
+                status: 'vorgemerkt',
+                is_recurring: false,
+                recurring_pattern: 'weekly',
+                recurring_end_date: ''
             });
         }
     }, [reservation, open]);
@@ -67,7 +112,12 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
         if (hasEventOnDate) {
             return;
         }
-        onSave(formData, reservation?.id);
+        
+        if (formData.is_recurring && !reservation) {
+            createRecurringMutation.mutate(formData);
+        } else {
+            onSave(formData, reservation?.id);
+        }
     };
 
     return (
@@ -188,6 +238,53 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                         />
                     </div>
 
+                    {!reservation && (
+                        <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <RepeatIcon className="w-4 h-4 text-slate-600" />
+                                    <Label htmlFor="recurring" className="cursor-pointer">Wiederkehrend (z.B. Stammtisch)</Label>
+                                </div>
+                                <Switch
+                                    id="recurring"
+                                    checked={formData.is_recurring}
+                                    onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
+                                />
+                            </div>
+
+                            {formData.is_recurring && (
+                                <div className="space-y-3 mt-3 pl-6">
+                                    <div className="space-y-2">
+                                        <Label>Wiederholung</Label>
+                                        <Select 
+                                            value={formData.recurring_pattern} 
+                                            onValueChange={(v) => setFormData({ ...formData, recurring_pattern: v })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="weekly">Wöchentlich</SelectItem>
+                                                <SelectItem value="biweekly">Alle 2 Wochen</SelectItem>
+                                                <SelectItem value="monthly">Monatlich</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Endet am (optional)</Label>
+                                        <Input
+                                            type="date"
+                                            value={formData.recurring_end_date}
+                                            onChange={(e) => setFormData({ ...formData, recurring_end_date: e.target.value })}
+                                            min={formData.date}
+                                        />
+                                        <p className="text-xs text-slate-500">Leer lassen für 6 Monate</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     <div className="flex gap-2 pt-4">
                         {reservation && canDelete && (
                             <Button
@@ -205,9 +302,15 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                         <Button 
                             type="submit" 
                             className="flex-1 bg-slate-800 hover:bg-slate-900"
-                            disabled={hasEventOnDate}
+                            disabled={hasEventOnDate || createRecurringMutation.isPending}
                         >
-                            {reservation ? 'Speichern' : 'Hinzufügen'}
+                            {createRecurringMutation.isPending 
+                                ? 'Erstelle Serie...' 
+                                : reservation 
+                                    ? 'Speichern' 
+                                    : formData.is_recurring 
+                                        ? 'Serie erstellen' 
+                                        : 'Hinzufügen'}
                         </Button>
                     </div>
                 </form>

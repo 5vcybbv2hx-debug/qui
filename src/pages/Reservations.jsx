@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Calendar, Users, Phone, Download, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Calendar, Users, Phone, Download, Search, Edit, Trash2, Archive, RepeatIcon } from 'lucide-react';
 import SavedFilters from '@/components/filters/SavedFilters';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -27,6 +27,7 @@ export default function Reservations() {
     const [statusFilter, setStatusFilter] = useState('alle');
     const [searchTerm, setSearchTerm] = useState('');
     const [guestFilter, setGuestFilter] = useState('alle');
+    const [showArchived, setShowArchived] = useState(false);
 
     const { data: allReservations = [] } = useQuery({
         queryKey: ['reservations'],
@@ -41,7 +42,8 @@ export default function Reservations() {
             (guestFilter === 'mittel' && res.guests > 4 && res.guests <= 8) ||
             (guestFilter === 'gross' && res.guests > 8);
         const matchesStatus = statusFilter === 'alle' || res.status === statusFilter;
-        return matchesSearch && matchesGuests && matchesStatus;
+        const matchesArchived = showArchived || !res.is_archived;
+        return matchesSearch && matchesGuests && matchesStatus && matchesArchived;
     });
 
     const sortedReservations = [...reservations].sort((a, b) => {
@@ -95,6 +97,13 @@ export default function Reservations() {
         if (confirm('Reservierung wirklich löschen?')) {
             deleteMutation.mutate(id);
         }
+    };
+
+    const handleArchive = (id, currentArchiveStatus) => {
+        updateMutation.mutate({ 
+            id, 
+            data: { is_archived: !currentArchiveStatus } 
+        });
     };
 
     const handleExportCalendar = () => {
@@ -223,6 +232,18 @@ export default function Reservations() {
                                     <SelectItem value="storniert">Storniert</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="showArchived"
+                                    checked={showArchived}
+                                    onChange={(e) => setShowArchived(e.target.checked)}
+                                    className="w-4 h-4 rounded border-slate-700"
+                                />
+                                <Label htmlFor="showArchived" className="text-sm text-slate-300 cursor-pointer">
+                                    Archivierte anzeigen
+                                </Label>
+                            </div>
                         </div>
                         <SavedFilters
                             storageKey="reservations_saved_filters"
@@ -252,6 +273,17 @@ export default function Reservations() {
                                             <Badge className={statusColors[res.status]}>
                                                 {res.status}
                                             </Badge>
+                                            {res.is_recurring && (
+                                                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                                                    <RepeatIcon className="w-3 h-3 mr-1" />
+                                                    Wiederkehrend
+                                                </Badge>
+                                            )}
+                                            {res.is_archived && (
+                                                <Badge className="bg-slate-200 text-slate-600">
+                                                    Archiviert
+                                                </Badge>
+                                            )}
                                         </div>
                                         
                                         <div className="flex flex-wrap items-center gap-4 text-sm mb-2">
@@ -294,17 +326,28 @@ export default function Reservations() {
                                     
                                     <div className="flex gap-1">
                                         {permissions.canEditReservations && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => {
-                                                    setSelectedReservation(res);
-                                                    setModalOpen(true);
-                                                }}
-                                                className="h-8 w-8 text-slate-400 hover:text-slate-200"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </Button>
+                                            <>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => {
+                                                        setSelectedReservation(res);
+                                                        setModalOpen(true);
+                                                    }}
+                                                    className="h-8 w-8 text-slate-400 hover:text-slate-200"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => handleArchive(res.id, res.is_archived)}
+                                                    className="h-8 w-8 text-slate-400 hover:text-amber-400"
+                                                    title={res.is_archived ? 'Wiederherstellen' : 'Archivieren'}
+                                                >
+                                                    <Archive className="w-4 h-4" />
+                                                </Button>
+                                            </>
                                         )}
                                         {permissions.canDeleteReservations && (
                                             <Button

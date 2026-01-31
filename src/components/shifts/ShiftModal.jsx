@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, addDays, addWeeks, eachDayOfInterval } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { X, Trash2, Plus, Minus, Users, Clock } from 'lucide-react';
+import { X, Trash2, Plus, Minus, Users, Clock, Repeat, AlertCircle, Palette } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import ShiftSwapRequest from './ShiftSwapRequest';
 
@@ -19,10 +21,20 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order')
     });
 
+    const { data: requirements = [] } = useQuery({
+        queryKey: ['shift-requirements'],
+        queryFn: () => base44.entities.ShiftRequirement.list()
+    });
+
     const getColorForOrder = (order, totalTypes) => {
         const hue = 120 - (order / Math.max(totalTypes - 1, 1)) * 120;
         return `hsl(${hue}, 70%, 50%)`;
     };
+
+    const predefinedColors = [
+        '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
+        '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+    ];
 
     const [formData, setFormData] = useState({
         employee_id: '',
@@ -36,6 +48,12 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
     });
 
     const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const [isRecurring, setIsRecurring] = useState(false);
+    const [recurringData, setRecurringData] = useState({
+        pattern: 'weekly',
+        endDate: '',
+        weekdays: []
+    });
 
     useEffect(() => {
         if (shift) {
@@ -50,8 +68,10 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 color: shift.color || ''
             });
             setSelectedEmployees([]);
+            setIsRecurring(false);
         } else if (selectedDate) {
             const defaultType = shiftTypes[0];
+            const endDate = addWeeks(selectedDate, 4);
             setFormData({
                 employee_id: '',
                 employee_name: '',
@@ -63,6 +83,12 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 color: ''
             });
             setSelectedEmployees([]);
+            setIsRecurring(false);
+            setRecurringData({
+                pattern: 'weekly',
+                endDate: format(endDate, 'yyyy-MM-dd'),
+                weekdays: [new Date(selectedDate).getDay()]
+            });
         }
     }, [shift, selectedDate, open, shiftTypes]);
 
@@ -109,6 +135,29 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         }));
     };
 
+    const generateRecurringDates = () => {
+        if (!isRecurring || !formData.date || !recurringData.endDate) return [formData.date];
+        
+        const startDate = new Date(formData.date);
+        const endDate = new Date(recurringData.endDate);
+        const dates = [];
+        
+        if (recurringData.pattern === 'daily') {
+            const allDates = eachDayOfInterval({ start: startDate, end: endDate });
+            dates.push(...allDates.map(d => format(d, 'yyyy-MM-dd')));
+        } else if (recurringData.pattern === 'weekly') {
+            let currentDate = startDate;
+            while (currentDate <= endDate) {
+                if (recurringData.weekdays.includes(currentDate.getDay())) {
+                    dates.push(format(currentDate, 'yyyy-MM-dd'));
+                }
+                currentDate = addDays(currentDate, 1);
+            }
+        }
+        
+        return dates;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -124,50 +173,61 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
             return;
         }
 
-        // Check for existing shifts
-        for (const empData of selectedEmployees) {
-            const hasExisting = existingShifts.some(
-                s => s.employee_id === empData.employee_id && s.date === formData.date
-            );
-            if (hasExisting) {
-                const employee = employees.find(e => e.id === empData.employee_id);
-                alert(`Fehler: ${employee?.name} hat bereits eine Schicht an diesem Tag.`);
-                return;
-            }
-        }
+        const datesToCreate = generateRecurringDates();
+        const seriesId = isRecurring ? `series_${Date.now()}` : null;
+        let shiftsCreated = 0;
 
         // Create shifts
-        for (const empData of selectedEmployees) {
-            const employee = employees.find(e => e.id === empData.employee_id);
-            const shiftData = {
-                employee_id: empData.employee_id,
-                employee_name: employee?.name || '',
-                color: employee?.color || '',
-                date: formData.date,
-                start_time: empData.start_time,
-                end_time: empData.end_time,
-                shift_type: empData.shift_type,
-                notes: formData.notes
-            };
-            
-            await onSave(shiftData, null);
-            
-            // Create notification
-            try {
-                if (employee?.email) {
-                    await base44.entities.Notification.create({
-                        type: 'general',
-                        title: 'Neue Schicht zugewiesen',
-                        message: `Du wurdest für eine Schicht am ${format(new Date(shiftData.date), 'dd.MM.yyyy', { locale: de })} (${shiftData.start_time} - ${shiftData.end_time}) eingeteilt.`,
-                        related_id: empData.employee_id,
-                        read_by: []
-                    });
+        for (const date of datesToCreate) {
+            for (const empData of selectedEmployees) {
+                // Check for existing shifts
+                const hasExisting = existingShifts.some(
+                    s => s.employee_id === empData.employee_id && s.date === date
+                );
+                if (hasExisting) continue;
+
+                const employee = employees.find(e => e.id === empData.employee_id);
+                const shiftColor = formData.color || employee?.color || predefinedColors[0];
+                const shiftData = {
+                    employee_id: empData.employee_id,
+                    employee_name: employee?.name || '',
+                    color: shiftColor,
+                    date: date,
+                    start_time: empData.start_time,
+                    end_time: empData.end_time,
+                    shift_type: empData.shift_type,
+                    notes: formData.notes,
+                    is_recurring: isRecurring,
+                    recurring_series_id: seriesId
+                };
+                
+                await onSave(shiftData, null);
+                shiftsCreated++;
+                
+                // Create notification only for first shift
+                if (date === datesToCreate[0]) {
+                    try {
+                        if (employee?.email) {
+                            const message = isRecurring
+                                ? `Du wurdest für wiederkehrende Schichten ab dem ${format(new Date(date), 'dd.MM.yyyy', { locale: de })} eingeteilt (${empData.start_time} - ${empData.end_time}).`
+                                : `Du wurdest für eine Schicht am ${format(new Date(date), 'dd.MM.yyyy', { locale: de })} (${empData.start_time} - ${empData.end_time}) eingeteilt.`;
+                            
+                            await base44.entities.Notification.create({
+                                type: 'general',
+                                title: 'Neue Schicht zugewiesen',
+                                message: message,
+                                related_id: empData.employee_id,
+                                read_by: []
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Fehler beim Erstellen der Benachrichtigung:', error);
+                    }
                 }
-            } catch (error) {
-                console.error('Fehler beim Erstellen der Benachrichtigung:', error);
             }
         }
         
+        alert(`${shiftsCreated} Schicht${shiftsCreated !== 1 ? 'en' : ''} erfolgreich erstellt!`);
         onClose();
     };
 
@@ -330,14 +390,166 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         </div>
                     )}
 
-                    <div className="space-y-2">
-                        <Label>Datum</Label>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Label>Datum</Label>
+                            {!shift && (
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={isRecurring}
+                                        onCheckedChange={setIsRecurring}
+                                        id="recurring-switch"
+                                    />
+                                    <Label htmlFor="recurring-switch" className="text-xs text-slate-600 cursor-pointer">
+                                        Wiederkehrend
+                                    </Label>
+                                </div>
+                            )}
+                        </div>
                         <Input
                             type="date"
                             value={formData.date}
                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                         />
                     </div>
+
+                    {!shift && isRecurring && (
+                        <div className="space-y-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                                <Repeat className="w-4 h-4" />
+                                Wiederholungseinstellungen
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <Label className="text-xs">Muster</Label>
+                                <Select value={recurringData.pattern} onValueChange={(v) => setRecurringData({ ...recurringData, pattern: v })}>
+                                    <SelectTrigger className="bg-white">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="daily">Täglich</SelectItem>
+                                        <SelectItem value="weekly">Wöchentlich</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {recurringData.pattern === 'weekly' && (
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Wochentage</Label>
+                                    <div className="flex gap-1 flex-wrap">
+                                        {['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'].map((day, idx) => (
+                                            <button
+                                                key={idx}
+                                                type="button"
+                                                onClick={() => {
+                                                    setRecurringData(prev => ({
+                                                        ...prev,
+                                                        weekdays: prev.weekdays.includes(idx)
+                                                            ? prev.weekdays.filter(d => d !== idx)
+                                                            : [...prev.weekdays, idx]
+                                                    }));
+                                                }}
+                                                className={cn(
+                                                    "w-9 h-9 rounded-full text-xs font-medium transition-all",
+                                                    recurringData.weekdays.includes(idx)
+                                                        ? "bg-blue-600 text-white"
+                                                        : "bg-white text-slate-600 hover:bg-slate-100"
+                                                )}
+                                            >
+                                                {day}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <Label className="text-xs">Enddatum</Label>
+                                <Input
+                                    type="date"
+                                    value={recurringData.endDate}
+                                    onChange={(e) => setRecurringData({ ...recurringData, endDate: e.target.value })}
+                                    min={formData.date}
+                                    className="bg-white"
+                                />
+                            </div>
+
+                            <div className="text-xs text-blue-600 flex items-start gap-1">
+                                <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                <span>
+                                    Es werden ca. {generateRecurringDates().length} Schichten pro Mitarbeiter erstellt
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {!shift && formData.date && (
+                        <div className="space-y-2">
+                            <Label className="text-xs flex items-center gap-2">
+                                <AlertCircle className="w-3 h-3" />
+                                Anforderungen für diesen Tag
+                            </Label>
+                            {(() => {
+                                const dayOfWeek = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][new Date(formData.date).getDay()];
+                                const dayRequirements = requirements.filter(r => r.day_of_week === dayOfWeek);
+                                
+                                if (dayRequirements.length === 0) {
+                                    return <p className="text-xs text-slate-500 italic">Keine Anforderungen für {dayOfWeek}</p>;
+                                }
+                                
+                                return (
+                                    <div className="space-y-1">
+                                        {dayRequirements.map((req, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded text-xs">
+                                                <span className="text-slate-700">
+                                                    {req.shift_type || 'Allgemein'}
+                                                </span>
+                                                <Badge variant="outline" className="text-xs">
+                                                    {req.required_employees} Mitarbeiter
+                                                </Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    )}
+
+                    {!shift && (
+                        <div className="space-y-2">
+                            <Label className="flex items-center gap-2">
+                                <Palette className="w-4 h-4" />
+                                Schichtfarbe (optional)
+                            </Label>
+                            <div className="flex gap-2 flex-wrap">
+                                {predefinedColors.map((color, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, color })}
+                                        className={cn(
+                                            "w-8 h-8 rounded-full transition-all",
+                                            formData.color === color && "ring-2 ring-offset-2 ring-slate-400"
+                                        )}
+                                        style={{ backgroundColor: color }}
+                                    />
+                                ))}
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, color: '' })}
+                                    className={cn(
+                                        "w-8 h-8 rounded-full border-2 border-slate-300 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50",
+                                        !formData.color && "ring-2 ring-offset-2 ring-slate-400"
+                                    )}
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <p className="text-xs text-slate-500">
+                                {formData.color ? 'Benutzerdefinierte Farbe' : 'Standard: Mitarbeiterfarbe'}
+                            </p>
+                        </div>
+                    )}
 
                     {shift && (
                         <div className="grid grid-cols-2 gap-3">

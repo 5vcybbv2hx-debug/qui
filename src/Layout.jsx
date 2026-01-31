@@ -105,7 +105,7 @@ export default function Layout({ children, currentPageName }) {
             </aside>
 
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-800">
+            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-800 pt-safe">
                 <div className="flex items-center justify-between px-4 py-3">
                     <Link to={createPageUrl(permissions.isManager ? 'Dashboard' : 'MyDashboard')} className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
@@ -128,7 +128,7 @@ export default function Layout({ children, currentPageName }) {
 
                 {/* Mobile Menu */}
                 {mobileMenuOpen && (
-                    <div className="absolute top-full left-0 right-0 bg-slate-950 border-b border-slate-800 shadow-lg max-h-[calc(100vh-60px)] overflow-y-auto">
+                    <div className="absolute top-full left-0 right-0 bg-slate-950 border-b border-slate-800 shadow-lg max-h-[calc(100vh-3.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
                         <nav className="p-3 space-y-1">
                             {navigation.filter(item => permissions[item.permission]).map((item) => {
                                 const isActive = currentPageName === item.page;
@@ -167,7 +167,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Main Content */}
-            <main className="md:pl-64 pt-14 md:pt-0 pb-safe">
+            <main className="md:pl-64 pt-[calc(3.5rem+env(safe-area-inset-top))] md:pt-0 pb-safe">
                 {children}
             </main>
         </div>

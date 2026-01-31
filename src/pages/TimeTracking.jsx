@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import TimeEntryModal from '@/components/timetracking/TimeEntryModal';
 import MonthlyReportExport from '@/components/timetracking/MonthlyReportExport';
+import { validateArbZG, formatWarnings } from '@/components/timetracking/ArbZGValidator';
 
 const statusConfig = {
     'entwurf': { label: 'Entwurf', color: 'bg-slate-100 text-slate-700', icon: FileText },
@@ -66,6 +67,12 @@ export default function TimeTracking() {
 
     const createMutation = useMutation({
         mutationFn: async (data) => {
+            // ArbZG Validierung
+            const warnings = validateArbZG(data, timeEntries);
+            if (warnings.length > 0) {
+                data.arbzg_warning = formatWarnings(warnings);
+            }
+            
             await base44.entities.TimeEntry.create(data);
             
             // Create notification for managers when employee submits time entry
@@ -109,9 +116,14 @@ export default function TimeTracking() {
 
     const approveMutation = useMutation({
         mutationFn: async (entryIds) => {
+            const user = await base44.auth.me();
             const promises = entryIds.map(async (id) => {
                 const entry = timeEntries.find(e => e.id === id);
-                await base44.entities.TimeEntry.update(id, { status: 'genehmigt' });
+                await base44.entities.TimeEntry.update(id, { 
+                    status: 'genehmigt',
+                    manager_approved_by: user.full_name,
+                    manager_approved_at: new Date().toISOString()
+                });
                 
                 // Create notification for employee
                 if (entry) {
@@ -171,11 +183,26 @@ export default function TimeTracking() {
     };
 
     const canEdit = (entry) => {
-        // Manager können immer bearbeiten, Mitarbeiter nur ihre eigenen Einträge im Entwurf oder eingereicht Status
+        // Genehmigte Einträge dürfen nicht mehr bearbeitet werden (Rechtskonformität)
+        if (entry.status === 'genehmigt') return false;
+        // Manager können nicht-genehmigte Einträge bearbeiten
         if (permissions.isManager) return true;
+        // Mitarbeiter nur ihre eigenen nicht-genehmigten Einträge
         if (entry.employee_id === currentEmployee?.id && entry.status !== 'genehmigt') return true;
         return false;
     };
+
+    const confirmEntryMutation = useMutation({
+        mutationFn: async (entryId) => {
+            await base44.entities.TimeEntry.update(entryId, {
+                employee_confirmed: true,
+                employee_confirmed_at: new Date().toISOString()
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['time-entries']);
+        }
+    });
 
 
 
@@ -202,12 +229,25 @@ export default function TimeTracking() {
             const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
             const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
 
+            // ArbZG Prüfung
+            const tempEntry = {
+                date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+                start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                end_time: format(clockOutTime, 'HH:mm'),
+                break_minutes: 0,
+                total_hours: totalHours,
+                employee_id: entry.employee_id
+            };
+            const warnings = validateArbZG(tempEntry, timeEntries);
+            const warningText = formatWarnings(warnings);
+
             // Update Clock Entry
             await base44.entities.ClockEntry.update(entryId, {
                 clock_out: clockOutTime.toISOString(),
                 break_minutes: 0,
                 total_hours: totalHours,
-                status: 'clocked_out'
+                status: 'clocked_out',
+                arbzg_warning: warningText
             });
 
             // Erstelle automatisch einen TimeEntry
@@ -220,7 +260,10 @@ export default function TimeTracking() {
                 break_minutes: 0,
                 total_hours: totalHours,
                 notes: 'Automatisch von Stempeluhr übertragen',
-                status: 'eingereicht'
+                status: 'eingereicht',
+                arbzg_warning: warningText,
+                employee_confirmed: true,
+                employee_confirmed_at: clockOutTime.toISOString()
             });
         },
         onSuccess: () => {
@@ -394,6 +437,20 @@ export default function TimeTracking() {
                     </div>
                 )}
 
+                {/* Rechtliche Hinweise */}
+                <Card className="p-4 bg-blue-900/20 border-blue-700/30 mb-6">
+                    <div className="flex gap-3">
+                        <div className="text-blue-400 mt-0.5">ℹ️</div>
+                        <div className="text-xs sm:text-sm text-blue-200">
+                            <p className="font-semibold mb-1">Rechtskonform nach ArbZG</p>
+                            <p className="text-blue-300">
+                                • Zeiterfassungen werden 2 Jahre gespeichert • Max. 10h pro Tag (§3) • Mind. 11h Ruhezeit (§5) • 
+                                Genehmigte Einträge sind unveränderbar • Bei &gt;6h: 30 Min Pause, bei &gt;9h: 45 Min Pause (§4)
+                            </p>
+                        </div>
+                    </div>
+                </Card>
+
                 {/* Zeiterfassung Section */}
                 <div className="space-y-6">
 
@@ -509,69 +566,102 @@ export default function TimeTracking() {
                                             return (
                                                 <Card key={entry.id} className="p-3 sm:p-4 bg-slate-800 border-slate-700">
                                                     <div className="flex items-start justify-between gap-2">
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
-                                                                <span className="font-semibold text-white text-sm sm:text-base">
-                                                                    {format(parseISO(entry.date), 'dd.MM.yyyy', { locale: de })}
-                                                                </span>
-                                                                <Badge className={cn(statusConfig[entry.status].color, "text-[10px] sm:text-xs")}>
-                                                                    <StatusIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
-                                                                    {statusConfig[entry.status].label}
-                                                                </Badge>
-                                                            </div>
-                                                            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-400">
-                                                                <span>
-                                                                    {entry.start_time} - {entry.end_time}
-                                                                    {entry.end_time < entry.start_time && <span className="ml-1">🌙</span>}
-                                                                </span>
-                                                                {entry.break_minutes > 0 && (
-                                                                    <span>Pause: {entry.break_minutes} Min</span>
-                                                                )}
-                                                                <span className="font-semibold text-amber-400">
-                                                                    {entry.total_hours?.toFixed(2)}h
-                                                                </span>
-                                                            </div>
-                                                            {entry.notes && (
-                                                                <p className="text-[10px] sm:text-xs text-slate-500 mt-2">{entry.notes}</p>
-                                                            )}
-                                                        </div>
-                                                        {canEdit(entry) && (
-                                                            <div className="flex gap-1">
-                                                                {permissions.isManager && entry.status !== 'genehmigt' && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        onClick={() => handleApprove(entry.id)}
-                                                                        className="text-green-400 hover:text-green-300 hover:bg-green-900/20"
-                                                                        title="Genehmigen"
-                                                                    >
-                                                                        <CheckCircle2 className="w-4 h-4" />
-                                                                    </Button>
-                                                                )}
+                                                       <div className="flex-1 min-w-0">
+                                                           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
+                                                               <span className="font-semibold text-white text-sm sm:text-base">
+                                                                   {format(parseISO(entry.date), 'dd.MM.yyyy', { locale: de })}
+                                                               </span>
+                                                               <Badge className={cn(statusConfig[entry.status].color, "text-[10px] sm:text-xs")}>
+                                                                   <StatusIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                                                                   {statusConfig[entry.status].label}
+                                                               </Badge>
+                                                               {entry.employee_confirmed && (
+                                                                   <Badge className="bg-blue-100 text-blue-700 text-[10px] sm:text-xs">
+                                                                       ✓ Bestätigt
+                                                                   </Badge>
+                                                               )}
+                                                               {entry.status === 'genehmigt' && (
+                                                                   <Badge className="bg-slate-700 text-slate-300 text-[10px] sm:text-xs">
+                                                                       🔒 Gesperrt
+                                                                   </Badge>
+                                                               )}
+                                                           </div>
+                                                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-400">
+                                                               <span>
+                                                                   {entry.start_time} - {entry.end_time}
+                                                                   {entry.end_time < entry.start_time && <span className="ml-1">🌙</span>}
+                                                               </span>
+                                                               {entry.break_minutes > 0 && (
+                                                                   <span>Pause: {entry.break_minutes} Min</span>
+                                                               )}
+                                                               <span className="font-semibold text-amber-400">
+                                                                   {entry.total_hours?.toFixed(2)}h
+                                                               </span>
+                                                           </div>
+                                                           {entry.arbzg_warning && (
+                                                               <div className="mt-2 p-2 bg-red-900/20 border border-red-700/30 rounded text-[10px] sm:text-xs text-red-400">
+                                                                   ⚠️ {entry.arbzg_warning}
+                                                               </div>
+                                                           )}
+                                                           {entry.notes && (
+                                                               <p className="text-[10px] sm:text-xs text-slate-500 mt-2">{entry.notes}</p>
+                                                           )}
+                                                           {entry.status === 'genehmigt' && entry.manager_approved_by && (
+                                                               <p className="text-[10px] text-slate-500 mt-1">
+                                                                   Genehmigt von {entry.manager_approved_by} am {format(parseISO(entry.manager_approved_at), 'dd.MM.yyyy HH:mm', { locale: de })}
+                                                               </p>
+                                                           )}
+                                                       </div>
+                                                        <div className="flex gap-1">
+                                                            {!entry.employee_confirmed && entry.employee_id === currentEmployee?.id && entry.status !== 'genehmigt' && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    onClick={() => {
-                                                                        setSelectedEntry(entry);
-                                                                        setModalOpen(true);
-                                                                    }}
-                                                                    className="text-slate-400 hover:text-white"
-                                                                    title={!permissions.isManager && entry.status !== 'entwurf' ? 'Bearbeiten setzt Status zurück auf Entwurf' : 'Bearbeiten'}
+                                                                    onClick={() => confirmEntryMutation.mutate(entry.id)}
+                                                                    className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                                                                    title="Bestätigen"
                                                                 >
-                                                                    <Pencil className="w-4 h-4" />
+                                                                    <Check className="w-4 h-4" />
                                                                 </Button>
-                                                                {permissions.isManager && (
+                                                            )}
+                                                            {permissions.isManager && entry.status !== 'genehmigt' && entry.employee_confirmed && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => handleApprove(entry.id)}
+                                                                    className="text-green-400 hover:text-green-300 hover:bg-green-900/20"
+                                                                    title="Genehmigen (rechtsverbindlich)"
+                                                                >
+                                                                    <CheckCircle2 className="w-4 h-4" />
+                                                                </Button>
+                                                            )}
+                                                            {canEdit(entry) && (
+                                                                <>
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="icon"
-                                                                        onClick={() => handleDelete(entry.id)}
-                                                                        className="text-red-400 hover:text-red-300"
+                                                                        onClick={() => {
+                                                                            setSelectedEntry(entry);
+                                                                            setModalOpen(true);
+                                                                        }}
+                                                                        className="text-slate-400 hover:text-white"
+                                                                        title={!permissions.isManager && entry.status !== 'entwurf' ? 'Bearbeiten setzt Status zurück auf Entwurf' : 'Bearbeiten'}
                                                                     >
-                                                                        <Trash2 className="w-4 h-4" />
+                                                                        <Pencil className="w-4 h-4" />
                                                                     </Button>
-                                                                )}
-                                                            </div>
-                                                        )}
+                                                                    {permissions.isManager && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            onClick={() => handleDelete(entry.id)}
+                                                                            className="text-red-400 hover:text-red-300"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </Button>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </Card>
                                             );

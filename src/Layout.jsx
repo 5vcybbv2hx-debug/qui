@@ -104,70 +104,85 @@ export default function Layout({ children, currentPageName }) {
                 </div>
             </aside>
 
-            {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-slate-950 border-b border-slate-800 pt-safe">
-                <div className="flex items-center justify-between px-4 py-3">
-                    <Link to={createPageUrl(permissions.isManager ? 'Dashboard' : 'MyDashboard')} className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                            <span className="text-white font-bold">B</span>
-                        </div>
-                        <span className="font-bold text-white">BarManager</span>
+            {/* Mobile Bottom Navigation */}
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950 border-t border-slate-800 pb-safe">
+                <div className="flex items-center justify-around px-2 py-2">
+                    <Link 
+                        to={createPageUrl(permissions.isManager ? 'Dashboard' : 'MyDashboard')}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                    >
+                        <Home className="w-5 h-5" />
+                        <span className="text-xs">Home</span>
                     </Link>
-                    <div className="flex items-center gap-2">
-                        {permissions.isManager && currentUser && (
+                    <Link 
+                        to={createPageUrl('Shifts')}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                    >
+                        <Calendar className="w-5 h-5" />
+                        <span className="text-xs">Schichten</span>
+                    </Link>
+                    {permissions.isManager && currentUser && (
+                        <div className="flex flex-col items-center gap-1 px-3 py-2">
                             <NotificationBell userEmail={currentUser.email} />
-                        )}
-                        <button
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="p-2 rounded-lg hover:bg-slate-800 text-slate-400"
-                        >
-                            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                        </button>
-                    </div>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                    >
+                        <Menu className="w-5 h-5" />
+                        <span className="text-xs">Menü</span>
+                    </button>
                 </div>
 
-                {/* Mobile Menu */}
+                {/* Mobile Menu Overlay */}
                 {mobileMenuOpen && (
-                    <div className="absolute top-full left-0 right-0 bg-slate-950 border-b border-slate-800 shadow-lg max-h-[calc(100vh-3.5rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto">
-                        <nav className="p-3 space-y-1">
-                            {navigation.filter(item => permissions[item.permission]).map((item) => {
-                                const isActive = currentPageName === item.page;
-                                return (
-                                    <Link
-                                        key={item.name}
-                                        to={createPageUrl(item.page)}
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className={cn(
-                                            "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium",
-                                            isActive 
-                                                ? "bg-amber-600 text-white" 
-                                                : "text-slate-400 hover:bg-slate-800 active:bg-slate-700"
-                                        )}
-                                    >
-                                        <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
-                                        {item.name}
-                                    </Link>
-                                );
-                            })}
-                        </nav>
-                        <div className="p-3 border-t border-slate-800">
-                            <button
-                                onClick={() => {
-                                    base44.auth.logout();
-                                    setMobileMenuOpen(false);
-                                }}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium"
-                            >
-                                <LogOut className="w-5 h-5" />
-                                Abmelden
-                            </button>
+                    <>
+                        <div 
+                            className="fixed inset-0 bg-black/50 z-40"
+                            onClick={() => setMobileMenuOpen(false)}
+                        />
+                        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 bg-slate-950 border-t border-slate-800 shadow-lg max-h-[70vh] overflow-y-auto z-50">
+                            <nav className="p-3 space-y-1">
+                                {navigation.filter(item => permissions[item.permission]).map((item) => {
+                                    const isActive = currentPageName === item.page;
+                                    return (
+                                        <Link
+                                            key={item.name}
+                                            to={createPageUrl(item.page)}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className={cn(
+                                                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium",
+                                                isActive 
+                                                    ? "bg-amber-600 text-white" 
+                                                    : "text-slate-400 hover:bg-slate-800 active:bg-slate-700"
+                                            )}
+                                        >
+                                            <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
+                                            {item.name}
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+                            <div className="p-3 border-t border-slate-800">
+                                <button
+                                    onClick={() => {
+                                        base44.auth.logout();
+                                        setMobileMenuOpen(false);
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                    Abmelden
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    </>
                 )}
             </div>
 
             {/* Main Content */}
-            <main className="md:pl-64 pt-[calc(3.5rem+env(safe-area-inset-top))] md:pt-0 pb-safe">
+            <main className="md:pl-64 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
                 {children}
             </main>
         </div>

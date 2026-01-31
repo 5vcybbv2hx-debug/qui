@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, isSameDay, startOfWeek, addDays } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Calendar, Users, Phone, Mail, ChevronLeft, ChevronRight, Download, PartyPopper, Search } from 'lucide-react';
+import { Plus, Calendar, Users, Phone, Download, Search, Edit, Trash2 } from 'lucide-react';
 import SavedFilters from '@/components/filters/SavedFilters';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -24,8 +24,6 @@ export default function Reservations() {
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedReservation, setSelectedReservation] = useState(null);
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [statusFilter, setStatusFilter] = useState('alle');
     const [searchTerm, setSearchTerm] = useState('');
     const [guestFilter, setGuestFilter] = useState('alle');
@@ -42,13 +40,17 @@ export default function Reservations() {
             (guestFilter === 'klein' && res.guests <= 4) ||
             (guestFilter === 'mittel' && res.guests > 4 && res.guests <= 8) ||
             (guestFilter === 'gross' && res.guests > 8);
-        return matchesSearch && matchesGuests;
+        const matchesStatus = statusFilter === 'alle' || res.status === statusFilter;
+        return matchesSearch && matchesGuests && matchesStatus;
     });
 
-    const { data: events = [] } = useQuery({
-        queryKey: ['events'],
-        queryFn: () => base44.entities.Event.list('-date', 50)
+    const sortedReservations = [...reservations].sort((a, b) => {
+        const dateCompare = new Date(a.date) - new Date(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return (a.time || '').localeCompare(b.time || '');
     });
+
+
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Reservation.create(data),
@@ -86,6 +88,10 @@ export default function Reservations() {
     };
 
     const handleDelete = (id) => {
+        if (!permissions.canDeleteReservations) {
+            alert('Nur Manager können Reservierungen löschen.');
+            return;
+        }
         if (confirm('Reservierung wirklich löschen?')) {
             deleteMutation.mutate(id);
         }
@@ -136,33 +142,11 @@ export default function Reservations() {
         document.body.removeChild(link);
     };
 
-    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-    
-    const getReservationsForDay = (date) => {
-        return reservations.filter(res => {
-            const matchesDate = isSameDay(new Date(res.date), date);
-            if (statusFilter === 'alle') return matchesDate;
-            return matchesDate && res.status === statusFilter;
-        });
-    };
-
-    const selectedDateReservations = getReservationsForDay(selectedDate)
-        .sort((a, b) => a.time.localeCompare(b.time));
-
-    const selectedDateEvents = events.filter(e => 
-        isSameDay(new Date(e.date), selectedDate) && e.status !== 'abgesagt'
-    );
-
     const statusColors = {
         'vorgemerkt': 'bg-yellow-100 text-yellow-700 border-yellow-200',
         'bestätigt': 'bg-green-100 text-green-700 border-green-200',
         'storniert': 'bg-slate-100 text-slate-500 border-slate-200'
     };
-
-    const todayCount = getReservationsForDay(new Date()).filter(r => r.status !== 'storniert').length;
-    const totalGuests = selectedDateReservations
-        .filter(r => r.status !== 'storniert')
-        .reduce((sum, r) => sum + (r.guests || 0), 0);
 
     if (!permissions.canViewReservations) {
         return <PermissionDenied message="Du hast keine Berechtigung, Reservierungen zu sehen." />;
@@ -176,7 +160,7 @@ export default function Reservations() {
                     <div>
                         <h1 className="text-2xl font-bold text-white tracking-tight">Reservierungen</h1>
                         <p className="text-slate-400 text-sm mt-1">
-                            {todayCount} Reservierung{todayCount !== 1 ? 'en' : ''} heute
+                            {reservations.length} Reservierung{reservations.length !== 1 ? 'en' : ''}
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -228,6 +212,17 @@ export default function Reservations() {
                                     <SelectItem value="gross">Groß (9+)</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="alle">Alle Status</SelectItem>
+                                    <SelectItem value="bestätigt">Bestätigt</SelectItem>
+                                    <SelectItem value="vorgemerkt">Vorgemerkt</SelectItem>
+                                    <SelectItem value="storniert">Storniert</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <SavedFilters
                             storageKey="reservations_saved_filters"
@@ -241,145 +236,104 @@ export default function Reservations() {
                     </div>
                 </Card>
 
-                {/* Week Calendar */}
-                <Card className="p-4 mb-4 bg-slate-800 border-slate-700">
-                    <div className="flex items-center justify-between mb-3">
-                        <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => setWeekStart(addDays(weekStart, -7))}
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </Button>
-                        <h3 className="font-medium text-white text-sm">
-                            {format(weekStart, 'MMMM yyyy', { locale: de })}
-                        </h3>
-                        <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={() => setWeekStart(addDays(weekStart, 7))}
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </Button>
-                    </div>
+                {/* Reservations List */}
+                {sortedReservations.length > 0 ? (
+                    <div className="space-y-3">
+                        {sortedReservations.map(res => (
+                            <Card 
+                                key={res.id}
+                                className="p-5 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors"
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <Calendar className="w-5 h-5 text-amber-400" />
+                                            <h3 className="font-semibold text-white text-lg">{res.customer_name}</h3>
+                                            <Badge className={statusColors[res.status]}>
+                                                {res.status}
+                                            </Badge>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap items-center gap-4 text-sm mb-2">
+                                            <div className="flex items-center gap-2 text-slate-300">
+                                                <Calendar className="w-4 h-4 text-slate-400" />
+                                                <span>{format(parseISO(res.date), 'dd. MMMM yyyy', { locale: de })}</span>
+                                            </div>
+                                            
+                                            {res.time && (
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <span>🕐</span>
+                                                    <span>{res.time} Uhr</span>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="flex items-center gap-2 text-slate-300">
+                                                <Users className="w-4 h-4 text-slate-400" />
+                                                <span>{res.guests} Person{res.guests !== 1 ? 'en' : ''}</span>
+                                            </div>
 
-                    <div className="grid grid-cols-7 gap-1">
-                        {weekDays.map((day, idx) => {
-                            const dayReservations = getReservationsForDay(day).filter(r => r.status !== 'storniert');
-                            const isToday = isSameDay(day, new Date());
-                            const isSelected = isSameDay(day, selectedDate);
-                            
-                            return (
-                                <button
-                                    key={idx}
-                                    onClick={() => setSelectedDate(day)}
-                                    className={cn(
-                                        "p-2 rounded text-center transition-colors",
-                                        isToday && "bg-amber-900/30",
-                                        isSelected && "bg-slate-700",
-                                        !isSelected && !isToday && "hover:bg-slate-700/50"
-                                    )}
-                                >
-                                    <p className="text-xs text-slate-500 mb-1">
-                                        {format(day, 'EEE', { locale: de })}
-                                    </p>
-                                    <p className={cn(
-                                        "text-lg font-semibold",
-                                        isSelected ? "text-white" : isToday ? "text-amber-400" : "text-slate-300"
-                                    )}>
-                                        {format(day, 'd')}
-                                    </p>
-                                    {dayReservations.length > 0 && (
-                                        <div className="w-1 h-1 rounded-full bg-green-500 mx-auto mt-1" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </Card>
+                                            {res.table && (
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <span>📍</span>
+                                                    <span>Tisch {res.table}</span>
+                                                </div>
+                                            )}
+                                        </div>
 
-                {/* Selected Date Events */}
-                {selectedDateEvents.length > 0 && (
-                    <Card className="p-3 bg-purple-900/20 border-purple-800/30 mb-4">
-                        <div className="flex items-center gap-2">
-                            <PartyPopper className="w-4 h-4 text-purple-400" />
-                            <p className="text-sm text-white flex-1">Event: {selectedDateEvents[0].title}</p>
-                            <Link to={createPageUrl('Events')}>
-                                <Button variant="ghost" size="sm" className="text-purple-400 h-7 text-xs">
-                                    Details
-                                </Button>
-                            </Link>
+                                        {res.phone && (
+                                            <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                <Phone className="w-3 h-3" />
+                                                <span>{res.phone}</span>
+                                            </div>
+                                        )}
+                                        
+                                        {res.notes && (
+                                            <p className="text-xs text-slate-500 mt-2 italic">{res.notes}</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex gap-1">
+                                        {permissions.canEditReservations && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => {
+                                                    setSelectedReservation(res);
+                                                    setModalOpen(true);
+                                                }}
+                                                className="h-8 w-8 text-slate-400 hover:text-slate-200"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                        {permissions.canDeleteReservations && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDelete(res.id)}
+                                                className="h-8 w-8 text-red-500 hover:text-red-400"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <Card className="p-12 bg-slate-800 border-slate-700">
+                        <div className="text-center text-slate-400">
+                            <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium">Keine Reservierungen gefunden</p>
+                            <p className="text-sm mt-1">
+                                {searchTerm || guestFilter !== 'alle' || statusFilter !== 'alle'
+                                    ? 'Versuche andere Filter' 
+                                    : 'Füge die erste Reservierung hinzu'}
+                            </p>
                         </div>
                     </Card>
                 )}
-
-                {/* Selected Date Details */}
-                <Card className="p-4 bg-slate-800 border-slate-700">
-                    <div className="flex items-center justify-between mb-3">
-                        <div>
-                            <h3 className="font-medium text-white text-sm">
-                                {format(selectedDate, "d. MMM", { locale: de })}
-                            </h3>
-                            <p className="text-xs text-slate-400 mt-0.5">
-                                {selectedDateReservations.filter(r => r.status !== 'storniert').length} Reservierungen
-                            </p>
-                        </div>
-                        <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-                            <TabsList className="bg-slate-900 h-8">
-                                <TabsTrigger value="alle" className="text-xs h-7">Alle</TabsTrigger>
-                                <TabsTrigger value="bestätigt" className="text-xs h-7">OK</TabsTrigger>
-                                <TabsTrigger value="vorgemerkt" className="text-xs h-7">Offen</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
-
-                    {selectedDateReservations.length > 0 ? (
-                        <div className="space-y-2">
-                            {selectedDateReservations.map(res => (
-                                <div
-                                    key={res.id}
-                                    onClick={() => {
-                                        setSelectedReservation(res);
-                                        setModalOpen(true);
-                                    }}
-                                    className="flex items-center gap-3 p-3 rounded bg-slate-900 hover:bg-slate-700 transition-colors cursor-pointer border border-slate-700"
-                                >
-                                    <div className="text-center min-w-[50px]">
-                                        <p className="text-lg font-semibold text-white">{res.time}</p>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="font-medium text-white text-sm">{res.customer_name}</p>
-                                        <p className="text-xs text-slate-400">
-                                            {res.guests} Pers.
-                                            {res.table && ` · Tisch ${res.table}`}
-                                        </p>
-                                    </div>
-                                    <Badge className={cn("text-xs", statusColors[res.status])}>
-                                        {res.status === 'bestätigt' ? '✓' : res.status === 'vorgemerkt' ? '?' : 'X'}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-slate-500">
-                            <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Keine Reservierungen</p>
-                            {permissions.canEditReservations && (
-                                <Button 
-                                    variant="link" 
-                                    size="sm" 
-                                    className="mt-1 text-xs"
-                                    onClick={() => {
-                                        setSelectedReservation(null);
-                                        setModalOpen(true);
-                                    }}
-                                >
-                                    Hinzufügen
-                                </Button>
-                            )}
-                        </div>
-                    )}
-                </Card>
 
                 {/* Modal */}
                 <ReservationModal
@@ -389,9 +343,9 @@ export default function Reservations() {
                         setSelectedReservation(null);
                     }}
                     reservation={selectedReservation}
-                    selectedDate={selectedDate}
                     onSave={handleSave}
                     onDelete={handleDelete}
+                    canDelete={permissions.canDeleteReservations}
                 />
             </div>
         </div>

@@ -66,6 +66,7 @@ export function usePermissions() {
                     canRequestShiftSwap: hasPermission(userRole, employeeRole, 'REQUEST_SHIFT_SWAP'),
                     canViewReservations: hasPermission(userRole, employeeRole, 'VIEW_RESERVATIONS'),
                     canEditReservations: hasPermission(userRole, employeeRole, 'EDIT_RESERVATIONS'),
+                    canDeleteReservations: hasPermission(userRole, employeeRole, 'DELETE_RESERVATIONS'),
                     canViewEvents: hasPermission(userRole, employeeRole, 'VIEW_EVENTS'),
                     canEditEvents: hasPermission(userRole, employeeRole, 'EDIT_EVENTS'),
                     canViewShopping: hasPermission(userRole, employeeRole, 'VIEW_SHOPPING'),

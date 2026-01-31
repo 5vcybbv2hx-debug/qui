@@ -36,12 +36,16 @@ export const PERMISSIONS = {
     
     // Reservierungen
     VIEW_RESERVATIONS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
         description: 'Reservierungen ansehen'
     },
     EDIT_RESERVATIONS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
         description: 'Reservierungen bearbeiten'
+    },
+    DELETE_RESERVATIONS: {
+        roles: [ROLES.ADMIN, ROLES.MANAGER],
+        description: 'Reservierungen löschen'
     },
     
     // Events

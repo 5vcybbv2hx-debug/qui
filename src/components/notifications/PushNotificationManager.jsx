@@ -6,10 +6,16 @@ import { toast } from 'sonner';
 
 export default function PushNotificationManager({ userEmail }) {
     const [subscription, setSubscription] = useState(null);
-    const [permission, setPermission] = useState(Notification.permission);
+    const [permission, setPermission] = useState('default');
+    const [isSupported, setIsSupported] = useState(false);
 
     useEffect(() => {
-        checkSubscription();
+        // Prüfen ob Browser Push unterstützt
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            setIsSupported(true);
+            setPermission(Notification.permission);
+            checkSubscription();
+        }
     }, []);
 
     const checkSubscription = async () => {
@@ -94,6 +100,10 @@ export default function PushNotificationManager({ userEmail }) {
             toast.error('Fehler beim Deaktivieren');
         }
     };
+
+    if (!isSupported) {
+        return null;
+    }
 
     if (permission === 'denied') {
         return (

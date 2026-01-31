@@ -32,18 +32,18 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
 
     return (
         <Card className={cn(
-            "p-4 border-0 shadow-sm transition-all duration-200 hover:shadow-md",
-            isCompleted && "opacity-60 bg-slate-50"
+            "p-3 bg-slate-800 border-slate-700 transition-all hover:bg-slate-750",
+            isCompleted && "opacity-60"
         )}>
             <div className="flex gap-3">
                 {/* Checkbox */}
                 <button
                     onClick={() => onStatusChange(todo, isCompleted ? 'offen' : 'erledigt')}
                     className={cn(
-                        "w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                        "w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center transition-all shrink-0",
                         isCompleted 
-                            ? "bg-emerald-500 border-emerald-500" 
-                            : "border-slate-300 hover:border-emerald-400"
+                            ? "bg-green-600 border-green-600" 
+                            : "border-slate-600 hover:border-green-500"
                     )}
                 >
                     {isCompleted && <Check className="w-3 h-3 text-white" />}
@@ -54,63 +54,60 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
                     <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                             <h4 className={cn(
-                                "font-medium",
-                                isCompleted ? "text-slate-400 line-through" : "text-slate-800"
+                                "font-medium text-sm",
+                                isCompleted ? "text-slate-500 line-through" : "text-white"
                             )}>
                                 {todo.title}
                             </h4>
                             {todo.description && (
-                                <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">
+                                <p className="text-xs text-slate-400 mt-1 line-clamp-1">
                                     {todo.description}
                                 </p>
                             )}
                         </div>
                         
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                    <MoreHorizontal className="w-4 h-4 text-slate-400" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => onEdit(todo)}>
-                                    <Pencil className="w-4 h-4 mr-2" />
-                                    Bearbeiten
-                                </DropdownMenuItem>
-                                {showArchiveButton && (
-                                    <DropdownMenuItem onClick={() => onArchive(todo.id)}>
-                                        <Archive className="w-4 h-4 mr-2" />
-                                        Archivieren
-                                    </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem 
-                                    onClick={() => onDelete(todo.id)}
-                                    className="text-red-600"
+                        <div className="flex gap-1 shrink-0">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => onEdit(todo)}
+                                className="h-7 w-7 text-slate-400 hover:text-slate-200"
+                            >
+                                <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            {showArchiveButton && (
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => onArchive(todo.id)}
+                                    className="h-7 w-7 text-slate-400 hover:text-amber-400"
                                 >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Löschen
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                    <Archive className="w-3.5 h-3.5" />
+                                </Button>
+                            )}
+                            <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => onDelete(todo.id)}
+                                className="h-7 w-7 text-red-500 hover:text-red-400"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                        </div>
                     </div>
                     
                     {/* Meta */}
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                         {todo.category && (
-                            <Badge variant="secondary" className={cn("text-[10px]", categoryColors[todo.category])}>
+                            <Badge className={cn("text-[10px] px-1.5 h-5", categoryColors[todo.category])}>
                                 {todo.category}
                             </Badge>
                         )}
                         
-                        <div className={cn("flex items-center gap-1", priority.color)}>
-                            <Flag className="w-3 h-3" />
-                            <span className="text-[10px] uppercase tracking-wider">{todo.priority}</span>
-                        </div>
-                        
                         {todo.due_date && (
                             <div className={cn(
                                 "flex items-center gap-1 text-[10px]",
-                                isOverdue ? "text-red-500" : "text-slate-400"
+                                isOverdue ? "text-red-400" : "text-slate-500"
                             )}>
                                 <Calendar className="w-3 h-3" />
                                 {format(new Date(todo.due_date), 'd. MMM', { locale: de })}
@@ -118,27 +115,9 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
                         )}
                         
                         {todo.assigned_to && (
-                            <Link 
-                                to={createPageUrl('Employees')}
-                                className="text-[10px] text-slate-400 hover:text-amber-500 transition-colors flex items-center gap-1"
-                            >
-                                → {todo.assigned_to}
-                                <ExternalLink className="w-2 h-2" />
-                            </Link>
-                        )}
-
-                        {todo.completed_by && (
-                            <div className="flex items-center gap-1 text-green-600">
+                            <div className="text-[10px] text-slate-500 flex items-center gap-1">
                                 <User className="w-3 h-3" />
-                                <span className="text-[10px]">{todo.completed_by}</span>
-                                {todo.completed_at && (
-                                    <>
-                                        <Clock className="w-3 h-3 ml-1" />
-                                        <span className="text-[10px]">
-                                            {format(new Date(todo.completed_at), 'dd.MM. HH:mm', { locale: de })}
-                                        </span>
-                                    </>
-                                )}
+                                {todo.assigned_to}
                             </div>
                         )}
                     </div>

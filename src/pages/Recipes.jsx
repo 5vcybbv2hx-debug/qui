@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import SavedFilters from '@/components/filters/SavedFilters';
 import IngredientSelector from '@/components/recipes/IngredientSelector';
 import PDFExportButton from '@/components/export/PDFExportButton';
 
@@ -32,6 +33,7 @@ export default function Recipes() {
     const [selectedRecipe, setSelectedRecipe] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('alle');
+    const [ingredientFilter, setIngredientFilter] = useState('');
     const [categoriesModalOpen, setCategoriesModalOpen] = useState(false);
     const [selectedRecipes, setSelectedRecipes] = useState(new Set());
     const [similarRecipesModal, setSimilarRecipesModal] = useState(false);
@@ -139,13 +141,13 @@ export default function Recipes() {
     };
 
     const filteredRecipes = recipes.filter(recipe => {
-        const ingredientNames = Array.isArray(recipe.ingredients) 
-            ? recipe.ingredients.map(i => i.article_name).join(' ')
-            : '';
-        const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            ingredientNames.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = categoryFilter === 'alle' || recipe.category === categoryFilter;
-        return matchesSearch && matchesCategory;
+        const matchesIngredient = !ingredientFilter || 
+            recipe.ingredients?.some(ing => 
+                ing.article_name?.toLowerCase().includes(ingredientFilter.toLowerCase())
+            );
+        return matchesSearch && matchesCategory && matchesIngredient;
     });
 
     const toggleRecipeSelection = (recipeId) => {
@@ -321,28 +323,52 @@ export default function Recipes() {
                 )}
 
                 {/* Search and Filter */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                            placeholder="Rezepte durchsuchen..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10"
+                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                    <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    placeholder="Rezept suchen..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-10 bg-slate-900 border-slate-700"
+                                />
+                            </div>
+                            <select
+                                value={categoryFilter}
+                                onChange={(e) => setCategoryFilter(e.target.value)}
+                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                            >
+                                <option value="alle">Alle Kategorien</option>
+                                <option value="Cocktail">Cocktail</option>
+                                <option value="Shot">Shot</option>
+                                <option value="Longdrink">Longdrink</option>
+                                <option value="Mocktail">Mocktail</option>
+                                <option value="Moonshiner-Cocktails">Moonshiner-Cocktails</option>
+                                <option value="Sonstiges">Sonstiges</option>
+                            </select>
+                            <div className="relative flex-1 sm:max-w-[200px]">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    placeholder="Nach Zutat..."
+                                    value={ingredientFilter}
+                                    onChange={(e) => setIngredientFilter(e.target.value)}
+                                    className="pl-10 bg-slate-900 border-slate-700"
+                                />
+                            </div>
+                        </div>
+                        <SavedFilters
+                            storageKey="recipes_saved_filters"
+                            currentFilters={{ searchQuery, categoryFilter, ingredientFilter }}
+                            onApplyFilter={(filters) => {
+                                setSearchQuery(filters.searchQuery || '');
+                                setCategoryFilter(filters.categoryFilter || 'alle');
+                                setIngredientFilter(filters.ingredientFilter || '');
+                            }}
                         />
                     </div>
-                    <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="w-full sm:w-auto">
-                        <TabsList className="grid grid-cols-3 sm:grid-cols-7 w-full">
-                            <TabsTrigger value="alle">Alle</TabsTrigger>
-                            <TabsTrigger value="Cocktail">Cocktails</TabsTrigger>
-                            <TabsTrigger value="Shot">Shots</TabsTrigger>
-                            <TabsTrigger value="Longdrink">Longdrinks</TabsTrigger>
-                            <TabsTrigger value="Mocktail">Mocktails</TabsTrigger>
-                            <TabsTrigger value="Moonshiner-Cocktails">Moonshiner</TabsTrigger>
-                            <TabsTrigger value="Sonstiges">Sonstiges</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
+                </Card>
 
                 {/* Recipes Grid */}
                 {filteredRecipes.length > 0 ? (

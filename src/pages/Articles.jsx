@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import SavedFilters from '@/components/filters/SavedFilters';
 import ArticleModal from '@/components/articles/ArticleModal';
 import CategoryManager from '@/components/articles/CategoryManager';
 import BulkEditModal from '@/components/articles/BulkEditModal';
@@ -39,6 +40,8 @@ export default function Articles() {
     const [selectedArticles, setSelectedArticles] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
+    const [filterSupplier, setFilterSupplier] = useState('all');
+    const [filterStock, setFilterStock] = useState('all');
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -112,12 +115,18 @@ export default function Articles() {
         setSelectedArticles([]);
     };
 
+    const allSuppliers = [...new Set(articles.flatMap(a => a.suppliers || []))].sort();
+
     const filteredArticles = articles
         .filter(a => {
             const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 a.barcode?.includes(searchTerm);
             const matchesCategory = filterCategory === 'all' || a.category === filterCategory;
-            return matchesSearch && matchesCategory;
+            const matchesSupplier = filterSupplier === 'all' || a.suppliers?.includes(filterSupplier);
+            const matchesStock = filterStock === 'all' ||
+                (filterStock === 'niedrig' && a.current_stock <= (a.min_stock || 0)) ||
+                (filterStock === 'leer' && a.current_stock === 0);
+            return matchesSearch && matchesCategory && matchesSupplier && matchesStock;
         });
 
     if (!permissions.canEditShopping) {
@@ -185,31 +194,60 @@ export default function Articles() {
                 </div>
 
                 {/* Search & Filter */}
-                <div className="mb-6 space-y-3">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                        <Input
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            placeholder="Suche nach Name oder Barcode..."
-                            className="pl-10 bg-slate-800 border-slate-700 text-white"
+                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                    <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                <Input
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Nach Name oder Barcode..."
+                                    className="pl-10 bg-slate-900 border-slate-700 text-white"
+                                />
+                            </div>
+                            <select
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                            >
+                                <option value="all">Alle Kategorien</option>
+                                {categories.map(cat => (
+                                    <option key={cat.name} value={cat.name}>{cat.name}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={filterSupplier}
+                                onChange={(e) => setFilterSupplier(e.target.value)}
+                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                            >
+                                <option value="all">Alle Lieferanten</option>
+                                {allSuppliers.map(sup => (
+                                    <option key={sup} value={sup}>{sup}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={filterStock}
+                                onChange={(e) => setFilterStock(e.target.value)}
+                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                            >
+                                <option value="all">Alle Bestände</option>
+                                <option value="niedrig">Niedrig</option>
+                                <option value="leer">Leer</option>
+                            </select>
+                        </div>
+                        <SavedFilters
+                            storageKey="articles_saved_filters"
+                            currentFilters={{ searchTerm, filterCategory, filterSupplier, filterStock }}
+                            onApplyFilter={(filters) => {
+                                setSearchTerm(filters.searchTerm || '');
+                                setFilterCategory(filters.filterCategory || 'all');
+                                setFilterSupplier(filters.filterSupplier || 'all');
+                                setFilterStock(filters.filterStock || 'all');
+                            }}
                         />
                     </div>
-
-                    <div className="flex gap-2 overflow-x-auto pb-2">
-                        {filterCategories.map(cat => (
-                            <Button
-                                key={cat}
-                                variant={filterCategory === cat ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setFilterCategory(cat)}
-                                className={filterCategory === cat ? "bg-amber-600 hover:bg-amber-700" : "border-slate-600 hover:bg-slate-700 text-slate-300"}
-                            >
-                                {cat === 'all' ? 'Alle' : cat}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
+                </Card>
 
                 {/* Articles Grid */}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import BackupManager from '@/components/backup/BackupManager';
 
 export default function Dashboard() {
     const { data: user } = useQuery({
@@ -163,13 +164,16 @@ export default function Dashboard() {
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
-                <div className="mb-4 sm:mb-6">
-                    <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                        Manager Dashboard
-                    </h1>
-                    <p className="text-slate-400 text-xs sm:text-sm">
-                        {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
-                    </p>
+                <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">
+                            Manager Dashboard
+                        </h1>
+                        <p className="text-slate-400 text-xs sm:text-sm">
+                            {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
+                        </p>
+                    </div>
+                    <BackupManager />
                 </div>
 
                 {/* Stats Grid */}

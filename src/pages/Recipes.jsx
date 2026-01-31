@@ -41,12 +41,14 @@ export default function Recipes() {
     const [formData, setFormData] = useState({
         name: '',
         category: 'Cocktail',
+        servings: 1,
         ingredients: [],
         preparation: '',
         glass_type: '',
         garnish: '',
         notes: ''
     });
+    const [viewServings, setViewServings] = useState({});
 
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes'],
@@ -99,6 +101,7 @@ export default function Recipes() {
             setFormData({
                 name: recipe.name,
                 category: recipe.category,
+                servings: recipe.servings || 1,
                 ingredients: recipe.ingredients || [],
                 preparation: recipe.preparation || '',
                 glass_type: recipe.glass_type || '',
@@ -110,6 +113,7 @@ export default function Recipes() {
             setFormData({
                 name: '',
                 category: categoryFilter !== 'alle' ? categoryFilter : 'Cocktail',
+                servings: 1,
                 ingredients: [],
                 preparation: '',
                 glass_type: '',
@@ -118,6 +122,15 @@ export default function Recipes() {
             });
         }
         setModalOpen(true);
+    };
+
+    const getScaledIngredients = (ingredients, baseServings, targetServings) => {
+        if (!ingredients || !baseServings || !targetServings) return ingredients;
+        const factor = targetServings / baseServings;
+        return ingredients.map(ing => ({
+            ...ing,
+            amount: Math.round(ing.amount * factor)
+        }));
     };
 
     const closeModal = () => {
@@ -433,9 +446,42 @@ export default function Recipes() {
                                 <div className="space-y-3 text-sm">
                                    {recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
                                        <div>
-                                           <p className="font-medium text-slate-300 mb-1">Zutaten:</p>
+                                           <div className="flex items-center justify-between mb-2">
+                                               <p className="font-medium text-slate-300">Zutaten:</p>
+                                               <div className="flex items-center gap-2">
+                                                   <Button
+                                                       variant="ghost"
+                                                       size="icon"
+                                                       onClick={() => setViewServings(prev => ({
+                                                           ...prev,
+                                                           [recipe.id]: Math.max(1, (prev[recipe.id] || recipe.servings || 1) - 1)
+                                                       }))}
+                                                       className="h-6 w-6 text-slate-400 hover:text-white"
+                                                   >
+                                                       -
+                                                   </Button>
+                                                   <span className="text-xs text-slate-400">
+                                                       {viewServings[recipe.id] || recipe.servings || 1}x
+                                                   </span>
+                                                   <Button
+                                                       variant="ghost"
+                                                       size="icon"
+                                                       onClick={() => setViewServings(prev => ({
+                                                           ...prev,
+                                                           [recipe.id]: (prev[recipe.id] || recipe.servings || 1) + 1
+                                                       }))}
+                                                       className="h-6 w-6 text-slate-400 hover:text-white"
+                                                   >
+                                                       +
+                                                   </Button>
+                                               </div>
+                                           </div>
                                            <div className="text-slate-400 text-xs leading-relaxed space-y-1">
-                                               {recipe.ingredients.map((ing, idx) => (
+                                               {getScaledIngredients(
+                                                   recipe.ingredients, 
+                                                   recipe.servings || 1, 
+                                                   viewServings[recipe.id] || recipe.servings || 1
+                                               ).map((ing, idx) => (
                                                    <p key={idx}>
                                                        {ing.amount > 0 && `${ing.amount}ml `}
                                                        {ing.article_name}
@@ -450,8 +496,13 @@ export default function Recipes() {
                                            <p className="font-medium text-green-400 mb-1">Kosten (EK netto):</p>
                                            <div className="text-green-300 text-xs">
                                                {(() => {
+                                                   const scaledIngredients = getScaledIngredients(
+                                                       recipe.ingredients, 
+                                                       recipe.servings || 1, 
+                                                       viewServings[recipe.id] || recipe.servings || 1
+                                                   );
                                                    let totalCost = 0;
-                                                   recipe.ingredients.forEach(ing => {
+                                                   scaledIngredients.forEach(ing => {
                                                        const article = articles.find(a => a.id === ing.article_id);
                                                        if (article && article.purchase_price && article.content_amount) {
                                                            const pricePerUnit = article.purchase_price / article.content_amount;
@@ -516,21 +567,32 @@ export default function Recipes() {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Kategorie</Label>
-                                <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Cocktail">Cocktail</SelectItem>
-                                        <SelectItem value="Shot">Shot</SelectItem>
-                                        <SelectItem value="Longdrink">Longdrink</SelectItem>
-                                        <SelectItem value="Mocktail">Mocktail</SelectItem>
-                                        <SelectItem value="Moonshiner-Cocktails">Moonshiner-Cocktails</SelectItem>
-                                        <SelectItem value="Sonstiges">Sonstiges</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <Label>Kategorie</Label>
+                                    <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Cocktail">Cocktail</SelectItem>
+                                            <SelectItem value="Shot">Shot</SelectItem>
+                                            <SelectItem value="Longdrink">Longdrink</SelectItem>
+                                            <SelectItem value="Mocktail">Mocktail</SelectItem>
+                                            <SelectItem value="Moonshiner-Cocktails">Moonshiner-Cocktails</SelectItem>
+                                            <SelectItem value="Sonstiges">Sonstiges</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Portionen</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={formData.servings}
+                                        onChange={(e) => setFormData({ ...formData, servings: parseInt(e.target.value) || 1 })}
+                                    />
+                                </div>
                             </div>
 
                             <IngredientSelector

@@ -16,7 +16,6 @@ import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
 import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManager';
 import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
-import ShiftSuggestions from '@/components/shifts/ShiftSuggestions';
 import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Shifts() {
@@ -109,11 +108,7 @@ export default function Shifts() {
         }
     };
 
-    const handleCreateMultipleShifts = async (suggestedShifts) => {
-        for (const shift of suggestedShifts) {
-            await createMutation.mutateAsync(shift);
-        }
-    };
+
 
     // Filter shifts
     const filteredShifts = shifts.filter(shift => {
@@ -159,13 +154,6 @@ export default function Shifts() {
                         </Button>
                         <ShiftSwapManager />
                         {permissions.isAdmin && <MonthlyStaffingCheck />}
-                        {permissions.isManager && (
-                            <ShiftSuggestions 
-                                shifts={shifts} 
-                                employees={employees}
-                                onCreateShifts={handleCreateMultipleShifts}
-                            />
-                        )}
                         <ShiftRequirementsManager />
                         <OpeningHoursManager />
                         <LiveSyncInstructions />

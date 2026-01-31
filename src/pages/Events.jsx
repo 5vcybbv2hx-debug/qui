@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Music, Users, Trash2, Edit, Search } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Music, Users, Trash2, Edit, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import SavedFilters from '@/components/filters/SavedFilters';
 
@@ -32,10 +32,8 @@ const statusColors = {
 
 export default function Events() {
     const queryClient = useQueryClient();
-    const [currentMonth, setCurrentMonth] = useState(new Date());
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
-    const [selectedDate, setSelectedDate] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('alle');
     const [statusFilter, setStatusFilter] = useState('alle');
@@ -86,7 +84,7 @@ export default function Events() {
         }
     });
 
-    const openModal = (event = null, date = null) => {
+    const openModal = (event = null) => {
         if (event) {
             setSelectedEvent(event);
             setFormData({
@@ -105,7 +103,7 @@ export default function Events() {
             setFormData({
                 title: '',
                 description: '',
-                date: date ? format(date, 'yyyy-MM-dd') : '',
+                date: '',
                 start_time: '20:00',
                 end_time: '02:00',
                 event_type: 'Party',
@@ -137,24 +135,14 @@ export default function Events() {
         }
     };
 
-    // Calendar generation
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-    const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-
-    const getEventsForDay = (day) => {
-        return events.filter(event => isSameDay(new Date(event.date), day));
-    };
-
-    const selectedDayEvents = selectedDate 
-        ? events.filter(e => isSameDay(new Date(e.date), selectedDate)).sort((a, b) => {
-            if (!a.start_time) return 1;
-            if (!b.start_time) return -1;
-            return a.start_time.localeCompare(b.start_time);
-        })
-        : [];
+    // Sort events by date and time
+    const sortedEvents = [...events].sort((a, b) => {
+        const dateCompare = new Date(a.date) - new Date(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        if (!a.start_time) return 1;
+        if (!b.start_time) return -1;
+        return a.start_time.localeCompare(b.start_time);
+    });
 
     return (
         <div className="min-h-screen bg-slate-900">
@@ -223,131 +211,99 @@ export default function Events() {
                     </div>
                 </Card>
 
-                <div className="grid lg:grid-cols-3 gap-6">
-                    {/* Calendar */}
-                    <div className="lg:col-span-2">
-                        <Card className="p-4 bg-slate-800 border-slate-700">
-                            {/* Month Navigation */}
-                            <div className="flex items-center justify-between mb-4">
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </Button>
-                                <h2 className="text-lg font-semibold text-white">
-                                    {format(currentMonth, 'MMMM yyyy', { locale: de })}
-                                </h2>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </Button>
-                            </div>
-
-                            {/* Weekday Headers */}
-                            <div className="grid grid-cols-7 gap-1 mb-2">
-                                {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(day => (
-                                    <div key={day} className="text-center text-xs text-slate-500 py-1">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Calendar Grid */}
-                            <div className="grid grid-cols-7 gap-1">
-                                {calendarDays.map((day, idx) => {
-                                    const dayEvents = getEventsForDay(day);
-                                    const isToday = isSameDay(day, new Date());
-                                    const isCurrentMonth = isSameMonth(day, currentMonth);
-                                    const isSelected = selectedDate && isSameDay(day, selectedDate);
-
-                                    return (
-                                        <button
-                                            key={idx}
-                                            onClick={() => setSelectedDate(day)}
-                                            className={cn(
-                                                "min-h-16 p-1 rounded text-left transition-colors",
-                                                isToday && "bg-amber-900/30",
-                                                isSelected && "bg-slate-700",
-                                                !isToday && !isSelected && "hover:bg-slate-700/50",
-                                                !isCurrentMonth && "opacity-30"
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "text-xs mb-1",
-                                                isToday ? "text-amber-400 font-semibold" : "text-slate-400"
-                                            )}>
-                                                {format(day, 'd')}
-                                            </div>
-                                            {dayEvents.length > 0 && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                                            )}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </Card>
-                    </div>
-
-                    {/* Selected Day Events */}
-                    <div>
-                        <Card className="p-4 bg-slate-800 border-slate-700">
-                            <h3 className="font-medium text-white mb-3 text-sm">
-                                {selectedDate ? format(selectedDate, 'dd. MMM yyyy', { locale: de }) : 'Datum wählen'}
-                            </h3>
-                            
-                            {selectedDayEvents.length > 0 ? (
-                                <div className="space-y-2">
-                                    {selectedDayEvents.map(event => (
-                                        <div key={event.id} 
-                                            onClick={() => openModal(event)}
-                                            className="p-3 bg-slate-900 rounded border border-slate-700 hover:border-slate-600 cursor-pointer"
-                                        >
-                                            <div className="flex items-start justify-between mb-1">
-                                                <p className="font-medium text-white text-sm">{event.title}</p>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleDelete(event.id);
-                                                    }}
-                                                    className="h-6 w-6 text-slate-400 hover:text-red-400"
-                                                >
-                                                    <Trash2 className="w-3 h-3" />
-                                                </Button>
-                                            </div>
-                                            <p className="text-xs text-slate-400">
-                                                {event.start_time || 'Keine Zeit'}
-                                                {event.expected_guests && ` · ${event.expected_guests} Gäste`}
-                                            </p>
+                {/* Events List */}
+                {sortedEvents.length > 0 ? (
+                    <div className="space-y-3">
+                        {sortedEvents.map(event => (
+                            <Card 
+                                key={event.id}
+                                className="p-5 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer"
+                                onClick={() => openModal(event)}
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <CalendarIcon className="w-5 h-5 text-amber-400" />
+                                            <h3 className="font-semibold text-white text-lg">{event.title}</h3>
+                                            <Badge className={eventTypeColors[event.event_type]}>
+                                                {event.event_type}
+                                            </Badge>
+                                            <Badge className={statusColors[event.status]}>
+                                                {event.status}
+                                            </Badge>
                                         </div>
-                                    ))}
+                                        
+                                        {event.description && (
+                                            <p className="text-sm text-slate-400 mb-3">{event.description}</p>
+                                        )}
+                                        
+                                        <div className="flex flex-wrap items-center gap-4 text-sm">
+                                            <div className="flex items-center gap-2 text-slate-300">
+                                                <CalendarIcon className="w-4 h-4 text-slate-400" />
+                                                <span>{format(parseISO(event.date), 'dd. MMMM yyyy', { locale: de })}</span>
+                                            </div>
+                                            
+                                            {event.start_time && (
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <span>🕐</span>
+                                                    <span>{event.start_time}{event.end_time && ` - ${event.end_time}`}</span>
+                                                </div>
+                                            )}
+                                            
+                                            {event.expected_guests && (
+                                                <div className="flex items-center gap-2 text-slate-300">
+                                                    <Users className="w-4 h-4 text-slate-400" />
+                                                    <span>{event.expected_guests} Gäste erwartet</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {event.notes && (
+                                            <p className="text-xs text-slate-500 mt-2 italic">{event.notes}</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="flex gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openModal(event);
+                                            }}
+                                            className="h-8 w-8 text-slate-400 hover:text-slate-200"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(event.id);
+                                            }}
+                                            className="h-8 w-8 text-red-500 hover:text-red-400"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            ) : selectedDate ? (
-                                <div className="text-center py-6 text-slate-500">
-                                    <p className="text-sm">Keine Events</p>
-                                    <Button
-                                        variant="link"
-                                        size="sm"
-                                        onClick={() => openModal(null, selectedDate)}
-                                        className="mt-1 text-xs"
-                                    >
-                                        Hinzufügen
-                                    </Button>
-                                </div>
-                            ) : (
-                                <p className="text-sm text-slate-500 text-center py-6">
-                                    Datum wählen
-                                </p>
-                            )}
-                        </Card>
+                            </Card>
+                        ))}
                     </div>
-                </div>
+                ) : (
+                    <Card className="p-12 bg-slate-800 border-slate-700">
+                        <div className="text-center text-slate-400">
+                            <CalendarIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium">Keine Events gefunden</p>
+                            <p className="text-sm mt-1">
+                                {searchTerm || typeFilter !== 'alle' || statusFilter !== 'alle' 
+                                    ? 'Versuche andere Filter' 
+                                    : 'Füge dein erstes Event hinzu'}
+                            </p>
+                        </div>
+                    </Card>
+                )}
 
                 {/* Modal */}
                 <Dialog open={modalOpen} onOpenChange={closeModal}>

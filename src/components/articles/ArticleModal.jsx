@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { Camera, X, Upload, Image as ImageIcon, Crop } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
+import ImageEditor from '@/components/articles/ImageEditor';
 
 export default function ArticleModal({ open, onClose, article, onSave }) {
     const { data: categories = [] } = useQuery({
@@ -20,6 +21,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
     const [scannerOpen, setScannerOpen] = useState(false);
     const [newSupplier, setNewSupplier] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [imageEditorOpen, setImageEditorOpen] = useState(false);
+    const [tempImageUrl, setTempImageUrl] = useState('');
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
@@ -114,10 +117,21 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        // Create temporary URL for editor
+        const tempUrl = URL.createObjectURL(file);
+        setTempImageUrl(tempUrl);
+        setImageEditorOpen(true);
+    };
+
+    const handleImageSave = async (editedFile) => {
         setUploading(true);
+        setImageEditorOpen(false);
+        
         try {
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            const { file_url } = await base44.integrations.Core.UploadFile({ file: editedFile });
             setFormData({ ...formData, image_url: file_url });
+            URL.revokeObjectURL(tempImageUrl);
+            setTempImageUrl('');
         } catch (error) {
             alert('Fehler beim Hochladen: ' + error.message);
         } finally {
@@ -255,6 +269,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                     <SelectItem value="l">l (Liter)</SelectItem>
                                     <SelectItem value="g">g (Gramm)</SelectItem>
                                     <SelectItem value="kg">kg (Kilogramm)</SelectItem>
+                                    <SelectItem value="Stück">Stück</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -302,15 +317,27 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                     alt="Vorschau"
                                     className="w-full h-32 object-cover rounded-lg"
                                 />
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-2 right-2"
-                                    onClick={() => setFormData({ ...formData, image_url: '' })}
-                                >
-                                    <X className="w-4 h-4" />
-                                </Button>
+                                <div className="absolute top-2 right-2 flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        size="icon"
+                                        onClick={() => {
+                                            setTempImageUrl(formData.image_url);
+                                            setImageEditorOpen(true);
+                                        }}
+                                    >
+                                        <Crop className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        onClick={() => setFormData({ ...formData, image_url: '' })}
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         ) : (
                             <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
@@ -356,6 +383,19 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                     open={scannerOpen}
                     onClose={() => setScannerOpen(false)}
                     onScan={handleScan}
+                />
+
+                <ImageEditor
+                    open={imageEditorOpen}
+                    onClose={() => {
+                        setImageEditorOpen(false);
+                        if (tempImageUrl) {
+                            URL.revokeObjectURL(tempImageUrl);
+                            setTempImageUrl('');
+                        }
+                    }}
+                    imageUrl={tempImageUrl}
+                    onSave={handleImageSave}
                 />
             </DialogContent>
         </Dialog>

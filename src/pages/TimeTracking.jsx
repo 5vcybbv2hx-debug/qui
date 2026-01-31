@@ -222,6 +222,58 @@ export default function TimeTracking() {
         }
     });
 
+    const clockOutAllMutation = useMutation({
+        mutationFn: async () => {
+            const activeClockedIn = clockEntries.filter(e => e.status === 'clocked_in');
+            const clockOutTime = new Date();
+            
+            const promises = activeClockedIn.map(async (entry) => {
+                const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
+                const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+
+                const tempEntry = {
+                    date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+                    start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                    end_time: format(clockOutTime, 'HH:mm'),
+                    break_minutes: 0,
+                    total_hours: totalHours,
+                    employee_id: entry.employee_id
+                };
+                const warnings = validateArbZG(tempEntry, timeEntries);
+                const warningText = formatWarnings(warnings);
+
+                await base44.entities.ClockEntry.update(entry.id, {
+                    clock_out: clockOutTime.toISOString(),
+                    break_minutes: 0,
+                    total_hours: totalHours,
+                    status: 'clocked_out',
+                    arbzg_warning: warningText
+                });
+
+                await base44.entities.TimeEntry.create({
+                    employee_id: entry.employee_id,
+                    employee_name: entry.employee_name,
+                    date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+                    start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                    end_time: format(clockOutTime, 'HH:mm'),
+                    break_minutes: 0,
+                    total_hours: totalHours,
+                    notes: 'Automatisch von Stempeluhr übertragen (Massen-Ausstempelung)',
+                    status: 'eingereicht',
+                    arbzg_warning: warningText,
+                    employee_confirmed: true,
+                    employee_confirmed_at: clockOutTime.toISOString()
+                });
+            });
+
+            return Promise.all(promises);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['clockEntries']);
+            queryClient.invalidateQueries(['time-entries']);
+        }
+    });
+
     const clockOutMutation = useMutation({
         mutationFn: async (entryId) => {
             const entry = clockEntries.find(e => e.id === entryId);
@@ -400,7 +452,25 @@ export default function TimeTracking() {
                 {/* Today's Clock Entries */}
                 {todayClockEntries.length > 0 && (
                     <div className="mb-6">
-                        <h3 className="text-sm sm:text-base font-semibold text-white mb-3">Heutige Stempelungen</h3>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm sm:text-base font-semibold text-white">Heutige Stempelungen</h3>
+                            {permissions.isManager && clockEntries.some(e => e.status === 'clocked_in') && (
+                                <Button
+                                    onClick={() => {
+                                        if (confirm('Möchtest du wirklich alle eingestempelten Mitarbeiter ausstempeln?')) {
+                                            clockOutAllMutation.mutate();
+                                        }
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-red-600 text-red-400 hover:bg-red-900/20"
+                                    disabled={clockOutAllMutation.isPending}
+                                >
+                                    <LogOut className="w-3 h-3 mr-1" />
+                                    Alle Ausstempeln
+                                </Button>
+                            )}
+                        </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {todayClockEntries.map(entry => (
                                 <Card key={entry.id} className="p-3 bg-slate-800 border-slate-700">

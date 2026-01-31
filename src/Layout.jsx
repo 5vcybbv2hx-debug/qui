@@ -11,29 +11,61 @@ import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
 import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
 
-const navigation = [
-    { name: 'Mein Dashboard', page: 'MyDashboard', icon: Home, permission: 'canViewDashboard' },
-    { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
-    { name: 'Benachrichtigungen', page: 'Notifications', icon: Bell, permission: 'canViewDashboard' },
-    { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
-    { name: 'Schichttausch', page: 'ShiftSwaps', icon: RepeatIcon, permission: 'canViewDashboard' },
-    { name: 'Kalenderintegration', page: 'CalendarIntegration', icon: Calendar, permission: 'canViewDashboard' },
-    { name: 'Zeit & Stempeluhr', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
-    { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },
-    { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard' },
-    { name: 'Budget', page: 'Budget', icon: TrendingUp, permission: 'canViewAnalytics' },
-    { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
-    { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
-    { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },
-    { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
-    { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
-    { name: 'Artikel', page: 'Articles', icon: Package, permission: 'canEditShopping' },
-    { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
-    { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },
-    { name: 'Putzliste', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
-    { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos' },
-    { name: 'Team', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
+const navigationSections = [
+    {
+        title: 'Dashboard',
+        items: [
+            { name: 'Mein Dashboard', page: 'MyDashboard', icon: Home, permission: 'canViewDashboard' },
+            { name: 'Manager Dashboard', page: 'Dashboard', icon: TrendingUp, permission: 'canViewDashboard' },
+            { name: 'Benachrichtigungen', page: 'Notifications', icon: Bell, permission: 'canViewDashboard' },
+        ]
+    },
+    {
+        title: 'Personal',
+        items: [
+            { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
+            { name: 'Schichttausch', page: 'ShiftSwaps', icon: RepeatIcon, permission: 'canViewDashboard' },
+            { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
+            { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },
+            { name: 'Team', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
+        ]
+    },
+    {
+        title: 'Bar-Betrieb',
+        items: [
+            { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
+            { name: 'Artikel', page: 'Articles', icon: Package, permission: 'canEditShopping' },
+            { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
+            { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },
+            { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
+        ]
+    },
+    {
+        title: 'Events & Gäste',
+        items: [
+            { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },
+            { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
+            { name: 'Kalenderintegration', page: 'CalendarIntegration', icon: Calendar, permission: 'canViewDashboard' },
+        ]
+    },
+    {
+        title: 'Organisation',
+        items: [
+            { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos' },
+            { name: 'Putzliste', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
+            { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard' },
+        ]
+    },
+    {
+        title: 'Finanzen',
+        items: [
+            { name: 'Budget', page: 'Budget', icon: TrendingUp, permission: 'canViewAnalytics' },
+            { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
+        ]
+    },
 ];
+
+const navigation = navigationSections.flatMap(section => section.items);
 
 export default function Layout({ children, currentPageName }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -61,23 +93,37 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-3 space-y-1">
-                        {navigation.filter(item => permissions[item.permission]).map((item) => {
-                            const isActive = currentPageName === item.page;
+                    <nav className="flex-1 px-3 space-y-6 overflow-y-auto">
+                        {navigationSections.map((section) => {
+                            const visibleItems = section.items.filter(item => permissions[item.permission]);
+                            if (visibleItems.length === 0) return null;
+
                             return (
-                                <Link
-                                    key={item.name}
-                                    to={createPageUrl(item.page)}
-                                    className={cn(
-                                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
-                                        isActive 
-                                            ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20" 
-                                            : "text-slate-400 hover:bg-slate-800"
-                                    )}
-                                >
-                                    <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
-                                    {item.name}
-                                </Link>
+                                <div key={section.title}>
+                                    <h3 className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                        {section.title}
+                                    </h3>
+                                    <div className="space-y-1">
+                                        {visibleItems.map((item) => {
+                                            const isActive = currentPageName === item.page;
+                                            return (
+                                                <Link
+                                                    key={item.name}
+                                                    to={createPageUrl(item.page)}
+                                                    className={cn(
+                                                        "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all",
+                                                        isActive 
+                                                            ? "bg-amber-600 text-white" 
+                                                            : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                                                    )}
+                                                >
+                                                    <item.icon className="w-4 h-4" />
+                                                    {item.name}
+                                                </Link>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
                             );
                         })}
                     </nav>
@@ -145,24 +191,38 @@ export default function Layout({ children, currentPageName }) {
                             onClick={() => setMobileMenuOpen(false)}
                         />
                         <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 bg-slate-950 border-t border-slate-800 shadow-lg max-h-[70vh] overflow-y-auto z-50">
-                            <nav className="p-3 space-y-1">
-                                {navigation.filter(item => permissions[item.permission]).map((item) => {
-                                    const isActive = currentPageName === item.page;
+                            <nav className="p-3 space-y-4">
+                                {navigationSections.map((section) => {
+                                    const visibleItems = section.items.filter(item => permissions[item.permission]);
+                                    if (visibleItems.length === 0) return null;
+
                                     return (
-                                        <Link
-                                            key={item.name}
-                                            to={createPageUrl(item.page)}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className={cn(
-                                                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium",
-                                                isActive 
-                                                    ? "bg-amber-600 text-white" 
-                                                    : "text-slate-400 hover:bg-slate-800 active:bg-slate-700"
-                                            )}
-                                        >
-                                            <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
-                                            {item.name}
-                                        </Link>
+                                        <div key={section.title}>
+                                            <h3 className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                                {section.title}
+                                            </h3>
+                                            <div className="space-y-1">
+                                                {visibleItems.map((item) => {
+                                                    const isActive = currentPageName === item.page;
+                                                    return (
+                                                        <Link
+                                                            key={item.name}
+                                                            to={createPageUrl(item.page)}
+                                                            onClick={() => setMobileMenuOpen(false)}
+                                                            className={cn(
+                                                                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium",
+                                                                isActive 
+                                                                    ? "bg-amber-600 text-white" 
+                                                                    : "text-slate-400 hover:bg-slate-800 active:bg-slate-700"
+                                                            )}
+                                                        >
+                                                            <item.icon className="w-4 h-4" />
+                                                            {item.name}
+                                                        </Link>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </nav>

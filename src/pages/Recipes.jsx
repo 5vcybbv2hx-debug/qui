@@ -481,12 +481,33 @@ export default function Recipes() {
                                                    recipe.ingredients, 
                                                    recipe.servings || 1, 
                                                    viewServings[recipe.id] || recipe.servings || 1
-                                               ).map((ing, idx) => (
-                                                   <p key={idx}>
-                                                       {ing.amount > 0 && `${ing.amount}ml `}
-                                                       {ing.article_name}
-                                                   </p>
-                                               ))}
+                                               ).map((ing, idx) => {
+                                                   const article = articles.find(a => a.id === ing.article_id);
+                                                   let cost = 0;
+                                                   if (article && article.purchase_price && article.content_amount) {
+                                                       let contentInMl = article.content_amount;
+                                                       if (article.content_unit === 'l') {
+                                                           contentInMl = article.content_amount * 1000;
+                                                       } else if (article.content_unit === 'kg') {
+                                                           contentInMl = article.content_amount * 1000;
+                                                       }
+                                                       const pricePerMl = article.purchase_price / contentInMl;
+                                                       cost = pricePerMl * ing.amount;
+                                                   }
+                                                   return (
+                                                       <p key={idx} className="flex justify-between items-center">
+                                                           <span>
+                                                               {ing.amount > 0 && `${ing.amount}ml `}
+                                                               {ing.article_name}
+                                                           </span>
+                                                           {permissions.isManager && cost > 0 && (
+                                                               <span className="text-green-400 font-medium ml-2">
+                                                                   {cost.toFixed(2)} €
+                                                               </span>
+                                                           )}
+                                                       </p>
+                                                   );
+                                               })}
                                            </div>
                                        </div>
                                    )}

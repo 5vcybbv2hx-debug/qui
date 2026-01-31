@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import PDFExportButton from '@/components/export/PDFExportButton';
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -46,6 +47,7 @@ export default function Employees() {
         employee_number: '',
         name: '',
         role: 'Barkeeper',
+        skills: [],
         contract_type: '',
         hourly_rate: '',
         vacation_days_per_year: '',
@@ -61,6 +63,7 @@ export default function Employees() {
         city: '',
         is_active: true
     });
+    const [skillsFilter, setSkillsFilter] = useState([]);
     
     const [whatsappGroupLink, setWhatsappGroupLink] = useState('https://chat.whatsapp.com/FrOmvmQFvvBJvqo4CJaBPA');
 
@@ -118,6 +121,7 @@ export default function Employees() {
                 employee_number: employee.employee_number || '',
                 name: employee.name,
                 role: employee.role,
+                skills: employee.skills || [],
                 contract_type: employee.contract_type || '',
                 hourly_rate: employee.hourly_rate || '',
                 vacation_days_per_year: employee.vacation_days_per_year || '',
@@ -139,8 +143,9 @@ export default function Employees() {
                 employee_number: '',
                 name: '',
                 role: 'Barkeeper',
+                skills: [],
                 contract_type: '',
-                hourly_rate: HOURLY_RATES.FULLTIME, // Standard für Vollzeit
+                hourly_rate: HOURLY_RATES.FULLTIME,
                 color: COLORS[Math.floor(Math.random() * COLORS.length)],
                 phone: '',
                 email: '',
@@ -240,9 +245,21 @@ export default function Employees() {
         });
     };
 
-    const activeEmployees = employees.filter(e => e.is_active !== false);
+    const filteredActiveEmployees = employees.filter(e => {
+        if (e.is_active === false) return false;
+        if (skillsFilter.length === 0) return true;
+        return skillsFilter.every(skill => e.skills?.includes(skill));
+    });
     const inactiveEmployees = employees.filter(e => e.is_active === false);
-    const employeesWithoutEmail = activeEmployees.filter(e => !e.email);
+    const employeesWithoutEmail = filteredActiveEmployees.filter(e => !e.email);
+
+    const handleSkillsFilterChange = (skill) => {
+        setSkillsFilter(prev => 
+            prev.includes(skill) 
+                ? prev.filter(s => s !== skill)
+                : [...prev, skill]
+        );
+    };
 
     // Alle Mitarbeiter dürfen die Team-Seite nutzen
     // if (!permissions.canViewEmployees) {
@@ -257,13 +274,13 @@ export default function Employees() {
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Team</h1>
                         <p className="text-slate-400 text-sm mt-1">
-                            {activeEmployees.length} aktive Mitarbeiter
+                            {filteredActiveEmployees.length} aktive Mitarbeiter
                         </p>
                     </div>
                     <div className="flex gap-2">
                         {permissions.isManager && (
                             <PDFExportButton
-                                data={activeEmployees}
+                                data={filteredActiveEmployees}
                                 filename="mitarbeiter"
                                 title="Mitarbeiterliste"
                                 columns={[
@@ -298,6 +315,27 @@ export default function Employees() {
                     </div>
                     </div>
 
+                    {/* Skills Filter - nur für Manager */}
+                    {permissions.isManager && (
+                        <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                            <div className="flex items-center gap-3 mb-3">
+                                <Filter className="w-5 h-5 text-amber-400" />
+                                <h3 className="font-semibold text-white">Nach Fähigkeiten filtern</h3>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                {['Barkeeper', 'Service', 'Sonderaufgaben'].map(skill => (
+                                    <label key={skill} className="flex items-center gap-2 cursor-pointer">
+                                        <Checkbox
+                                            checked={skillsFilter.includes(skill)}
+                                            onCheckedChange={() => handleSkillsFilterChange(skill)}
+                                        />
+                                        <span className="text-sm text-slate-300">{skill}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </Card>
+                    )}
+
                     {/* Missing Email Alert */}
                     {employeesWithoutEmail.length > 0 && (
                     <Alert className="bg-amber-900/20 border-amber-700 mb-6">
@@ -315,7 +353,7 @@ export default function Employees() {
 
                     {/* Employee Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {activeEmployees.map(employee => (
+                    {filteredActiveEmployees.map(employee => (
                         <Card 
                             key={employee.id}
                             className="p-4 sm:p-5 bg-slate-800 border-slate-700 shadow-sm"
@@ -330,9 +368,20 @@ export default function Employees() {
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-white truncate">{employee.name}</h3>
                                     {(canViewDetails(employee) || permissions.isManager) && (
-                                        <Badge className={cn("mt-1 text-xs", roleColors[employee.role] || 'bg-slate-100 text-slate-700')}>
-                                            {employee.role}
-                                        </Badge>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            <Badge className={cn("text-xs", roleColors[employee.role] || 'bg-slate-100 text-slate-700')}>
+                                                {employee.role}
+                                            </Badge>
+                                        </div>
+                                    )}
+                                    {permissions.isManager && employee.skills?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {employee.skills.map(skill => (
+                                                <Badge key={skill} variant="outline" className="text-xs border-amber-600 text-amber-400">
+                                                    {skill}
+                                                </Badge>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -571,6 +620,28 @@ export default function Employees() {
                                     />
                                 )}
                             </div>
+
+                            {permissions.isManager && (
+                                <div className="space-y-2">
+                                    <Label>Spezielle Fähigkeiten (nur für Manager sichtbar)</Label>
+                                    <div className="flex flex-col gap-2 p-3 bg-slate-900 rounded-lg border border-slate-700">
+                                        {['Barkeeper', 'Service', 'Sonderaufgaben'].map(skill => (
+                                            <label key={skill} className="flex items-center gap-2 cursor-pointer">
+                                                <Checkbox
+                                                    checked={formData.skills?.includes(skill)}
+                                                    onCheckedChange={(checked) => {
+                                                        const newSkills = checked
+                                                            ? [...(formData.skills || []), skill]
+                                                            : (formData.skills || []).filter(s => s !== skill);
+                                                        setFormData({ ...formData, skills: newSkills });
+                                                    }}
+                                                />
+                                                <span className="text-sm text-slate-300">{skill}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">

@@ -261,6 +261,22 @@ export default function Employees() {
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        {permissions.isManager && (
+                            <PDFExportButton
+                                data={activeEmployees}
+                                filename="mitarbeiter"
+                                title="Mitarbeiterliste"
+                                columns={[
+                                    { label: 'Name', field: 'name' },
+                                    { label: 'Rolle', field: 'role' },
+                                    { label: 'Vertrag', field: 'contract_type' },
+                                    { label: 'Stundensatz', render: (e) => e.hourly_rate ? `${e.hourly_rate} €` : '-' },
+                                    { label: 'Email', field: 'email' }
+                                ]}
+                                variant="outline"
+                                className="border-green-600 text-green-600 hover:bg-green-50"
+                            />
+                        )}
                         <a
                             href={whatsappGroupLink}
                             target="_blank"

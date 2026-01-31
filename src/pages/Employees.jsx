@@ -551,17 +551,25 @@ export default function Employees() {
 
                             <div className="space-y-2">
                                 <Label>Position</Label>
-                                <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Barkeeper">Barkeeper</SelectItem>
-                                        <SelectItem value="Servicekraft">Servicekraft</SelectItem>
-                                        <SelectItem value="Manager">Manager</SelectItem>
-                                        <SelectItem value="Aushilfe">Aushilfe</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {permissions.isAdmin ? (
+                                    <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v })}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Barkeeper">Barkeeper</SelectItem>
+                                            <SelectItem value="Servicekraft">Servicekraft</SelectItem>
+                                            <SelectItem value="Manager">Manager</SelectItem>
+                                            <SelectItem value="Aushilfe">Aushilfe</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <Input
+                                        value={formData.role}
+                                        disabled
+                                        className="bg-slate-700 text-slate-400"
+                                    />
+                                )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">

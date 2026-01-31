@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import IngredientSelector from '@/components/recipes/IngredientSelector';
+import PDFExportButton from '@/components/export/PDFExportButton';
 
 const categoryColors = {
     'Cocktail': 'bg-pink-100 text-pink-700',
@@ -252,6 +253,19 @@ export default function Recipes() {
                     </div>
                     {permissions.isManager && (
                         <div className="flex gap-2">
+                            <PDFExportButton
+                                data={filteredRecipes}
+                                filename="rezepte"
+                                title="Rezepte"
+                                columns={[
+                                    { label: 'Name', field: 'name' },
+                                    { label: 'Kategorie', field: 'category' },
+                                    { label: 'Zutaten', render: (r) => r.ingredients?.length || 0 },
+                                    { label: 'Glas', field: 'glass_type' }
+                                ]}
+                                variant="outline"
+                                className="border-green-600 text-green-600 hover:bg-green-50"
+                            />
                             <Button 
                                 onClick={() => setCategoriesModalOpen(true)}
                                 variant="outline"

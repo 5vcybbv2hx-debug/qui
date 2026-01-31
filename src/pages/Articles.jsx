@@ -14,6 +14,7 @@ import CategoryManager from '@/components/articles/CategoryManager';
 import BulkEditModal from '@/components/articles/BulkEditModal';
 import LowStockAlert from '@/components/articles/LowStockAlert';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
+import PDFExportButton from '@/components/export/PDFExportButton';
 
 
 const categoryColors = {
@@ -136,6 +137,20 @@ export default function Articles() {
                     </div>
                     
                     <div className="flex gap-2 flex-wrap">
+                        <PDFExportButton
+                            data={filteredArticles}
+                            filename="artikel"
+                            title="Artikeldatenbank"
+                            columns={[
+                                { label: 'Name', field: 'name' },
+                                { label: 'Barcode', field: 'barcode' },
+                                { label: 'Kategorie', field: 'category' },
+                                { label: 'Bestand', render: (a) => `${a.current_stock || 0}/${a.min_stock || '-'}` },
+                                { label: 'Preis (€)', render: (a) => a.purchase_price?.toFixed(2) || '-' }
+                            ]}
+                            variant="outline"
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                        />
                         <LowStockAlert />
                         <CategoryManager />
                         {selectedArticles.length > 0 && (

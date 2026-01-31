@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Music, Users, Trash2, Edit } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Music, Users, Trash2, Edit, Search } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { de } from 'date-fns/locale';
+import SavedFilters from '@/components/filters/SavedFilters';
 
 const eventTypeColors = {
     'Party': 'bg-purple-100 text-purple-700 border-purple-200',
@@ -35,6 +36,9 @@ export default function Events() {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [typeFilter, setTypeFilter] = useState('alle');
+    const [statusFilter, setStatusFilter] = useState('alle');
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -47,9 +51,16 @@ export default function Events() {
         status: 'geplant'
     });
 
-    const { data: events = [] } = useQuery({
+    const { data: allEvents = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('date')
+    });
+
+    const events = allEvents.filter(event => {
+        const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = typeFilter === 'alle' || event.event_type === typeFilter;
+        const matchesStatus = statusFilter === 'alle' || event.status === statusFilter;
+        return matchesSearch && matchesType && matchesStatus;
     });
 
     const createMutation = useMutation({
@@ -149,7 +160,7 @@ export default function Events() {
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-white tracking-tight">Events</h1>
                         <p className="text-slate-400 text-sm mt-1">
@@ -164,6 +175,53 @@ export default function Events() {
                         Event hinzufügen
                     </Button>
                 </div>
+
+                {/* Filters */}
+                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                    <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    placeholder="Event suchen..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-9 bg-slate-900 border-slate-700"
+                                />
+                            </div>
+                            <Select value={typeFilter} onValueChange={setTypeFilter}>
+                                <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                    <SelectValue placeholder="Typ" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="alle">Alle Typen</SelectItem>
+                                    <SelectItem value="Party">Party</SelectItem>
+                                    <SelectItem value="Livemusik">Livemusik</SelectItem>
+                                    <SelectItem value="Special Event">Special Event</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="alle">Alle Status</SelectItem>
+                                    <SelectItem value="geplant">Geplant</SelectItem>
+                                    <SelectItem value="bestätigt">Bestätigt</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <SavedFilters
+                            storageKey="events_saved_filters"
+                            currentFilters={{ searchTerm, typeFilter, statusFilter }}
+                            onApplyFilter={(filters) => {
+                                setSearchTerm(filters.searchTerm || '');
+                                setTypeFilter(filters.typeFilter || 'alle');
+                                setStatusFilter(filters.statusFilter || 'alle');
+                            }}
+                        />
+                    </div>
+                </Card>
 
                 <div className="grid lg:grid-cols-3 gap-6">
                     {/* Calendar */}

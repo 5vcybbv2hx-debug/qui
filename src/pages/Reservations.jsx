@@ -3,7 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, isSameDay, startOfWeek, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Calendar, Users, Phone, Mail, ChevronLeft, ChevronRight, Download, PartyPopper } from 'lucide-react';
+import { Plus, Calendar, Users, Phone, Mail, ChevronLeft, ChevronRight, Download, PartyPopper, Search } from 'lucide-react';
+import SavedFilters from '@/components/filters/SavedFilters';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -24,10 +25,22 @@ export default function Reservations() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [statusFilter, setStatusFilter] = useState('alle');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [guestFilter, setGuestFilter] = useState('alle');
 
-    const { data: reservations = [] } = useQuery({
+    const { data: allReservations = [] } = useQuery({
         queryKey: ['reservations'],
         queryFn: () => base44.entities.Reservation.list('-date', 200)
+    });
+
+    const reservations = allReservations.filter(res => {
+        const matchesSearch = res.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            res.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesGuests = guestFilter === 'alle' ||
+            (guestFilter === 'klein' && res.guests <= 4) ||
+            (guestFilter === 'mittel' && res.guests > 4 && res.guests <= 8) ||
+            (guestFilter === 'gross' && res.guests > 8);
+        return matchesSearch && matchesGuests;
     });
 
     const { data: events = [] } = useQuery({
@@ -157,7 +170,7 @@ export default function Reservations() {
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-white tracking-tight">Reservierungen</h1>
                         <p className="text-slate-400 text-sm mt-1">
@@ -169,7 +182,7 @@ export default function Reservations() {
                         <Button 
                             variant="outline"
                             onClick={handleExportCalendar}
-                            disabled={reservations.length === 0}
+                            disabled={allReservations.length === 0}
                         >
                             <Download className="w-4 h-4 mr-2" />
                             Kalender
@@ -188,6 +201,43 @@ export default function Reservations() {
                         )}
                     </div>
                 </div>
+
+                {/* Filters */}
+                <Card className="p-4 bg-slate-800 border-slate-700 mb-4">
+                    <div className="space-y-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <Input
+                                    placeholder="Name oder Telefon suchen..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-9 bg-slate-900 border-slate-700"
+                                />
+                            </div>
+                            <Select value={guestFilter} onValueChange={setGuestFilter}>
+                                <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                    <SelectValue placeholder="Gästezahl" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="alle">Alle Größen</SelectItem>
+                                    <SelectItem value="klein">Klein (1-4)</SelectItem>
+                                    <SelectItem value="mittel">Mittel (5-8)</SelectItem>
+                                    <SelectItem value="gross">Groß (9+)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <SavedFilters
+                            storageKey="reservations_saved_filters"
+                            currentFilters={{ searchTerm, guestFilter, statusFilter }}
+                            onApplyFilter={(filters) => {
+                                setSearchTerm(filters.searchTerm || '');
+                                setGuestFilter(filters.guestFilter || 'alle');
+                                setStatusFilter(filters.statusFilter || 'alle');
+                            }}
+                        />
+                    </div>
+                </Card>
 
                 {/* Week Calendar */}
                 <Card className="p-4 mb-4 bg-slate-800 border-slate-700">

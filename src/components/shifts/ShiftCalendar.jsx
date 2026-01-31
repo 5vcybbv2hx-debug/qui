@@ -34,7 +34,9 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
         })();
     
     const getShiftsForDay = (date) => {
-        return shifts.filter(shift => isSameDay(new Date(shift.date), date));
+        return shifts
+            .filter(shift => isSameDay(new Date(shift.date), date))
+            .sort((a, b) => a.start_time.localeCompare(b.start_time));
     };
     
     const getEmployeeColor = (employeeId) => {

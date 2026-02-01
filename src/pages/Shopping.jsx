@@ -16,11 +16,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import BarcodeScanner from '../components/restock/BarcodeScanner';
 
-const categoryColors = {
-    'C+C': 'bg-blue-100 text-blue-700 border-blue-200',
-    'Metro': 'bg-orange-100 text-orange-700 border-orange-200',
-    'Wein-Bauer': 'bg-purple-100 text-purple-700 border-purple-200',
-    'Toom': 'bg-red-100 text-red-700 border-red-200'
+const getSupplierColor = (index) => {
+    const colors = [
+        'bg-blue-100 text-blue-700 border-blue-200',
+        'bg-orange-100 text-orange-700 border-orange-200',
+        'bg-purple-100 text-purple-700 border-purple-200',
+        'bg-red-100 text-red-700 border-red-200',
+        'bg-green-100 text-green-700 border-green-200',
+        'bg-pink-100 text-pink-700 border-pink-200'
+    ];
+    return colors[index % colors.length];
 };
 
 const statusConfig = {
@@ -90,7 +95,7 @@ export default function Shopping() {
             setSelectedItem(null);
             setFormData({
                 item_name: '',
-                category: activeTab !== 'alle' ? activeTab : 'C+C',
+                category: activeTab !== 'alle' ? activeTab : (suppliers[0]?.name || ''),
                 quantity: '',
                 unit: '',
                 status: 'offen',
@@ -147,6 +152,13 @@ export default function Shopping() {
         queryFn: () => base44.entities.Article.list('name')
     });
 
+    const { data: suppliers = [] } = useQuery({
+        queryKey: ['suppliers'],
+        queryFn: () => base44.entities.Supplier.filter({ is_active: true }, 'order')
+    });
+
+    const activeSuppliers = suppliers.filter(s => s.is_active);
+
     const handleEanSubmit = async (e) => {
         e.preventDefault();
         if (!eanInput.trim()) return;
@@ -180,7 +192,7 @@ export default function Shopping() {
             // Add new item
             await createMutation.mutateAsync({
                 item_name: article.name,
-                category: article.suppliers?.[0] || 'C+C',
+                category: article.suppliers?.[0] || suppliers[0]?.name || '',
                 quantity: parseFloat(article.quantity || 1),
                 unit: article.unit || '',
                 status: 'offen',
@@ -266,12 +278,13 @@ export default function Shopping() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                    <TabsList className="grid w-full grid-cols-5 mb-6">
+                    <TabsList className={`grid w-full mb-6`} style={{ gridTemplateColumns: `repeat(${activeSuppliers.length + 1}, minmax(0, 1fr))` }}>
                         <TabsTrigger value="alle">Alle</TabsTrigger>
-                        <TabsTrigger value="C+C">C+C</TabsTrigger>
-                        <TabsTrigger value="Metro">Metro</TabsTrigger>
-                        <TabsTrigger value="Wein-Bauer">Wein-Bauer</TabsTrigger>
-                        <TabsTrigger value="Toom">Toom</TabsTrigger>
+                        {activeSuppliers.map(supplier => (
+                            <TabsTrigger key={supplier.id} value={supplier.name}>
+                                {supplier.name}
+                            </TabsTrigger>
+                        ))}
                     </TabsList>
 
                     <TabsContent value={activeTab} className="space-y-6">
@@ -301,7 +314,7 @@ export default function Shopping() {
                                                             <h4 className="font-semibold text-slate-800">
                                                                 {item.item_name}
                                                             </h4>
-                                                            <Badge className={cn("text-xs mt-1", categoryColors[item.category])}>
+                                                            <Badge className={cn("text-xs mt-1", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
                                                                 {item.category}
                                                             </Badge>
                                                         </div>
@@ -548,10 +561,11 @@ export default function Shopping() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="C+C">C+C</SelectItem>
-                                        <SelectItem value="Metro">Metro</SelectItem>
-                                        <SelectItem value="Wein-Bauer">Wein-Bauer</SelectItem>
-                                        <SelectItem value="Toom">Toom</SelectItem>
+                                        {activeSuppliers.map(supplier => (
+                                            <SelectItem key={supplier.id} value={supplier.name}>
+                                                {supplier.name}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

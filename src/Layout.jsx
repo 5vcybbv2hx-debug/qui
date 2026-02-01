@@ -35,6 +35,7 @@ const navigationSections = [
         items: [
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
             { name: 'Artikel', page: 'Articles', icon: Package, permission: 'canEditShopping' },
+            { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager' },
             { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
             { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },
             { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },

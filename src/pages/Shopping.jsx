@@ -184,7 +184,7 @@ export default function Shopping() {
                 quantity: parseFloat(article.quantity || 1),
                 unit: article.unit || '',
                 status: 'offen',
-                notes: `EAN: ${barcode}`
+                notes: `EAN: ${article.barcode || input}`
             });
         }
 

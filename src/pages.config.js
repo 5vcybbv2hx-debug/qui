@@ -69,6 +69,7 @@ import TeamMeeting from './pages/TeamMeeting';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
+import Suppliers from './pages/Suppliers';
 import __Layout from './Layout.jsx';
 
 
@@ -95,6 +96,7 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
+    "Suppliers": Suppliers,
 }
 
 export const pagesConfig = {

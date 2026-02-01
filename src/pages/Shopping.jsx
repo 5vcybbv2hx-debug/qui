@@ -375,7 +375,7 @@ export default function Shopping() {
                                                         <h4 className="font-semibold text-slate-800">
                                                             {item.item_name}
                                                         </h4>
-                                                        <Badge className={cn("text-xs", categoryColors[item.category])}>
+                                                        <Badge className={cn("text-xs", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
                                                             {item.category}
                                                         </Badge>
                                                     </div>
@@ -436,7 +436,7 @@ export default function Shopping() {
                                                         <h4 className="font-medium text-slate-700 line-through">
                                                             {item.item_name}
                                                         </h4>
-                                                        <Badge className={cn("text-xs", categoryColors[item.category])}>
+                                                        <Badge className={cn("text-xs", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
                                                             {item.category}
                                                         </Badge>
                                                     </div>

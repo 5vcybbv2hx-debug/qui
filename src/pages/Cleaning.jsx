@@ -12,11 +12,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import CleaningList from '@/components/cleaning/CleaningList';
 import AreasManager from '@/components/cleaning/AreasManager';
+import PinVerification from '@/components/terminal/PinVerification';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Cleaning() {
     const queryClient = useQueryClient();
+    const permissions = usePermissions();
     const [modalOpen, setModalOpen] = useState(false);
     const [reportsModalOpen, setReportsModalOpen] = useState(false);
+    const [pinModalOpen, setPinModalOpen] = useState(false);
+    const [selectedTask, setSelectedTask] = useState(null);
     const [formData, setFormData] = useState({
         title: '',
         area: 'Theke',
@@ -26,6 +31,11 @@ export default function Cleaning() {
     const { data: user } = useQuery({
         queryKey: ['user'],
         queryFn: () => base44.auth.me()
+    });
+
+    const { data: employees = [] } = useQuery({
+        queryKey: ['employees'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name')
     });
 
     const { data: tasks = [], isLoading } = useQuery({
@@ -65,14 +75,39 @@ export default function Cleaning() {
     });
 
     const handleComplete = (task) => {
-        updateMutation.mutate({
-            id: task.id,
+        if (permissions.isTerminal && !task.is_completed) {
+            setSelectedTask(task);
+            setPinModalOpen(true);
+        } else {
+            updateMutation.mutate({
+                id: task.id,
+                data: {
+                    is_completed: !task.is_completed,
+                    completed_by: task.is_completed ? null : user?.full_name || user?.email,
+                    completed_at: task.is_completed ? null : new Date().toISOString()
+                }
+            });
+        }
+    };
+
+    const handlePinVerified = async (pin) => {
+        const employee = employees.find(e => e.pin === pin);
+        if (!employee) {
+            alert('Falsche PIN!');
+            return;
+        }
+
+        await updateMutation.mutateAsync({
+            id: selectedTask.id,
             data: {
-                is_completed: !task.is_completed,
-                completed_by: task.is_completed ? null : user?.full_name || user?.email,
-                completed_at: task.is_completed ? null : new Date().toISOString()
+                is_completed: true,
+                completed_by: employee.name,
+                completed_at: new Date().toISOString()
             }
         });
+
+        setPinModalOpen(false);
+        setSelectedTask(null);
     };
 
     const handleReset = (task) => {
@@ -284,6 +319,17 @@ export default function Cleaning() {
                         </form>
                     </DialogContent>
                 </Dialog>
+
+                {/* Pin Verification */}
+                <PinVerification
+                    open={pinModalOpen}
+                    onClose={() => {
+                        setPinModalOpen(false);
+                        setSelectedTask(null);
+                    }}
+                    onVerified={handlePinVerified}
+                    title="Aufgabe bestätigen"
+                />
 
                 {/* Reports Modal */}
                 <Dialog open={reportsModalOpen} onOpenChange={setReportsModalOpen}>

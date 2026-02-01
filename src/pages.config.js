@@ -70,6 +70,7 @@ import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Suppliers from './pages/Suppliers';
+import TerminalClock from './pages/TerminalClock';
 import __Layout from './Layout.jsx';
 
 
@@ -97,6 +98,7 @@ export const PAGES = {
     "Todos": Todos,
     "Vacation": Vacation,
     "Suppliers": Suppliers,
+    "TerminalClock": TerminalClock,
 }
 
 export const pagesConfig = {

@@ -55,6 +55,7 @@ const navigationSections = [
             { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos' },
             { name: 'Putzliste', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
             { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard' },
+            { name: 'Terminal', page: 'TerminalClock', icon: Clock, permission: 'isTerminal' },
         ]
     },
     {

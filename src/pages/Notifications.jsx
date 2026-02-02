@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PushNotificationManager from '@/components/notifications/PushNotificationManager';
+import SendNotificationModal from '@/components/notifications/SendNotificationModal';
 
 const typeIcons = {
     'general': Info,
@@ -127,72 +128,76 @@ export default function Notifications() {
             <div className="max-w-4xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <Bell className="w-8 h-8 text-amber-400" />
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Benachrichtigungen</h1>
-                        {unreadCount > 0 && (
-                            <Badge className="bg-red-600 text-white">
-                                {unreadCount} neu
-                            </Badge>
-                        )}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3">
+                            <Bell className="w-8 h-8 text-amber-400" />
+                            <div>
+                                <h1 className="text-2xl font-bold text-white tracking-tight">Benachrichtigungen</h1>
+                                <p className="text-slate-400 text-sm">
+                                    Alle wichtigen Updates an einem Ort
+                                </p>
+                            </div>
+                            {unreadCount > 0 && (
+                                <Badge className="bg-red-600 text-white">
+                                    {unreadCount} neu
+                                </Badge>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {currentUser && <PushNotificationManager userEmail={currentUser.email} />}
+                            {permissions.isManager && <SendNotificationModal />}
+                        </div>
                     </div>
-                    <p className="text-slate-400 text-sm">
-                        Alle wichtigen Updates und Ereignisse an einem Ort
-                    </p>
                 </div>
 
-                {/* Push Notification Manager */}
-                {currentUser && (
-                    <div className="mb-6">
-                        <PushNotificationManager userEmail={currentUser.email} />
-                    </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                    <Tabs value={filter} onValueChange={setFilter} className="flex-1">
-                        <TabsList className="grid grid-cols-3 w-full">
-                            <TabsTrigger value="all">
+                {/* Filters & Actions */}
+                <div className="mb-6 space-y-4">
+                    <Tabs value={filter} onValueChange={setFilter}>
+                        <TabsList className="grid grid-cols-3 w-full bg-slate-800 border-slate-700">
+                            <TabsTrigger value="all" className="data-[state=active]:bg-amber-600">
                                 Alle ({visibleNotifications.length})
                             </TabsTrigger>
-                            <TabsTrigger value="unread">
+                            <TabsTrigger value="unread" className="data-[state=active]:bg-amber-600">
                                 Ungelesen ({unreadCount})
                             </TabsTrigger>
-                            <TabsTrigger value="read">
+                            <TabsTrigger value="read" className="data-[state=active]:bg-amber-600">
                                 Gelesen ({visibleNotifications.length - unreadCount})
                             </TabsTrigger>
                         </TabsList>
                     </Tabs>
-                    <div className="flex gap-2">
-                        {unreadCount > 0 && (
-                            <Button
-                                onClick={() => markAllAsReadMutation.mutate()}
-                                variant="outline"
-                                size="sm"
-                                disabled={markAllAsReadMutation.isPending}
-                                className="border-slate-600 text-slate-300"
-                            >
-                                <CheckCircle2 className="w-4 h-4 mr-1" />
-                                Alle als gelesen
-                            </Button>
-                        )}
-                        {filteredNotifications.some(n => n.read_by?.includes(currentUser.email)) && (
-                            <Button
-                                onClick={() => {
-                                    if (confirm('Alle gelesenen Benachrichtigungen löschen?')) {
-                                        deleteAllReadMutation.mutate();
-                                    }
-                                }}
-                                variant="outline"
-                                size="sm"
-                                disabled={deleteAllReadMutation.isPending}
-                                className="border-red-600 text-red-400"
-                            >
-                                <Trash2 className="w-4 h-4 mr-1" />
-                                Gelesene löschen
-                            </Button>
-                        )}
-                    </div>
+                    
+                    {(unreadCount > 0 || filteredNotifications.some(n => n.read_by?.includes(currentUser.email))) && (
+                        <div className="flex flex-wrap gap-2">
+                            {unreadCount > 0 && (
+                                <Button
+                                    onClick={() => markAllAsReadMutation.mutate()}
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={markAllAsReadMutation.isPending}
+                                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                >
+                                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                                    Alle als gelesen markieren
+                                </Button>
+                            )}
+                            {filteredNotifications.some(n => n.read_by?.includes(currentUser.email)) && (
+                                <Button
+                                    onClick={() => {
+                                        if (confirm('Alle gelesenen Benachrichtigungen löschen?')) {
+                                            deleteAllReadMutation.mutate();
+                                        }
+                                    }}
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={deleteAllReadMutation.isPending}
+                                    className="border-red-600 text-red-400 hover:bg-red-950"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Gelesene löschen
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Notifications List */}

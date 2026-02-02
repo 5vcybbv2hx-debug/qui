@@ -112,6 +112,7 @@ export default function MyDashboard() {
     const myUpcomingShifts = shifts
         .filter(s => s.employee_id === currentEmployee.id)
         .filter(s => isFuture(parseISO(s.date)) || isToday(parseISO(s.date)))
+        .sort((a, b) => parseISO(a.date) - parseISO(b.date))
         .slice(0, 5);
 
     // Calculate hours this week

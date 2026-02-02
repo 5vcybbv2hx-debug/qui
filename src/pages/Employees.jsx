@@ -302,7 +302,7 @@ export default function Employees() {
                                     { label: 'Email', field: 'email' }
                                 ]}
                                 variant="outline"
-                                className="border-green-600 text-green-600 hover:bg-green-50"
+                                className="border-green-600 text-white bg-green-600 hover:bg-green-700"
                             />
                         )}
                         <a
@@ -511,13 +511,13 @@ export default function Employees() {
                                         />
                                         {employee.email && (
                                             <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleInvite(employee)}
-                                                className="flex-1 border-green-600 text-green-400 hover:bg-green-900/20"
+                                               variant="outline"
+                                               size="sm"
+                                               onClick={() => handleInvite(employee)}
+                                               className="flex-1 border-green-600 text-white bg-green-600 hover:bg-green-700"
                                             >
-                                                <UserPlus className="w-4 h-4 mr-1" />
-                                                Einladen
+                                               <UserPlus className="w-4 h-4 mr-1" />
+                                               Einladen
                                             </Button>
                                         )}
                                     </div>

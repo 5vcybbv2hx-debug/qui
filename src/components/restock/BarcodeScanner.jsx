@@ -8,6 +8,8 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
     const scannerRef = useRef(null);
     const scannerInstanceRef = useRef(null);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [cameras, setCameras] = useState([]);
+    const [selectedCamera, setSelectedCamera] = useState(null);
 
     useEffect(() => {
         if (!open) {
@@ -23,19 +25,32 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
             return;
         }
 
+        // Get available cameras
+        if (open && !isInitialized && cameras.length === 0) {
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length) {
+                    setCameras(devices);
+                    setSelectedCamera(devices[0].id);
+                }
+            }).catch(err => {
+                console.error('Error getting cameras:', err);
+            });
+        }
+
         // Initialize scanner when opening
-        if (open && !isInitialized) {
+        if (open && !isInitialized && selectedCamera) {
             const timer = setTimeout(() => {
                 try {
                     const html5QrcodeScanner = new Html5QrcodeScanner(
                         "barcode-scanner",
                         { 
-                            fps: 10, 
-                            qrbox: { width: 250, height: 150 },
+                            fps: 15, 
+                            qrbox: { width: 300, height: 200 },
                             aspectRatio: 1.0,
                             showTorchButtonIfSupported: true,
                             rememberLastUsedCamera: true,
                             videoConstraints: {
+                                deviceId: selectedCamera,
                                 facingMode: { ideal: "environment" }
                             },
                             formatsToSupport: [

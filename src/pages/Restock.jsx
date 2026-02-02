@@ -79,6 +79,7 @@ export default function Restock() {
             createMutation.mutate({
                 barcode: scannedBarcode,
                 article_name: article.name,
+                article_image_url: article.image_url || null,
                 quantity: 1,
                 restocked_by: user?.full_name || user?.email || 'Unbekannt',
                 date: today,
@@ -347,6 +348,14 @@ export default function Restock() {
                                                         >
                                                             {item.is_completed && <Check className="w-4 h-4 text-white" />}
                                                         </button>
+
+                                                        {item.article_image_url && (
+                                                            <img 
+                                                                src={item.article_image_url} 
+                                                                alt={item.article_name}
+                                                                className="w-12 h-12 rounded-lg object-cover border border-slate-700"
+                                                            />
+                                                        )}
 
                                                         <div className="flex-1 min-w-0">
                                                             <h3 className={cn(

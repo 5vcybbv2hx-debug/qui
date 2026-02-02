@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import BackupManager from '@/components/backup/BackupManager';
+import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 
 export default function Dashboard() {
     const { data: user } = useQuery({
@@ -173,7 +174,10 @@ export default function Dashboard() {
                             {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
                         </p>
                     </div>
-                    <BackupManager />
+                    <div className="flex gap-2">
+                        <HolidayCreditManager />
+                        <BackupManager />
+                    </div>
                 </div>
 
                 {/* Stats Grid */}

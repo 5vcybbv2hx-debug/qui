@@ -1,0 +1,217 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+
+export default function HolidayCreditManager() {
+    const queryClient = useQueryClient();
+    const [modalOpen, setModalOpen] = useState(false);
+    const [mode, setMode] = useState('month'); // 'month' or 'single'
+    const [year, setYear] = useState(new Date().getFullYear());
+    const [month, setMonth] = useState(new Date().getMonth() + 1);
+    const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [result, setResult] = useState(null);
+
+    const creditMutation = useMutation({
+        mutationFn: async (data) => {
+            return await base44.functions.invoke('creditHolidayHours', data);
+        },
+        onSuccess: (response) => {
+            setResult(response.data);
+            queryClient.invalidateQueries(['time-entries']);
+        }
+    });
+
+    const handleCredit = () => {
+        const payload = mode === 'month' 
+            ? { year, month }
+            : { date };
+        
+        creditMutation.mutate(payload);
+    };
+
+    const handleClose = () => {
+        setModalOpen(false);
+        setResult(null);
+    };
+
+    return (
+        <>
+            <Button
+                onClick={() => setModalOpen(true)}
+                variant="outline"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            >
+                <Calendar className="w-4 h-4 mr-2" />
+                Feiertage gutschreiben
+            </Button>
+
+            <Dialog open={modalOpen} onOpenChange={handleClose}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Calendar className="w-5 h-5 text-amber-500" />
+                            Feiertage für Vollzeitkräfte gutschreiben
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {!result ? (
+                        <div className="space-y-4 mt-4">
+                            <div className="bg-slate-100 p-3 rounded-lg text-sm text-slate-700">
+                                <p className="font-medium mb-1">ℹ️ Automatische Gutschrift</p>
+                                <p>Vollzeitkräfte erhalten automatisch 8 Stunden für jeden Feiertag, der auf einen Öffnungstag fällt.</p>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <Button
+                                    variant={mode === 'month' ? 'default' : 'outline'}
+                                    onClick={() => setMode('month')}
+                                    className={mode === 'month' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                                >
+                                    Monat
+                                </Button>
+                                <Button
+                                    variant={mode === 'single' ? 'default' : 'outline'}
+                                    onClick={() => setMode('single')}
+                                    className={mode === 'single' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                                >
+                                    Einzelner Tag
+                                </Button>
+                            </div>
+
+                            {mode === 'month' ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Jahr</Label>
+                                        <Input
+                                            type="number"
+                                            value={year}
+                                            onChange={(e) => setYear(parseInt(e.target.value))}
+                                            min={2020}
+                                            max={2030}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Monat</Label>
+                                        <select
+                                            value={month}
+                                            onChange={(e) => setMonth(parseInt(e.target.value))}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                                        >
+                                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                                <option key={m} value={m}>
+                                                    {format(new Date(2024, m - 1, 1), 'MMMM', { locale: de })}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <Label>Datum</Label>
+                                    <Input
+                                        type="date"
+                                        value={date}
+                                        onChange={(e) => setDate(e.target.value)}
+                                    />
+                                </div>
+                            )}
+
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button variant="outline" onClick={handleClose}>
+                                    Abbrechen
+                                </Button>
+                                <Button
+                                    onClick={handleCredit}
+                                    disabled={creditMutation.isPending}
+                                    className="bg-amber-600 hover:bg-amber-700"
+                                >
+                                    {creditMutation.isPending ? (
+                                        <>
+                                            <Clock className="w-4 h-4 mr-2 animate-spin" />
+                                            Wird verarbeitet...
+                                        </>
+                                    ) : (
+                                        'Gutschreiben'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 mt-4">
+                            {result.success ? (
+                                <>
+                                    <div className="bg-green-50 p-4 rounded-lg">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                            <p className="font-semibold text-green-800">Erfolgreich</p>
+                                        </div>
+                                        <p className="text-sm text-green-700">{result.summary}</p>
+                                    </div>
+
+                                    {result.credited.length > 0 && (
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-700 mb-2">Gutgeschrieben:</p>
+                                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                                                {result.credited.map((item, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-2 bg-green-50 rounded text-sm">
+                                                        <div>
+                                                            <p className="font-medium text-slate-800">{item.employee}</p>
+                                                            <p className="text-xs text-slate-600">{item.name} • {item.date}</p>
+                                                        </div>
+                                                        <Badge className="bg-green-600">
+                                                            {item.hours}h
+                                                        </Badge>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {result.skipped.length > 0 && (
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-700 mb-2">Übersprungen:</p>
+                                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                                                {result.skipped.map((item, idx) => (
+                                                    <div key={idx} className="flex items-center justify-between p-2 bg-slate-100 rounded text-sm">
+                                                        <div>
+                                                            <p className="font-medium text-slate-800">
+                                                                {item.employee || item.name}
+                                                            </p>
+                                                            <p className="text-xs text-slate-600">{item.reason}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="bg-red-50 p-4 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <AlertCircle className="w-5 h-5 text-red-600" />
+                                        <p className="font-semibold text-red-800">Fehler</p>
+                                    </div>
+                                    <p className="text-sm text-red-700">{result.error}</p>
+                                </div>
+                            )}
+
+                            <div className="flex justify-end">
+                                <Button onClick={handleClose}>
+                                    Schließen
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+}

@@ -30,16 +30,40 @@ export default function Inventory() {
         queryFn: () => base44.entities.ArticleCategory.list('order')
     });
 
-    const updateMutation = useMutation({
-        mutationFn: (updates) => 
-            Promise.all(updates.map(({ id, stock }) => 
-                base44.entities.Article.update(id, { current_stock: stock })
-            )),
+    const saveMutation = useMutation({
+        mutationFn: async ({ counts, articles, user }) => {
+            const countsData = Object.entries(counts).map(([id, counted]) => {
+                const article = articles.find(a => a.id === id);
+                const systemStock = article?.current_stock || 0;
+                return {
+                    article_id: id,
+                    article_name: article?.name,
+                    system_stock: systemStock,
+                    counted_stock: counted,
+                    difference: counted - systemStock
+                };
+            });
+
+            const totalDiff = countsData.reduce((sum, c) => sum + Math.abs(c.difference), 0);
+
+            return base44.entities.InventorySession.create({
+                date: new Date().toISOString(),
+                counted_by: user.full_name,
+                counts: countsData,
+                total_items: countsData.length,
+                total_difference: totalDiff
+            });
+        },
         onSuccess: () => {
-            queryClient.invalidateQueries(['articles']);
             setCounts({});
-            alert('Inventur gespeichert und Bestände aktualisiert');
+            setActiveArticle(null);
+            alert('Inventur gespeichert (Bestände nicht geändert)');
         }
+    });
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['current-user'],
+        queryFn: () => base44.auth.me()
     });
 
     const handleCountChange = (articleId, value) => {
@@ -66,18 +90,13 @@ export default function Inventory() {
     };
 
     const handleSave = () => {
-        const updates = Object.entries(counts).map(([id, count]) => ({
-            id,
-            stock: count
-        }));
-
-        if (updates.length === 0) {
+        if (Object.keys(counts).length === 0) {
             alert('Keine Zählungen vorhanden');
             return;
         }
 
-        if (confirm(`${updates.length} Artikel-Bestände aktualisieren?`)) {
-            updateMutation.mutate(updates);
+        if (confirm(`Inventur mit ${Object.keys(counts).length} Artikeln speichern?`)) {
+            saveMutation.mutate({ counts, articles, user: currentUser });
         }
     };
 

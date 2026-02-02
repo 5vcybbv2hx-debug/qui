@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import TaskManager from './TaskManager';
+import ReportProblemButton from './ReportProblemButton';
 
 const areaColors = {
     'Theke': 'bg-amber-100 text-amber-700',
@@ -137,6 +138,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                         </div>
                                         
                                         <div className="flex items-center gap-1">
+                                            <ReportProblemButton task={task} userName={userName} />
                                             <TaskManager task={task} areas={areas} />
                                             {task.is_completed && (
                                                 <Button

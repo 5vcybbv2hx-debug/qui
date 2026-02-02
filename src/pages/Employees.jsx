@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import PDFExportButton from '@/components/export/PDFExportButton';
+import PermissionsManager from '@/components/employees/PermissionsManager';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -208,6 +209,16 @@ export default function Employees() {
             alert(`✅ Einladung an ${employee.email} wurde versendet!`);
         } catch (error) {
             alert('❌ Fehler beim Versenden der Einladung: ' + error.message);
+        }
+    };
+
+    const handlePermissionsSave = async (employeeId, permissions) => {
+        try {
+            await base44.entities.Employee.update(employeeId, { permissions });
+            queryClient.invalidateQueries(['employees']);
+            alert('✅ Berechtigungen aktualisiert!');
+        } catch (error) {
+            alert('❌ Fehler beim Speichern der Berechtigungen: ' + error.message);
         }
     };
 
@@ -491,40 +502,50 @@ export default function Employees() {
                             )}
 
                             {/* Action Buttons */}
-                            {canEdit(employee) && (
-                                <div className="flex gap-2 mt-4 pt-3 border-t border-slate-700">
-                                    {permissions.isManager && employee.email && (
+                            <div className="space-y-2 mt-4 pt-3 border-t border-slate-700">
+                                {permissions.isManager && (
+                                    <div className="flex gap-2">
+                                        <PermissionsManager 
+                                            employee={employee}
+                                            onSave={(perms) => handlePermissionsSave(employee.id, perms)}
+                                        />
+                                        {employee.email && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleInvite(employee)}
+                                                className="flex-1 border-green-600 text-green-400 hover:bg-green-900/20"
+                                            >
+                                                <UserPlus className="w-4 h-4 mr-1" />
+                                                Einladen
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                                {canEdit(employee) && (
+                                    <div className="flex gap-2">
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => handleInvite(employee)}
-                                            className="flex-1 border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white"
+                                            onClick={() => openModal(employee)}
+                                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
                                         >
-                                            <UserPlus className="w-4 h-4 mr-1" />
-                                            Einladen
+                                            <Pencil className="w-4 h-4 mr-1" />
+                                            Bearbeiten
                                         </Button>
-                                    )}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => openModal(employee)}
-                                        className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
-                                    >
-                                        <Pencil className="w-4 h-4 mr-1" />
-                                        Bearbeiten
-                                    </Button>
-                                    {permissions.isManager && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleDelete(employee.id)}
-                                            className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            )}
+                                        {permissions.isManager && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDelete(employee.id)}
+                                                className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </Card>
                     ))}
                 </div>

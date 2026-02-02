@@ -7,6 +7,7 @@ import PermissionDenied from '@/components/auth/PermissionDenied';
 import PDFExportButton from '@/components/export/PDFExportButton';
 import PermissionsManager from '@/components/employees/PermissionsManager';
 import PersonalFormUploader from '@/components/employees/PersonalFormUploader';
+import PersonalFormDigital from '@/components/employees/PersonalFormDigital';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -292,6 +293,7 @@ export default function Employees() {
                     <div className="flex gap-2 flex-wrap">
                         {permissions.isManager && (
                             <>
+                                <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries(['employees'])} />
                                 <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />
                                 <PDFExportButton
                                     data={filteredActiveEmployees}

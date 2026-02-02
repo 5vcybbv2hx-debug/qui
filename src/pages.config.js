@@ -54,8 +54,10 @@ import Cleaning from './pages/Cleaning';
 import Dashboard from './pages/Dashboard';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
+import Inventory from './pages/Inventory';
 import MyDashboard from './pages/MyDashboard';
 import Notifications from './pages/Notifications';
+import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
@@ -72,8 +74,6 @@ import TerminalClock from './pages/TerminalClock';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import Permissions from './pages/Permissions';
-import Inventory from './pages/Inventory';
 import __Layout from './Layout.jsx';
 
 
@@ -85,8 +85,10 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "Employees": Employees,
     "Events": Events,
+    "Inventory": Inventory,
     "MyDashboard": MyDashboard,
     "Notifications": Notifications,
+    "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
     "Reports": Reports,
@@ -103,8 +105,6 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "Permissions": Permissions,
-    "Inventory": Inventory,
 }
 
 export const pagesConfig = {

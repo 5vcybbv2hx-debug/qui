@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
+import PDFExportButton from '@/components/export/PDFExportButton';
 import { cn } from "@/lib/utils";
 
 export default function Inventory() {
@@ -145,6 +146,33 @@ export default function Inventory() {
                             <Camera className="w-4 h-4 mr-2" />
                             Scanner
                         </Button>
+                        <PDFExportButton
+                            data={filteredArticles.filter(a => counts[a.id] !== undefined).map(a => ({
+                                ...a,
+                                counted_stock: counts[a.id],
+                                difference: counts[a.id] - (a.current_stock || 0),
+                                total_value: (counts[a.id] || 0) * (a.purchase_price || 0)
+                            }))}
+                            filename={`inventur_${new Date().toISOString().split('T')[0]}`}
+                            title="Inventur-Bericht"
+                            columns={[
+                                { label: 'Artikel', field: 'name' },
+                                { label: 'Barcode', field: 'barcode' },
+                                { label: 'Kategorie', field: 'category' },
+                                { label: 'Lieferant', render: (a) => a.suppliers?.join(', ') || '-' },
+                                { label: 'Soll-Bestand', field: 'current_stock' },
+                                { label: 'Ist-Bestand', field: 'counted_stock' },
+                                { label: 'Differenz', render: (a) => {
+                                    const diff = a.difference;
+                                    return diff > 0 ? `+${diff}` : `${diff}`;
+                                }},
+                                { label: 'EK-Preis (€)', render: (a) => a.purchase_price?.toFixed(2) || '-' },
+                                { label: 'Gesamtwert (€)', render: (a) => a.total_value?.toFixed(2) || '-' }
+                            ]}
+                            variant="outline"
+                            className="border-purple-600 text-purple-600 hover:bg-purple-900/20"
+                            disabled={Object.keys(counts).length === 0}
+                        />
                         <Button 
                             onClick={handleSave}
                             disabled={Object.keys(counts).length === 0}

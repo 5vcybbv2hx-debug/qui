@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 import { Camera, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -68,6 +68,17 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
 
                     html5QrcodeScanner.render(
                         (decodedText) => {
+                            // Haptic feedback
+                            if (navigator.vibrate) {
+                                navigator.vibrate(200);
+                            }
+                            
+                            // Audio feedback
+                            try {
+                                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYHGWe57OafTRAMUKfj8LZjHAY4ktfyy3ksBSR3x/DdkEAKFF606+uoVRQKRp/g8r5sIQUrgs7y2Ik2Bxlnueznn00QDFC');
+                                audio.play();
+                            } catch (e) {}
+
                             onScan(decodedText);
                             // Cleanup before closing
                             if (scannerInstanceRef.current) {
@@ -113,10 +124,34 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                 </DialogHeader>
                 
                 <div className="mt-4">
+                    {cameras.length > 1 && (
+                        <div className="mb-3">
+                            <select
+                                value={selectedCamera}
+                                onChange={(e) => {
+                                    setSelectedCamera(e.target.value);
+                                    if (scannerInstanceRef.current) {
+                                        scannerInstanceRef.current.clear().then(() => {
+                                            scannerInstanceRef.current = null;
+                                            setIsInitialized(false);
+                                        });
+                                    }
+                                }}
+                                className="w-full px-3 py-2 rounded-md border border-slate-300 bg-white text-sm"
+                            >
+                                {cameras.map(camera => (
+                                    <option key={camera.id} value={camera.id}>
+                                        {camera.label || `Kamera ${camera.id}`}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <div 
                         id="barcode-scanner" 
                         ref={scannerRef}
-                        className="rounded-lg overflow-hidden border-2 border-slate-700 bg-slate-900 min-h-[400px]"
+                        className="rounded-lg overflow-hidden border-2 border-slate-700 bg-slate-900 min-h-[450px]"
                     />
                     <div className="mt-4 p-3 bg-slate-100 rounded-lg border border-slate-300">
                         <p className="text-sm text-slate-700 text-center font-medium">

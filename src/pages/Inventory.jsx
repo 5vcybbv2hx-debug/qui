@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ClipboardCheck, Camera, Save, RotateCcw, Search, AlertTriangle } from 'lucide-react';
+import { ClipboardCheck, Camera, Save, RotateCcw, Search, AlertTriangle, Cloud, CloudOff } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -22,6 +22,32 @@ export default function Inventory() {
     const [activeArticle, setActiveArticle] = useState(null);
     const [scanMode, setScanMode] = useState(false);
     const [lastScanned, setLastScanned] = useState(null);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    // Load offline counts from localStorage
+    useEffect(() => {
+        const savedCounts = localStorage.getItem('inventory_offline_counts');
+        if (savedCounts) {
+            setCounts(JSON.parse(savedCounts));
+        }
+    }, []);
+
+    // Save counts to localStorage for offline support
+    useEffect(() => {
+        localStorage.setItem('inventory_offline_counts', JSON.stringify(counts));
+    }, [counts]);
+
+    // Online/offline detection
+    useEffect(() => {
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -58,9 +84,20 @@ export default function Inventory() {
             });
         },
         onSuccess: () => {
+            // Optimistic update - clear immediately
+            const previousCounts = counts;
             setCounts({});
             setActiveArticle(null);
+            localStorage.removeItem('inventory_offline_counts');
+            
+            queryClient.setQueryData(['inventory-sessions'], (old) => {
+                return old ? [...old, { counts: previousCounts }] : [{ counts: previousCounts }];
+            });
+            
             alert('Inventur gespeichert (Bestände nicht geändert)');
+        },
+        onError: (error) => {
+            alert('Fehler beim Speichern: ' + error.message);
         }
     });
 
@@ -71,7 +108,11 @@ export default function Inventory() {
 
     const handleCountChange = (articleId, value) => {
         const numValue = parseInt(value) || 0;
-        setCounts(prev => ({ ...prev, [articleId]: numValue }));
+        // Optimistic update
+        setCounts(prev => {
+            const newCounts = { ...prev, [articleId]: numValue };
+            return newCounts;
+        });
         setActiveArticle(articleId);
     };
 
@@ -145,11 +186,23 @@ export default function Inventory() {
             <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-3 mb-6">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Inventur</h1>
-                        <p className="text-slate-400 text-sm mt-1">
-                            {countedArticles.length} von {filteredArticles.length} gezählt
-                        </p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Inventur</h1>
+                            <p className="text-slate-400 text-sm mt-1">
+                                {countedArticles.length} von {filteredArticles.length} gezählt
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {isOnline ? (
+                                <Cloud className="w-5 h-5 text-green-500" />
+                            ) : (
+                                <CloudOff className="w-5 h-5 text-amber-500" />
+                            )}
+                            <span className="text-xs text-slate-400">
+                                {isOnline ? 'Online' : 'Offline'}
+                            </span>
+                        </div>
                     </div>
                     
                     <div className="flex gap-2 flex-wrap">

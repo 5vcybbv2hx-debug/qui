@@ -17,6 +17,7 @@ import LowStockAlert from '@/components/articles/LowStockAlert';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import PDFExportButton from '@/components/export/PDFExportButton';
 import LabelPrinter from '@/components/articles/LabelPrinter';
+import BulkImporter from '@/components/articles/BulkImporter';
 
 
 const categoryColors = {
@@ -55,8 +56,18 @@ export default function Articles() {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.Article.create(data),
-        onSuccess: () => {
+        mutationFn: (data) => {
+            // Generate barcode if missing
+            if (!data.barcode) {
+                data.barcode = `GEN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            }
+            return base44.entities.Article.create(data);
+        },
+        onSuccess: (newArticle) => {
+            // Optimistic update
+            queryClient.setQueryData(['articles'], (old) => {
+                return old ? [...old, newArticle] : [newArticle];
+            });
             queryClient.invalidateQueries(['articles']);
             setModalOpen(false);
             setSelectedArticle(null);
@@ -65,6 +76,18 @@ export default function Articles() {
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Article.update(id, data),
+        onMutate: async ({ id, data }) => {
+            // Optimistic update
+            await queryClient.cancelQueries(['articles']);
+            const previous = queryClient.getQueryData(['articles']);
+            queryClient.setQueryData(['articles'], (old) => {
+                return old.map(article => article.id === id ? { ...article, ...data } : article);
+            });
+            return { previous };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['articles'], context.previous);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['articles']);
             setModalOpen(false);
@@ -74,6 +97,18 @@ export default function Articles() {
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Article.delete(id),
+        onMutate: async (id) => {
+            // Optimistic update
+            await queryClient.cancelQueries(['articles']);
+            const previous = queryClient.getQueryData(['articles']);
+            queryClient.setQueryData(['articles'], (old) => {
+                return old.filter(article => article.id !== id);
+            });
+            return { previous };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['articles'], context.previous);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['articles']);
         }
@@ -147,6 +182,7 @@ export default function Articles() {
                     </div>
                     
                     <div className="flex gap-2 flex-wrap">
+                        <BulkImporter />
                         <LabelPrinter articles={filteredArticles} />
                         <PDFExportButton
                             data={filteredArticles}
@@ -257,10 +293,27 @@ export default function Articles() {
                         const isSelected = selectedArticles.find(a => a.id === article.id);
                         const isLowStock = article.min_stock && article.current_stock < article.min_stock;
                         
+                        let touchStartX = 0;
+                        let touchEndX = 0;
+                        
+                        const handleTouchStart = (e) => {
+                            touchStartX = e.touches[0].clientX;
+                        };
+                        
+                        const handleTouchEnd = (e) => {
+                            touchEndX = e.changedTouches[0].clientX;
+                            if (touchStartX - touchEndX > 100) {
+                                // Swipe left to delete
+                                handleDelete(article.id);
+                            }
+                        };
+                        
                         return (
                             <Card 
                                 key={article.id} 
                                 className={`p-4 bg-slate-800 border-slate-700 ${isSelected ? 'ring-2 ring-amber-500' : ''} ${isLowStock ? 'border-red-500' : ''}`}
+                                onTouchStart={handleTouchStart}
+                                onTouchEnd={handleTouchEnd}
                             >
                                 <div className="flex items-start justify-between mb-3">
                                     <div className="flex items-start gap-2 flex-1">

@@ -6,6 +6,7 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import PDFExportButton from '@/components/export/PDFExportButton';
 import PermissionsManager from '@/components/employees/PermissionsManager';
+import PersonalFormUploader from '@/components/employees/PersonalFormUploader';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

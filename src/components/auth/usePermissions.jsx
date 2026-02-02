@@ -50,7 +50,7 @@ export function usePermissions() {
                 const employee = employees[0];
                 const employeeRole = employee?.role || null;
                 const userRole = user.role;
-                const isTerminal = userRole === 'terminal';
+                const isTerminal = user.is_terminal === true;
 
                 setPermissions({
                     role: userRole,

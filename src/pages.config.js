@@ -71,6 +71,7 @@ import TerminalClock from './pages/TerminalClock';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
+import TeamCalendar from './pages/TeamCalendar';
 import __Layout from './Layout.jsx';
 
 
@@ -99,6 +100,7 @@ export const PAGES = {
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
+    "TeamCalendar": TeamCalendar,
 }
 
 export const pagesConfig = {

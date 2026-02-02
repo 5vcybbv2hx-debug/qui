@@ -24,6 +24,7 @@ const navigationSections = [
         title: 'Personal',
         items: [
             { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
+            { name: 'Team-Kalender', page: 'TeamCalendar', icon: CalendarCheck, permission: 'canViewShifts' },
             { name: 'Schichttausch', page: 'ShiftSwaps', icon: RepeatIcon, permission: 'canViewDashboard' },
             { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
             { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },

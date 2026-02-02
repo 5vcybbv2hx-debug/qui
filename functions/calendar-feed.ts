@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
             lines.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`);
             lines.push(`DTSTART:${date}T${time}`);
             lines.push(`DTEND:${date}T${endTime}`);
-            lines.push(`SUMMARY:Reservierung: ${res.customer_name} (${res.guests} Pers.)`);
+            lines.push(`SUMMARY:🪑 Reservierung: ${res.customer_name} (${res.guests} Pers.)`);
             let desc = `${res.guests} Personen`;
             if (res.table) desc += ` - Tisch ${res.table}`;
             if (res.phone) desc += `\\nTel: ${res.phone}`;

@@ -20,6 +20,8 @@ export default function Inventory() {
     const [filterCategory, setFilterCategory] = useState('all');
     const [counts, setCounts] = useState({});
     const [activeArticle, setActiveArticle] = useState(null);
+    const [scanMode, setScanMode] = useState(false);
+    const [lastScanned, setLastScanned] = useState(null);
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -79,6 +81,11 @@ export default function Inventory() {
             const currentCount = counts[article.id] || 0;
             setCounts(prev => ({ ...prev, [article.id]: currentCount + 1 }));
             setActiveArticle(article.id);
+            setLastScanned({ 
+                name: article.name, 
+                count: currentCount + 1,
+                timestamp: Date.now()
+            });
             
             // Scroll to article
             setTimeout(() => {
@@ -87,6 +94,13 @@ export default function Inventory() {
                     block: 'center' 
                 });
             }, 100);
+
+            // Clear notification after 2 seconds
+            setTimeout(() => {
+                setLastScanned(null);
+            }, 2000);
+        } else {
+            alert('Artikel nicht gefunden: ' + barcode);
         }
     };
 
@@ -140,11 +154,14 @@ export default function Inventory() {
                     
                     <div className="flex gap-2 flex-wrap">
                         <Button 
-                            onClick={() => setScannerOpen(true)}
-                            className="bg-blue-600 hover:bg-blue-700"
+                            onClick={() => {
+                                setScanMode(!scanMode);
+                                if (!scanMode) setScannerOpen(true);
+                            }}
+                            className={scanMode ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}
                         >
                             <Camera className="w-4 h-4 mr-2" />
-                            Scanner
+                            {scanMode ? 'Scannen aktiv' : 'Scanner starten'}
                         </Button>
                         <PDFExportButton
                             data={filteredArticles.filter(a => counts[a.id] !== undefined).map(a => ({
@@ -191,6 +208,19 @@ export default function Inventory() {
                         </Button>
                     </div>
                 </div>
+
+                {/* Last Scanned Notification */}
+                {lastScanned && (
+                    <div className="mb-4 p-4 bg-green-600 rounded-lg border-2 border-green-400 animate-pulse">
+                        <div className="flex items-center gap-2">
+                            <Camera className="w-5 h-5 text-white" />
+                            <div>
+                                <p className="font-semibold text-white">{lastScanned.name}</p>
+                                <p className="text-sm text-green-100">Menge: {lastScanned.count}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-6">
@@ -324,8 +354,19 @@ export default function Inventory() {
 
                 <BarcodeScanner
                     open={scannerOpen}
-                    onClose={() => setScannerOpen(false)}
-                    onScan={handleScan}
+                    onClose={() => {
+                        setScannerOpen(false);
+                        setScanMode(false);
+                    }}
+                    onScan={(barcode) => {
+                        handleScan(barcode);
+                        if (scanMode) {
+                            // Keep scanner open in scan mode
+                            setTimeout(() => {
+                                setScannerOpen(true);
+                            }, 100);
+                        }
+                    }}
                 />
             </div>
         </div>

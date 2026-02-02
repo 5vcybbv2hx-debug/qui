@@ -66,12 +66,12 @@ import ShiftSwaps from './pages/ShiftSwaps';
 import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import Suppliers from './pages/Suppliers';
+import TeamCalendar from './pages/TeamCalendar';
 import TeamMeeting from './pages/TeamMeeting';
 import TerminalClock from './pages/TerminalClock';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import TeamCalendar from './pages/TeamCalendar';
 import __Layout from './Layout.jsx';
 
 
@@ -95,12 +95,12 @@ export const PAGES = {
     "Shifts": Shifts,
     "Shopping": Shopping,
     "Suppliers": Suppliers,
+    "TeamCalendar": TeamCalendar,
     "TeamMeeting": TeamMeeting,
     "TerminalClock": TerminalClock,
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "TeamCalendar": TeamCalendar,
 }
 
 export const pagesConfig = {

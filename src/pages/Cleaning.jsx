@@ -79,13 +79,16 @@ export default function Cleaning() {
             setSelectedTask(task);
             setPinModalOpen(true);
         } else {
+            const displayName = user?.full_name 
+                ? user.full_name.split(' ').reverse().join(', ')
+                : user?.email;
             updateMutation.mutate({
-                id: task.id,
-                data: {
-                    is_completed: !task.is_completed,
-                    completed_by: task.is_completed ? null : user?.full_name || user?.email,
-                    completed_at: task.is_completed ? null : new Date().toISOString()
-                }
+            id: task.id,
+            data: {
+                is_completed: !task.is_completed,
+                completed_by: task.is_completed ? null : displayName,
+                completed_at: task.is_completed ? null : new Date().toISOString()
+            }
             });
         }
     };
@@ -97,11 +100,12 @@ export default function Cleaning() {
             return;
         }
 
+        const displayName = employee.name.split(' ').reverse().join(', ');
         await updateMutation.mutateAsync({
             id: selectedTask.id,
             data: {
                 is_completed: true,
-                completed_by: employee.name,
+                completed_by: displayName,
                 completed_at: new Date().toISOString()
             }
         });
@@ -121,7 +125,40 @@ export default function Cleaning() {
         });
     };
 
-    const resetAllDaily = () => {
+    const endDay = async () => {
+        if (!confirm('Tag beenden? Dies erstellt einen Tagesbericht und setzt alle täglichen Aufgaben zurück.')) return;
+
+        // Erstelle Tagesbericht
+        const today = new Date();
+        const completedTasks = tasks.filter(t => 
+            t.is_completed && 
+            t.completed_at && 
+            format(new Date(t.completed_at), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
+        );
+
+        const reportData = completedTasks.map(task => ({
+            task_title: task.title,
+            area: task.area,
+            frequency: task.frequency,
+            completed_by: task.completed_by,
+            completed_at: task.completed_at
+        }));
+
+        const report = {
+            week_start: format(today, 'yyyy-MM-dd'),
+            week_end: format(today, 'yyyy-MM-dd'),
+            report_data: reportData,
+            total_tasks: tasks.filter(t => t.frequency === 'täglich').length,
+            completed_tasks: completedTasks.length,
+            completion_rate: tasks.filter(t => t.frequency === 'täglich').length > 0 
+                ? Math.round((completedTasks.length / tasks.filter(t => t.frequency === 'täglich').length) * 100) 
+                : 0
+        };
+
+        await base44.entities.CleaningReport.create(report);
+        queryClient.invalidateQueries(['cleaning-reports']);
+
+        // Setze tägliche Aufgaben zurück
         const dailyTasks = tasks.filter(t => t.frequency === 'täglich' && t.is_completed);
         dailyTasks.forEach(task => {
             updateMutation.mutate({
@@ -134,6 +171,8 @@ export default function Cleaning() {
                 }
             });
         });
+
+        alert('Tagesbericht erstellt und tägliche Aufgaben zurückgesetzt!');
     };
 
     const handleSubmit = (e) => {
@@ -210,11 +249,11 @@ export default function Cleaning() {
                         <AreasManager />
                         <Button 
                             variant="outline"
-                            onClick={resetAllDaily}
-                            className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                            onClick={endDay}
+                            className="text-orange-300 border-orange-600 hover:bg-orange-900/20"
                         >
                             <RefreshCw className="w-4 h-4 mr-2" />
-                            Tägl. zurücksetzen
+                            Tag beenden
                         </Button>
                         <Button 
                             onClick={() => setModalOpen(true)}
@@ -246,7 +285,7 @@ export default function Cleaning() {
                     areas={areas}
                     onComplete={handleComplete}
                     onReset={handleReset}
-                    userName={user?.full_name || user?.email}
+                    userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
                 />
 
                 {/* Add Modal */}

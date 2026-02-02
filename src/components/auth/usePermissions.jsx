@@ -51,6 +51,10 @@ export function usePermissions() {
                 const employeeRole = employee?.role || null;
                 const userRole = user.role;
                 const isTerminal = user.is_terminal === true;
+                const isManager = isManagerOrAdmin(userRole, employeeRole);
+
+                // Verwende individuelle Berechtigungen des Mitarbeiters, falls vorhanden
+                const perms = employee?.permissions || {};
 
                 setPermissions({
                     role: userRole,
@@ -58,35 +62,36 @@ export function usePermissions() {
                     employeeName: employee?.name || user.full_name,
                     isLoading: false,
                     isAdmin: userRole === ROLES.ADMIN,
-                    isManager: isManagerOrAdmin(userRole, employeeRole),
+                    isManager,
                     isTerminal,
                     
-                    canViewDashboard: isTerminal ? false : hasPermission(userRole, employeeRole, 'VIEW_DASHBOARD'),
-                    canViewShifts: isTerminal ? true : hasPermission(userRole, employeeRole, 'VIEW_SHIFTS'),
-                    canEditShifts: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_SHIFTS'),
-                    canApproveShiftSwaps: isTerminal ? false : hasPermission(userRole, employeeRole, 'APPROVE_SHIFT_SWAPS'),
-                    canRequestShiftSwap: isTerminal ? false : hasPermission(userRole, employeeRole, 'REQUEST_SHIFT_SWAP'),
-                    canViewReservations: isTerminal ? true : hasPermission(userRole, employeeRole, 'VIEW_RESERVATIONS'),
-                    canEditReservations: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_RESERVATIONS'),
-                    canDeleteReservations: isTerminal ? false : hasPermission(userRole, employeeRole, 'DELETE_RESERVATIONS'),
-                    canViewEvents: isTerminal ? true : hasPermission(userRole, employeeRole, 'VIEW_EVENTS'),
-                    canEditEvents: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_EVENTS'),
-                    canViewShopping: isTerminal ? true : hasPermission(userRole, employeeRole, 'VIEW_SHOPPING'),
-                    canEditShopping: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_SHOPPING'),
-                    canViewRestock: isTerminal ? true : hasPermission(userRole, employeeRole, 'VIEW_RESTOCK'),
-                    canEditRestock: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_RESTOCK'),
-                    canViewCleaning: isTerminal ? true : hasPermission(userRole, employeeRole, 'VIEW_CLEANING'),
-                    canEditCleaning: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_CLEANING'),
-                    canManageCleaningAreas: isTerminal ? false : hasPermission(userRole, employeeRole, 'MANAGE_CLEANING_AREAS'),
-                    canViewTodos: isTerminal ? false : hasPermission(userRole, employeeRole, 'VIEW_TODOS'),
-                    canEditTodos: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_TODOS'),
-                    canViewEmployees: isTerminal ? false : hasPermission(userRole, employeeRole, 'VIEW_EMPLOYEES'),
-                    canEditEmployees: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_EMPLOYEES'),
-                    canViewEmployeeDetails: isTerminal ? false : hasPermission(userRole, employeeRole, 'VIEW_EMPLOYEE_DETAILS'),
-                    canViewRecipes: isTerminal ? true : hasPermission(userRole, employeeRole, 'VIEW_RECIPES'),
-                    canEditRecipes: isTerminal ? false : hasPermission(userRole, employeeRole, 'EDIT_RECIPES'),
-                    canViewAnalytics: isTerminal ? false : hasPermission(userRole, employeeRole, 'VIEW_ANALYTICS'),
-                    canViewPriceCalculator: isTerminal ? false : hasPermission(userRole, employeeRole, 'VIEW_PRICE_CALCULATOR'),
+                    // Terminal-Modus überschreibt alles
+                    canViewDashboard: isTerminal ? false : (perms.canViewDashboard ?? true),
+                    canViewShifts: isTerminal ? true : (perms.canViewShifts ?? true),
+                    canEditShifts: isTerminal ? false : (perms.canEditShifts ?? isManager),
+                    canApproveShiftSwaps: isTerminal ? false : (perms.canApproveShiftSwaps ?? isManager),
+                    canRequestShiftSwap: isTerminal ? false : (perms.canRequestShiftSwap ?? true),
+                    canViewReservations: isTerminal ? true : (perms.canViewReservations ?? true),
+                    canEditReservations: isTerminal ? false : (perms.canEditReservations ?? true),
+                    canDeleteReservations: isTerminal ? false : (perms.canDeleteReservations ?? isManager),
+                    canViewEvents: isTerminal ? true : (perms.canViewEvents ?? true),
+                    canEditEvents: isTerminal ? false : (perms.canEditEvents ?? isManager),
+                    canViewShopping: isTerminal ? true : (perms.canViewShopping ?? true),
+                    canEditShopping: isTerminal ? false : (perms.canEditShopping ?? true),
+                    canViewRestock: isTerminal ? true : (perms.canViewRestock ?? true),
+                    canEditRestock: isTerminal ? false : (perms.canEditRestock ?? true),
+                    canViewCleaning: isTerminal ? true : (perms.canViewCleaning ?? true),
+                    canEditCleaning: isTerminal ? false : (perms.canEditCleaning ?? true),
+                    canManageCleaningAreas: isTerminal ? false : (perms.canManageCleaningAreas ?? isManager),
+                    canViewTodos: isTerminal ? false : (perms.canViewTodos ?? true),
+                    canEditTodos: isTerminal ? false : (perms.canEditTodos ?? true),
+                    canViewEmployees: isTerminal ? false : (perms.canViewEmployees ?? true),
+                    canEditEmployees: isTerminal ? false : (perms.canEditEmployees ?? isManager),
+                    canViewEmployeeDetails: isTerminal ? false : (perms.canViewEmployeeDetails ?? isManager),
+                    canViewRecipes: isTerminal ? true : (perms.canViewRecipes ?? true),
+                    canEditRecipes: isTerminal ? false : (perms.canEditRecipes ?? (employeeRole === 'Barkeeper' || isManager)),
+                    canViewAnalytics: isTerminal ? false : (perms.canViewAnalytics ?? isManager),
+                    canViewPriceCalculator: isTerminal ? false : (perms.canViewPriceCalculator ?? (userRole === ROLES.ADMIN)),
                 });
             } catch (error) {
                 console.error('Error loading permissions:', error);

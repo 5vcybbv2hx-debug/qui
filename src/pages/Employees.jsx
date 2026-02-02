@@ -289,22 +289,25 @@ export default function Employees() {
                             {filteredActiveEmployees.length} aktive Mitarbeiter
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                         {permissions.isManager && (
-                            <PDFExportButton
-                                data={filteredActiveEmployees}
-                                filename="mitarbeiter"
-                                title="Mitarbeiterliste"
-                                columns={[
-                                    { label: 'Name', field: 'name' },
-                                    { label: 'Rolle', field: 'role' },
-                                    { label: 'Vertrag', field: 'contract_type' },
-                                    { label: 'Stundensatz', render: (e) => e.hourly_rate ? `${e.hourly_rate} €` : '-' },
-                                    { label: 'Email', field: 'email' }
-                                ]}
-                                variant="outline"
-                                className="border-green-600 text-white bg-green-600 hover:bg-green-700"
-                            />
+                            <>
+                                <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />
+                                <PDFExportButton
+                                    data={filteredActiveEmployees}
+                                    filename="mitarbeiter"
+                                    title="Mitarbeiterliste"
+                                    columns={[
+                                        { label: 'Name', field: 'name' },
+                                        { label: 'Rolle', field: 'role' },
+                                        { label: 'Vertrag', field: 'contract_type' },
+                                        { label: 'Stundensatz', render: (e) => e.hourly_rate ? `${e.hourly_rate} €` : '-' },
+                                        { label: 'Email', field: 'email' }
+                                    ]}
+                                    variant="outline"
+                                    className="border-green-600 text-white bg-green-600 hover:bg-green-700"
+                                />
+                            </>
                         )}
                         <a
                             href={whatsappGroupLink}

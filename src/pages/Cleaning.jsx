@@ -241,7 +241,7 @@ export default function Cleaning() {
                         <Button 
                             variant="outline"
                             onClick={generateWeeklyReport}
-                            className="text-green-300 border-green-600 hover:bg-green-900/20"
+                            className="text-white bg-green-600 hover:bg-green-700 border-green-600"
                         >
                             <FileText className="w-4 h-4 mr-2" />
                             Wochenbericht
@@ -250,7 +250,7 @@ export default function Cleaning() {
                         <Button 
                             variant="outline"
                             onClick={endDay}
-                            className="text-orange-300 border-orange-600 hover:bg-orange-900/20"
+                            className="text-white bg-orange-600 hover:bg-orange-700 border-orange-600"
                         >
                             <RefreshCw className="w-4 h-4 mr-2" />
                             Tag beenden

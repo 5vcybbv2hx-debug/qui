@@ -332,7 +332,7 @@ export default function Shopping() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleStatusChange(item, 'bestellt')}
-                                                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                        className="text-white bg-blue-600 hover:bg-blue-700 border-blue-600"
                                                     >
                                                         <Package className="w-4 h-4" />
                                                     </Button>
@@ -389,7 +389,7 @@ export default function Shopping() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleStatusChange(item, 'erhalten')}
-                                                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                        className="text-white bg-green-600 hover:bg-green-700 border-green-600"
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </Button>
@@ -420,7 +420,7 @@ export default function Shopping() {
                                         variant="outline"
                                         size="sm"
                                         onClick={handleDeleteReceived}
-                                        className="text-red-600 hover:text-red-700 border-red-300 hover:bg-red-50"
+                                        className="text-white bg-red-600 hover:bg-red-700 border-red-600"
                                     >
                                         <Trash2 className="w-4 h-4 mr-2" />
                                         Alle löschen

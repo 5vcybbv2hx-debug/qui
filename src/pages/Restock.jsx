@@ -270,7 +270,7 @@ export default function Restock() {
                                 type="button"
                                 variant="outline"
                                 onClick={() => setScannerOpen(true)}
-                                className="border-slate-600 hover:bg-slate-700"
+                                className="border-slate-600 bg-slate-600 hover:bg-slate-700 text-white"
                             >
                                 <Camera className="w-4 h-4 mr-2" />
                                 Kamera
@@ -298,7 +298,7 @@ export default function Restock() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleDeleteCompleted}
-                                className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                                className="border-slate-600 bg-slate-600 hover:bg-slate-700 text-white"
                             >
                                 <CheckCheck className="w-4 h-4 mr-2" />
                                 Erledigte löschen

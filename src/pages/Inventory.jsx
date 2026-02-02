@@ -170,7 +170,7 @@ export default function Inventory() {
                                 { label: 'Gesamtwert (€)', render: (a) => a.total_value?.toFixed(2) || '-' }
                             ]}
                             variant="outline"
-                            className="border-purple-600 text-purple-600 hover:bg-purple-900/20"
+                            className="border-purple-600 text-white bg-purple-600 hover:bg-purple-700"
                             disabled={Object.keys(counts).length === 0}
                         />
                         <Button 
@@ -184,7 +184,7 @@ export default function Inventory() {
                         <Button 
                             onClick={handleReset}
                             variant="outline"
-                            className="border-red-600 text-red-600 hover:bg-red-900/20"
+                            className="border-red-600 text-white bg-red-600 hover:bg-red-700"
                         >
                             <RotateCcw className="w-4 h-4 mr-2" />
                             Zurücksetzen

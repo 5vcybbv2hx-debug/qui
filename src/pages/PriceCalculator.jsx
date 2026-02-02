@@ -12,10 +12,6 @@ import PermissionDenied from '@/components/auth/PermissionDenied';
 
 export default function PriceCalculator() {
     const permissions = usePermissions();
-
-    if (!permissions.canViewPriceCalculator) {
-        return <PermissionDenied message="Nur Administratoren haben Zugriff auf die Preiskalkulation." />;
-    }
     const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [margin, setMargin] = useState('200');
@@ -31,6 +27,10 @@ export default function PriceCalculator() {
         queryKey: ['recipes'],
         queryFn: () => base44.entities.Recipe.list('name')
     });
+
+    if (!permissions.canViewPriceCalculator) {
+        return <PermissionDenied message="Nur Administratoren haben Zugriff auf die Preiskalkulation." />;
+    }
 
     const filteredArticles = articles.filter(a => 
         a.name.toLowerCase().includes(searchTerm.toLowerCase()) && a.purchase_price

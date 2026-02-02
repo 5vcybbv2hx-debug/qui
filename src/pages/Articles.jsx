@@ -160,7 +160,7 @@ export default function Articles() {
                                 { label: 'Preis (€)', render: (a) => a.purchase_price?.toFixed(2) || '-' }
                             ]}
                             variant="outline"
-                            className="border-green-600 text-green-600 hover:bg-green-50"
+                            className="border-green-600 text-white bg-green-600 hover:bg-green-700"
                         />
                         <LowStockAlert />
                         <CategoryManager />
@@ -168,7 +168,7 @@ export default function Articles() {
                             <Button 
                                 onClick={() => setBulkEditOpen(true)}
                                 variant="outline"
-                                className="border-amber-600 text-amber-600 hover:bg-amber-50"
+                                className="border-amber-600 text-white bg-amber-600 hover:bg-amber-700"
                             >
                                 <CheckSquare className="w-4 h-4 mr-2" />
                                 Bearbeiten ({selectedArticles.length})
@@ -177,7 +177,7 @@ export default function Articles() {
                         <Button 
                             onClick={() => setScannerOpen(true)}
                             variant="outline"
-                            className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                            className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
                         >
                             <Camera className="w-4 h-4 mr-2" />
                             Scannen

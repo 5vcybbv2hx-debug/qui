@@ -128,7 +128,7 @@ ${articlesToPrint.map(article => `
             <Button
                 onClick={() => setOpen(true)}
                 variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-900/20"
+                className="border-blue-600 text-white bg-blue-600 hover:bg-blue-700"
             >
                 <Printer className="w-4 h-4 mr-2" />
                 Etiketten drucken
@@ -159,6 +159,7 @@ ${articlesToPrint.map(article => `
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setSelectedArticles(articles.map(a => a.id))}
+                                    className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
                                 >
                                     Alle
                                 </Button>
@@ -166,6 +167,7 @@ ${articlesToPrint.map(article => `
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setSelectedArticles([])}
+                                    className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
                                 >
                                     Keine
                                 </Button>
@@ -213,7 +215,7 @@ ${articlesToPrint.map(article => `
                             <Button
                                 onClick={() => setOpen(false)}
                                 variant="outline"
-                                className="flex-1"
+                                className="flex-1 border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
                             >
                                 Abbrechen
                             </Button>

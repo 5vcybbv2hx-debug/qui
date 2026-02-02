@@ -13,6 +13,7 @@ import { de } from 'date-fns/locale';
 export default function HolidayCreditManager() {
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
+    const [creditType, setCreditType] = useState('holiday'); // 'holiday' or 'vacation'
     const [mode, setMode] = useState('month'); // 'month' or 'single'
     const [year, setYear] = useState(new Date().getFullYear());
     const [month, setMonth] = useState(new Date().getMonth() + 1);
@@ -21,7 +22,8 @@ export default function HolidayCreditManager() {
 
     const creditMutation = useMutation({
         mutationFn: async (data) => {
-            return await base44.functions.invoke('creditHolidayHours', data);
+            const functionName = creditType === 'holiday' ? 'creditHolidayHours' : 'creditVacationHours';
+            return await base44.functions.invoke(functionName, data);
         },
         onSuccess: (response) => {
             setResult(response.data);
@@ -40,6 +42,7 @@ export default function HolidayCreditManager() {
     const handleClose = () => {
         setModalOpen(false);
         setResult(null);
+        setCreditType('holiday');
     };
 
     return (
@@ -50,7 +53,7 @@ export default function HolidayCreditManager() {
                 className="border-slate-600 text-slate-300 hover:bg-slate-700"
             >
                 <Calendar className="w-4 h-4 mr-2" />
-                Feiertage gutschreiben
+                Stunden gutschreiben
             </Button>
 
             <Dialog open={modalOpen} onOpenChange={handleClose}>
@@ -58,15 +61,37 @@ export default function HolidayCreditManager() {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-amber-500" />
-                            Feiertage für Vollzeitkräfte gutschreiben
+                            Stunden für Vollzeitkräfte gutschreiben
                         </DialogTitle>
                     </DialogHeader>
 
                     {!result ? (
                         <div className="space-y-4 mt-4">
+                            <div className="flex gap-2">
+                                <Button
+                                    variant={creditType === 'holiday' ? 'default' : 'outline'}
+                                    onClick={() => setCreditType('holiday')}
+                                    className={creditType === 'holiday' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                                >
+                                    Feiertage
+                                </Button>
+                                <Button
+                                    variant={creditType === 'vacation' ? 'default' : 'outline'}
+                                    onClick={() => setCreditType('vacation')}
+                                    className={creditType === 'vacation' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                                >
+                                    Urlaubstage
+                                </Button>
+                            </div>
+
                             <div className="bg-slate-100 p-3 rounded-lg text-sm text-slate-700">
                                 <p className="font-medium mb-1">ℹ️ Automatische Gutschrift</p>
-                                <p>Vollzeitkräfte erhalten automatisch 8 Stunden für jeden Feiertag, der auf einen Öffnungstag fällt.</p>
+                                <p>
+                                    {creditType === 'holiday' 
+                                        ? 'Vollzeitkräfte erhalten automatisch 8 Stunden für jeden Feiertag, der auf einen Öffnungstag fällt.'
+                                        : 'Vollzeitkräfte erhalten automatisch 8 Stunden für jeden Urlaubstag, der auf einen Öffnungstag fällt.'
+                                    }
+                                </p>
                             </div>
 
                             <div className="flex gap-2">

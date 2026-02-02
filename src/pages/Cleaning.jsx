@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Sparkles, RefreshCw, FileText } from 'lucide-react';
+import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,52 @@ export default function Cleaning() {
         area: 'Theke',
         frequency: 'täglich'
     });
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [pendingUpdates, setPendingUpdates] = useState([]);
+
+    // Load pending updates from localStorage
+    useEffect(() => {
+        const saved = localStorage.getItem('cleaning_pending_updates');
+        if (saved) {
+            setPendingUpdates(JSON.parse(saved));
+        }
+    }, []);
+
+    // Save pending updates to localStorage
+    useEffect(() => {
+        localStorage.setItem('cleaning_pending_updates', JSON.stringify(pendingUpdates));
+    }, [pendingUpdates]);
+
+    // Online/offline detection
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true);
+            syncPendingUpdates();
+        };
+        const handleOffline = () => setIsOnline(false);
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    // Sync pending updates when online
+    const syncPendingUpdates = async () => {
+        if (pendingUpdates.length === 0) return;
+        
+        for (const update of pendingUpdates) {
+            try {
+                await base44.entities.CleaningTask.update(update.id, update.data);
+            } catch (error) {
+                console.error('Sync failed:', error);
+            }
+        }
+        
+        setPendingUpdates([]);
+        queryClient.invalidateQueries(['cleaning']);
+    };
 
     const { data: user } = useQuery({
         queryKey: ['user'],
@@ -68,9 +114,22 @@ export default function Cleaning() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
+        mutationFn: ({ id, data }) => {
+            if (!isOnline) {
+                // Store for later sync
+                setPendingUpdates(prev => [...prev, { id, data }]);
+                // Optimistic update
+                queryClient.setQueryData(['cleaning'], (old) => {
+                    return old.map(task => task.id === id ? { ...task, ...data } : task);
+                });
+                return Promise.resolve();
+            }
+            return base44.entities.CleaningTask.update(id, data);
+        },
         onSuccess: () => {
-            queryClient.invalidateQueries(['cleaning']);
+            if (isOnline) {
+                queryClient.invalidateQueries(['cleaning']);
+            }
         }
     });
 
@@ -223,11 +282,23 @@ export default function Cleaning() {
             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-3 mb-6">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Putzliste</h1>
-                        <p className="text-slate-400 text-sm mt-1">
-                            {format(new Date(), "EEEE, d. MMMM", { locale: de })}
-                        </p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Putzliste</h1>
+                            <p className="text-slate-400 text-sm mt-1">
+                                {format(new Date(), "EEEE, d. MMMM", { locale: de })}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {isOnline ? (
+                                <Cloud className="w-5 h-5 text-green-500" />
+                            ) : (
+                                <CloudOff className="w-5 h-5 text-amber-500" />
+                            )}
+                            <span className="text-xs text-slate-400">
+                                {isOnline ? 'Online' : `Offline (${pendingUpdates.length})`}
+                            </span>
+                        </div>
                     </div>
                     <div className="flex gap-2 flex-wrap">
                         <Button 

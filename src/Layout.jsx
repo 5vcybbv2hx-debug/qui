@@ -40,6 +40,7 @@ const navigationSections = [
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager' },
             { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
             { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },
+            { name: 'Schwund', page: 'Wastage', icon: TrendingUp, permission: 'canEditShopping' },
             { name: 'Inventur', page: 'Inventory', icon: ClipboardCheck, permission: 'canEditShopping' },
             { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
         ]

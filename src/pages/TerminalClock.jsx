@@ -103,7 +103,7 @@ export default function TerminalClock() {
 
                 // Zeige Verdienst für Aushilfen (Minijob)
                 if (selectedEmployee.contract_type === 'Minijob' && selectedEmployee.hourly_rate) {
-                    const earnings = (Math.round(hours * 100) / 100) * selectedEmployee.hourly_rate;
+                    const earnings = Math.ceil((Math.round(hours * 100) / 100) * selectedEmployee.hourly_rate);
                     setEarningsData({
                         name: selectedEmployee.name,
                         hours: Math.round(hours * 100) / 100,
@@ -345,7 +345,7 @@ export default function TerminalClock() {
 
                                 <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-8 text-center">
                                     <div className="text-6xl font-bold text-white mb-2">
-                                        {earningsData.earnings.toFixed(2)} €
+                                        {earningsData.earnings} €
                                     </div>
                                     <div className="text-green-100 text-sm">
                                         {earningsData.hours.toFixed(2)}h × {earningsData.hourlyRate.toFixed(2)} €/h

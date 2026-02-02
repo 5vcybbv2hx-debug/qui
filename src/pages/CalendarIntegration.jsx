@@ -140,6 +140,8 @@ export default function CalendarIntegration() {
                                 <ul className="space-y-1 text-sm text-slate-400">
                                     <li>✓ Alle Schichten</li>
                                     <li>✓ Reservierungen</li>
+                                    <li>✓ Genehmigte Urlaube</li>
+                                    <li>✓ Feiertage (BW)</li>
                                     <li>✓ Mitarbeiter-Geburtstage</li>
                                     <li>✓ Automatische Updates</li>
                                 </ul>

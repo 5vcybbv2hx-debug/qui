@@ -103,6 +103,8 @@ export default function LiveSyncInstructions() {
                         <ul className="space-y-1 list-disc list-inside">
                             <li><strong>Schichten:</strong> Alle geplanten Mitarbeiter-Schichten</li>
                             <li><strong>Reservierungen:</strong> Alle bestätigten und vorgemerkten Reservierungen</li>
+                            <li><strong>Urlaub:</strong> Alle genehmigten Urlaubsanträge</li>
+                            <li><strong>Feiertage:</strong> Gesetzliche Feiertage Baden-Württemberg</li>
                             <li><strong>Geburtstage:</strong> Geburtstage aller Mitarbeiter (jährlich wiederkehrend)</li>
                         </ul>
                     </div>

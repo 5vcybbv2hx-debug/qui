@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { getHolidaysBW } from './holidayUtils.js';
 
 Deno.serve(async (req) => {
     try {
@@ -12,6 +13,15 @@ Deno.serve(async (req) => {
         
         // Fetch all employees for birthdays
         const employees = await base44.asServiceRole.entities.Employee.list();
+        
+        // Fetch vacation requests
+        const vacationRequests = await base44.asServiceRole.entities.VacationRequest.filter({ 
+            status: 'genehmigt' 
+        });
+        
+        // Get holidays for current and next year
+        const currentYear = new Date().getFullYear();
+        const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
         
         // Generate ICS content
         const lines = [
@@ -94,6 +104,52 @@ Deno.serve(async (req) => {
             lines.push(`DESCRIPTION:Geburtstag von ${emp.name} (${emp.role})`);
             lines.push('RRULE:FREQ=YEARLY');
             lines.push('STATUS:CONFIRMED');
+            lines.push('END:VEVENT');
+        });
+
+        // Add vacation requests
+        vacationRequests.forEach(vacation => {
+            const startDate = vacation.start_date.replace(/-/g, '');
+            const endDate = vacation.end_date.replace(/-/g, '');
+            
+            // Calculate end date + 1 for all-day events (ICS standard)
+            const endDateObj = new Date(vacation.end_date);
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            const endDatePlusOne = endDateObj.toISOString().split('T')[0].replace(/-/g, '');
+            
+            lines.push('BEGIN:VEVENT');
+            lines.push(`UID:vacation-${vacation.id}@barmanager.app`);
+            lines.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`);
+            lines.push(`DTSTART;VALUE=DATE:${startDate}`);
+            lines.push(`DTEND;VALUE=DATE:${endDatePlusOne}`);
+            lines.push(`SUMMARY:🏖️ Urlaub: ${vacation.employee_name}`);
+            let desc = `${vacation.type || 'Urlaub'}`;
+            if (vacation.days_count) desc += ` - ${vacation.days_count} Tage`;
+            if (vacation.notes) desc += `\\n${vacation.notes.replace(/\n/g, '\\n')}`;
+            lines.push(`DESCRIPTION:${desc}`);
+            lines.push('STATUS:CONFIRMED');
+            lines.push('TRANSP:TRANSPARENT');
+            lines.push('END:VEVENT');
+        });
+
+        // Add holidays
+        holidays.forEach(holiday => {
+            const dateStr = holiday.date.toISOString().split('T')[0].replace(/-/g, '');
+            
+            // Calculate end date + 1 for all-day events
+            const endDateObj = new Date(holiday.date);
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            const endDateStr = endDateObj.toISOString().split('T')[0].replace(/-/g, '');
+            
+            lines.push('BEGIN:VEVENT');
+            lines.push(`UID:holiday-${dateStr}@barmanager.app`);
+            lines.push(`DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`);
+            lines.push(`DTSTART;VALUE=DATE:${dateStr}`);
+            lines.push(`DTEND;VALUE=DATE:${endDateStr}`);
+            lines.push(`SUMMARY:🎉 Feiertag: ${holiday.name}`);
+            lines.push(`DESCRIPTION:Gesetzlicher Feiertag in Baden-Württemberg`);
+            lines.push('STATUS:CONFIRMED');
+            lines.push('TRANSP:TRANSPARENT');
             lines.push('END:VEVENT');
         });
 

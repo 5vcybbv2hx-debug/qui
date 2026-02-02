@@ -20,6 +20,8 @@ export default function TerminalClock() {
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [reportMonth, setReportMonth] = useState(format(new Date(), 'yyyy-MM'));
+    const [earningsModalOpen, setEarningsModalOpen] = useState(false);
+    const [earningsData, setEarningsData] = useState(null);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
@@ -98,7 +100,20 @@ export default function TerminalClock() {
                         status: 'clocked_out'
                     }
                 });
-                alert(`✓ ${selectedEmployee.name} ausgestempelt\nArbeitszeit: ${Math.round(hours * 10) / 10}h`);
+
+                // Zeige Verdienst für Aushilfen (Minijob)
+                if (selectedEmployee.contract_type === 'Minijob' && selectedEmployee.hourly_rate) {
+                    const earnings = (Math.round(hours * 100) / 100) * selectedEmployee.hourly_rate;
+                    setEarningsData({
+                        name: selectedEmployee.name,
+                        hours: Math.round(hours * 100) / 100,
+                        hourlyRate: selectedEmployee.hourly_rate,
+                        earnings: earnings
+                    });
+                    setEarningsModalOpen(true);
+                } else {
+                    alert(`✓ ${selectedEmployee.name} ausgestempelt\nArbeitszeit: ${Math.round(hours * 10) / 10}h`);
+                }
             }
         }
 
@@ -312,6 +327,48 @@ export default function TerminalClock() {
                     onVerified={handlePinVerified}
                     title={`PIN für ${selectedEmployee?.name}`}
                 />
+
+                {/* Verdienst Modal für Aushilfen */}
+                <Dialog open={earningsModalOpen} onOpenChange={setEarningsModalOpen}>
+                    <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700 text-white">
+                        <DialogHeader>
+                            <DialogTitle className="text-center text-2xl">
+                                🎉 Gut gemacht!
+                            </DialogTitle>
+                        </DialogHeader>
+                        {earningsData && (
+                            <div className="space-y-6 mt-4">
+                                <div className="text-center">
+                                    <p className="text-slate-400 mb-2">Hallo {earningsData.name},</p>
+                                    <p className="text-slate-300 text-lg">du hast heute verdient:</p>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-8 text-center">
+                                    <div className="text-6xl font-bold text-white mb-2">
+                                        {earningsData.earnings.toFixed(2)} €
+                                    </div>
+                                    <div className="text-green-100 text-sm">
+                                        {earningsData.hours.toFixed(2)}h × {earningsData.hourlyRate.toFixed(2)} €/h
+                                    </div>
+                                </div>
+
+                                <div className="text-center text-slate-400 text-sm">
+                                    Vielen Dank für deine Arbeit heute! 💪
+                                </div>
+
+                                <Button
+                                    onClick={() => {
+                                        setEarningsModalOpen(false);
+                                        setEarningsData(null);
+                                    }}
+                                    className="w-full bg-amber-600 hover:bg-amber-700 text-lg py-6"
+                                >
+                                    Okay, verstanden
+                                </Button>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
 
                 {/* Berichte Modal */}
                 <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>

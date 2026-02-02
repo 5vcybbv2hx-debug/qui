@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Printer } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import JsBarcode from 'jsbarcode';
 
 export default function LabelPrinter({ articles = [] }) {
     const [open, setOpen] = useState(false);
@@ -14,6 +15,22 @@ export default function LabelPrinter({ articles = [] }) {
                 ? prev.filter(id => id !== articleId)
                 : [...prev, articleId]
         );
+    };
+
+    const generateBarcodeSVG = (barcode) => {
+        const canvas = document.createElement('canvas');
+        try {
+            JsBarcode(canvas, barcode, {
+                format: 'CODE128',
+                width: 1.5,
+                height: 40,
+                displayValue: false,
+                margin: 0
+            });
+            return canvas.toDataURL('image/png');
+        } catch (e) {
+            return null;
+        }
     };
 
     const handlePrint = () => {
@@ -55,24 +72,26 @@ export default function LabelPrinter({ articles = [] }) {
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             margin-bottom: 1mm;
         }
         .name {
-            font-size: 11pt;
+            font-size: 10pt;
             font-weight: bold;
             line-height: 1.2;
-            max-width: 40mm;
+            max-width: 35mm;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .barcode {
-            font-size: 8pt;
+        .barcode-img {
+            height: 10mm;
+            width: auto;
+        }
+        .barcode-text {
+            font-size: 7pt;
             font-family: 'Courier New', monospace;
-            background: white;
-            padding: 1mm 2mm;
-            border: 1px solid #000;
             text-align: center;
+            margin-top: 0.5mm;
         }
         .info {
             display: flex;
@@ -100,18 +119,26 @@ export default function LabelPrinter({ articles = [] }) {
     </style>
 </head>
 <body>
-${articlesToPrint.map(article => `
+${articlesToPrint.map(article => {
+    const barcodeSVG = article.barcode ? generateBarcodeSVG(article.barcode) : null;
+    return `
     <div class="label">
         <div class="header">
             <div class="name">${article.name}</div>
-            ${article.barcode ? `<div class="barcode">${article.barcode}</div>` : ''}
+            ${barcodeSVG ? `
+                <div>
+                    <img src="${barcodeSVG}" class="barcode-img" />
+                    <div class="barcode-text">${article.barcode}</div>
+                </div>
+            ` : ''}
         </div>
         <div class="info">
             <div class="category">${article.category || ''}</div>
             ${article.suppliers?.length > 0 ? `<div class="suppliers">${article.suppliers.join(', ')}</div>` : ''}
         </div>
     </div>
-`).join('')}
+`;
+}).join('')}
 </body>
 </html>
         `;

@@ -8,6 +8,8 @@ import PDFExportButton from '@/components/export/PDFExportButton';
 import PermissionsManager from '@/components/employees/PermissionsManager';
 import PersonalFormUploader from '@/components/employees/PersonalFormUploader';
 import PersonalFormDigital from '@/components/employees/PersonalFormDigital';
+import SalaryHistoryModal from '@/components/employees/SalaryHistoryModal';
+import WorkTimeModelsManager from '@/components/employees/WorkTimeModelsManager';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,6 +82,11 @@ export default function Employees() {
         queryFn: () => base44.auth.me()
     });
 
+    const { data: workTimeModels = [] } = useQuery({
+        queryKey: ['work-time-models'],
+        queryFn: () => base44.entities.WorkTimeModel.list('name')
+    });
+
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Employee.create(data),
         onSuccess: () => {
@@ -89,7 +96,24 @@ export default function Employees() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: async ({ id, data, isOwnProfile }) => {
+        mutationFn: async ({ id, data, isOwnProfile, oldEmployee }) => {
+            // Gehaltshistorie erstellen, wenn sich Stundensatz oder Vertragsart geändert hat
+            if (permissions.isManager && oldEmployee && 
+                (oldEmployee.hourly_rate !== data.hourly_rate || 
+                 oldEmployee.contract_type !== data.contract_type)) {
+                await base44.entities.SalaryHistory.create({
+                    employee_id: id,
+                    employee_name: data.name,
+                    old_hourly_rate: oldEmployee.hourly_rate,
+                    new_hourly_rate: data.hourly_rate,
+                    old_contract_type: oldEmployee.contract_type,
+                    new_contract_type: data.contract_type,
+                    change_reason: data.salary_change_reason || 'Manuelle Anpassung',
+                    effective_date: new Date().toISOString().split('T')[0],
+                    changed_by: currentUser?.email || 'System'
+                });
+            }
+
             await base44.entities.Employee.update(id, data);
             
             // Benachrichtigung für Manager erstellen, wenn Mitarbeiter eigene Daten bearbeitet
@@ -106,6 +130,7 @@ export default function Employees() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['employees']);
+            queryClient.invalidateQueries(['salary-history']);
             closeModal();
         }
     });
@@ -181,7 +206,12 @@ export default function Employees() {
         
         if (selectedEmployee) {
             const isOwnProfile = currentUser?.email === selectedEmployee.email;
-            updateMutation.mutate({ id: selectedEmployee.id, data: cleanedData, isOwnProfile });
+            updateMutation.mutate({ 
+                id: selectedEmployee.id, 
+                data: cleanedData, 
+                isOwnProfile,
+                oldEmployee: selectedEmployee 
+            });
         } else {
             createMutation.mutate(cleanedData);
         }
@@ -293,6 +323,7 @@ export default function Employees() {
                     <div className="flex gap-2 flex-wrap">
                         {permissions.isManager && (
                             <>
+                                <WorkTimeModelsManager />
                                 <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries(['employees'])} />
                                 <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />
                                 <PDFExportButton
@@ -510,23 +541,28 @@ export default function Employees() {
                             {/* Action Buttons */}
                             <div className="space-y-2 mt-4 pt-3 border-t border-slate-700">
                                 {permissions.isManager && (
-                                    <div className="flex gap-2">
-                                        <PermissionsManager 
-                                            employee={employee}
-                                            onSave={(perms) => handlePermissionsSave(employee.id, perms)}
-                                        />
-                                        {employee.email && (
-                                            <Button
-                                               variant="outline"
-                                               size="sm"
-                                               onClick={() => handleInvite(employee)}
-                                               className="flex-1 border-green-600 text-white bg-green-600 hover:bg-green-700"
-                                            >
-                                               <UserPlus className="w-4 h-4 mr-1" />
-                                               Einladen
-                                            </Button>
-                                        )}
-                                    </div>
+                                    <>
+                                        <div className="flex gap-2">
+                                            <SalaryHistoryModal employee={employee} />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <PermissionsManager 
+                                                employee={employee}
+                                                onSave={(perms) => handlePermissionsSave(employee.id, perms)}
+                                            />
+                                            {employee.email && (
+                                                <Button
+                                                   variant="outline"
+                                                   size="sm"
+                                                   onClick={() => handleInvite(employee)}
+                                                   className="flex-1 border-green-600 text-white bg-green-600 hover:bg-green-700"
+                                                >
+                                                   <UserPlus className="w-4 h-4 mr-1" />
+                                                   Einladen
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </>
                                 )}
                                 {canEdit(employee) && (
                                     <div className="flex gap-2">
@@ -677,12 +713,16 @@ export default function Employees() {
                                         <Select 
                                             value={formData.contract_type} 
                                             onValueChange={(v) => {
-                                                // Setze Standardsatz basierend auf Vertragsart
-                                                const newRate = v === 'Minijob' ? HOURLY_RATES.MINIJOB : HOURLY_RATES.FULLTIME;
+                                                // Finde passendes Arbeitszeitmodell
+                                                const model = workTimeModels.find(m => 
+                                                    m.name.toLowerCase().includes(v.toLowerCase()) && m.is_active !== false
+                                                );
+                                                
                                                 setFormData({ 
                                                     ...formData, 
                                                     contract_type: v,
-                                                    hourly_rate: selectedEmployee ? formData.hourly_rate : newRate
+                                                    hourly_rate: model?.default_hourly_rate || (v === 'Minijob' ? HOURLY_RATES.MINIJOB : HOURLY_RATES.FULLTIME),
+                                                    vacation_days_per_year: model?.vacation_days || formData.vacation_days_per_year
                                                 });
                                             }}
                                         >
@@ -702,6 +742,16 @@ export default function Employees() {
                                             className="bg-slate-700 text-slate-400"
                                         />
                                     )}
+                                    {permissions.isAdmin && formData.contract_type && workTimeModels.length > 0 && (() => {
+                                        const model = workTimeModels.find(m => 
+                                            m.name.toLowerCase().includes(formData.contract_type.toLowerCase()) && m.is_active !== false
+                                        );
+                                        return model ? (
+                                            <p className="text-xs text-slate-500">
+                                                📋 Modell: {model.name} · Standard {model.default_hourly_rate.toFixed(2)} € · Min. {model.min_hourly_rate.toFixed(2)} €
+                                            </p>
+                                        ) : null;
+                                    })()}
                                 </div>
 
                                 <div className="space-y-2">

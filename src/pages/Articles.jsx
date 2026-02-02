@@ -16,6 +16,7 @@ import BulkEditModal from '@/components/articles/BulkEditModal';
 import LowStockAlert from '@/components/articles/LowStockAlert';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import PDFExportButton from '@/components/export/PDFExportButton';
+import LabelPrinter from '@/components/articles/LabelPrinter';
 
 
 const categoryColors = {
@@ -146,6 +147,7 @@ export default function Articles() {
                     </div>
                     
                     <div className="flex gap-2 flex-wrap">
+                        <LabelPrinter articles={filteredArticles} />
                         <PDFExportButton
                             data={filteredArticles}
                             filename="artikel"

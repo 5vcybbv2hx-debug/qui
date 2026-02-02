@@ -1,0 +1,234 @@
+import React, { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Printer } from 'lucide-react';
+import { cn } from "@/lib/utils";
+
+export default function LabelPrinter({ articles = [] }) {
+    const [open, setOpen] = useState(false);
+    const [selectedArticles, setSelectedArticles] = useState([]);
+
+    const toggleArticle = (articleId) => {
+        setSelectedArticles(prev =>
+            prev.includes(articleId)
+                ? prev.filter(id => id !== articleId)
+                : [...prev, articleId]
+        );
+    };
+
+    const handlePrint = () => {
+        const printWindow = window.open('', '_blank');
+        const articlesToPrint = articles.filter(a => selectedArticles.includes(a.id));
+
+        const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Etiketten</title>
+    <style>
+        @page {
+            size: 62mm 29mm;
+            margin: 0;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .label {
+            width: 62mm;
+            height: 29mm;
+            padding: 2mm;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid #ddd;
+        }
+        .label:last-child {
+            page-break-after: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1mm;
+        }
+        .name {
+            font-size: 11pt;
+            font-weight: bold;
+            line-height: 1.2;
+            max-width: 40mm;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .barcode {
+            font-size: 8pt;
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 1mm 2mm;
+            border: 1px solid #000;
+            text-align: center;
+        }
+        .info {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .category {
+            font-size: 8pt;
+            color: #555;
+        }
+        .suppliers {
+            font-size: 7pt;
+            color: #666;
+            text-align: right;
+            max-width: 30mm;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media print {
+            .label {
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+${articlesToPrint.map(article => `
+    <div class="label">
+        <div class="header">
+            <div class="name">${article.name}</div>
+            ${article.barcode ? `<div class="barcode">${article.barcode}</div>` : ''}
+        </div>
+        <div class="info">
+            <div class="category">${article.category || ''}</div>
+            ${article.suppliers?.length > 0 ? `<div class="suppliers">${article.suppliers.join(', ')}</div>` : ''}
+        </div>
+    </div>
+`).join('')}
+</body>
+</html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.print();
+        };
+    };
+
+    return (
+        <>
+            <Button
+                onClick={() => setOpen(true)}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-900/20"
+            >
+                <Printer className="w-4 h-4 mr-2" />
+                Etiketten drucken
+            </Button>
+
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-slate-800 text-white border-slate-700">
+                    <DialogHeader>
+                        <DialogTitle>Etiketten drucken (62mm x 29mm)</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-blue-900/20 rounded-lg border border-blue-700">
+                            <div className="text-sm text-blue-300">
+                                <p className="font-semibold mb-1">Brother QL-800 Tipp:</p>
+                                <p>• Format: 62mm Endlos-Etikettenrolle</p>
+                                <p>• Im Druckdialog: "Tatsächliche Größe" wählen</p>
+                                <p>• Randlos-Druck aktivieren</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm text-slate-400">
+                                {selectedArticles.length} von {articles.length} ausgewählt
+                            </p>
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedArticles(articles.map(a => a.id))}
+                                >
+                                    Alle
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setSelectedArticles([])}
+                                >
+                                    Keine
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-2 max-h-96 overflow-y-auto">
+                            {articles.map(article => (
+                                <div
+                                    key={article.id}
+                                    onClick={() => toggleArticle(article.id)}
+                                    className={cn(
+                                        "p-3 rounded-lg cursor-pointer transition-all border-2",
+                                        selectedArticles.includes(article.id)
+                                            ? "bg-blue-900/30 border-blue-500"
+                                            : "bg-slate-900 border-slate-700 hover:border-slate-600"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "w-5 h-5 rounded border-2 flex items-center justify-center",
+                                            selectedArticles.includes(article.id)
+                                                ? "bg-blue-600 border-blue-600"
+                                                : "border-slate-600"
+                                        )}>
+                                            {selectedArticles.includes(article.id) && (
+                                                <svg className="w-3 h-3 text-white" fill="none" strokeWidth="2" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-white text-sm">{article.name}</p>
+                                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                                                {article.barcode && <span className="font-mono">{article.barcode}</span>}
+                                                {article.category && <span>• {article.category}</span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex gap-2 pt-4 border-t border-slate-700">
+                            <Button
+                                onClick={() => setOpen(false)}
+                                variant="outline"
+                                className="flex-1"
+                            >
+                                Abbrechen
+                            </Button>
+                            <Button
+                                onClick={handlePrint}
+                                disabled={selectedArticles.length === 0}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            >
+                                <Printer className="w-4 h-4 mr-2" />
+                                {selectedArticles.length} Etikett{selectedArticles.length !== 1 ? 'en' : ''} drucken
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
+}

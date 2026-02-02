@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, startOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, isSameDay, isSameMonth, startOfDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Palmtree, ExternalLink } from 'lucide-react';
@@ -7,6 +7,7 @@ import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getHolidaysBW, getHolidayName } from './getHolidays';
 
 export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
     const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
@@ -14,6 +15,12 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
     const [draggedShift, setDraggedShift] = useState(null);
 
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+    
+    // Feiertage für das aktuelle Jahr und das nächste Jahr laden
+    const holidays = useMemo(() => {
+        const year = currentDate.getFullYear();
+        return [...getHolidaysBW(year), ...getHolidaysBW(year + 1)];
+    }, [currentDate]);
     
     // Generate calendar days based on view mode
     const calendarDays = viewMode === 'week'
@@ -165,6 +172,8 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                         dateStr <= v.end_date
                     );
                     
+                    const holidayName = getHolidayName(day, holidays);
+                    
                     return (
                         <div 
                             key={idx} 
@@ -204,6 +213,15 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                     )}
                                 </div>
                             </div>
+                            
+                            {/* Feiertag Banner */}
+                            {holidayName && (
+                                <div className="absolute top-1.5 left-1.5 right-16 z-10">
+                                    <div className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded font-semibold truncate shadow-sm">
+                                        {holidayName}
+                                    </div>
+                                </div>
+                            )}
                             
                             {/* Content Area */}
                             <div className="p-1.5 pt-8 h-full flex flex-col gap-0.5 overflow-y-auto max-h-[200px]">

@@ -73,6 +73,7 @@ import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Permissions from './pages/Permissions';
+import Inventory from './pages/Inventory';
 import __Layout from './Layout.jsx';
 
 
@@ -103,6 +104,7 @@ export const PAGES = {
     "Todos": Todos,
     "Vacation": Vacation,
     "Permissions": Permissions,
+    "Inventory": Inventory,
 }
 
 export const pagesConfig = {

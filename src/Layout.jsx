@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -40,6 +40,7 @@ const navigationSections = [
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager' },
             { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
             { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },
+            { name: 'Inventur', page: 'Inventory', icon: ClipboardCheck, permission: 'canEditShopping' },
             { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
         ]
     },

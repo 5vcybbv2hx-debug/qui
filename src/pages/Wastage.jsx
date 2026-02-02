@@ -118,6 +118,7 @@ export default function Wastage() {
             article_name: selectedArticle.name,
             article_image_url: selectedArticle.image_url || null,
             quantity: qty,
+            unit: wastageType === 'Nachtwächter' ? 'Liter' : 'Stück',
             type: wastageType,
             date: format(new Date(), 'yyyy-MM-dd'),
             time: format(new Date(), 'HH:mm'),
@@ -259,7 +260,9 @@ export default function Wastage() {
 
                         <div className="grid sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-slate-300">Menge</Label>
+                                <Label className="text-slate-300">
+                                    Menge {wastageType === 'Nachtwächter' ? '(in Litern)' : '(Stück)'}
+                                </Label>
                                 <Input
                                     type="number"
                                     step="0.1"
@@ -267,6 +270,7 @@ export default function Wastage() {
                                     value={quantity}
                                     onChange={(e) => setQuantity(e.target.value)}
                                     className="bg-slate-900 border-slate-600 text-white"
+                                    placeholder={wastageType === 'Nachtwächter' ? 'z.B. 2.5' : 'z.B. 1'}
                                 />
                             </div>
 
@@ -347,7 +351,7 @@ export default function Wastage() {
                                                             </div>
                                                             <div className="flex items-center gap-2 text-xs text-slate-400">
                                                                 <span className="font-semibold text-amber-400">
-                                                                    {item.quantity}x
+                                                                    {item.quantity} {item.unit || 'Stück'}
                                                                 </span>
                                                                 <span>•</span>
                                                                 <span>{item.time} Uhr</span>

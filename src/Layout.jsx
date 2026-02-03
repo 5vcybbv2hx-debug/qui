@@ -20,18 +20,17 @@ const navigationSections = [
         ]
     },
     {
-        title: 'Team & Schichten',
+        title: 'Team',
         items: [
-            { name: 'Kalender', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
-            { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
-            { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },
+            { name: 'Kalender', page: 'Calendar', icon: Calendar, permission: 'canViewShifts' },
+            { name: 'Zeit', page: 'TimeManagement', icon: Clock, permission: 'canViewDashboard' },
+            { name: 'Mein Bereich', page: 'MyArea', icon: Users, permission: 'canViewDashboard' },
             { name: 'Mitarbeiter', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
-            { name: 'Mein Profil', page: 'MyProfile', icon: Users, permission: 'canViewDashboard' },
             { name: 'Berechtigungen', page: 'Permissions', icon: Shield, permission: 'isAdmin' },
         ]
     },
     {
-        title: 'Bar & Lager',
+        title: 'Bar',
         items: [
             { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewShopping' },
             { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees' },
@@ -41,7 +40,7 @@ const navigationSections = [
         ]
     },
     {
-        title: 'Events & Gäste',
+        title: 'Events',
         items: [
             { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },
             { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
@@ -54,7 +53,6 @@ const navigationSections = [
             { name: 'Putzen', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
             { name: 'Wartung', page: 'Maintenance', icon: Wrench, permission: 'canViewEmployees' },
             { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard' },
-            { name: 'Terminal', page: 'TerminalClock', icon: Clock, permission: 'isTerminal' },
         ]
     },
     {
@@ -165,11 +163,11 @@ export default function Layout({ children, currentPageName }) {
                         <span className="text-xs">Home</span>
                     </Link>
                     <Link 
-                        to={createPageUrl('Shifts')}
+                        to={createPageUrl('Calendar')}
                         className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
                     >
                         <Calendar className="w-5 h-5" />
-                        <span className="text-xs">Schichten</span>
+                        <span className="text-xs">Kalender</span>
                     </Link>
                     {permissions.isManager && currentUser && (
                         <div className="flex flex-col items-center gap-1 px-3 py-2">

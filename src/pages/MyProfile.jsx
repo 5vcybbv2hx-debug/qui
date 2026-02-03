@@ -33,7 +33,7 @@ export default function MyProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 p-6">
+        <div>
             <div className="max-w-3xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
                     <UserCircle className="w-12 h-12 text-amber-500" />

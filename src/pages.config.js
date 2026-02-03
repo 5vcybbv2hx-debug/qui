@@ -80,6 +80,9 @@ import Vacation from './pages/Vacation';
 import Wastage from './pages/Wastage';
 import MyProfile from './pages/MyProfile';
 import Warehouse from './pages/Warehouse';
+import Calendar from './pages/Calendar';
+import MyArea from './pages/MyArea';
+import TimeManagement from './pages/TimeManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -117,6 +120,9 @@ export const PAGES = {
     "Wastage": Wastage,
     "MyProfile": MyProfile,
     "Warehouse": Warehouse,
+    "Calendar": Calendar,
+    "MyArea": MyArea,
+    "TimeManagement": TimeManagement,
 }
 
 export const pagesConfig = {

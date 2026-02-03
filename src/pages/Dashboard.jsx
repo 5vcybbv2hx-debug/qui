@@ -210,7 +210,7 @@ export default function Dashboard() {
     if (permissions.isManager) {
         const stats = [
             { title: 'Aktive Mitarbeiter', value: employees.length, icon: Users, color: 'bg-blue-600', link: 'Employees' },
-            { title: 'Schichten heute', value: todayShifts.length, icon: Calendar, color: 'bg-purple-600', link: 'Shifts' },
+            { title: 'Schichten heute', value: todayShifts.length, icon: Calendar, color: 'bg-purple-600', link: 'Calendar' },
             { title: 'Reservierungen', value: todayReservations.length, icon: CalendarCheck, color: 'bg-green-600', link: 'Reservations' },
             { title: 'Offene Aufgaben', value: openTodos.length, icon: CheckSquare, color: 'bg-orange-600', link: 'Todos', badge: urgentTodos.length > 0 ? `${urgentTodos.length} dringend` : null }
         ];
@@ -250,7 +250,7 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {pendingTimeEntries.length > 0 && (
-                            <Link to={createPageUrl('TimeTracking')}>
+                            <Link to={createPageUrl('TimeManagement')}>
                                 <Card className="bg-amber-900/20 border-amber-800/30 hover:bg-amber-900/30 transition-colors">
                                     <CardContent className="p-4">
                                         <div className="flex items-center gap-3">
@@ -267,7 +267,7 @@ export default function Dashboard() {
                         )}
 
                         {pendingVacationRequests.length > 0 && (
-                            <Link to={createPageUrl('Vacation')}>
+                            <Link to={createPageUrl('MyArea')}>
                                 <Card className="bg-blue-900/20 border-blue-800/30 hover:bg-blue-900/30 transition-colors">
                                     <CardContent className="p-4">
                                         <div className="flex items-center gap-3">
@@ -471,43 +471,43 @@ export default function Dashboard() {
                 </Card>
 
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                    <Link to={createPageUrl('Shifts')}>
+                    <Link to={createPageUrl('Calendar')}>
                         <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
                                     <Calendar className="w-6 h-6 text-blue-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Schichtplan</p>
+                                    <p className="text-sm text-slate-400">Kalender</p>
                                     <p className="font-semibold text-white">Ansehen</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
-                    <Link to={createPageUrl('Vacation')}>
+                    <Link to={createPageUrl('MyArea')}>
                         <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
                                     <Umbrella className="w-6 h-6 text-purple-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Urlaub</p>
-                                    <p className="font-semibold text-white">Beantragen</p>
+                                    <p className="text-sm text-slate-400">Mein Bereich</p>
+                                    <p className="font-semibold text-white">Profil & Urlaub</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
-                    <Link to={createPageUrl('TimeTracking')}>
+                    <Link to={createPageUrl('TimeManagement')}>
                         <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-amber-600/20 flex items-center justify-center">
                                     <FileText className="w-6 h-6 text-amber-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Zeiteinträge</p>
-                                    <p className="font-semibold text-white">Ansehen</p>
+                                    <p className="text-sm text-slate-400">Zeit</p>
+                                    <p className="font-semibold text-white">Erfassen</p>
                                 </div>
                             </div>
                         </Card>
@@ -559,7 +559,7 @@ export default function Dashboard() {
                 <div>
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-bold text-white">Kommende Schichten</h2>
-                        <Link to={createPageUrl('Shifts')}>
+                        <Link to={createPageUrl('Calendar')}>
                             <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">Alle</Button>
                         </Link>
                     </div>

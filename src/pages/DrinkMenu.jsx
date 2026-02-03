@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Wine, Search, Eye, EyeOff } from "lucide-react";
+import { Plus, Wine, Search, Eye, EyeOff, Link2 } from "lucide-react";
 import MenuItemModal from "../components/menu/MenuItemModal";
 import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
@@ -136,6 +136,12 @@ export default function DrinkMenuPage() {
                                                         )}
                                                         {item.alcohol_content && (
                                                             <Badge variant="outline">{item.alcohol_content}% Vol.</Badge>
+                                                        )}
+                                                        {item.linked_article_name && (
+                                                            <Badge className="bg-blue-100 text-blue-800">
+                                                                <Link2 className="h-3 w-3 mr-1" />
+                                                                {item.linked_article_name}
+                                                            </Badge>
                                                         )}
                                                     </div>
                                                 </div>

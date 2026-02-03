@@ -52,9 +52,11 @@ import Budget from './pages/Budget';
 import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
 import Dashboard from './pages/Dashboard';
+import DrinkMenu from './pages/DrinkMenu';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
 import Inventory from './pages/Inventory';
+import Maintenance from './pages/Maintenance';
 import MyDashboard from './pages/MyDashboard';
 import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
@@ -64,6 +66,7 @@ import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
+import SalesAnalysis from './pages/SalesAnalysis';
 import ShiftAnalytics from './pages/ShiftAnalytics';
 import ShiftSwaps from './pages/ShiftSwaps';
 import Shifts from './pages/Shifts';
@@ -76,9 +79,6 @@ import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Wastage from './pages/Wastage';
-import Maintenance from './pages/Maintenance';
-import DrinkMenu from './pages/DrinkMenu';
-import SalesAnalysis from './pages/SalesAnalysis';
 import __Layout from './Layout.jsx';
 
 
@@ -88,9 +88,11 @@ export const PAGES = {
     "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
     "Dashboard": Dashboard,
+    "DrinkMenu": DrinkMenu,
     "Employees": Employees,
     "Events": Events,
     "Inventory": Inventory,
+    "Maintenance": Maintenance,
     "MyDashboard": MyDashboard,
     "Notifications": Notifications,
     "Onboarding": Onboarding,
@@ -100,6 +102,7 @@ export const PAGES = {
     "Reports": Reports,
     "Reservations": Reservations,
     "Restock": Restock,
+    "SalesAnalysis": SalesAnalysis,
     "ShiftAnalytics": ShiftAnalytics,
     "ShiftSwaps": ShiftSwaps,
     "Shifts": Shifts,
@@ -112,9 +115,6 @@ export const PAGES = {
     "Todos": Todos,
     "Vacation": Vacation,
     "Wastage": Wastage,
-    "Maintenance": Maintenance,
-    "DrinkMenu": DrinkMenu,
-    "SalesAnalysis": SalesAnalysis,
 }
 
 export const pagesConfig = {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import {
     Dialog,
     DialogContent,
@@ -30,7 +30,15 @@ export default function MenuItemModal({ item, open, onClose }) {
         order_position: "",
         allergens: "",
         alcohol_content: "",
-        image_url: ""
+        image_url: "",
+        linked_article_id: "",
+        linked_article_name: ""
+    });
+
+    const { data: articles = [] } = useQuery({
+        queryKey: ['articles-for-linking'],
+        queryFn: () => base44.entities.Article.list('-name', 500),
+        initialData: []
     });
 
     useEffect(() => {
@@ -190,6 +198,39 @@ export default function MenuItemModal({ item, open, onClose }) {
                                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                                 placeholder="https://..."
                             />
+                        </div>
+
+                        <div className="col-span-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <Label className="text-blue-900">🔗 Artikel verknüpfen (optional)</Label>
+                            <p className="text-xs text-blue-700 mb-2 mt-1">Verknüpfung mit Lagerbestand für automatisches Tracking</p>
+                            <Select
+                                value={formData.linked_article_id || ""}
+                                onValueChange={(value) => {
+                                    const article = articles.find(a => a.id === value);
+                                    setFormData({ 
+                                        ...formData, 
+                                        linked_article_id: value,
+                                        linked_article_name: article?.name || ""
+                                    });
+                                }}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Artikel auswählen..." />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-60">
+                                    <SelectItem value={null}>Keine Verknüpfung</SelectItem>
+                                    {articles.map(article => (
+                                        <SelectItem key={article.id} value={article.id}>
+                                            {article.name} {article.barcode ? `(${article.barcode})` : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {formData.linked_article_name && (
+                                <p className="text-xs text-green-700 mt-2">
+                                    ✓ Verknüpft mit: {formData.linked_article_name}
+                                </p>
+                            )}
                         </div>
                     </div>
 

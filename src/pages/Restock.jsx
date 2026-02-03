@@ -189,8 +189,8 @@ export default function Restock() {
         });
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-4xl mx-auto px-4 py-8">
+        <div>
+            <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-white tracking-tight">Auffülliste</h1>

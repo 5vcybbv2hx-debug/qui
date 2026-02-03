@@ -172,8 +172,8 @@ export default function Articles() {
     const filterCategories = ['all', ...categories.map(c => c.name)];
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div>
+            <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="flex flex-col gap-3 mb-6">
                     <div>

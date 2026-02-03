@@ -221,8 +221,8 @@ export default function Shopping() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-5xl mx-auto px-4 py-8">
+        <div>
+            <div className="max-w-5xl mx-auto">
                 {/* Header */}
                 <div className="flex flex-col gap-4 mb-8">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -57,7 +57,6 @@ import Employees from './pages/Employees';
 import Events from './pages/Events';
 import Inventory from './pages/Inventory';
 import Maintenance from './pages/Maintenance';
-import MyDashboard from './pages/MyDashboard';
 import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
@@ -80,6 +79,7 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Wastage from './pages/Wastage';
 import MyProfile from './pages/MyProfile';
+import Warehouse from './pages/Warehouse';
 import __Layout from './Layout.jsx';
 
 
@@ -94,7 +94,6 @@ export const PAGES = {
     "Events": Events,
     "Inventory": Inventory,
     "Maintenance": Maintenance,
-    "MyDashboard": MyDashboard,
     "Notifications": Notifications,
     "Onboarding": Onboarding,
     "Permissions": Permissions,
@@ -117,10 +116,11 @@ export const PAGES = {
     "Vacation": Vacation,
     "Wastage": Wastage,
     "MyProfile": MyProfile,
+    "Warehouse": Warehouse,
 }
 
 export const pagesConfig = {
-    mainPage: "MyDashboard",
+    mainPage: "Articles",
     Pages: PAGES,
     Layout: __Layout,
 };

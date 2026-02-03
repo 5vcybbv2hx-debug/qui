@@ -13,37 +13,30 @@ import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistratio
 
 const navigationSections = [
     {
-        title: 'Dashboard',
+        title: 'Übersicht',
         items: [
-            { name: 'Mein Dashboard', page: 'MyDashboard', icon: Home, permission: 'canViewDashboard' },
-            { name: 'Manager Dashboard', page: 'Dashboard', icon: TrendingUp, permission: 'canViewDashboard' },
+            { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
             { name: 'Benachrichtigungen', page: 'Notifications', icon: Bell, permission: 'canViewDashboard' },
         ]
     },
     {
-        title: 'Personal',
+        title: 'Team & Schichten',
         items: [
-            { name: 'Schichtplan', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
-            { name: 'Team-Kalender', page: 'TeamCalendar', icon: CalendarCheck, permission: 'canViewShifts' },
-            { name: 'Schichttausch', page: 'ShiftSwaps', icon: RepeatIcon, permission: 'canViewDashboard' },
+            { name: 'Kalender', page: 'Shifts', icon: Calendar, permission: 'canViewShifts' },
             { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
             { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },
+            { name: 'Mitarbeiter', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
             { name: 'Mein Profil', page: 'MyProfile', icon: Users, permission: 'canViewDashboard' },
-            { name: 'Team', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
-            { name: 'Einlernliste', page: 'Onboarding', icon: GraduationCap, permission: 'canViewDashboard' },
             { name: 'Berechtigungen', page: 'Permissions', icon: Shield, permission: 'isAdmin' },
         ]
     },
     {
-        title: 'Bar-Betrieb',
+        title: 'Bar & Lager',
         items: [
+            { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewShopping' },
+            { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees' },
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
-            { name: 'Artikel', page: 'Articles', icon: Package, permission: 'canEditShopping' },
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager' },
-            { name: 'Einkauf', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
-            { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewRestock' },
-            { name: 'Schwund', page: 'Wastage', icon: TrendingUp, permission: 'canEditShopping' },
-            { name: 'Inventur', page: 'Inventory', icon: ClipboardCheck, permission: 'canEditShopping' },
             { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
         ]
     },
@@ -52,26 +45,24 @@ const navigationSections = [
         items: [
             { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard' },
             { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations' },
-            { name: 'Kalenderintegration', page: 'CalendarIntegration', icon: Calendar, permission: 'canViewDashboard' },
         ]
     },
     {
         title: 'Organisation',
         items: [
             { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos' },
-            { name: 'Putzliste', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
+            { name: 'Putzen', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
+            { name: 'Wartung', page: 'Maintenance', icon: Wrench, permission: 'canViewEmployees' },
             { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard' },
-            { name: 'Wartungsplan', page: 'Maintenance', icon: Wrench, permission: 'canViewEmployees' },
-            { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees' },
             { name: 'Terminal', page: 'TerminalClock', icon: Clock, permission: 'isTerminal' },
         ]
     },
     {
-        title: 'Finanzen',
+        title: 'Analysen',
         items: [
+            { name: 'Verkäufe', page: 'SalesAnalysis', icon: TrendingUp, permission: 'canViewAnalytics' },
             { name: 'Budget', page: 'Budget', icon: TrendingUp, permission: 'canViewAnalytics' },
             { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
-            { name: 'Verkaufs-Analyse', page: 'SalesAnalysis', icon: TrendingUp, permission: 'canViewAnalytics' },
         ]
     },
 ];
@@ -96,7 +87,7 @@ export default function Layout({ children, currentPageName }) {
             <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
                 <div className="flex flex-col flex-grow bg-slate-950 border-r border-slate-800 pt-5 overflow-y-auto">
                     {/* Logo */}
-                    <Link to={createPageUrl(permissions.isManager ? 'Dashboard' : 'MyDashboard')} className="flex items-center gap-3 px-6 mb-8 hover:opacity-80 transition-opacity">
+                    <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-8 hover:opacity-80 transition-opacity">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
                             <span className="text-white font-bold text-lg">B</span>
                         </div>
@@ -167,7 +158,7 @@ export default function Layout({ children, currentPageName }) {
             <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950 border-t border-slate-800 pb-safe">
                 <div className="flex items-center justify-around px-2 py-2">
                     <Link 
-                        to={createPageUrl(permissions.isManager ? 'Dashboard' : 'MyDashboard')}
+                        to={createPageUrl('Dashboard')}
                         className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
                     >
                         <Home className="w-5 h-5" />

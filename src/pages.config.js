@@ -75,6 +75,7 @@ import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Wastage from './pages/Wastage';
+import Onboarding from './pages/Onboarding';
 import __Layout from './Layout.jsx';
 
 
@@ -107,6 +108,7 @@ export const PAGES = {
     "Todos": Todos,
     "Vacation": Vacation,
     "Wastage": Wastage,
+    "Onboarding": Onboarding,
 }
 
 export const pagesConfig = {

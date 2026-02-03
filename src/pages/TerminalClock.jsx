@@ -265,7 +265,7 @@ export default function TerminalClock() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {employees.filter(e => e.pin).map(employee => {
+                    {employees.filter(e => e.pin && e.name !== 'Orga').map(employee => {
                         const status = getEmployeeStatus(employee);
                         const isActive = !!status;
 
@@ -318,7 +318,7 @@ export default function TerminalClock() {
                     })}
                 </div>
 
-                {employees.filter(e => e.pin).length === 0 && (
+                {employees.filter(e => e.pin && e.name !== 'Orga').length === 0 && (
                     <Card className="p-12 bg-slate-800 border-slate-700">
                         <div className="text-center text-slate-400">
                             <Coffee className="w-16 h-16 mx-auto mb-4 opacity-50" />

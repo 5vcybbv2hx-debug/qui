@@ -22,6 +22,7 @@ export default function TerminalClock() {
     const [reportMonth, setReportMonth] = useState(format(new Date(), 'yyyy-MM'));
     const [earningsModalOpen, setEarningsModalOpen] = useState(false);
     const [earningsData, setEarningsData] = useState(null);
+    const [nightWatchModalOpen, setNightWatchModalOpen] = useState(false);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
@@ -46,6 +47,34 @@ export default function TerminalClock() {
         mutationFn: (data) => base44.entities.ClockEntry.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries(['clock-entries-today']);
+        }
+    });
+
+    const wastageCreationMutation = useMutation({
+        mutationFn: async () => {
+            const today = format(new Date(), 'yyyy-MM-dd');
+            const nightWatchItems = [
+                { name: 'Chiemseer Hell', barcode: 'CHIEMSEER_HELL' },
+                { name: 'Hacker Hefe', barcode: 'HACKER_HEFE' },
+                { name: 'Fürstenberg Pils', barcode: 'FUERSTENBERG_PILS' },
+                { name: 'Kloster Dunkel', barcode: 'KLOSTER_DUNKEL' },
+                { name: 'Oberbräu Hell', barcode: 'OBERBRAEU_HELL' },
+                { name: 'Alpirsbacher Hefe Alkoholfrei', barcode: 'ALPIRSBACHER_HEFE_AF' }
+            ];
+
+            const wastageEntries = nightWatchItems.map(item => ({
+                barcode: item.barcode,
+                article_name: item.name,
+                quantity: 0.8,
+                unit: 'Liter',
+                type: 'Nachtwächter',
+                date: today,
+                time: format(new Date(), 'HH:mm'),
+                noted_by: 'Automatisch',
+                notes: 'Automatisch eingetragen beim ersten Einstempeln'
+            }));
+
+            await base44.entities.Wastage.bulkCreate(wastageEntries);
         }
     });
 
@@ -82,7 +111,14 @@ export default function TerminalClock() {
                     clock_in: new Date().toISOString(),
                     status: 'clocked_in'
                 });
-                alert(`✓ ${selectedEmployee.name} eingestempelt`);
+                
+                // Prüfen ob erste Person des Tages
+                const isFirstOfDay = clockEntries.length === 0;
+                if (isFirstOfDay) {
+                    setNightWatchModalOpen(true);
+                } else {
+                    alert(`✓ ${selectedEmployee.name} eingestempelt`);
+                }
             }
         } else if (selectedAction === 'out') {
             if (!activeEntry) {
@@ -367,6 +403,58 @@ export default function TerminalClock() {
                                 </Button>
                             </div>
                         )}
+                    </DialogContent>
+                </Dialog>
+
+                {/* Nachtwächter Modal */}
+                <Dialog open={nightWatchModalOpen} onOpenChange={setNightWatchModalOpen}>
+                    <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700 text-white">
+                        <DialogHeader>
+                            <DialogTitle className="text-center text-xl">
+                                🌙 Nachtwächterliste eintragen?
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 mt-4">
+                            <p className="text-slate-300 text-center">
+                                Du bist die erste Person, die sich heute einstempelt.
+                            </p>
+                            <div className="bg-slate-700 rounded-lg p-4">
+                                <p className="text-sm font-semibold text-amber-400 mb-2">
+                                    Folgende Artikel werden als Nachtwächter eingetragen:
+                                </p>
+                                <ul className="text-sm text-slate-300 space-y-1">
+                                    <li>• Chiemseer Hell (0,8 Liter)</li>
+                                    <li>• Hacker Hefe (0,8 Liter)</li>
+                                    <li>• Fürstenberg Pils (0,8 Liter)</li>
+                                    <li>• Kloster Dunkel (0,8 Liter)</li>
+                                    <li>• Oberbräu Hell (0,8 Liter)</li>
+                                    <li>• Alpirsbacher Hefe Alkoholfrei (0,8 Liter)</li>
+                                </ul>
+                            </div>
+                            <div className="flex gap-3">
+                                <Button
+                                    onClick={() => {
+                                        setNightWatchModalOpen(false);
+                                        alert(`✓ ${selectedEmployee?.name} eingestempelt`);
+                                    }}
+                                    variant="outline"
+                                    className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                                >
+                                    Nein, überspringen
+                                </Button>
+                                <Button
+                                    onClick={async () => {
+                                        await wastageCreationMutation.mutateAsync();
+                                        setNightWatchModalOpen(false);
+                                        alert(`✓ ${selectedEmployee?.name} eingestempelt\n✓ Nachtwächterliste eingetragen`);
+                                    }}
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                    disabled={wastageCreationMutation.isPending}
+                                >
+                                    {wastageCreationMutation.isPending ? 'Wird eingetragen...' : 'Ja, eintragen'}
+                                </Button>
+                            </div>
+                        </div>
                     </DialogContent>
                 </Dialog>
 

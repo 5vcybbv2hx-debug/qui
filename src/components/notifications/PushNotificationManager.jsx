@@ -71,7 +71,7 @@ export default function PushNotificationManager({ userEmail }) {
             setSubscription(sub);
 
             // Subscription im Backend speichern
-            await base44.entities.User.update(userEmail, {
+            await base44.auth.updateMe({
                 push_subscription: JSON.stringify(sub)
             });
 
@@ -89,7 +89,7 @@ export default function PushNotificationManager({ userEmail }) {
                 setSubscription(null);
                 
                 // Subscription im Backend löschen
-                await base44.entities.User.update(userEmail, {
+                await base44.auth.updateMe({
                     push_subscription: null
                 });
                 

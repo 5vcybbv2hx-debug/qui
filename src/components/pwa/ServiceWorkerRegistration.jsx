@@ -6,140 +6,21 @@ export default function ServiceWorkerRegistration() {
             // Service Worker Registration
             const registerServiceWorker = async () => {
                 try {
-                    // Erstelle Service Worker als Data URL
-                    const swCode = `
-                        const CACHE_NAME = 'barmanager-v1';
-                        const urlsToCache = [
-                            '/',
-                        ];
+                    const registration = await navigator.serviceWorker.register('/api/functions/sw', {
+                        scope: '/'
+                    });
+                    console.log('[App] Service Worker registered:', registration);
 
-                        self.addEventListener('install', (event) => {
-                            event.waitUntil(
-                                caches.open(CACHE_NAME)
-                                    .then((cache) => cache.addAll(urlsToCache))
-                            );
-                        });
-
-                        self.addEventListener('fetch', (event) => {
-                            // Cache-First-Strategie für statische Assets
-                            if (event.request.method === 'GET') {
-                                event.respondWith(
-                                    caches.match(event.request)
-                                        .then((response) => {
-                                            if (response) {
-                                                return response;
-                                            }
-                                            return fetch(event.request).then((response) => {
-                                                // Speichere erfolgreiche GET-Anfragen im Cache
-                                                if (response.status === 200) {
-                                                    const responseClone = response.clone();
-                                                    caches.open(CACHE_NAME).then((cache) => {
-                                                        cache.put(event.request, responseClone);
-                                                    });
-                                                }
-                                                return response;
-                                            }).catch(() => {
-                                                // Offline-Fallback
-                                                return new Response(
-                                                    JSON.stringify({ 
-                                                        error: 'Offline', 
-                                                        message: 'Diese Anfrage ist offline nicht verfügbar' 
-                                                    }),
-                                                    { 
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        status: 503
-                                                    }
-                                                );
-                                            });
-                                        })
-                                );
-                            }
-                        });
-
-                        self.addEventListener('activate', (event) => {
-                            const cacheWhitelist = [CACHE_NAME];
-                            event.waitUntil(
-                                caches.keys().then((cacheNames) => {
-                                    return Promise.all(
-                                        cacheNames.map((cacheName) => {
-                                            if (cacheWhitelist.indexOf(cacheName) === -1) {
-                                                return caches.delete(cacheName);
-                                            }
-                                        })
-                                    );
-                                })
-                            );
-                        });
-
-                        // Push-Benachrichtigungen
-                        self.addEventListener('push', (event) => {
-                            console.log('Push notification received');
-                            
-                            let data = {
-                                title: 'Neue Benachrichtigung',
-                                body: 'Sie haben eine neue Nachricht',
-                                icon: '/icon-192.png'
-                            };
-                            
-                            if (event.data) {
-                                try {
-                                    data = event.data.json();
-                                } catch (e) {
-                                    data.body = event.data.text();
-                                }
-                            }
-                            
-                            const options = {
-                                body: data.body,
-                                icon: data.icon || '/icon-192.png',
-                                badge: data.badge || '/icon-192.png',
-                                vibrate: [200, 100, 200],
-                                data: data.data || {},
-                                actions: [
-                                    { action: 'open', title: 'Öffnen' },
-                                    { action: 'close', title: 'Schließen' }
-                                ]
-                            };
-                            
-                            event.waitUntil(
-                                self.registration.showNotification(data.title, options)
-                            );
-                        });
-
-                        self.addEventListener('notificationclick', (event) => {
-                            event.notification.close();
-                            
-                            if (event.action === 'close') {
-                                return;
-                            }
-                            
-                            const urlToOpen = event.notification.data?.url || '/Notifications';
-                            
-                            event.waitUntil(
-                                clients.matchAll({ type: 'window', includeUncontrolled: true })
-                                    .then((clientList) => {
-                                        for (let client of clientList) {
-                                            if (client.url.includes(self.location.origin) && 'focus' in client) {
-                                                return client.focus().then(() => {
-                                                    client.postMessage({ type: 'NOTIFICATION_CLICKED', url: urlToOpen });
-                                                });
-                                            }
-                                        }
-                                        if (clients.openWindow) {
-                                            return clients.openWindow(urlToOpen);
-                                        }
-                                    })
-                            );
-                        });
-                    `;
-
-                    const blob = new Blob([swCode], { type: 'application/javascript' });
-                    const swUrl = URL.createObjectURL(blob);
-
-                    const registration = await navigator.serviceWorker.register(swUrl);
-                    console.log('Service Worker registered:', registration);
+                    // Warte auf Installation
+                    if (registration.installing) {
+                        console.log('[App] Service Worker installing...');
+                    } else if (registration.waiting) {
+                        console.log('[App] Service Worker waiting...');
+                    } else if (registration.active) {
+                        console.log('[App] Service Worker active');
+                    }
                 } catch (error) {
-                    console.error('Service Worker registration failed:', error);
+                    console.error('[App] Service Worker registration failed:', error);
                 }
             };
 

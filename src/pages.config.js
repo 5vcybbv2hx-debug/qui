@@ -78,6 +78,7 @@ import Vacation from './pages/Vacation';
 import Wastage from './pages/Wastage';
 import Maintenance from './pages/Maintenance';
 import DrinkMenu from './pages/DrinkMenu';
+import SalesAnalysis from './pages/SalesAnalysis';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +114,7 @@ export const PAGES = {
     "Wastage": Wastage,
     "Maintenance": Maintenance,
     "DrinkMenu": DrinkMenu,
+    "SalesAnalysis": SalesAnalysis,
 }
 
 export const pagesConfig = {

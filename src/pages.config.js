@@ -57,6 +57,7 @@ import Events from './pages/Events';
 import Inventory from './pages/Inventory';
 import MyDashboard from './pages/MyDashboard';
 import Notifications from './pages/Notifications';
+import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
 import Recipes from './pages/Recipes';
@@ -75,7 +76,8 @@ import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Wastage from './pages/Wastage';
-import Onboarding from './pages/Onboarding';
+import Maintenance from './pages/Maintenance';
+import DrinkMenu from './pages/DrinkMenu';
 import __Layout from './Layout.jsx';
 
 
@@ -90,6 +92,7 @@ export const PAGES = {
     "Inventory": Inventory,
     "MyDashboard": MyDashboard,
     "Notifications": Notifications,
+    "Onboarding": Onboarding,
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
@@ -108,7 +111,8 @@ export const PAGES = {
     "Todos": Todos,
     "Vacation": Vacation,
     "Wastage": Wastage,
-    "Onboarding": Onboarding,
+    "Maintenance": Maintenance,
+    "DrinkMenu": DrinkMenu,
 }
 
 export const pagesConfig = {

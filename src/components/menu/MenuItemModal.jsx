@@ -1,0 +1,243 @@
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+
+export default function MenuItemModal({ item, open, onClose }) {
+    const queryClient = useQueryClient();
+    const [formData, setFormData] = useState({
+        name: "",
+        category: "Cocktails",
+        subcategory: "",
+        description: "",
+        price: "",
+        size: "",
+        is_available: true,
+        is_seasonal: false,
+        is_special: false,
+        order_position: "",
+        allergens: "",
+        alcohol_content: "",
+        image_url: ""
+    });
+
+    useEffect(() => {
+        if (item) {
+            setFormData(item);
+        }
+    }, [item]);
+
+    const saveMutation = useMutation({
+        mutationFn: async (data) => {
+            if (item) {
+                return base44.entities.MenuItem.update(item.id, data);
+            }
+            return base44.entities.MenuItem.create(data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['menu-items']);
+            onClose();
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: () => base44.entities.MenuItem.delete(item.id),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['menu-items']);
+            onClose();
+        }
+    });
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const submitData = {
+            ...formData,
+            price: parseFloat(formData.price),
+            alcohol_content: formData.alcohol_content ? parseFloat(formData.alcohol_content) : undefined,
+            order_position: formData.order_position ? parseInt(formData.order_position) : undefined
+        };
+        saveMutation.mutate(submitData);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{item ? 'Getränk bearbeiten' : 'Neues Getränk'}</DialogTitle>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                            <Label>Name *</Label>
+                            <Input
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="z.B. Mojito"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Kategorie *</Label>
+                            <Select
+                                value={formData.category}
+                                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Bier">Bier</SelectItem>
+                                    <SelectItem value="Wein">Wein</SelectItem>
+                                    <SelectItem value="Sekt & Champagner">Sekt & Champagner</SelectItem>
+                                    <SelectItem value="Spirituosen">Spirituosen</SelectItem>
+                                    <SelectItem value="Longdrinks">Longdrinks</SelectItem>
+                                    <SelectItem value="Cocktails">Cocktails</SelectItem>
+                                    <SelectItem value="Shots">Shots</SelectItem>
+                                    <SelectItem value="Softdrinks">Softdrinks</SelectItem>
+                                    <SelectItem value="Heißgetränke">Heißgetränke</SelectItem>
+                                    <SelectItem value="Moonshiner-Cocktails">Moonshiner-Cocktails</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <Label>Unterkategorie</Label>
+                            <Input
+                                value={formData.subcategory}
+                                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                                placeholder="z.B. Rum, IPA"
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Preis (€) *</Label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={formData.price}
+                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                                placeholder="7.50"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Größe</Label>
+                            <Input
+                                value={formData.size}
+                                onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                                placeholder="z.B. 0,3l, 4cl"
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Alkoholgehalt (%)</Label>
+                            <Input
+                                type="number"
+                                step="0.1"
+                                value={formData.alcohol_content}
+                                onChange={(e) => setFormData({ ...formData, alcohol_content: e.target.value })}
+                                placeholder="z.B. 5.2"
+                            />
+                        </div>
+
+                        <div>
+                            <Label>Reihenfolge</Label>
+                            <Input
+                                type="number"
+                                value={formData.order_position}
+                                onChange={(e) => setFormData({ ...formData, order_position: e.target.value })}
+                                placeholder="1, 2, 3..."
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <Label>Beschreibung</Label>
+                            <Textarea
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="Zutaten und Beschreibung"
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <Label>Allergene</Label>
+                            <Input
+                                value={formData.allergens}
+                                onChange={(e) => setFormData({ ...formData, allergens: e.target.value })}
+                                placeholder="z.B. Laktose, Nüsse"
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <Label>Bild-URL</Label>
+                            <Input
+                                value={formData.image_url}
+                                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                placeholder="https://..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={formData.is_available}
+                                onCheckedChange={(checked) => setFormData({ ...formData, is_available: checked })}
+                            />
+                            <Label>Verfügbar</Label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={formData.is_seasonal}
+                                onCheckedChange={(checked) => setFormData({ ...formData, is_seasonal: checked })}
+                            />
+                            <Label>Saisonales Angebot</Label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={formData.is_special}
+                                onCheckedChange={(checked) => setFormData({ ...formData, is_special: checked })}
+                            />
+                            <Label>Special/Tagesangebot</Label>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        {item && (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={() => deleteMutation.mutate()}
+                            >
+                                Löschen
+                            </Button>
+                        )}
+                        <Button type="button" variant="outline" onClick={onClose}>
+                            Abbrechen
+                        </Button>
+                        <Button type="submit">
+                            Speichern
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}

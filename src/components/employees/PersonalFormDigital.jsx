@@ -25,6 +25,12 @@ export default function PersonalFormDigital({ onSuccess }) {
         city: '',
         nationality: 'Deutsch',
         
+        // Personalakte (nicht an Steuerberater)
+        employee_email: '',
+        employee_phone: '',
+        tshirt_size: '',
+        pullover_size: '',
+        
         // Beschäftigung
         entry_date: '',
         activity: '',
@@ -86,13 +92,15 @@ export default function PersonalFormDigital({ onSuccess }) {
                 role: 'Aushilfe',
                 contract_type: 'Minijob',
                 hourly_rate: parseFloat(data.hourly_rate),
-                email: data.steuerberater_email,
-                phone: '',
+                email: data.employee_email || '',
+                phone: data.employee_phone || '',
                 birthday: data.birthday,
                 entry_date: data.entry_date,
                 street: data.street,
                 postal_code: data.postal_code,
                 city: data.city,
+                tshirt_size: data.tshirt_size || '',
+                pullover_size: data.pullover_size || '',
                 is_active: true
             };
             
@@ -154,6 +162,10 @@ BarManager System
             postal_code: '',
             city: '',
             nationality: 'Deutsch',
+            employee_email: '',
+            employee_phone: '',
+            tshirt_size: '',
+            pullover_size: '',
             entry_date: '',
             activity: '',
             education: '',
@@ -226,7 +238,7 @@ BarManager System
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <FileText className="w-5 h-5 text-blue-600" />
-                            Personalbogen Minijob - Schritt {step} von 4
+                            Personalbogen Minijob - Schritt {step} von 5
                         </DialogTitle>
                     </DialogHeader>
 
@@ -321,13 +333,81 @@ BarManager System
                                         </div>
                                     </div>
 
+                                    <div className="pt-4 border-t">
+                                        <h4 className="font-semibold mb-3 text-sm text-slate-600">Für Personalakte (nicht an Steuerberater)</h4>
+                                        
+                                        <div className="space-y-3">
+                                            <div className="space-y-2">
+                                                <Label>E-Mail Adresse</Label>
+                                                <Input
+                                                    type="email"
+                                                    value={formData.employee_email}
+                                                    onChange={(e) => setFormData({...formData, employee_email: e.target.value})}
+                                                    placeholder="mitarbeiter@example.com"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Telefonnummer</Label>
+                                                <Input
+                                                    value={formData.employee_phone}
+                                                    onChange={(e) => setFormData({...formData, employee_phone: e.target.value})}
+                                                    placeholder="+49 123 456789"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="space-y-2">
+                                                    <Label>T-Shirt Größe</Label>
+                                                    <Select
+                                                        value={formData.tshirt_size}
+                                                        onValueChange={(value) => setFormData({...formData, tshirt_size: value})}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Auswählen..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="XS">XS</SelectItem>
+                                                            <SelectItem value="S">S</SelectItem>
+                                                            <SelectItem value="M">M</SelectItem>
+                                                            <SelectItem value="L">L</SelectItem>
+                                                            <SelectItem value="XL">XL</SelectItem>
+                                                            <SelectItem value="XXL">XXL</SelectItem>
+                                                            <SelectItem value="XXXL">XXXL</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Pullover Größe</Label>
+                                                    <Select
+                                                        value={formData.pullover_size}
+                                                        onValueChange={(value) => setFormData({...formData, pullover_size: value})}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Auswählen..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="XS">XS</SelectItem>
+                                                            <SelectItem value="S">S</SelectItem>
+                                                            <SelectItem value="M">M</SelectItem>
+                                                            <SelectItem value="L">L</SelectItem>
+                                                            <SelectItem value="XL">XL</SelectItem>
+                                                            <SelectItem value="XXL">XXL</SelectItem>
+                                                            <SelectItem value="XXXL">XXXL</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <Button type="button" onClick={nextStep} className="w-full bg-blue-600 hover:bg-blue-700">
                                         Weiter
                                     </Button>
                                 </div>
                             )}
 
-                            {/* Schritt 2: Beschäftigung */}
+                            {/* Schritt 2: Beschäftigung Teil 1 */}
                             {step === 2 && (
                                 <div className="space-y-4">
                                     <h3 className="font-semibold text-lg border-b pb-2">Beschäftigung</h3>
@@ -461,10 +541,10 @@ BarManager System
                                 </div>
                             )}
 
-                            {/* Schritt 3: Versicherung & Bank */}
+                            {/* Schritt 3: Versicherung & Weitere Beschäftigungen */}
                             {step === 3 && (
                                 <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Versicherung & Bankdaten</h3>
+                                    <h3 className="font-semibold text-lg border-b pb-2">Versicherung & Weitere Beschäftigungen</h3>
                                     
                                     <div className="space-y-2">
                                         <Label>Steuer-Identifikationsnummer *</Label>
@@ -526,7 +606,21 @@ BarManager System
                                         )}
                                     </div>
 
-                                    <h4 className="font-semibold pt-4">Bankverbindung</h4>
+                                    <div className="flex gap-2">
+                                        <Button type="button" variant="outline" onClick={prevStep} className="flex-1">
+                                            Zurück
+                                        </Button>
+                                        <Button type="button" onClick={nextStep} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                                            Weiter
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Schritt 4: Bankverbindung */}
+                            {step === 4 && (
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Bankverbindung</h3>
                                     
                                     <div className="space-y-2">
                                         <Label>Kreditinstitut *</Label>
@@ -566,8 +660,8 @@ BarManager System
                                 </div>
                             )}
 
-                            {/* Schritt 4: Bestätigung */}
-                            {step === 4 && (
+                            {/* Schritt 5: Bestätigung */}
+                            {step === 5 && (
                                 <div className="space-y-4">
                                     <h3 className="font-semibold text-lg border-b pb-2">Bestätigung & Versand</h3>
                                     

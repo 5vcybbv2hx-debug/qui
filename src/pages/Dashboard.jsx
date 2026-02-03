@@ -1,22 +1,26 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { format, isToday, startOfWeek, endOfWeek, parseISO, addDays, isSameDay, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, isToday, startOfWeek, endOfWeek, parseISO, addDays, isSameDay, startOfMonth, endOfMonth, differenceInMinutes, isFuture } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { 
-    Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, Users, 
-    ShoppingCart, Sparkles, CheckSquare, DollarSign, TrendingUp,
-    CalendarCheck, Package, XCircle, AlertTriangle
+    Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, Users, ShoppingCart, 
+    Sparkles, CheckSquare, Package, AlertTriangle, CalendarCheck, LogIn, LogOut,
+    Umbrella, FileText, TrendingUp
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import BackupManager from '@/components/backup/BackupManager';
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Dashboard() {
+    const permissions = usePermissions();
+    const queryClient = useQueryClient();
+
     const { data: user } = useQuery({
         queryKey: ['user'],
         queryFn: () => base44.auth.me()
@@ -27,14 +31,19 @@ export default function Dashboard() {
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
+    const { data: shifts = [] } = useQuery({
+        queryKey: ['shifts'],
+        queryFn: () => base44.entities.Shift.list('-date', 100)
+    });
+
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries'],
         queryFn: () => base44.entities.TimeEntry.list('-date', 100)
     });
 
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 100)
+    const { data: clockEntries = [] } = useQuery({
+        queryKey: ['clock-entries'],
+        queryFn: () => base44.entities.ClockEntry.list('-clock_in')
     });
 
     const { data: events = [] } = useQuery({
@@ -77,437 +86,512 @@ export default function Dashboard() {
         queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date', 50)
     });
 
+    const clockInMutation = useMutation({
+        mutationFn: async (employeeId) => {
+            const employee = employees.find(e => e.id === employeeId);
+            return base44.entities.ClockEntry.create({
+                employee_id: employeeId,
+                employee_name: employee.name,
+                clock_in: new Date().toISOString(),
+                status: 'clocked_in'
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['clock-entries']);
+        }
+    });
+
+    const clockOutMutation = useMutation({
+        mutationFn: async (entryId) => {
+            const entry = clockEntries.find(e => e.id === entryId);
+            const clockOutTime = new Date();
+            const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
+            const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+
+            await base44.entities.ClockEntry.update(entryId, {
+                clock_out: clockOutTime.toISOString(),
+                break_minutes: 0,
+                total_hours: totalHours,
+                status: 'clocked_out'
+            });
+
+            await base44.entities.TimeEntry.create({
+                employee_id: entry.employee_id,
+                employee_name: entry.employee_name,
+                date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+                start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                end_time: format(clockOutTime, 'HH:mm'),
+                break_minutes: 0,
+                total_hours: totalHours,
+                notes: 'Automatisch von Stempeluhr übertragen',
+                status: 'eingereicht'
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['clock-entries']);
+            queryClient.invalidateQueries(['time-entries']);
+        }
+    });
+
+    const currentEmployee = employees.find(e => e.email === user?.email);
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     const monthStart = startOfMonth(new Date());
     const monthEnd = endOfMonth(new Date());
 
-    // Zeiterfassungen die genehmigt werden müssen
+    // Manager Dashboard Daten
     const pendingTimeEntries = timeEntries.filter(e => e.status === 'eingereicht');
-
-    // Urlaubsanträge
     const pendingVacationRequests = vacationRequests.filter(r => r.status === 'beantragt');
-
-    // Schichttausch-Anfragen
     const pendingShiftSwaps = shiftSwapRequests.filter(r => r.status === 'ausstehend');
-
-    // Todos
     const openTodos = todos.filter(t => t.status !== 'erledigt');
     const urgentTodos = openTodos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
-
-    // Einkaufsliste
     const openShoppingItems = shoppingList.filter(i => i.status === 'offen');
-
-    // Putzaufgaben
     const cleaningProgress = cleaningTasks.length > 0 
         ? Math.round((cleaningTasks.filter(t => t.is_completed).length / cleaningTasks.length) * 100)
         : 0;
-
-    // Lagerbestand
-    const lowStockArticles = articles.filter(a => 
-        a.min_stock && a.current_stock <= a.min_stock
-    );
-
-    // Events & Reservierungen heute
+    const lowStockArticles = articles.filter(a => a.min_stock && a.current_stock <= a.min_stock);
     const today = format(new Date(), 'yyyy-MM-dd');
     const todayEvents = events.filter(e => e.date === today && e.status !== 'abgesagt');
     const todayReservations = reservations.filter(r => r.date === today && r.status !== 'storniert');
-
-    // Schichten heute
     const todayShifts = shifts.filter(s => s.date === today);
 
-    // Wochentage für Übersicht
+    // Mitarbeiter Dashboard Daten
+    const myUpcomingShifts = currentEmployee ? shifts
+        .filter(s => s.employee_id === currentEmployee.id)
+        .filter(s => isFuture(parseISO(s.date)) || isToday(parseISO(s.date)))
+        .sort((a, b) => parseISO(a.date) - parseISO(b.date))
+        .slice(0, 5) : [];
+
+    const weekEntries = currentEmployee ? timeEntries.filter(e => {
+        if (e.employee_id !== currentEmployee.id) return false;
+        const entryDate = parseISO(e.date);
+        return entryDate >= weekStart && entryDate <= weekEnd;
+    }) : [];
+    const hoursThisWeek = weekEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
+
+    const monthEntries = currentEmployee ? timeEntries.filter(e => {
+        if (e.employee_id !== currentEmployee.id) return false;
+        const entryDate = parseISO(e.date);
+        return entryDate >= monthStart && entryDate <= monthEnd;
+    }) : [];
+    const hoursThisMonth = monthEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
+
+    const approvedVacations = currentEmployee ? vacationRequests.filter(
+        v => v.employee_id === currentEmployee.id && v.status === 'genehmigt' && v.type === 'Urlaub'
+    ) : [];
+    const usedVacationDays = approvedVacations.reduce((sum, v) => sum + (v.days_count || 0), 0);
+    const totalVacationDays = currentEmployee?.vacation_days_per_year || 0;
+    const remainingVacationDays = totalVacationDays - usedVacationDays;
+
+    const activeClockEntry = currentEmployee ? clockEntries.find(
+        e => e.employee_id === currentEmployee.id && e.status === 'clocked_in'
+    ) : null;
+
+    const getWorkingDuration = (clockIn) => {
+        const now = new Date();
+        const start = new Date(clockIn);
+        const minutes = differenceInMinutes(now, start);
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours}h ${mins}m`;
+    };
+
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-    // Daten pro Tag
     const getDayData = (date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
         const dayShifts = shifts.filter(s => s.date === dateStr);
         const dayEvents = events.filter(e => e.date === dateStr && e.status !== 'abgesagt');
         const dayReservations = reservations.filter(r => r.date === dateStr && r.status !== 'storniert');
-        
         return { dayShifts, dayEvents, dayReservations };
     };
 
-    const stats = [
-        {
-            title: 'Aktive Mitarbeiter',
-            value: employees.length,
-            icon: Users,
-            color: 'bg-blue-600',
-            link: 'Employees'
-        },
-        {
-            title: 'Schichten heute',
-            value: todayShifts.length,
-            icon: Calendar,
-            color: 'bg-purple-600',
-            link: 'Shifts'
-        },
-        {
-            title: 'Reservierungen heute',
-            value: todayReservations.length,
-            icon: CalendarCheck,
-            color: 'bg-green-600',
-            link: 'Reservations'
-        },
-        {
-            title: 'Offene Aufgaben',
-            value: openTodos.length,
-            icon: CheckSquare,
-            color: 'bg-orange-600',
-            link: 'Todos',
-            badge: urgentTodos.length > 0 ? `${urgentTodos.length} dringend` : null
-        }
-    ];
+    // Manager View
+    if (permissions.isManager) {
+        const stats = [
+            { title: 'Aktive Mitarbeiter', value: employees.length, icon: Users, color: 'bg-blue-600', link: 'Employees' },
+            { title: 'Schichten heute', value: todayShifts.length, icon: Calendar, color: 'bg-purple-600', link: 'Shifts' },
+            { title: 'Reservierungen', value: todayReservations.length, icon: CalendarCheck, color: 'bg-green-600', link: 'Reservations' },
+            { title: 'Offene Aufgaben', value: openTodos.length, icon: CheckSquare, color: 'bg-orange-600', link: 'Todos', badge: urgentTodos.length > 0 ? `${urgentTodos.length} dringend` : null }
+        ];
+
+        return (
+            <div className="min-h-screen bg-slate-900 p-4 sm:p-8">
+                <div className="max-w-7xl mx-auto space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+                            <p className="text-slate-400 text-sm">{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <HolidayCreditManager />
+                            <BackupManager />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {stats.map((stat) => (
+                            <Link to={createPageUrl(stat.link)} key={stat.title}>
+                                <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className={`${stat.color} p-2 rounded-lg`}>
+                                                <stat.icon className="w-5 h-5 text-white" />
+                                            </div>
+                                            {stat.badge && <Badge className="bg-red-600 text-xs">{stat.badge}</Badge>}
+                                        </div>
+                                        <p className="text-sm text-slate-400 mb-1">{stat.title}</p>
+                                        <p className="text-2xl font-bold text-white">{stat.value}</p>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {pendingTimeEntries.length > 0 && (
+                            <Link to={createPageUrl('TimeTracking')}>
+                                <Card className="bg-amber-900/20 border-amber-800/30 hover:bg-amber-900/30 transition-colors">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <Clock className="w-8 h-8 text-amber-400" />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-white">Zeiterfassungen</p>
+                                                <p className="text-xs text-amber-300">{pendingTimeEntries.length} zu genehmigen</p>
+                                            </div>
+                                            <ArrowRight className="w-5 h-5 text-amber-400" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        )}
+
+                        {pendingVacationRequests.length > 0 && (
+                            <Link to={createPageUrl('Vacation')}>
+                                <Card className="bg-blue-900/20 border-blue-800/30 hover:bg-blue-900/30 transition-colors">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <Calendar className="w-8 h-8 text-blue-400" />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-white">Urlaubsanträge</p>
+                                                <p className="text-xs text-blue-300">{pendingVacationRequests.length} ausstehend</p>
+                                            </div>
+                                            <ArrowRight className="w-5 h-5 text-blue-400" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        )}
+
+                        {lowStockArticles.length > 0 && (
+                            <Link to={createPageUrl('Warehouse')}>
+                                <Card className="bg-red-900/20 border-red-800/30 hover:bg-red-900/30 transition-colors">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <AlertTriangle className="w-8 h-8 text-red-400" />
+                                            <div className="flex-1">
+                                                <p className="text-sm font-medium text-white">Lager niedrig</p>
+                                                <p className="text-xs text-red-300">{lowStockArticles.length} Artikel</p>
+                                            </div>
+                                            <ArrowRight className="w-5 h-5 text-red-400" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <Link to={createPageUrl('Warehouse')}>
+                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                                <CardContent className="p-4 text-center">
+                                    <div className="w-12 h-12 rounded-lg bg-orange-600 mb-3 mx-auto flex items-center justify-center">
+                                        <ShoppingCart className="w-6 h-6 text-white" />
+                                    </div>
+                                    <p className="text-sm font-medium text-white mb-1">Einkauf</p>
+                                    <p className="text-xs text-slate-400">{openShoppingItems.length} offen</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+
+                        <Link to={createPageUrl('Cleaning')}>
+                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                                <CardContent className="p-4 text-center">
+                                    <div className="w-12 h-12 rounded-lg bg-pink-600 mb-3 mx-auto flex items-center justify-center">
+                                        <Sparkles className="w-6 h-6 text-white" />
+                                    </div>
+                                    <p className="text-sm font-medium text-white mb-1">Putzen</p>
+                                    <p className="text-xs text-slate-400">{cleaningProgress}% erledigt</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+
+                        <Link to={createPageUrl('Events')}>
+                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                                <CardContent className="p-4 text-center">
+                                    <div className="w-12 h-12 rounded-lg bg-indigo-600 mb-3 mx-auto flex items-center justify-center">
+                                        <Calendar className="w-6 h-6 text-white" />
+                                    </div>
+                                    <p className="text-sm font-medium text-white mb-1">Events</p>
+                                    <p className="text-xs text-slate-400">{todayEvents.length} heute</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+
+                        <Link to={createPageUrl('Warehouse')}>
+                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                                <CardContent className="p-4 text-center">
+                                    <div className="w-12 h-12 rounded-lg bg-teal-600 mb-3 mx-auto flex items-center justify-center">
+                                        <Package className="w-6 h-6 text-white" />
+                                    </div>
+                                    <p className="text-sm font-medium text-white mb-1">Lager</p>
+                                    <p className="text-xs text-slate-400">{articles.length} Artikel</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    </div>
+
+                    {(todayShifts.length > 0 || todayEvents.length > 0 || todayReservations.length > 0) && (
+                        <Card className="p-6 bg-slate-800 border-slate-700">
+                            <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                                <Calendar className="w-5 h-5 text-green-500" />
+                                Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <p className="text-xs text-slate-400 mb-2">SCHICHTEN ({todayShifts.length})</p>
+                                    <div className="space-y-2">
+                                        {todayShifts.slice(0, 4).map(shift => (
+                                            <div key={shift.id} className="flex items-center gap-2 text-sm">
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: shift.color || '#64748b' }} />
+                                                <span className="text-slate-300 truncate">{shift.employee_name}</span>
+                                                <span className="text-slate-500 text-xs ml-auto">{shift.start_time?.substring(0, 5)}</span>
+                                            </div>
+                                        ))}
+                                        {todayShifts.length === 0 && <p className="text-sm text-slate-600 italic">Keine Schichten</p>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs text-slate-400 mb-2">EVENTS ({todayEvents.length})</p>
+                                    <div className="space-y-2">
+                                        {todayEvents.map(event => (
+                                            <div key={event.id} className="flex items-start gap-2 text-sm">
+                                                <AlertCircle className="w-4 h-4 text-pink-500 mt-0.5" />
+                                                <div className="flex-1">
+                                                    <p className="text-slate-300 font-medium truncate">{event.title}</p>
+                                                    {event.expected_guests && <p className="text-xs text-slate-500">{event.expected_guests} Gäste</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {todayEvents.length === 0 && <p className="text-sm text-slate-600 italic">Keine Events</p>}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs text-slate-400 mb-2">RESERVIERUNGEN ({todayReservations.length})</p>
+                                    <div className="space-y-2">
+                                        {todayReservations.slice(0, 4).map(res => (
+                                            <div key={res.id} className="flex items-start gap-2 text-sm">
+                                                <CalendarCheck className="w-4 h-4 text-blue-500 mt-0.5" />
+                                                <div className="flex-1">
+                                                    <p className="text-slate-300 truncate">{res.customer_name}</p>
+                                                    <p className="text-xs text-slate-500">{res.time} • {res.guests} Gäste</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {todayReservations.length === 0 && <p className="text-sm text-slate-600 italic">Keine Reservierungen</p>}
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Employee View
+    if (!currentEmployee) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+                <Card className="max-w-md w-full p-8 text-center bg-slate-800 border-slate-700">
+                    <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-white mb-2">Kein Profil</h2>
+                    <p className="text-slate-400">Du musst als Mitarbeiter registriert sein.</p>
+                </Card>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-                {/* Header */}
-                <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">
-                            Manager Dashboard
-                        </h1>
-                        <p className="text-slate-400 text-xs sm:text-sm">
-                            {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
-                        <HolidayCreditManager />
-                        <BackupManager />
-                    </div>
+        <div className="min-h-screen bg-slate-900 p-4 sm:p-8">
+            <div className="max-w-6xl mx-auto space-y-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-white">Willkommen, {currentEmployee.name}!</h1>
+                    <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                    {stats.map((stat) => (
-                        <Link to={createPageUrl(stat.link)} key={stat.title}>
-                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer">
-                                <CardContent className="p-4 sm:p-6">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className={`${stat.color} p-2 rounded-lg`}>
-                                            <stat.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                                        </div>
-                                        {stat.badge && (
-                                            <Badge className="bg-red-600 text-white text-xs">{stat.badge}</Badge>
-                                        )}
-                                    </div>
-                                    <p className="text-xs sm:text-sm text-slate-400 mb-1">{stat.title}</p>
-                                    <p className="text-xl sm:text-2xl font-bold text-white">{stat.value}</p>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
-
-                {/* Alerts Row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                    {/* Zeiterfassung */}
-                    {pendingTimeEntries.length > 0 && (
-                        <Link to={createPageUrl('TimeTracking')}>
-                            <Card className="bg-amber-900/20 border-amber-800/30 hover:bg-amber-900/30 transition-colors cursor-pointer">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <Clock className="w-8 h-8 text-amber-400" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-white truncate">Zeiterfassungen</p>
-                                            <p className="text-xs text-amber-300">{pendingTimeEntries.length} zu genehmigen</p>
-                                        </div>
-                                        <ArrowRight className="w-5 h-5 text-amber-400 shrink-0" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    )}
-
-                    {/* Urlaubsanträge */}
-                    {pendingVacationRequests.length > 0 && (
-                        <Link to={createPageUrl('Vacation')}>
-                            <Card className="bg-blue-900/20 border-blue-800/30 hover:bg-blue-900/30 transition-colors cursor-pointer">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <Calendar className="w-8 h-8 text-blue-400" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-white truncate">Urlaubsanträge</p>
-                                            <p className="text-xs text-blue-300">{pendingVacationRequests.length} ausstehend</p>
-                                        </div>
-                                        <ArrowRight className="w-5 h-5 text-blue-400 shrink-0" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    )}
-
-                    {/* Schichttausch */}
-                    {pendingShiftSwaps.length > 0 && (
-                        <Link to={createPageUrl('Shifts')}>
-                            <Card className="bg-purple-900/20 border-purple-800/30 hover:bg-purple-900/30 transition-colors cursor-pointer">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <Users className="w-8 h-8 text-purple-400" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-white truncate">Schichttausch</p>
-                                            <p className="text-xs text-purple-300">{pendingShiftSwaps.length} Anfragen</p>
-                                        </div>
-                                        <ArrowRight className="w-5 h-5 text-purple-400 shrink-0" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    )}
-
-                    {/* Niedriger Lagerbestand */}
-                    {lowStockArticles.length > 0 && (
-                        <Link to={createPageUrl('Articles')}>
-                            <Card className="bg-red-900/20 border-red-800/30 hover:bg-red-900/30 transition-colors cursor-pointer">
-                                <CardContent className="p-4">
-                                    <div className="flex items-center gap-3">
-                                        <AlertTriangle className="w-8 h-8 text-red-400" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-white truncate">Lagerbestand niedrig</p>
-                                            <p className="text-xs text-red-300">{lowStockArticles.length} Artikel</p>
-                                        </div>
-                                        <ArrowRight className="w-5 h-5 text-red-400 shrink-0" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    )}
-                </div>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                    <Link to={createPageUrl('Shopping')}>
-                        <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
-                            <CardContent className="p-4 text-center">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-orange-600 mb-3">
-                                    <ShoppingCart className="w-6 h-6 text-white" />
-                                </div>
-                                <p className="text-sm font-medium text-white mb-1">Einkaufsliste</p>
-                                <p className="text-xs text-slate-400">{openShoppingItems.length} offen</p>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
-                    <Link to={createPageUrl('Cleaning')}>
-                        <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
-                            <CardContent className="p-4 text-center">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-pink-600 mb-3">
-                                    <Sparkles className="w-6 h-6 text-white" />
-                                </div>
-                                <p className="text-sm font-medium text-white mb-1">Putzliste</p>
-                                <p className="text-xs text-slate-400">{cleaningProgress}% erledigt</p>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
-                    <Link to={createPageUrl('Events')}>
-                        <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
-                            <CardContent className="p-4 text-center">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-indigo-600 mb-3">
-                                    <Calendar className="w-6 h-6 text-white" />
-                                </div>
-                                <p className="text-sm font-medium text-white mb-1">Events</p>
-                                <p className="text-xs text-slate-400">{todayEvents.length} heute</p>
-                            </CardContent>
-                        </Card>
-                    </Link>
-
-                    <Link to={createPageUrl('Articles')}>
-                        <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
-                            <CardContent className="p-4 text-center">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-teal-600 mb-3">
-                                    <Package className="w-6 h-6 text-white" />
-                                </div>
-                                <p className="text-sm font-medium text-white mb-1">Lager</p>
-                                <p className="text-xs text-slate-400">{articles.length} Artikel</p>
-                            </CardContent>
-                        </Card>
-                    </Link>
-                </div>
-
-                {/* Heute Übersicht */}
-                {(todayShifts.length > 0 || todayEvents.length > 0 || todayReservations.length > 0) && (
-                    <Card className="p-4 sm:p-6 bg-slate-800 border-slate-700 mb-4 sm:mb-6">
-                        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-green-500" />
-                            Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
-                        </h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Schichten */}
-                            <div>
-                                <p className="text-xs text-slate-400 mb-2">SCHICHTEN ({todayShifts.length})</p>
-                                <div className="space-y-2">
-                                    {todayShifts.slice(0, 4).map(shift => (
-                                        <div key={shift.id} className="flex items-center gap-2 text-sm">
-                                            <div 
-                                                className="w-2 h-2 rounded-full shrink-0"
-                                                style={{ backgroundColor: shift.color || '#64748b' }}
-                                            />
-                                            <span className="text-slate-300 truncate">{shift.employee_name}</span>
-                                            <span className="text-slate-500 text-xs ml-auto shrink-0">
-                                                {shift.start_time?.substring(0, 5)}
-                                            </span>
-                                        </div>
-                                    ))}
-                                    {todayShifts.length > 4 && (
-                                        <p className="text-xs text-slate-500 ml-4">+{todayShifts.length - 4} weitere</p>
-                                    )}
-                                    {todayShifts.length === 0 && (
-                                        <p className="text-sm text-slate-600 italic">Keine Schichten</p>
-                                    )}
-                                </div>
+                <Card className="p-6 bg-slate-800 border-slate-700">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl"
+                                 style={{ backgroundColor: currentEmployee.color || '#64748b' }}>
+                                {currentEmployee.name?.charAt(0).toUpperCase()}
                             </div>
-
-                            {/* Events */}
                             <div>
-                                <p className="text-xs text-slate-400 mb-2">EVENTS ({todayEvents.length})</p>
-                                <div className="space-y-2">
-                                    {todayEvents.map(event => (
-                                        <div key={event.id} className="flex items-start gap-2 text-sm">
-                                            <AlertCircle className="w-4 h-4 text-pink-500 mt-0.5 shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-slate-300 font-medium truncate">{event.title}</p>
-                                                {event.expected_guests && (
-                                                    <p className="text-xs text-slate-500">{event.expected_guests} Gäste</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {todayEvents.length === 0 && (
-                                        <p className="text-sm text-slate-600 italic">Keine Events</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Reservierungen */}
-                            <div>
-                                <p className="text-xs text-slate-400 mb-2">RESERVIERUNGEN ({todayReservations.length})</p>
-                                <div className="space-y-2">
-                                    {todayReservations.slice(0, 4).map(res => (
-                                        <div key={res.id} className="flex items-start gap-2 text-sm">
-                                            <CalendarCheck className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-slate-300 truncate">{res.customer_name}</p>
-                                                <p className="text-xs text-slate-500">
-                                                    {res.time} • {res.guests} Gäste
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {todayReservations.length > 4 && (
-                                        <p className="text-xs text-slate-500 ml-6">+{todayReservations.length - 4} weitere</p>
-                                    )}
-                                    {todayReservations.length === 0 && (
-                                        <p className="text-sm text-slate-600 italic">Keine Reservierungen</p>
-                                    )}
-                                </div>
+                                {activeClockEntry ? (
+                                    <>
+                                        <p className="text-white font-semibold">Eingestempelt</p>
+                                        <p className="text-green-400 text-sm">
+                                            Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-white font-semibold">Nicht eingestempelt</p>
+                                        <p className="text-slate-400 text-sm">Bereit zum Einstempeln</p>
+                                    </>
+                                )}
                             </div>
                         </div>
-                    </Card>
-                )}
-
-                {/* Wochenübersicht */}
-                <Card className="p-4 sm:p-6 bg-slate-800 border-slate-700">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-white flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-purple-500" />
-                            <span className="hidden sm:inline">Wochenübersicht</span>
-                            <span className="text-sm text-slate-400">
-                                {format(weekStart, 'dd.MM.')} - {format(weekEnd, 'dd.MM.')}
-                            </span>
-                        </h3>
-                        <Link to={createPageUrl('Shifts')}>
-                            <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white">
-                                Alle ansehen
-                                <ArrowRight className="w-4 h-4 ml-2" />
+                        {activeClockEntry ? (
+                            <Button onClick={() => clockOutMutation.mutate(activeClockEntry.id)}
+                                    size="lg" className="bg-red-600 hover:bg-red-700">
+                                <LogOut className="w-5 h-5 mr-2" /> Ausstempeln
                             </Button>
-                        </Link>
-                    </div>
-                    
-                    <div className="space-y-2 sm:space-y-3">
-                        {weekDays.map(day => {
-                            const { dayShifts, dayEvents, dayReservations } = getDayData(day);
-                            const isToday = isSameDay(day, new Date());
-                            
-                            return (
-                                <div 
-                                    key={day.toString()} 
-                                    className={`p-3 sm:p-4 rounded-lg ${isToday ? 'bg-amber-900/20 border border-amber-800/30' : 'bg-slate-900'}`}
-                                >
-                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-0 mb-3">
-                                        <div>
-                                            <p className={`font-semibold text-sm sm:text-base ${isToday ? 'text-amber-400' : 'text-white'}`}>
-                                                {format(day, 'EEEE', { locale: de })}
-                                            </p>
-                                            <p className="text-xs text-slate-400">{format(day, 'dd.MM.yyyy')}</p>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {dayShifts.length > 0 && (
-                                                <Badge variant="outline" className="text-xs border-purple-600 text-purple-400">
-                                                    {dayShifts.length} Schichten
-                                                </Badge>
-                                            )}
-                                            {dayEvents.length > 0 && (
-                                                <Badge variant="outline" className="text-xs border-pink-600 text-pink-400">
-                                                    {dayEvents.length} Events
-                                                </Badge>
-                                            )}
-                                            {dayReservations.length > 0 && (
-                                                <Badge variant="outline" className="text-xs border-blue-600 text-blue-400">
-                                                    {dayReservations.length} Res.
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Schichten */}
-                                    {dayShifts.length > 0 && (
-                                        <div className="space-y-1.5 mb-2">
-                                            {dayShifts.slice(0, 3).map(shift => (
-                                                <div key={shift.id} className="flex items-center gap-2 text-xs">
-                                                    <div 
-                                                        className="w-2 h-2 rounded-full shrink-0"
-                                                        style={{ backgroundColor: shift.color || '#64748b' }}
-                                                    />
-                                                    <span className="text-slate-300 truncate">{shift.employee_name}</span>
-                                                    <span className="text-slate-500 ml-auto shrink-0">
-                                                        {shift.start_time?.substring(0, 5)} - {shift.end_time?.substring(0, 5)}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                            {dayShifts.length > 3 && (
-                                                <p className="text-xs text-slate-500 ml-4">+{dayShifts.length - 3} weitere</p>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {/* Events */}
-                                    {dayEvents.length > 0 && (
-                                        <div className="space-y-1 pt-2 border-t border-slate-700">
-                                            {dayEvents.map(event => (
-                                                <div key={event.id} className="flex items-center gap-2 text-xs">
-                                                    <AlertCircle className="w-3 h-3 text-pink-500 shrink-0" />
-                                                    <span className="text-slate-300 font-medium truncate">{event.title}</span>
-                                                    {event.expected_guests && (
-                                                        <span className="text-slate-500 ml-auto shrink-0">({event.expected_guests} Gäste)</span>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {dayShifts.length === 0 && dayEvents.length === 0 && dayReservations.length === 0 && (
-                                        <p className="text-xs text-slate-600 italic">Keine Einträge</p>
-                                    )}
-                                </div>
-                            );
-                        })}
+                        ) : (
+                            <Button onClick={() => clockInMutation.mutate(currentEmployee.id)}
+                                    size="lg" className="bg-green-600 hover:bg-green-700">
+                                <LogIn className="w-5 h-5 mr-2" /> Einstempeln
+                            </Button>
+                        )}
                     </div>
                 </Card>
+
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Link to={createPageUrl('Shifts')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                                    <Calendar className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-400">Schichtplan</p>
+                                    <p className="font-semibold text-white">Ansehen</p>
+                                </div>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to={createPageUrl('Vacation')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                                    <Umbrella className="w-6 h-6 text-purple-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-400">Urlaub</p>
+                                    <p className="font-semibold text-white">Beantragen</p>
+                                </div>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to={createPageUrl('TimeTracking')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-lg bg-amber-600/20 flex items-center justify-center">
+                                    <FileText className="w-6 h-6 text-amber-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-400">Zeiteinträge</p>
+                                    <p className="font-semibold text-white">Ansehen</p>
+                                </div>
+                            </div>
+                        </Card>
+                    </Link>
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-6">
+                    <Card className="p-6 bg-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                                <Clock className="w-6 h-6 text-blue-500" />
+                            </div>
+                            <Badge className="bg-blue-600/20 text-blue-400">Woche</Badge>
+                        </div>
+                        <p className="text-3xl font-bold text-white mb-1">{hoursThisWeek.toFixed(1)}h</p>
+                        <p className="text-sm text-slate-400">Gearbeitete Stunden</p>
+                        <p className="text-xs text-slate-500 mt-2">Monat: {hoursThisMonth.toFixed(1)}h</p>
+                    </Card>
+
+                    <Card className="p-6 bg-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                                <Umbrella className="w-6 h-6 text-purple-500" />
+                            </div>
+                            <Badge className="bg-purple-600/20 text-purple-400">Urlaub</Badge>
+                        </div>
+                        <p className="text-3xl font-bold text-white mb-1">{remainingVacationDays}</p>
+                        <p className="text-sm text-slate-400">Verbleibende Tage</p>
+                        <p className="text-xs text-slate-500 mt-2">Von {totalVacationDays} gesamt</p>
+                    </Card>
+
+                    <Card className="p-6 bg-slate-800 border-slate-700">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
+                                <Calendar className="w-6 h-6 text-green-500" />
+                            </div>
+                            <Badge className="bg-green-600/20 text-green-400">Nächste</Badge>
+                        </div>
+                        <p className="text-3xl font-bold text-white mb-1">{myUpcomingShifts.length}</p>
+                        <p className="text-sm text-slate-400">Kommende Schichten</p>
+                        {myUpcomingShifts[0] && (
+                            <p className="text-xs text-slate-500 mt-2">
+                                Nächste: {format(parseISO(myUpcomingShifts[0].date), 'EEE, dd.MM', { locale: de })}
+                            </p>
+                        )}
+                    </Card>
+                </div>
+
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-white">Kommende Schichten</h2>
+                        <Link to={createPageUrl('Shifts')}>
+                            <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">Alle</Button>
+                        </Link>
+                    </div>
+
+                    {myUpcomingShifts.length === 0 ? (
+                        <Card className="p-8 text-center bg-slate-800 border-slate-700">
+                            <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                            <p className="text-slate-400">Keine kommenden Schichten</p>
+                        </Card>
+                    ) : (
+                        <div className="space-y-3">
+                            {myUpcomingShifts.map(shift => (
+                                <Card key={shift.id} className="p-4 bg-slate-800 border-slate-700">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-start gap-4 flex-1">
+                                            <div className="text-center">
+                                                <p className="text-2xl font-bold text-white">{format(parseISO(shift.date), 'dd')}</p>
+                                                <p className="text-xs text-slate-400 uppercase">{format(parseISO(shift.date), 'MMM', { locale: de })}</p>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-white">{format(parseISO(shift.date), 'EEEE', { locale: de })}</p>
+                                                <p className="text-sm text-slate-400">{shift.start_time} - {shift.end_time}</p>
+                                                {shift.notes && <p className="text-xs text-slate-500 mt-1">{shift.notes}</p>}
+                                            </div>
+                                        </div>
+                                        <Badge className="bg-amber-600/20 text-amber-400">{shift.shift_type}</Badge>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

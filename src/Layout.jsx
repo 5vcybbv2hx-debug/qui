@@ -28,6 +28,7 @@ const navigationSections = [
             { name: 'Schichttausch', page: 'ShiftSwaps', icon: RepeatIcon, permission: 'canViewDashboard' },
             { name: 'Zeiterfassung', page: 'TimeTracking', icon: Clock, permission: 'canViewDashboard' },
             { name: 'Urlaub', page: 'Vacation', icon: Calendar, permission: 'canViewDashboard' },
+            { name: 'Mein Profil', page: 'MyProfile', icon: Users, permission: 'canViewDashboard' },
             { name: 'Team', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
             { name: 'Einlernliste', page: 'Onboarding', icon: GraduationCap, permission: 'canViewDashboard' },
             { name: 'Berechtigungen', page: 'Permissions', icon: Shield, permission: 'isAdmin' },

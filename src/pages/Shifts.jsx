@@ -78,8 +78,10 @@ export default function Shifts() {
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Shift.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['shifts']);
+        onSuccess: (_, deletedId) => {
+            queryClient.setQueryData(['shifts'], (old) => 
+                (old || []).filter(shift => shift.id !== deletedId)
+            );
             setModalOpen(false);
             setSelectedShift(null);
         }

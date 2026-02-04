@@ -2,7 +2,7 @@ const CACHE_NAME = 'barmanager-v2';
 const STATIC_CACHE = 'barmanager-static-v2';
 const DYNAMIC_CACHE = 'barmanager-dynamic-v2';
 
-Deno.serve(() => {
+Deno.serve((req) => {
     const swCode = `
         const CACHE_NAME = 'barmanager-v2';
         const STATIC_CACHE = 'barmanager-static-v2';

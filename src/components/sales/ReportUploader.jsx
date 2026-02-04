@@ -9,65 +9,90 @@ import { Upload, FileText, AlertCircle, CheckCircle2, Loader2 } from 'lucide-rea
 import { toast } from 'sonner';
 
 export default function ReportUploader({ onUploadComplete }) {
-    const [file, setFile] = useState(null);
+    const [files, setFiles] = useState([]);
     const [reportType, setReportType] = useState('');
-    const [reportDate, setReportDate] = useState('');
     const [uploading, setUploading] = useState(false);
 
     const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
-        if (selectedFile && selectedFile.type === 'application/pdf') {
-            setFile(selectedFile);
-        } else {
+        const selectedFiles = Array.from(e.target.files);
+        const pdfFiles = selectedFiles.filter(f => f.type === 'application/pdf');
+        
+        if (pdfFiles.length !== selectedFiles.length) {
             toast.error('Bitte nur PDF-Dateien hochladen');
+        }
+        
+        if (pdfFiles.length > 0) {
+            setFiles(pdfFiles);
         }
     };
 
     const handleUpload = async () => {
-        if (!file || !reportType || !reportDate) {
-            toast.error('Bitte alle Felder ausfüllen');
+        if (files.length === 0 || !reportType) {
+            toast.error('Bitte Dateien und Berichtstyp auswählen');
             return;
         }
 
         setUploading(true);
+        let successCount = 0;
+        let errorCount = 0;
+
         try {
-            // 1. Upload file
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            for (const file of files) {
+                try {
+                    // Versuche Datum aus Dateinamen zu extrahieren (z.B. "Z-Abschlag_2024-12-31.pdf")
+                    const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
+                    const reportDate = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
 
-            // 2. Create report record
-            const report = await base44.entities.SalesReport.create({
-                report_type: reportType,
-                report_date: reportDate,
-                file_url: file_url,
-                processing_status: 'processing'
-            });
+                    // 1. Upload file
+                    const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-            // 3. Extract data from PDF
-            const extractionSchema = getExtractionSchema(reportType);
-            const extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
-                file_url: file_url,
-                json_schema: extractionSchema
-            });
+                    // 2. Create report record
+                    const report = await base44.entities.SalesReport.create({
+                        report_type: reportType,
+                        report_date: reportDate,
+                        file_url: file_url,
+                        processing_status: 'processing'
+                    });
 
-            if (extractionResult.status === 'success') {
-                // 4. Process extracted data
-                await processExtractedData(report.id, extractionResult.output, reportType);
+                    // 3. Extract data from PDF
+                    const extractionSchema = getExtractionSchema(reportType);
+                    const extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+                        file_url: file_url,
+                        json_schema: extractionSchema
+                    });
 
-                // 5. Update report with extracted summary
-                await base44.entities.SalesReport.update(report.id, {
-                    extracted_data: extractionResult.output,
-                    processing_status: 'completed',
-                    ...calculateSummary(extractionResult.output, reportType)
-                });
+                    if (extractionResult.status === 'success') {
+                        // 4. Process extracted data
+                        await processExtractedData(report.id, extractionResult.output, reportType, reportDate);
 
-                toast.success('Bericht erfolgreich hochgeladen und verarbeitet!');
-                setFile(null);
-                setReportType('');
-                setReportDate('');
-                if (onUploadComplete) onUploadComplete();
-            } else {
-                throw new Error(extractionResult.details || 'Fehler beim Extrahieren der Daten');
+                        // 5. Update report with extracted summary
+                        await base44.entities.SalesReport.update(report.id, {
+                            extracted_data: extractionResult.output,
+                            processing_status: 'completed',
+                            ...calculateSummary(extractionResult.output, reportType)
+                        });
+
+                        successCount++;
+                    } else {
+                        errorCount++;
+                        console.error(`Fehler bei ${file.name}:`, extractionResult.details);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    console.error(`Fehler beim Verarbeiten von ${file.name}:`, error);
+                }
             }
+
+            if (successCount > 0) {
+                toast.success(`${successCount} Berichte erfolgreich hochgeladen!`);
+            }
+            if (errorCount > 0) {
+                toast.error(`${errorCount} Berichte konnten nicht verarbeitet werden`);
+            }
+
+            setFiles([]);
+            setReportType('');
+            if (onUploadComplete) onUploadComplete();
         } catch (error) {
             console.error('Upload error:', error);
             toast.error('Fehler beim Hochladen: ' + error.message);
@@ -153,7 +178,7 @@ export default function ReportUploader({ onUploadComplete }) {
         return schemas[type] || schemas['Artikelverkäufe'];
     };
 
-    const processExtractedData = async (reportId, data, reportType) => {
+    const processExtractedData = async (reportId, data, reportType, reportDate) => {
         const items = [];
 
         if (reportType === 'Z-Abschlag' && data.items) {
@@ -244,44 +269,43 @@ export default function ReportUploader({ onUploadComplete }) {
                 </div>
 
                 <div>
-                    <Label>Berichtsdatum</Label>
-                    <Input
-                        type="date"
-                        value={reportDate}
-                        onChange={(e) => setReportDate(e.target.value)}
-                    />
-                </div>
-
-                <div>
-                    <Label>PDF-Datei</Label>
+                    <Label>PDF-Dateien (mehrere möglich)</Label>
                     <Input
                         type="file"
                         accept=".pdf"
+                        multiple
                         onChange={handleFileChange}
                         className="cursor-pointer"
                     />
-                    {file && (
-                        <div className="flex items-center gap-2 mt-2 text-sm text-slate-600">
-                            <FileText className="w-4 h-4" />
-                            {file.name}
+                    {files.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                            {files.map((file, idx) => (
+                                <div key={idx} className="flex items-center gap-2 text-sm text-slate-600">
+                                    <FileText className="w-4 h-4" />
+                                    {file.name}
+                                </div>
+                            ))}
+                            <p className="text-xs text-slate-500 mt-2">
+                                {files.length} Datei(en) ausgewählt
+                            </p>
                         </div>
                     )}
                 </div>
 
                 <Button
                     onClick={handleUpload}
-                    disabled={!file || !reportType || !reportDate || uploading}
+                    disabled={files.length === 0 || !reportType || uploading}
                     className="w-full bg-amber-600 hover:bg-amber-700"
                 >
                     {uploading ? (
                         <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Wird verarbeitet...
+                            {files.length > 1 ? `${files.length} Berichte werden verarbeitet...` : 'Wird verarbeitet...'}
                         </>
                     ) : (
                         <>
                             <Upload className="w-4 h-4 mr-2" />
-                            Hochladen & Analysieren
+                            {files.length > 1 ? `${files.length} Berichte hochladen` : 'Hochladen & Analysieren'}
                         </>
                     )}
                 </Button>
@@ -290,8 +314,7 @@ export default function ReportUploader({ onUploadComplete }) {
                     <div className="flex items-start gap-2">
                         <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-blue-800">
-                            <strong>Tipp:</strong> Die KI extrahiert automatisch relevante Daten aus Ihrem PDF.
-                            Je strukturierter Ihr Bericht, desto besser die Analyse.
+                            <strong>Bulk-Upload:</strong> Wähle mehrere PDFs gleichzeitig aus. Das Datum wird automatisch aus dem Dateinamen extrahiert (Format: YYYY-MM-DD). Z.B.: "Z-Abschlag_2024-12-31.pdf"
                         </div>
                     </div>
                 </div>

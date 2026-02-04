@@ -155,17 +155,19 @@ export default function Shifts() {
                         </Button>
                         <ShiftSwapManager />
                         {permissions.isAdmin && <MonthlyStaffingCheck />}
-                        <ShiftRequirementsManager />
-                        <OpeningHoursManager />
+                        {permissions.canEditShifts && <ShiftRequirementsManager />}
+                        {permissions.canEditShifts && <OpeningHoursManager />}
                         <LiveSyncInstructions />
                         <CalendarExport shifts={shifts} reservations={reservations} />
-                        <Button 
-                            onClick={() => handleAddShift(new Date())}
-                            className="bg-amber-600 hover:bg-amber-700"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Neue Schicht
-                        </Button>
+                        {permissions.canEditShifts && (
+                            <Button 
+                                onClick={() => handleAddShift(new Date())}
+                                className="bg-amber-600 hover:bg-amber-700"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Neue Schicht
+                            </Button>
+                        )}
                     </div>
                 </div>
 

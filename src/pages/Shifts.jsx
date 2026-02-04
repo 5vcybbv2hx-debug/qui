@@ -268,8 +268,8 @@ export default function Shifts() {
                                     return (
                                         <div 
                                             key={shift.id}
-                                            onClick={() => handleSelectShift(shift)}
-                                            className="flex items-center gap-3 p-3 rounded-lg bg-slate-900 cursor-pointer hover:bg-slate-700 transition-colors border border-slate-700 hover:border-amber-600"
+                                            onClick={() => permissions.canEditShifts && handleSelectShift(shift)}
+                                            className={`flex items-center gap-3 p-3 rounded-lg bg-slate-900 transition-colors border border-slate-700 ${permissions.canEditShifts ? 'cursor-pointer hover:bg-slate-700 hover:border-amber-600' : 'cursor-default'}`}
                                         >
                                             <div 
                                                 className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"

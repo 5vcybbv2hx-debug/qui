@@ -21,35 +21,37 @@ export default function WarehousePage() {
 
     return (
         <div className="min-h-screen bg-slate-900">
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-white">Lagerverwaltung</h1>
-                    <p className="text-slate-400 text-sm mt-1">Artikel, Einkauf, Auffüllen und Inventur</p>
+                <div className="mb-4 sm:mb-6">
+                    <h1 className="text-xl sm:text-2xl font-bold text-white">Lagerverwaltung</h1>
+                    <p className="text-slate-400 text-xs sm:text-sm mt-1">Artikel, Einkauf, Auffüllen und Inventur</p>
                 </div>
 
                 {/* Tabs */}
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-5 bg-slate-800 border-slate-700">
-                        <TabsTrigger value="articles" className="data-[state=active]:bg-amber-600">
-                            <Package className="w-4 h-4 mr-2" />
-                            Artikel
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+                    <TabsList className="grid w-full grid-cols-5 bg-slate-800 border-slate-700 h-auto p-1">
+                        <TabsTrigger value="articles" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                            <Package className="w-5 h-5 sm:w-4 sm:h-4" />
+                            <span className="hidden sm:inline">Artikel</span>
+                            <span className="sm:hidden">Artikel</span>
                         </TabsTrigger>
-                        <TabsTrigger value="shopping" className="data-[state=active]:bg-amber-600">
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Einkauf
+                        <TabsTrigger value="shopping" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                            <ShoppingCart className="w-5 h-5 sm:w-4 sm:h-4" />
+                            <span className="hidden sm:inline">Einkauf</span>
+                            <span className="sm:hidden">Kauf</span>
                         </TabsTrigger>
-                        <TabsTrigger value="restock" className="data-[state=active]:bg-amber-600">
-                            <Scan className="w-4 h-4 mr-2" />
-                            Auffüllen
+                        <TabsTrigger value="restock" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                            <Scan className="w-5 h-5 sm:w-4 sm:h-4" />
+                            <span>Auffüllen</span>
                         </TabsTrigger>
-                        <TabsTrigger value="wastage" className="data-[state=active]:bg-amber-600">
-                            <TrendingDown className="w-4 h-4 mr-2" />
-                            Schwund
+                        <TabsTrigger value="wastage" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                            <TrendingDown className="w-5 h-5 sm:w-4 sm:h-4" />
+                            <span>Schwund</span>
                         </TabsTrigger>
-                        <TabsTrigger value="inventory" className="data-[state=active]:bg-amber-600">
-                            <ClipboardCheck className="w-4 h-4 mr-2" />
-                            Inventur
+                        <TabsTrigger value="inventory" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                            <ClipboardCheck className="w-5 h-5 sm:w-4 sm:h-4" />
+                            <span>Inventur</span>
                         </TabsTrigger>
                     </TabsList>
 

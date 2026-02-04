@@ -154,20 +154,20 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Mobile Bottom Navigation */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-950 border-t border-slate-800 pb-safe">
-                <div className="flex items-center justify-around px-2 py-2">
+                <div className="flex items-center justify-around px-1 py-3">
                     <Link 
                         to={createPageUrl('Dashboard')}
-                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800 active:bg-slate-700 text-slate-400 hover:text-white transition-colors min-w-[72px]"
                     >
-                        <Home className="w-5 h-5" />
-                        <span className="text-xs">Home</span>
+                        <Home className="w-6 h-6" />
+                        <span className="text-xs font-medium">Home</span>
                     </Link>
                     <Link 
                         to={createPageUrl('Calendar')}
-                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800 active:bg-slate-700 text-slate-400 hover:text-white transition-colors min-w-[72px]"
                     >
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-xs">Kalender</span>
+                        <Calendar className="w-6 h-6" />
+                        <span className="text-xs font-medium">Kalender</span>
                     </Link>
                     {permissions.isManager && currentUser && (
                         <div className="flex flex-col items-center gap-1 px-3 py-2">
@@ -176,10 +176,10 @@ export default function Layout({ children, currentPageName }) {
                     )}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800 active:bg-slate-700 text-slate-400 hover:text-white transition-colors min-w-[72px]"
                     >
-                        <Menu className="w-5 h-5" />
-                        <span className="text-xs">Menü</span>
+                        <Menu className="w-6 h-6" />
+                        <span className="text-xs font-medium">Menü</span>
                     </button>
                 </div>
 
@@ -187,18 +187,18 @@ export default function Layout({ children, currentPageName }) {
                 {mobileMenuOpen && (
                     <>
                         <div 
-                            className="fixed inset-0 bg-black/50 z-40"
+                            className="fixed inset-0 bg-black/60 z-40"
                             onClick={() => setMobileMenuOpen(false)}
                         />
-                        <div className="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 bg-slate-950 border-t border-slate-800 shadow-lg max-h-[70vh] overflow-y-auto z-50">
-                            <nav className="p-3 space-y-4">
+                        <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-slate-950 border-t border-slate-800 shadow-2xl max-h-[75vh] overflow-y-auto z-50 rounded-t-2xl">
+                            <nav className="p-4 space-y-5">
                                 {navigationSections.map((section) => {
                                     const visibleItems = section.items.filter(item => permissions[item.permission]);
                                     if (visibleItems.length === 0) return null;
 
                                     return (
                                         <div key={section.title}>
-                                            <h3 className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                            <h3 className="px-4 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                                                 {section.title}
                                             </h3>
                                             <div className="space-y-1">
@@ -210,15 +210,15 @@ export default function Layout({ children, currentPageName }) {
                                                             to={createPageUrl(item.page)}
                                                             onClick={() => setMobileMenuOpen(false)}
                                                             className={cn(
-                                                                "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium",
+                                                                "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-colors",
                                                                 isActive 
-                                                                    ? "bg-amber-600 text-white" 
-                                                                    : "text-slate-400 hover:bg-slate-800 active:bg-slate-700"
+                                                                    ? "bg-amber-600 text-white shadow-lg" 
+                                                                    : "text-slate-300 hover:bg-slate-800 active:bg-slate-700"
                                                             )}
-                                                        >
-                                                            <item.icon className="w-4 h-4" />
+                                                            >
+                                                            <item.icon className="w-5 h-5" />
                                                             {item.name}
-                                                        </Link>
+                                                            </Link>
                                                     );
                                                 })}
                                             </div>
@@ -226,13 +226,13 @@ export default function Layout({ children, currentPageName }) {
                                     );
                                 })}
                             </nav>
-                            <div className="p-3 border-t border-slate-800">
+                            <div className="p-4 border-t border-slate-800">
                                 <button
                                     onClick={() => {
                                         base44.auth.logout();
                                         setMobileMenuOpen(false);
                                     }}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium"
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 text-sm font-medium transition-colors"
                                 >
                                     <LogOut className="w-5 h-5" />
                                     Abmelden
@@ -244,7 +244,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Main Content */}
-            <main className="md:pl-64 pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+            <main className="md:pl-64 pt-[env(safe-area-inset-top)] pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
                 {children}
             </main>
         </div>

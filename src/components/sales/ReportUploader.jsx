@@ -39,22 +39,10 @@ export default function ReportUploader({ onUploadComplete }) {
         try {
             for (const file of files) {
                 try {
-                    // Versuche Datum aus Dateinamen zu extrahieren (z.B. "Z-Abschlag_2024-12-31.pdf")
-                    const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
-                    const reportDate = dateMatch ? dateMatch[1] : new Date().toISOString().split('T')[0];
-
                     // 1. Upload file
                     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-                    // 2. Create report record
-                    const report = await base44.entities.SalesReport.create({
-                        report_type: reportType,
-                        report_date: reportDate,
-                        file_url: file_url,
-                        processing_status: 'processing'
-                    });
-
-                    // 3. Extract data from PDF
+                    // 2. Extract data from PDF (including date)
                     const extractionSchema = getExtractionSchema(reportType);
                     const extractionResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
                         file_url: file_url,
@@ -62,6 +50,17 @@ export default function ReportUploader({ onUploadComplete }) {
                     });
 
                     if (extractionResult.status === 'success') {
+                        // Extrahiere Datum aus dem Bericht (nicht aus Dateinamen!)
+                        const reportDate = extractionResult.output.date || new Date().toISOString().split('T')[0];
+
+                        // 3. Create report record
+                        const report = await base44.entities.SalesReport.create({
+                            report_type: reportType,
+                            report_date: reportDate,
+                            file_url: file_url,
+                            processing_status: 'processing'
+                        });
+
                         // 4. Process extracted data
                         await processExtractedData(report.id, extractionResult.output, reportType, reportDate);
 
@@ -314,7 +313,7 @@ export default function ReportUploader({ onUploadComplete }) {
                     <div className="flex items-start gap-2">
                         <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-blue-800">
-                            <strong>Bulk-Upload:</strong> Wähle mehrere PDFs gleichzeitig aus. Das Datum wird automatisch aus dem Dateinamen extrahiert (Format: YYYY-MM-DD). Z.B.: "Z-Abschlag_2024-12-31.pdf"
+                            <strong>Bulk-Upload:</strong> Wähle mehrere PDFs gleichzeitig aus. Das Datum wird automatisch aus dem Bericht selbst extrahiert (perfekt für nach-Mitternacht-Berichte).
                         </div>
                     </div>
                 </div>

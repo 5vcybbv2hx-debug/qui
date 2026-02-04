@@ -244,7 +244,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Main Content */}
-            <main className="md:pl-64 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+            <main className="md:pl-64 pt-[env(safe-area-inset-top)] pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
                 {children}
             </main>
         </div>

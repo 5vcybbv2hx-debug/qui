@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Trash2, TrendingUp, Eye } from 'lucide-react';
+import { FileText, Trash2, TrendingUp, Eye, Download } from 'lucide-react';
 import ReportUploader from '@/components/sales/ReportUploader';
 import SalesAnalyticsDashboard from '@/components/sales/SalesAnalyticsDashboard';
 import ReportDetailsModal from '@/components/sales/ReportDetailsModal';
@@ -176,6 +176,20 @@ export default function SalesAnalysisPage() {
                                                                 title="Vorschau & Details"
                                                             >
                                                                 <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => {
+                                                                    const link = document.createElement('a');
+                                                                    link.href = report.file_url;
+                                                                    link.download = `${report.report_type}_${new Date(report.report_date).toLocaleDateString('de-DE')}.pdf`;
+                                                                    link.click();
+                                                                }}
+                                                                className="text-slate-400 hover:text-white"
+                                                                title="PDF herunterladen"
+                                                            >
+                                                                <Download className="w-4 h-4" />
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"

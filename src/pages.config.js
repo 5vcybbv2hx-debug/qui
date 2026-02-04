@@ -87,6 +87,7 @@ import Wastage from './pages/Wastage';
 import LazyReports from './pages/LazyReports';
 import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import LazyBudget from './pages/LazyBudget';
+import LaborCostAnalysis from './pages/LaborCostAnalysis';
 import __Layout from './Layout.jsx';
 
 
@@ -131,6 +132,7 @@ export const PAGES = {
     "LazyReports": LazyReports,
     "LazySalesAnalysis": LazySalesAnalysis,
     "LazyBudget": LazyBudget,
+    "LaborCostAnalysis": LaborCostAnalysis,
 }
 
 export const pagesConfig = {

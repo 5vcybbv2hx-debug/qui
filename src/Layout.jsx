@@ -60,6 +60,7 @@ const navigationSections = [
         title: 'Analysen',
         items: [
             { name: 'Verkäufe', page: 'SalesAnalysis', icon: TrendingUp, permission: 'canViewAnalytics' },
+            { name: 'Personalkosten', page: 'LaborCostAnalysis', icon: Users, permission: 'canViewAnalytics' },
             { name: 'Budget', page: 'Budget', icon: TrendingUp, permission: 'canViewAnalytics' },
             { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
         ]

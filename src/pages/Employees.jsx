@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter } from 'lucide-react';
@@ -73,17 +73,20 @@ export default function Employees() {
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.list('name')
+        queryFn: () => base44.entities.Employee.list('name'),
+        staleTime: 2 * 60 * 1000, // 2 minutes
     });
 
     const { data: currentUser } = useQuery({
         queryKey: ['user'],
-        queryFn: () => base44.auth.me()
+        queryFn: () => base44.auth.me(),
+        staleTime: 10 * 60 * 1000, // 10 minutes
     });
 
     const { data: workTimeModels = [] } = useQuery({
         queryKey: ['work-time-models'],
-        queryFn: () => base44.entities.WorkTimeModel.list('name')
+        queryFn: () => base44.entities.WorkTimeModel.list('name'),
+        staleTime: 30 * 60 * 1000, // 30 minutes
     });
 
     const createMutation = useMutation({
@@ -286,13 +289,24 @@ export default function Employees() {
         });
     };
 
-    const filteredActiveEmployees = employees.filter(e => {
-        if (e.is_active === false) return false;
-        if (skillsFilter.length === 0) return true;
-        return skillsFilter.every(skill => e.skills?.includes(skill));
-    });
-    const inactiveEmployees = employees.filter(e => e.is_active === false);
-    const employeesWithoutEmail = filteredActiveEmployees.filter(e => !e.email);
+    const filteredActiveEmployees = useMemo(() => 
+        employees.filter(e => {
+            if (e.is_active === false) return false;
+            if (skillsFilter.length === 0) return true;
+            return skillsFilter.every(skill => e.skills?.includes(skill));
+        }),
+        [employees, skillsFilter]
+    );
+    
+    const inactiveEmployees = useMemo(() => 
+        employees.filter(e => e.is_active === false),
+        [employees]
+    );
+    
+    const employeesWithoutEmail = useMemo(() => 
+        filteredActiveEmployees.filter(e => !e.email),
+        [filteredActiveEmployees]
+    );
 
     const handleSkillsFilterChange = (skill) => {
         setSkillsFilter(prev => 

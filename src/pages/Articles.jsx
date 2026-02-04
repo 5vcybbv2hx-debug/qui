@@ -18,6 +18,8 @@ import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import PDFExportButton from '@/components/export/PDFExportButton';
 import LabelPrinter from '@/components/articles/LabelPrinter';
 import BulkImporter from '@/components/articles/BulkImporter';
+import ArticleCard from '@/components/articles/ArticleCard';
+import { useMemo } from 'react';
 
 
 const categoryColors = {
@@ -47,12 +49,16 @@ export default function Articles() {
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list('name')
+        queryFn: () => base44.entities.Article.list('name'),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 10 * 60 * 1000 // 10 minutes
     });
 
     const { data: categories = [] } = useQuery({
         queryKey: ['article-categories'],
-        queryFn: () => base44.entities.ArticleCategory.list('order')
+        queryFn: () => base44.entities.ArticleCategory.list('order'),
+        staleTime: 30 * 60 * 1000, // 30 minutes - categories change rarely
+        gcTime: 60 * 60 * 1000 // 1 hour
     });
 
     const createMutation = useMutation({
@@ -151,10 +157,13 @@ export default function Articles() {
         setSelectedArticles([]);
     };
 
-    const allSuppliers = [...new Set(articles.flatMap(a => a.suppliers || []))].sort();
+    const allSuppliers = useMemo(() => 
+        [...new Set(articles.flatMap(a => a.suppliers || []))].sort(),
+        [articles]
+    );
 
-    const filteredArticles = articles
-        .filter(a => {
+    const filteredArticles = useMemo(() => 
+        articles.filter(a => {
             const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 a.barcode?.includes(searchTerm);
             const matchesCategory = filterCategory === 'all' || a.category === filterCategory;
@@ -163,7 +172,9 @@ export default function Articles() {
                 (filterStock === 'niedrig' && a.current_stock <= (a.min_stock || 0)) ||
                 (filterStock === 'leer' && a.current_stock === 0);
             return matchesSearch && matchesCategory && matchesSupplier && matchesStock;
-        });
+        }),
+        [articles, searchTerm, filterCategory, filterSupplier, filterStock]
+    );
 
     if (!permissions.canEditShopping) {
         return <PermissionDenied />;
@@ -290,101 +301,23 @@ export default function Articles() {
                 {/* Articles Grid */}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {filteredArticles.map(article => {
-                        const isSelected = selectedArticles.find(a => a.id === article.id);
+                        const isSelected = !!selectedArticles.find(a => a.id === article.id);
                         const isLowStock = article.min_stock && article.current_stock < article.min_stock;
                         
-                        let touchStartX = 0;
-                        let touchEndX = 0;
-                        
-                        const handleTouchStart = (e) => {
-                            touchStartX = e.touches[0].clientX;
-                        };
-                        
-                        const handleTouchEnd = (e) => {
-                            touchEndX = e.changedTouches[0].clientX;
-                            if (touchStartX - touchEndX > 100) {
-                                // Swipe left to delete
-                                handleDelete(article.id);
-                            }
-                        };
-                        
                         return (
-                            <Card 
-                                key={article.id} 
-                                className={`p-4 bg-slate-800 border-slate-700 ${isSelected ? 'ring-2 ring-amber-500' : ''} ${isLowStock ? 'border-red-500' : ''}`}
-                                onTouchStart={handleTouchStart}
-                                onTouchEnd={handleTouchEnd}
-                            >
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-start gap-2 flex-1">
-                                        <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={() => toggleSelectArticle(article)}
-                                            className="mt-1"
-                                        />
-                                        <div className="flex-1">
-                                            {article.image_url && (
-                                                <img 
-                                                    src={article.image_url} 
-                                                    alt={article.name}
-                                                    className="w-full h-24 object-cover rounded-lg mb-2"
-                                                />
-                                            )}
-                                            <h3 className="font-semibold text-white text-sm mb-1">{article.name}</h3>
-                                            <p className="text-xs text-slate-400 font-mono">{article.barcode}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                setSelectedArticle(article);
-                                                setModalOpen(true);
-                                            }}
-                                            className="h-8 w-8 text-slate-400 hover:text-white"
-                                        >
-                                            <Pencil className="w-3 h-3" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => handleDelete(article.id)}
-                                            className="h-8 w-8 text-red-400 hover:text-red-300"
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    {article.category && (
-                                        <Badge style={{ 
-                                            backgroundColor: categories.find(c => c.name === article.category)?.color + '20',
-                                            color: categories.find(c => c.name === article.category)?.color || '#64748b'
-                                        }}>
-                                            {article.category}
-                                        </Badge>
-                                    )}
-                                    
-                                    <div className="text-xs text-slate-400 space-y-1">
-                                        {article.suppliers?.length > 0 && (
-                                            <p>📦 {article.suppliers.join(', ')}</p>
-                                        )}
-                                        {article.quantity && article.unit && (
-                                            <p>📦 {article.quantity} {article.unit}</p>
-                                        )}
-                                        {article.purchase_price && (
-                                            <p className="font-semibold text-green-400">💰 {article.purchase_price.toFixed(2)} €</p>
-                                        )}
-                                        {article.min_stock && (
-                                            <p className={isLowStock ? 'text-red-400 font-semibold' : ''}>
-                                                📊 Bestand: {article.current_stock || 0} / {article.min_stock}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </Card>
+                            <ArticleCard
+                                key={article.id}
+                                article={article}
+                                isSelected={isSelected}
+                                isLowStock={isLowStock}
+                                categories={categories}
+                                onToggleSelect={toggleSelectArticle}
+                                onEdit={(article) => {
+                                    setSelectedArticle(article);
+                                    setModalOpen(true);
+                                }}
+                                onDelete={handleDelete}
+                            />
                         );
                     })}
                 </div>

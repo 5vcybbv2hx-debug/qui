@@ -56,6 +56,7 @@ import Dashboard from './pages/Dashboard';
 import DrinkMenu from './pages/DrinkMenu';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
+import Home from './pages/Home';
 import Inventory from './pages/Inventory';
 import Maintenance from './pages/Maintenance';
 import MyArea from './pages/MyArea';
@@ -83,7 +84,9 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
-import Home from './pages/Home';
+import LazyReports from './pages/LazyReports';
+import LazySalesAnalysis from './pages/LazySalesAnalysis';
+import LazyBudget from './pages/LazyBudget';
 import __Layout from './Layout.jsx';
 
 
@@ -97,6 +100,7 @@ export const PAGES = {
     "DrinkMenu": DrinkMenu,
     "Employees": Employees,
     "Events": Events,
+    "Home": Home,
     "Inventory": Inventory,
     "Maintenance": Maintenance,
     "MyArea": MyArea,
@@ -124,7 +128,9 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
-    "Home": Home,
+    "LazyReports": LazyReports,
+    "LazySalesAnalysis": LazySalesAnalysis,
+    "LazyBudget": LazyBudget,
 }
 
 export const pagesConfig = {

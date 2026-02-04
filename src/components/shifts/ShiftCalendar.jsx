@@ -293,20 +293,22 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             </div>
                             
                             {/* Hover Add Button */}
-                            <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full h-6 rounded-none bg-slate-900/90 hover:bg-amber-600 text-slate-400 hover:text-white border-t border-slate-700"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onAddShift(day);
-                                    }}
-                                >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    <span className="text-[10px]">Schicht</span>
-                                </Button>
-                            </div>
+                            {permissions.canEditShifts && (
+                                <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full h-6 rounded-none bg-slate-900/90 hover:bg-amber-600 text-slate-400 hover:text-white border-t border-slate-700"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onAddShift(day);
+                                        }}
+                                    >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        <span className="text-[10px]">Schicht</span>
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     );
                 })}

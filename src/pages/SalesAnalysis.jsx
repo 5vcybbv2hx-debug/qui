@@ -23,8 +23,13 @@ export default function SalesAnalysisPage() {
 
     const handleDelete = async (id) => {
         if (confirm('Bericht wirklich löschen?')) {
-            await base44.entities.SalesReport.delete(id);
-            refetch();
+            try {
+                await base44.entities.SalesReport.delete(id);
+                refetch();
+            } catch (error) {
+                console.error('Fehler beim Löschen:', error);
+                refetch();
+            }
         }
     };
 

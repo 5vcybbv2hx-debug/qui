@@ -91,7 +91,12 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                         
                         {/* Tasks */}
                         <div className="divide-y divide-slate-700">
-                            {areaTasks.map((task) => (
+                            {areaTasks
+                                .sort((a, b) => {
+                                    if (a.is_completed === b.is_completed) return 0;
+                                    return a.is_completed ? 1 : -1;
+                                })
+                                .map((task) => (
                                 <div 
                                     key={task.id}
                                     className={cn(

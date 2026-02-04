@@ -50,8 +50,8 @@ export default function ReportUploader({ onUploadComplete }) {
                     });
 
                     if (extractionResult.status === 'success') {
-                        // Extrahiere Datum aus dem Bericht (nicht aus Dateinamen!)
-                        const reportDate = extractionResult.output.date || new Date().toISOString().split('T')[0];
+                        // Extrahiere Datum aus dem Bericht und konvertiere zu ISO Format
+                        const reportDate = formatDateToISO(extractionResult.output.date);
 
                         // 3. Create report record
                         const report = await base44.entities.SalesReport.create({

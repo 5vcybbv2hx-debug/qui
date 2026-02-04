@@ -58,8 +58,8 @@ export default function Shifts() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['shifts']);
+        onSuccess: (newShift) => {
+            queryClient.setQueryData(['shifts'], (old) => [newShift, ...(old || [])]);
             setModalOpen(false);
             setSelectedShift(null);
         }

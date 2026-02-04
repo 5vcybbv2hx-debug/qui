@@ -71,6 +71,19 @@ export default function ReportUploader({ onUploadComplete }) {
                             ...calculateSummary(extractionResult.output, reportType)
                         });
 
+                        // 6. Bei niedriger Confidence Score ein To-Do erstellen
+                        const confidenceScore = extractionResult.output.confidence_score || 100;
+                        if (confidenceScore < 80) {
+                            await base44.entities.TodoItem.create({
+                                title: `Z-Bericht vom ${reportDate} manuell überprüfen`,
+                                description: `Automatische Datenextraktion hat niedrige Konfidenz (${confidenceScore}%). Bitte Zahlungsarten und Umsätze manuell überprüfen.`,
+                                priority: 'hoch',
+                                status: 'offen',
+                                category: 'Sonstiges',
+                                due_date: reportDate
+                            });
+                        }
+
                         successCount++;
                     } else {
                         errorCount++;
@@ -110,6 +123,16 @@ export default function ReportUploader({ onUploadComplete }) {
                     total_transactions: { type: 'number' },
                     cash_revenue: { type: 'number' },
                     card_revenue: { type: 'number' },
+                    payment_methods: {
+                        type: 'object',
+                        properties: {
+                            cash: { type: 'number' },
+                            card: { type: 'number' },
+                            ec: { type: 'number' },
+                            credit_card: { type: 'number' },
+                            other: { type: 'number' }
+                        }
+                    },
                     items: {
                         type: 'array',
                         items: {
@@ -120,6 +143,10 @@ export default function ReportUploader({ onUploadComplete }) {
                                 revenue: { type: 'number' }
                             }
                         }
+                    },
+                    confidence_score: { 
+                        type: 'number',
+                        description: 'Confidence score 0-100 for data extraction quality'
                     }
                 }
             },

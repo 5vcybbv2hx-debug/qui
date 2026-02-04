@@ -249,14 +249,16 @@ export default function Shifts() {
                             <h3 className="font-bold text-white text-lg">
                                 {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
                             </h3>
-                            <Button 
-                                size="sm" 
-                                className="bg-amber-600 hover:bg-amber-700"
-                                onClick={() => handleAddShift(selectedDate)}
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Schicht hinzufügen
-                            </Button>
+                            {permissions.canEditShifts && (
+                                <Button 
+                                    size="sm" 
+                                    className="bg-amber-600 hover:bg-amber-700"
+                                    onClick={() => handleAddShift(selectedDate)}
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Schicht hinzufügen
+                                </Button>
+                            )}
                         </div>
                         
                         {selectedDateShifts.length > 0 ? (

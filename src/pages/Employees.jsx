@@ -37,10 +37,9 @@ const HOURLY_RATES = {
 };
 
 const roleColors = {
-    'Barkeeper': 'bg-amber-100 text-amber-700',
-    'Servicekraft': 'bg-blue-100 text-blue-700',
-    'Manager': 'bg-purple-100 text-purple-700',
-    'Aushilfe': 'bg-slate-100 text-slate-700'
+    'Aushilfe': 'bg-slate-100 text-slate-700',
+    'Vollzeit': 'bg-blue-100 text-blue-700',
+    'Manager': 'bg-purple-100 text-purple-700'
 };
 
 export default function Employees() {
@@ -51,7 +50,7 @@ export default function Employees() {
     const [formData, setFormData] = useState({
         employee_number: '',
         name: '',
-        role: 'Barkeeper',
+        role: 'Aushilfe',
         skills: [],
         contract_type: '',
         hourly_rate: '',
@@ -232,8 +231,7 @@ export default function Employees() {
         try {
             const roleMapping = {
                 'Manager': 'admin',
-                'Barkeeper': 'user',
-                'Servicekraft': 'user',
+                'Vollzeit': 'user',
                 'Aushilfe': 'user'
             };
             
@@ -663,16 +661,15 @@ export default function Employees() {
 
                             <div className="space-y-2">
                                 <Label>Position</Label>
-                                {permissions.isAdmin ? (
+                                {permissions.isManager ? (
                                     <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v })}>
                                         <SelectTrigger>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Barkeeper">Barkeeper</SelectItem>
-                                            <SelectItem value="Servicekraft">Servicekraft</SelectItem>
-                                            <SelectItem value="Manager">Manager</SelectItem>
                                             <SelectItem value="Aushilfe">Aushilfe</SelectItem>
+                                            <SelectItem value="Vollzeit">Vollzeit</SelectItem>
+                                            <SelectItem value="Manager">Manager</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 ) : (

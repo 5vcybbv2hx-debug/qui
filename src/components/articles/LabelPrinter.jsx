@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Printer } from 'lucide-react';
+import { Printer, FileDown } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import JsBarcode from 'jsbarcode';
+import jsPDF from 'jspdf';
 
 export default function LabelPrinter({ articles = [] }) {
     const [open, setOpen] = useState(false);
@@ -31,6 +32,64 @@ export default function LabelPrinter({ articles = [] }) {
         } catch (e) {
             return null;
         }
+    };
+
+    const handlePDFExport = () => {
+        const articlesToPrint = articles.filter(a => selectedArticles.includes(a.id));
+        
+        // 62mm x 29mm in points (1mm = 2.834645669 points)
+        const labelWidth = 62 * 2.834645669;
+        const labelHeight = 29 * 2.834645669;
+        
+        const pdf = new jsPDF({
+            orientation: 'landscape',
+            unit: 'pt',
+            format: [labelWidth, labelHeight]
+        });
+
+        articlesToPrint.forEach((article, index) => {
+            if (index > 0) {
+                pdf.addPage([labelWidth, labelHeight], 'landscape');
+            }
+
+            // Name (oben links)
+            pdf.setFontSize(11);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text(article.name, 8, 15, { maxWidth: 100 });
+
+            // Barcode (oben rechts)
+            if (article.barcode) {
+                const barcodeImg = generateBarcodeSVG(article.barcode);
+                if (barcodeImg) {
+                    pdf.addImage(barcodeImg, 'PNG', labelWidth - 90, 8, 82, 30);
+                    
+                    // Barcode-Text
+                    pdf.setFontSize(7);
+                    pdf.setFont('courier', 'normal');
+                    pdf.text(article.barcode, labelWidth - 49, 44, { align: 'center' });
+                }
+            }
+
+            // Kategorie (unten links)
+            if (article.category) {
+                pdf.setFontSize(9);
+                pdf.setFont('helvetica', 'normal');
+                pdf.setTextColor(85, 85, 85);
+                pdf.text(article.category, 8, labelHeight - 8);
+            }
+
+            // Lieferanten (unten rechts)
+            if (article.suppliers?.length > 0) {
+                pdf.setFontSize(7);
+                pdf.setTextColor(102, 102, 102);
+                const supplierText = article.suppliers.join(', ');
+                pdf.text(supplierText, labelWidth - 8, labelHeight - 8, { align: 'right', maxWidth: 85 });
+            }
+
+            pdf.setTextColor(0, 0, 0);
+        });
+
+        pdf.save('etiketten.pdf');
     };
 
     const handlePrint = () => {
@@ -247,12 +306,20 @@ ${articlesToPrint.map(article => {
                                 Abbrechen
                             </Button>
                             <Button
+                                onClick={handlePDFExport}
+                                disabled={selectedArticles.length === 0}
+                                className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                                <FileDown className="w-4 h-4 mr-2" />
+                                PDF
+                            </Button>
+                            <Button
                                 onClick={handlePrint}
                                 disabled={selectedArticles.length === 0}
                                 className="flex-1 bg-blue-600 hover:bg-blue-700"
                             >
                                 <Printer className="w-4 h-4 mr-2" />
-                                {selectedArticles.length} Etikett{selectedArticles.length !== 1 ? 'en' : ''} drucken
+                                Drucken
                             </Button>
                         </div>
                     </div>

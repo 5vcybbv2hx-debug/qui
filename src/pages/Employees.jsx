@@ -629,7 +629,7 @@ export default function Employees() {
                 )}
 
                 {/* Modal */}
-                <Dialog open={modalOpen} onOpenChange={closeModal}>
+                <Dialog open={modalOpen} onOpenChange={(open) => !open && closeModal()}>
                     <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>

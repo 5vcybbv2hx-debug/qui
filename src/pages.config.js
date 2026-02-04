@@ -58,6 +58,10 @@ import Employees from './pages/Employees';
 import Events from './pages/Events';
 import Home from './pages/Home';
 import Inventory from './pages/Inventory';
+import LaborCostAnalysis from './pages/LaborCostAnalysis';
+import LazyBudget from './pages/LazyBudget';
+import LazyReports from './pages/LazyReports';
+import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import Maintenance from './pages/Maintenance';
 import MyArea from './pages/MyArea';
 import MyProfile from './pages/MyProfile';
@@ -84,10 +88,6 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
-import LazyReports from './pages/LazyReports';
-import LazySalesAnalysis from './pages/LazySalesAnalysis';
-import LazyBudget from './pages/LazyBudget';
-import LaborCostAnalysis from './pages/LaborCostAnalysis';
 import __Layout from './Layout.jsx';
 
 
@@ -103,6 +103,10 @@ export const PAGES = {
     "Events": Events,
     "Home": Home,
     "Inventory": Inventory,
+    "LaborCostAnalysis": LaborCostAnalysis,
+    "LazyBudget": LazyBudget,
+    "LazyReports": LazyReports,
+    "LazySalesAnalysis": LazySalesAnalysis,
     "Maintenance": Maintenance,
     "MyArea": MyArea,
     "MyProfile": MyProfile,
@@ -129,10 +133,6 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
-    "LazyReports": LazyReports,
-    "LazySalesAnalysis": LazySalesAnalysis,
-    "LazyBudget": LazyBudget,
-    "LaborCostAnalysis": LaborCostAnalysis,
 }
 
 export const pagesConfig = {

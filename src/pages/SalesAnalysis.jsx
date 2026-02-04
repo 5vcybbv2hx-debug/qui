@@ -4,13 +4,16 @@ import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Trash2, Download, TrendingUp } from 'lucide-react';
+import { FileText, Trash2, Download, TrendingUp, Eye } from 'lucide-react';
 import ReportUploader from '@/components/sales/ReportUploader';
 import SalesAnalyticsDashboard from '@/components/sales/SalesAnalyticsDashboard';
+import ReportDetailsModal from '@/components/sales/ReportDetailsModal';
 import { Badge } from '@/components/ui/badge';
 
 export default function SalesAnalysisPage() {
     const [activeTab, setActiveTab] = useState('dashboard');
+    const [selectedReport, setSelectedReport] = useState(null);
+    const [detailsOpen, setDetailsOpen] = useState(false);
 
     const { data: reports = [], refetch } = useQuery({
         queryKey: ['sales-reports'],
@@ -133,6 +136,17 @@ export default function SalesAnalysisPage() {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        onClick={() => {
+                                                            setSelectedReport(report);
+                                                            setDetailsOpen(true);
+                                                        }}
+                                                        className="text-amber-400 hover:text-amber-300"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
                                                         onClick={() => window.open(report.file_url, '_blank')}
                                                         className="text-slate-400 hover:text-white"
                                                     >
@@ -155,6 +169,15 @@ export default function SalesAnalysisPage() {
                         </Card>
                     </TabsContent>
                 </Tabs>
+
+                <ReportDetailsModal
+                    report={selectedReport}
+                    open={detailsOpen}
+                    onClose={() => {
+                        setDetailsOpen(false);
+                        setSelectedReport(null);
+                    }}
+                />
             </div>
         </div>
     );

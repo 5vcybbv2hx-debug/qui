@@ -96,6 +96,10 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
 
     const handleDrop = (e, targetDate) => {
         e.preventDefault();
+        if (!permissions.canEditShifts) {
+            setDraggedShift(null);
+            return;
+        }
         if (draggedShift && onShiftMove) {
             const currentDate = new Date(draggedShift.date);
             const newDate = startOfDay(targetDate);

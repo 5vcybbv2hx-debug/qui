@@ -113,12 +113,38 @@ export default function ReportUploader({ onUploadComplete }) {
         }
     };
 
+    const formatDateToISO = (dateString) => {
+        if (!dateString) return new Date().toISOString().split('T')[0];
+        
+        // Versuche verschiedene Formate zu erkennen
+        // Format 1: DD.MM.YYYY
+        const germanMatch = dateString.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+        if (germanMatch) {
+            const day = String(germanMatch[1]).padStart(2, '0');
+            const month = String(germanMatch[2]).padStart(2, '0');
+            const year = germanMatch[3];
+            return `${year}-${month}-${day}`;
+        }
+        
+        // Format 2: YYYY-MM-DD (bereits korrekt)
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            return dateString;
+        }
+        
+        // Format 3: ISO String
+        if (dateString.includes('T')) {
+            return dateString.split('T')[0];
+        }
+        
+        return new Date().toISOString().split('T')[0];
+    };
+
     const getExtractionSchema = (type) => {
         const schemas = {
             'Z-Abschlag': {
                 type: 'object',
                 properties: {
-                    date: { type: 'string' },
+                    date: { type: 'string', description: 'Datum im Format DD.MM.YYYY oder YYYY-MM-DD' },
                     total_revenue: { type: 'number' },
                     total_transactions: { type: 'number' },
                     cash_revenue: { type: 'number' },

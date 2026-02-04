@@ -39,6 +39,29 @@ export default function SalesAnalysisPage() {
         return <Badge className={color}>{label}</Badge>;
     };
 
+    // Gruppiere Berichte nach Monat
+    const reportsByMonth = React.useMemo(() => {
+        const grouped = {};
+        reports.forEach(report => {
+            const date = new Date(report.report_date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const monthLabel = date.toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
+            
+            if (!grouped[monthKey]) {
+                grouped[monthKey] = {
+                    label: monthLabel,
+                    reports: []
+                };
+            }
+            grouped[monthKey].reports.push(report);
+        });
+        
+        // Sortiere nach Monat (neueste zuerst)
+        return Object.entries(grouped)
+            .sort(([a], [b]) => b.localeCompare(a))
+            .map(([key, value]) => value);
+    }, [reports]);
+
     return (
         <div className="min-h-screen bg-slate-900 p-6">
             <div className="max-w-7xl mx-auto">
@@ -92,81 +115,92 @@ export default function SalesAnalysisPage() {
                     </TabsContent>
 
                     <TabsContent value="reports">
-                        <Card className="bg-slate-800/50 border-slate-700">
-                            <CardHeader>
-                                <CardTitle className="text-white">Hochgeladene Berichte</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {reports.length === 0 ? (
-                                    <div className="text-center py-8 text-slate-400">
-                                        Noch keine Berichte hochgeladen
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {reports.map(report => (
-                                            <div
-                                                key={report.id}
-                                                className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700 hover:border-amber-600/50 transition-colors"
-                                            >
-                                                <div className="flex items-start gap-4 flex-1">
-                                                    <FileText className="w-8 h-8 text-amber-500 flex-shrink-0 mt-1" />
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <h4 className="font-semibold text-white">{report.report_type}</h4>
-                                                            {getStatusBadge(report.processing_status)}
-                                                        </div>
-                                                        <div className="text-sm text-slate-400 space-y-1">
-                                                            <div>
-                                                                Datum: {new Date(report.report_date).toLocaleDateString('de-DE')}
-                                                            </div>
-                                                            {report.total_revenue > 0 && (
-                                                                <div>
-                                                                    Umsatz: {report.total_revenue.toFixed(2)} € | 
-                                                                    Transaktionen: {report.total_transactions || 0} | 
-                                                                    Ø Bon: {report.average_transaction?.toFixed(2) || 0} €
+                        {reports.length === 0 ? (
+                            <Card className="bg-slate-800/50 border-slate-700">
+                                <CardContent className="text-center py-8 text-slate-400">
+                                    Noch keine Berichte hochgeladen
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="space-y-6">
+                                {reportsByMonth.map((month, idx) => (
+                                    <Card key={idx} className="bg-slate-800/50 border-slate-700">
+                                        <CardHeader>
+                                            <CardTitle className="text-white flex items-center justify-between">
+                                                <span>{month.label}</span>
+                                                <Badge variant="outline" className="text-slate-300 border-slate-600">
+                                                    {month.reports.length} {month.reports.length === 1 ? 'Bericht' : 'Berichte'}
+                                                </Badge>
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3">
+                                                {month.reports.map(report => (
+                                                    <div
+                                                        key={report.id}
+                                                        className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700 hover:border-amber-600/50 transition-colors"
+                                                    >
+                                                        <div className="flex items-start gap-4 flex-1">
+                                                            <FileText className="w-8 h-8 text-amber-500 flex-shrink-0 mt-1" />
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-3 mb-2">
+                                                                    <h4 className="font-semibold text-white">{report.report_type}</h4>
+                                                                    {getStatusBadge(report.processing_status)}
                                                                 </div>
-                                                            )}
-                                                            {report.notes && (
-                                                                <div className="text-slate-500">{report.notes}</div>
-                                                            )}
+                                                                <div className="text-sm text-slate-400 space-y-1">
+                                                                    <div>
+                                                                        Datum: {new Date(report.report_date).toLocaleDateString('de-DE')}
+                                                                    </div>
+                                                                    {report.total_revenue > 0 && (
+                                                                        <div>
+                                                                            Umsatz: {report.total_revenue.toFixed(2)} € | 
+                                                                            Transaktionen: {report.total_transactions || 0} | 
+                                                                            Ø Bon: {report.average_transaction?.toFixed(2) || 0} €
+                                                                        </div>
+                                                                    )}
+                                                                    {report.notes && (
+                                                                        <div className="text-slate-500">{report.notes}</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => {
+                                                                    setSelectedReport(report);
+                                                                    setDetailsOpen(true);
+                                                                }}
+                                                                className="text-amber-400 hover:text-amber-300"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => window.open(report.file_url, '_blank')}
+                                                                className="text-slate-400 hover:text-white"
+                                                            >
+                                                                <Download className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => handleDelete(report.id)}
+                                                                className="text-red-400 hover:text-red-300"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </Button>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => {
-                                                            setSelectedReport(report);
-                                                            setDetailsOpen(true);
-                                                        }}
-                                                        className="text-amber-400 hover:text-amber-300"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => window.open(report.file_url, '_blank')}
-                                                        className="text-slate-400 hover:text-white"
-                                                    >
-                                                        <Download className="w-4 h-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDelete(report.id)}
-                                                        className="text-red-400 hover:text-red-300"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </Button>
-                                                </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
                     </TabsContent>
                 </Tabs>
 

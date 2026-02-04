@@ -456,34 +456,62 @@ export default function Cleaning() {
                                 </div>
                             ) : (
                                 reports.map(report => (
-                                    <div key={report.id} className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div>
-                                                <h3 className="font-semibold text-slate-900">
-                                                    Woche vom {format(new Date(report.week_start), 'dd.MM.', { locale: de })} - {format(new Date(report.week_end), 'dd.MM.yyyy', { locale: de })}
-                                                </h3>
-                                                <p className="text-sm text-slate-600 mt-1">
-                                                    {report.completed_tasks} von {report.total_tasks} Aufgaben · {report.completion_rate}% erledigt
-                                                </p>
-                                            </div>
-                                        </div>
+                                    <div key={report.id} className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                       <div className="flex items-start justify-between mb-4">
+                                           <div className="flex items-start gap-3">
+                                               <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                                   <FileText className="w-5 h-5 text-green-600" />
+                                               </div>
+                                               <div>
+                                                   <h3 className="font-semibold text-slate-900 text-lg">
+                                                       {format(new Date(report.week_start), 'dd.MM.', { locale: de })} - {format(new Date(report.week_end), 'dd.MM.yyyy', { locale: de })}
+                                                   </h3>
+                                                   <div className="flex items-center gap-3 mt-2">
+                                                       <div className="flex items-center gap-1.5">
+                                                           <span className="text-2xl font-bold text-green-600">{report.completion_rate}%</span>
+                                                           <span className="text-xs text-slate-500">Erledigt</span>
+                                                       </div>
+                                                       <div className="h-4 w-px bg-slate-200" />
+                                                       <span className="text-sm text-slate-600">
+                                                           {report.completed_tasks} von {report.total_tasks} Aufgaben
+                                                       </span>
+                                                   </div>
+                                               </div>
+                                           </div>
+                                       </div>
                                         
                                         {report.report_data && report.report_data.length > 0 && (
-                                            <div className="space-y-2">
-                                                <p className="text-xs font-medium text-slate-700 uppercase tracking-wider">Erledigte Aufgaben:</p>
-                                                {report.report_data.map((task, idx) => (
-                                                    <div key={idx} className="text-sm text-slate-600 pl-3 border-l-2 border-slate-300">
-                                                        <span className="font-medium">{task.task_title}</span>
-                                                        {task.completed_by && (
-                                                            <span className="text-slate-500"> · {task.completed_by}</span>
-                                                        )}
-                                                        {task.completed_at && (
-                                                            <span className="text-xs text-slate-400 ml-1">
-                                                                ({format(new Date(task.completed_at), 'dd.MM. HH:mm', { locale: de })})
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ))}
+                                            <div className="mt-4 space-y-3">
+                                                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Erledigte Aufgaben:</p>
+                                                <div className="space-y-2">
+                                                    {report.report_data.map((task, idx) => (
+                                                        <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200">
+                                                            <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                                                                <span className="text-green-600 text-xs">✓</span>
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-start justify-between gap-2">
+                                                                    <div className="flex-1">
+                                                                        <p className="font-medium text-slate-900">{task.task_title}</p>
+                                                                        <p className="text-xs text-slate-500 mt-0.5">{task.area} · {task.frequency}</p>
+                                                                    </div>
+                                                                </div>
+                                                                {task.completed_by && (
+                                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
+                                                                        <span className="text-xs text-slate-600">
+                                                                            👤 <span className="font-medium">{task.completed_by}</span>
+                                                                        </span>
+                                                                        {task.completed_at && (
+                                                                            <span className="text-xs text-slate-400">
+                                                                                · {format(new Date(task.completed_at), 'dd.MM. HH:mm', { locale: de })} Uhr
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>

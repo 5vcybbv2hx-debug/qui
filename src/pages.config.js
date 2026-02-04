@@ -49,6 +49,7 @@
  */
 import Articles from './pages/Articles';
 import Budget from './pages/Budget';
+import Calendar from './pages/Calendar';
 import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
 import Dashboard from './pages/Dashboard';
@@ -57,6 +58,8 @@ import Employees from './pages/Employees';
 import Events from './pages/Events';
 import Inventory from './pages/Inventory';
 import Maintenance from './pages/Maintenance';
+import MyArea from './pages/MyArea';
+import MyProfile from './pages/MyProfile';
 import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
@@ -74,21 +77,19 @@ import Suppliers from './pages/Suppliers';
 import TeamCalendar from './pages/TeamCalendar';
 import TeamMeeting from './pages/TeamMeeting';
 import TerminalClock from './pages/TerminalClock';
+import TimeManagement from './pages/TimeManagement';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
-import Wastage from './pages/Wastage';
-import MyProfile from './pages/MyProfile';
 import Warehouse from './pages/Warehouse';
-import Calendar from './pages/Calendar';
-import MyArea from './pages/MyArea';
-import TimeManagement from './pages/TimeManagement';
+import Wastage from './pages/Wastage';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Articles": Articles,
     "Budget": Budget,
+    "Calendar": Calendar,
     "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
     "Dashboard": Dashboard,
@@ -97,6 +98,8 @@ export const PAGES = {
     "Events": Events,
     "Inventory": Inventory,
     "Maintenance": Maintenance,
+    "MyArea": MyArea,
+    "MyProfile": MyProfile,
     "Notifications": Notifications,
     "Onboarding": Onboarding,
     "Permissions": Permissions,
@@ -114,15 +117,12 @@ export const PAGES = {
     "TeamCalendar": TeamCalendar,
     "TeamMeeting": TeamMeeting,
     "TerminalClock": TerminalClock,
+    "TimeManagement": TimeManagement,
     "TimeTracking": TimeTracking,
     "Todos": Todos,
     "Vacation": Vacation,
-    "Wastage": Wastage,
-    "MyProfile": MyProfile,
     "Warehouse": Warehouse,
-    "Calendar": Calendar,
-    "MyArea": MyArea,
-    "TimeManagement": TimeManagement,
+    "Wastage": Wastage,
 }
 
 export const pagesConfig = {

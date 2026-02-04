@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Trash2, Download, TrendingUp, Eye } from 'lucide-react';
+import { FileText, Trash2, TrendingUp, Eye } from 'lucide-react';
 import ReportUploader from '@/components/sales/ReportUploader';
 import SalesAnalyticsDashboard from '@/components/sales/SalesAnalyticsDashboard';
 import ReportDetailsModal from '@/components/sales/ReportDetailsModal';
@@ -173,22 +173,16 @@ export default function SalesAnalysisPage() {
                                                                     setDetailsOpen(true);
                                                                 }}
                                                                 className="text-amber-400 hover:text-amber-300"
+                                                                title="Vorschau & Details"
                                                             >
                                                                 <Eye className="w-4 h-4" />
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                onClick={() => window.open(report.file_url, '_blank')}
-                                                                className="text-slate-400 hover:text-white"
-                                                            >
-                                                                <Download className="w-4 h-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
                                                                 onClick={() => handleDelete(report.id)}
                                                                 className="text-red-400 hover:text-red-300"
+                                                                title="Löschen"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </Button>

@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, CheckCircle2, FileText, CreditCard, Banknote, Edit2, Save, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, FileText, CreditCard, Banknote, Edit2, Save, X, ExternalLink } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 export default function ReportDetailsModal({ report, open, onClose }) {
@@ -88,7 +88,18 @@ export default function ReportDetailsModal({ report, open, onClose }) {
                     {/* Left: PDF Viewer */}
                     <div className="space-y-4">
                         <Card className="p-4 bg-slate-800 border-slate-700">
-                            <h3 className="text-white font-semibold mb-3">Original PDF</h3>
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-white font-semibold">Original PDF</h3>
+                                <Button
+                                    onClick={() => window.open(report.file_url, '_blank')}
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                >
+                                    <ExternalLink className="w-4 h-4 mr-2" />
+                                    In neuem Tab öffnen
+                                </Button>
+                            </div>
                             <div className="bg-slate-950 rounded-lg overflow-hidden" style={{ height: '600px' }}>
                                 <iframe
                                     src={report.file_url}

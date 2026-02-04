@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import ShiftCalendar from '@/components/shifts/ShiftCalendar';
 import ShiftModal from '@/components/shifts/ShiftModal';
 import CalendarExport from '@/components/shifts/CalendarExport';

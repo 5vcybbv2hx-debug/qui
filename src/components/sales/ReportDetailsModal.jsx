@@ -1,27 +1,106 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { AlertCircle, CheckCircle2, FileText, CreditCard, Banknote } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AlertCircle, CheckCircle2, FileText, CreditCard, Banknote, Edit2, Save, X } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 export default function ReportDetailsModal({ report, open, onClose }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedPayments, setEditedPayments] = useState(null);
+    const [isSaving, setIsSaving] = useState(false);
+
     if (!report) return null;
 
     const data = report.extracted_data || {};
     const confidenceScore = data.confidence_score || 100;
     const isLowConfidence = confidenceScore < 80;
 
+    const paymentMethods = editedPayments || data.payment_methods || {};
+
+    const handleEdit = () => {
+        setEditedPayments({ ...data.payment_methods });
+        setIsEditing(true);
+    };
+
+    const handleCancel = () => {
+        setEditedPayments(null);
+        setIsEditing(false);
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const updatedData = {
+                ...report.extracted_data,
+                payment_methods: editedPayments
+            };
+            
+            const totalRevenue = Object.values(editedPayments).reduce((sum, val) => sum + (val || 0), 0);
+            
+            await base44.entities.SalesReport.update(report.id, {
+                extracted_data: updatedData,
+                total_revenue: totalRevenue
+            });
+            
+            setIsEditing(false);
+            onClose();
+        } catch (error) {
+            alert('Fehler beim Speichern: ' + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const updatePayment = (key, value) => {
+        setEditedPayments(prev => ({
+            ...prev,
+            [key]: parseFloat(value) || 0
+        }));
+    };
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700">
+            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700">
                 <DialogHeader>
-                    <DialogTitle className="text-white flex items-center gap-3">
-                        <FileText className="w-6 h-6 text-amber-500" />
-                        {report.report_type} - {new Date(report.report_date).toLocaleDateString('de-DE')}
+                    <DialogTitle className="text-white flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <FileText className="w-6 h-6 text-amber-500" />
+                            {report.report_type} - {new Date(report.report_date).toLocaleDateString('de-DE')}
+                        </div>
+                        {!isEditing && (
+                            <Button
+                                onClick={handleEdit}
+                                variant="outline"
+                                size="sm"
+                                className="border-amber-600 text-amber-500 hover:bg-amber-600 hover:text-white"
+                            >
+                                <Edit2 className="w-4 h-4 mr-2" />
+                                Bearbeiten
+                            </Button>
+                        )}
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Left: PDF Viewer */}
+                    <div className="space-y-4">
+                        <Card className="p-4 bg-slate-800 border-slate-700">
+                            <h3 className="text-white font-semibold mb-3">Original PDF</h3>
+                            <div className="bg-slate-950 rounded-lg overflow-hidden" style={{ height: '600px' }}>
+                                <iframe
+                                    src={report.file_url}
+                                    className="w-full h-full"
+                                    title="PDF Bericht"
+                                />
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Right: Analysis */}
+                    <div className="space-y-6">
                     {/* Confidence Score */}
                     <Card className="p-4 bg-slate-800 border-slate-700">
                         <div className="flex items-center justify-between">
@@ -75,71 +154,133 @@ export default function ReportDetailsModal({ report, open, onClose }) {
                         </div>
                     </Card>
 
-                    {/* Payment Methods */}
-                    {data.payment_methods && (
-                        <Card className="p-4 bg-slate-800 border-slate-700">
-                            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                                <CreditCard className="w-5 h-5 text-amber-500" />
-                                Zahlungsarten
-                            </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {data.payment_methods.cash > 0 && (
+                        {/* Payment Methods */}
+                        {data.payment_methods && (
+                            <Card className="p-4 bg-slate-800 border-slate-700">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-white font-semibold flex items-center gap-2">
+                                        <CreditCard className="w-5 h-5 text-amber-500" />
+                                        Zahlungsarten
+                                    </h3>
+                                    {isEditing && (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                onClick={handleSave}
+                                                disabled={isSaving}
+                                                size="sm"
+                                                className="bg-green-600 hover:bg-green-700"
+                                            >
+                                                <Save className="w-4 h-4 mr-1" />
+                                                Speichern
+                                            </Button>
+                                            <Button
+                                                onClick={handleCancel}
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-slate-600"
+                                            >
+                                                <X className="w-4 h-4 mr-1" />
+                                                Abbrechen
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="space-y-3">
+                                    {/* Bargeld */}
                                     <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                                        <div className="flex items-center gap-2 mb-1">
+                                        <div className="flex items-center gap-2 mb-2">
                                             <Banknote className="w-4 h-4 text-green-400" />
                                             <span className="text-sm text-slate-400">Bargeld</span>
                                         </div>
-                                        <p className="text-lg font-bold text-white">
-                                            {data.payment_methods.cash.toFixed(2)} €
-                                        </p>
+                                        {isEditing ? (
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={paymentMethods.cash || 0}
+                                                onChange={(e) => updatePayment('cash', e.target.value)}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                            />
+                                        ) : (
+                                            <p className="text-lg font-bold text-white">
+                                                {(paymentMethods.cash || 0).toFixed(2)} €
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                                {data.payment_methods.card > 0 && (
+
+                                    {/* EC-Karte */}
                                     <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <CreditCard className="w-4 h-4 text-blue-400" />
-                                            <span className="text-sm text-slate-400">Karte</span>
-                                        </div>
-                                        <p className="text-lg font-bold text-white">
-                                            {data.payment_methods.card.toFixed(2)} €
-                                        </p>
-                                    </div>
-                                )}
-                                {data.payment_methods.ec > 0 && (
-                                    <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                                        <div className="flex items-center gap-2 mb-1">
+                                        <div className="flex items-center gap-2 mb-2">
                                             <CreditCard className="w-4 h-4 text-purple-400" />
                                             <span className="text-sm text-slate-400">EC-Karte</span>
                                         </div>
-                                        <p className="text-lg font-bold text-white">
-                                            {data.payment_methods.ec.toFixed(2)} €
-                                        </p>
+                                        {isEditing ? (
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={paymentMethods.ec || 0}
+                                                onChange={(e) => updatePayment('ec', e.target.value)}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                            />
+                                        ) : (
+                                            <p className="text-lg font-bold text-white">
+                                                {(paymentMethods.ec || 0).toFixed(2)} €
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                                {data.payment_methods.credit_card > 0 && (
+
+                                    {/* Gutschein */}
                                     <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <CreditCard className="w-4 h-4 text-yellow-400" />
-                                            <span className="text-sm text-slate-400">Kreditkarte</span>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <FileText className="w-4 h-4 text-amber-400" />
+                                            <span className="text-sm text-slate-400">Gutschein</span>
                                         </div>
-                                        <p className="text-lg font-bold text-white">
-                                            {data.payment_methods.credit_card.toFixed(2)} €
-                                        </p>
+                                        {isEditing ? (
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={paymentMethods.voucher || 0}
+                                                onChange={(e) => updatePayment('voucher', e.target.value)}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                            />
+                                        ) : (
+                                            <p className="text-lg font-bold text-white">
+                                                {(paymentMethods.voucher || 0).toFixed(2)} €
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                                {data.payment_methods.other > 0 && (
+
+                                    {/* Sonstiges */}
                                     <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                                        <div className="flex items-center gap-2 mb-1">
+                                        <div className="flex items-center gap-2 mb-2">
                                             <span className="text-sm text-slate-400">Sonstiges</span>
                                         </div>
-                                        <p className="text-lg font-bold text-white">
-                                            {data.payment_methods.other.toFixed(2)} €
-                                        </p>
+                                        {isEditing ? (
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={paymentMethods.other || 0}
+                                                onChange={(e) => updatePayment('other', e.target.value)}
+                                                className="bg-slate-800 border-slate-600 text-white"
+                                            />
+                                        ) : (
+                                            <p className="text-lg font-bold text-white">
+                                                {(paymentMethods.other || 0).toFixed(2)} €
+                                            </p>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                        </Card>
-                    )}
+
+                                    {/* Summe */}
+                                    <div className="p-3 rounded-lg bg-amber-900/20 border border-amber-800/30">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-semibold text-amber-400">Gesamt</span>
+                                            <p className="text-lg font-bold text-white">
+                                                {Object.values(paymentMethods).reduce((sum, val) => sum + (val || 0), 0).toFixed(2)} €
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+                        )}
 
                     {/* Items */}
                     {data.items && data.items.length > 0 && (
@@ -167,13 +308,14 @@ export default function ReportDetailsModal({ report, open, onClose }) {
                         </Card>
                     )}
 
-                    {/* Raw Data (für Debugging) */}
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <h3 className="text-white font-semibold mb-3">Rohdaten (JSON)</h3>
-                        <pre className="text-xs text-slate-300 bg-slate-900 p-3 rounded overflow-x-auto">
-                            {JSON.stringify(data, null, 2)}
-                        </pre>
-                    </Card>
+                        {/* Raw Data (für Debugging) */}
+                        <Card className="p-4 bg-slate-800 border-slate-700">
+                            <h3 className="text-white font-semibold mb-3">Rohdaten (JSON)</h3>
+                            <pre className="text-xs text-slate-300 bg-slate-900 p-3 rounded overflow-x-auto max-h-40">
+                                {JSON.stringify(data, null, 2)}
+                            </pre>
+                        </Card>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>

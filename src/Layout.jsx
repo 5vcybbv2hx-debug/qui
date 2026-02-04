@@ -25,6 +25,7 @@ const navigationSections = [
             { name: 'Kalender', page: 'Calendar', icon: Calendar, permission: 'canViewShifts' },
             { name: 'Zeit', page: 'TimeManagement', icon: Clock, permission: 'canViewDashboard' },
             { name: 'Mein Bereich', page: 'MyArea', icon: Users, permission: 'canViewDashboard' },
+            { name: 'Einlernen', page: 'Onboarding', icon: GraduationCap, permission: 'canViewEmployees' },
             { name: 'Mitarbeiter', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
             { name: 'Berechtigungen', page: 'Permissions', icon: Shield, permission: 'isAdmin' },
         ]

@@ -3,8 +3,7 @@
 export const ROLES = {
     ADMIN: 'admin',
     MANAGER: 'Manager',
-    BARKEEPER: 'Barkeeper',
-    SERVICEKRAFT: 'Servicekraft',
+    VOLLZEIT: 'Vollzeit',
     AUSHILFE: 'Aushilfe'
 };
 
@@ -12,13 +11,13 @@ export const ROLES = {
 export const PERMISSIONS = {
     // Dashboard
     VIEW_DASHBOARD: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Dashboard anzeigen'
     },
     
     // Schichtplanung
     VIEW_SHIFTS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Schichtplan ansehen'
     },
     EDIT_SHIFTS: {
@@ -30,17 +29,17 @@ export const PERMISSIONS = {
         description: 'Schichttausch genehmigen'
     },
     REQUEST_SHIFT_SWAP: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Schichttausch anfragen'
     },
     
     // Reservierungen
     VIEW_RESERVATIONS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Reservierungen ansehen'
     },
     EDIT_RESERVATIONS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Reservierungen bearbeiten'
     },
     DELETE_RESERVATIONS: {
@@ -50,7 +49,7 @@ export const PERMISSIONS = {
     
     // Events
     VIEW_EVENTS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Events ansehen'
     },
     EDIT_EVENTS: {
@@ -60,31 +59,31 @@ export const PERMISSIONS = {
     
     // Einkauf
     VIEW_SHOPPING: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Einkaufsliste ansehen'
     },
     EDIT_SHOPPING: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Einkaufsliste bearbeiten'
     },
     
     // Auffüllen
     VIEW_RESTOCK: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Auffüllen ansehen'
     },
     EDIT_RESTOCK: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Auffüllen bearbeiten'
     },
     
     // Putzliste
     VIEW_CLEANING: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Putzliste ansehen'
     },
     EDIT_CLEANING: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Putzliste bearbeiten'
     },
     MANAGE_CLEANING_AREAS: {
@@ -94,17 +93,17 @@ export const PERMISSIONS = {
     
     // Aufgaben
     VIEW_TODOS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT],
         description: 'Aufgaben ansehen'
     },
     EDIT_TODOS: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT],
         description: 'Aufgaben bearbeiten'
     },
     
     // Team / Mitarbeiter
     VIEW_EMPLOYEES: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Mitarbeiter ansehen'
     },
     EDIT_EMPLOYEES: {
@@ -118,11 +117,11 @@ export const PERMISSIONS = {
     
     // Rezepte
     VIEW_RECIPES: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER, ROLES.SERVICEKRAFT, ROLES.AUSHILFE],
+        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.VOLLZEIT, ROLES.AUSHILFE],
         description: 'Rezepte ansehen'
     },
     EDIT_RECIPES: {
-        roles: [ROLES.ADMIN, ROLES.MANAGER, ROLES.BARKEEPER],
+        roles: [ROLES.ADMIN, ROLES.MANAGER],
         description: 'Rezepte bearbeiten'
     },
     

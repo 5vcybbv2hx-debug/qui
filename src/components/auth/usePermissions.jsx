@@ -36,6 +36,7 @@ export function usePermissions() {
         canViewRecipes: false,
         canEditRecipes: false,
         canViewAnalytics: false,
+        canClockOutOthers: false,
     });
 
     useEffect(() => {
@@ -92,6 +93,7 @@ export function usePermissions() {
                     canEditRecipes: isTerminal ? false : (perms.canEditRecipes ?? (employeeRole === 'Barkeeper' || isManager)),
                     canViewAnalytics: isTerminal ? false : (perms.canViewAnalytics ?? isManager),
                     canViewPriceCalculator: isTerminal ? false : (perms.canViewPriceCalculator ?? (userRole === ROLES.ADMIN)),
+                    canClockOutOthers: isTerminal ? false : (perms.canClockOutOthers ?? isManager),
                 });
             } catch (error) {
                 console.error('Error loading permissions:', error);

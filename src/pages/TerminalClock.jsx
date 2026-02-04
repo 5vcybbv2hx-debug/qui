@@ -12,9 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PinVerification from '@/components/terminal/PinVerification';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, addMonths } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function TerminalClock() {
     const queryClient = useQueryClient();
+    const permissions = usePermissions();
     const [pinModalOpen, setPinModalOpen] = useState(false);
     const [selectedAction, setSelectedAction] = useState(null);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -23,6 +25,25 @@ export default function TerminalClock() {
     const [earningsModalOpen, setEarningsModalOpen] = useState(false);
     const [earningsData, setEarningsData] = useState(null);
     const [nightWatchModalOpen, setNightWatchModalOpen] = useState(false);
+    const [targetEmployee, setTargetEmployee] = useState(null);
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['currentUser'],
+        queryFn: () => base44.auth.me(),
+    });
+
+    const { data: currentEmployee } = useQuery({
+        queryKey: ['currentEmployee', currentUser?.email],
+        queryFn: async () => {
+            if (!currentUser) return null;
+            const employees = await base44.entities.Employee.filter({
+                email: currentUser.email,
+                is_active: true
+            });
+            return employees[0];
+        },
+        enabled: !!currentUser,
+    });
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
@@ -86,8 +107,22 @@ export default function TerminalClock() {
     });
 
     const handleClockAction = (employee, action) => {
-        setSelectedEmployee(employee);
+        setTargetEmployee(employee);
         setSelectedAction(action);
+        
+        // Beim Ausstempeln anderer: Prüfe Berechtigung
+        if (action === 'out' && currentEmployee && employee.id !== currentEmployee.id) {
+            if (!permissions.isManager && !permissions.canClockOutOthers) {
+                alert('❌ Du hast keine Berechtigung, andere Mitarbeiter auszustempeln.');
+                return;
+            }
+            // Manager/Berechtigte verwenden eigene PIN
+            setSelectedEmployee(currentEmployee);
+        } else {
+            // Normaler Fall: Eigene PIN
+            setSelectedEmployee(employee);
+        }
+        
         setPinModalOpen(true);
     };
 
@@ -97,8 +132,10 @@ export default function TerminalClock() {
             return;
         }
 
+        // Verwende targetEmployee für die eigentliche Aktion
+        const employeeToProcess = targetEmployee || selectedEmployee;
         const activeEntry = clockEntries.find(
-            e => e.employee_id === selectedEmployee.id && e.status === 'clocked_in'
+            e => e.employee_id === employeeToProcess.id && e.status === 'clocked_in'
         );
 
         if (selectedAction === 'in') {
@@ -106,8 +143,8 @@ export default function TerminalClock() {
                 alert('Du bist bereits eingestempelt!');
             } else {
                 await clockMutation.mutateAsync({
-                    employee_id: selectedEmployee.id,
-                    employee_name: selectedEmployee.name,
+                    employee_id: employeeToProcess.id,
+                    employee_name: employeeToProcess.name,
                     clock_in: new Date().toISOString(),
                     status: 'clocked_in'
                 });
@@ -117,12 +154,12 @@ export default function TerminalClock() {
                 if (isFirstOfDay) {
                     setNightWatchModalOpen(true);
                 } else {
-                    alert(`✓ ${selectedEmployee.name} eingestempelt`);
+                    alert(`✓ ${employeeToProcess.name} eingestempelt`);
                 }
             }
         } else if (selectedAction === 'out') {
             if (!activeEntry) {
-                alert('Du bist nicht eingestempelt!');
+                alert(`${employeeToProcess.name} ist nicht eingestempelt!`);
             } else {
                 const clockIn = new Date(activeEntry.clock_in);
                 const clockOut = new Date();
@@ -138,23 +175,28 @@ export default function TerminalClock() {
                 });
 
                 // Zeige Verdienst für Aushilfen (Minijob)
-                if (selectedEmployee.contract_type === 'Minijob' && selectedEmployee.hourly_rate) {
-                    const earnings = Math.ceil((Math.round(hours * 100) / 100) * selectedEmployee.hourly_rate);
+                if (employeeToProcess.contract_type === 'Minijob' && employeeToProcess.hourly_rate) {
+                    const earnings = Math.ceil((Math.round(hours * 100) / 100) * employeeToProcess.hourly_rate);
                     setEarningsData({
-                        name: selectedEmployee.name,
+                        name: employeeToProcess.name,
                         hours: Math.round(hours * 100) / 100,
-                        hourlyRate: selectedEmployee.hourly_rate,
+                        hourlyRate: employeeToProcess.hourly_rate,
                         earnings: earnings
                     });
                     setEarningsModalOpen(true);
                 } else {
-                    alert(`✓ ${selectedEmployee.name} ausgestempelt\nArbeitszeit: ${Math.round(hours * 10) / 10}h`);
+                    const wasOtherEmployee = targetEmployee && targetEmployee.id !== selectedEmployee?.id;
+                    const message = wasOtherEmployee 
+                        ? `✓ ${employeeToProcess.name} ausgestempelt (von ${selectedEmployee.name})\nArbeitszeit: ${Math.round(hours * 10) / 10}h`
+                        : `✓ ${employeeToProcess.name} ausgestempelt\nArbeitszeit: ${Math.round(hours * 10) / 10}h`;
+                    alert(message);
                 }
             }
         }
 
         setPinModalOpen(false);
         setSelectedEmployee(null);
+        setTargetEmployee(null);
         setSelectedAction(null);
     };
 
@@ -358,10 +400,13 @@ export default function TerminalClock() {
                     onClose={() => {
                         setPinModalOpen(false);
                         setSelectedEmployee(null);
+                        setTargetEmployee(null);
                         setSelectedAction(null);
                     }}
                     onVerified={handlePinVerified}
-                    title={`PIN für ${selectedEmployee?.name}`}
+                    title={targetEmployee && targetEmployee.id !== selectedEmployee?.id 
+                        ? `PIN für ${selectedEmployee?.name} (Ausstempeln: ${targetEmployee?.name})`
+                        : `PIN für ${selectedEmployee?.name}`}
                 />
 
                 {/* Verdienst Modal für Aushilfen */}

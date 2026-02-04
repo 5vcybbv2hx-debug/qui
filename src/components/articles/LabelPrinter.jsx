@@ -23,12 +23,32 @@ export default function LabelPrinter({ articles = [] }) {
         try {
             JsBarcode(canvas, barcode, {
                 format: 'CODE128',
-                width: 1.5,
-                height: 40,
+                width: 3,
+                height: 80,
                 displayValue: false,
                 margin: 0
             });
             return canvas.toDataURL('image/png');
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const generateHighResBarcode = (barcode) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 150;
+        try {
+            JsBarcode(canvas, barcode, {
+                format: 'CODE128',
+                width: 4,
+                height: 120,
+                displayValue: false,
+                margin: 5,
+                background: '#ffffff',
+                lineColor: '#000000'
+            });
+            return canvas.toDataURL('image/png', 1.0);
         } catch (e) {
             return null;
         }
@@ -44,7 +64,8 @@ export default function LabelPrinter({ articles = [] }) {
         const pdf = new jsPDF({
             orientation: 'landscape',
             unit: 'pt',
-            format: [labelWidth, labelHeight]
+            format: [labelWidth, labelHeight],
+            compress: false
         });
 
         articlesToPrint.forEach((article, index) => {
@@ -52,44 +73,51 @@ export default function LabelPrinter({ articles = [] }) {
                 pdf.addPage([labelWidth, labelHeight], 'landscape');
             }
 
-            // Name (oben links)
-            pdf.setFontSize(11);
+            const padding = 5.67; // 2mm
+            
+            // Name (oben links, mehrzeilig möglich)
+            pdf.setFontSize(12);
             pdf.setFont('helvetica', 'bold');
-            pdf.text(article.name, 8, 15, { maxWidth: 100 });
+            const nameLines = pdf.splitTextToSize(article.name, 110);
+            pdf.text(nameLines, padding, padding + 10);
 
-            // Barcode (oben rechts)
+            // Barcode (oben rechts) - hochauflösend
             if (article.barcode) {
-                const barcodeImg = generateBarcodeSVG(article.barcode);
+                const barcodeImg = generateHighResBarcode(article.barcode);
                 if (barcodeImg) {
-                    pdf.addImage(barcodeImg, 'PNG', labelWidth - 90, 8, 82, 30);
+                    // Barcode größer und schärfer
+                    const barcodeWidth = 100;
+                    const barcodeHeight = 37.5;
+                    pdf.addImage(barcodeImg, 'PNG', labelWidth - barcodeWidth - padding, padding, barcodeWidth, barcodeHeight, undefined, 'FAST');
                     
-                    // Barcode-Text
-                    pdf.setFontSize(7);
+                    // Barcode-Text direkt darunter
+                    pdf.setFontSize(8);
                     pdf.setFont('courier', 'normal');
-                    pdf.text(article.barcode, labelWidth - 49, 44, { align: 'center' });
+                    pdf.text(article.barcode, labelWidth - (barcodeWidth / 2) - padding, padding + barcodeHeight + 8, { align: 'center' });
                 }
             }
 
             // Kategorie (unten links)
             if (article.category) {
-                pdf.setFontSize(9);
+                pdf.setFontSize(10);
                 pdf.setFont('helvetica', 'normal');
-                pdf.setTextColor(85, 85, 85);
-                pdf.text(article.category, 8, labelHeight - 8);
+                pdf.setTextColor(60, 60, 60);
+                pdf.text(article.category, padding, labelHeight - padding - 3);
             }
 
             // Lieferanten (unten rechts)
             if (article.suppliers?.length > 0) {
-                pdf.setFontSize(7);
-                pdf.setTextColor(102, 102, 102);
+                pdf.setFontSize(8);
+                pdf.setTextColor(90, 90, 90);
                 const supplierText = article.suppliers.join(', ');
-                pdf.text(supplierText, labelWidth - 8, labelHeight - 8, { align: 'right', maxWidth: 85 });
+                const supplierLines = pdf.splitTextToSize(supplierText, 95);
+                pdf.text(supplierLines[0], labelWidth - padding, labelHeight - padding - 3, { align: 'right' });
             }
 
             pdf.setTextColor(0, 0, 0);
         });
 
-        pdf.save('etiketten.pdf');
+        pdf.save('etiketten_62x29mm.pdf');
     };
 
     const handlePrint = () => {

@@ -75,52 +75,55 @@ export default function TeamCalendarView({
     return (
         <div className="bg-slate-800 rounded-xl border border-slate-700">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <CalendarIcon className="w-5 h-5 text-amber-400" />
-                    {format(currentDate, 'MMMM yyyy', { locale: de })}
-                </h2>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentDate(subMonths(currentDate, 1))}
-                        className="border-slate-600 text-slate-300"
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentDate(new Date())}
-                        className="border-slate-600 text-slate-300"
-                    >
-                        Heute
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-                        className="border-slate-600 text-slate-300"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </Button>
+            <div className="flex flex-col gap-3 p-4 border-b border-slate-700">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-base md:text-lg font-semibold text-white flex items-center gap-2">
+                        <CalendarIcon className="w-4 h-4 md:w-5 md:h-5 text-amber-400" />
+                        <span className="hidden sm:inline">{format(currentDate, 'MMMM yyyy', { locale: de })}</span>
+                        <span className="sm:hidden">{format(currentDate, 'MMM yyyy', { locale: de })}</span>
+                    </h2>
+                    <div className="flex gap-1.5 md:gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+                            className="border-slate-600 text-slate-300 h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentDate(new Date())}
+                            className="border-slate-600 text-slate-300 h-8 px-2 text-xs"
+                        >
+                            Heute
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+                            className="border-slate-600 text-slate-300 h-8 w-8 p-0"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
 
             {/* Calendar Grid */}
-            <div className="p-4">
+            <div className="p-2 md:p-4">
                 {/* Weekday Headers */}
-                <div className="grid grid-cols-7 gap-2 mb-2">
+                <div className="grid grid-cols-7 gap-0.5 md:gap-2 mb-1 md:mb-2">
                     {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(day => (
-                        <div key={day} className="text-center text-xs font-medium text-slate-400 py-2">
+                        <div key={day} className="text-center text-[10px] md:text-xs font-medium text-slate-400 py-1 md:py-2">
                             {day}
                         </div>
                     ))}
                 </div>
 
                 {/* Days Grid */}
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-0.5 md:gap-2">
                     {days.map(day => {
                         const events = getEventsForDay(day);
                         const isToday = isSameDay(day, new Date());
@@ -131,42 +134,65 @@ export default function TeamCalendarView({
                             <div
                                 key={day.toString()}
                                 className={cn(
-                                    "min-h-[100px] p-2 rounded-lg border transition-all",
+                                    "min-h-[60px] md:min-h-[100px] p-1 md:p-2 rounded md:rounded-lg border transition-all",
                                     isCurrentMonth ? "bg-slate-900 border-slate-700" : "bg-slate-900/50 border-slate-800",
                                     isWeekendDay && "bg-slate-800/50",
-                                    isToday && "ring-2 ring-amber-500"
+                                    isToday && "ring-1 md:ring-2 ring-amber-500"
                                 )}
                             >
                                 <div className={cn(
-                                    "text-sm font-medium mb-2",
+                                    "text-[10px] md:text-sm font-medium mb-1 md:mb-2 text-center md:text-left",
                                     isToday ? "text-amber-400" : isCurrentMonth ? "text-white" : "text-slate-500"
                                 )}>
                                     {format(day, 'd')}
                                 </div>
 
-                                <div className="space-y-1">
-                                    {events.slice(0, 3).map((event, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => onEventClick?.(event)}
-                                            className={cn(
-                                                "w-full text-left px-2 py-1 rounded text-xs truncate transition-all hover:scale-105",
-                                                "text-white font-medium cursor-pointer"
-                                            )}
-                                            style={{ backgroundColor: event.color }}
-                                            title={event.label}
-                                        >
-                                            {event.label}
-                                        </button>
-                                    ))}
-                                    {events.length > 3 && (
-                                        <button
-                                            onClick={() => onEventClick?.({ type: 'multiple', events, date: day })}
-                                            className="w-full text-left px-2 py-1 text-xs text-slate-400 hover:text-slate-200 transition-colors"
-                                        >
-                                            +{events.length - 3} weitere
-                                        </button>
-                                    )}
+                                <div className="space-y-0.5 md:space-y-1">
+                                    {/* Mobile: Show dots, Desktop: Show full events */}
+                                    <div className="md:hidden flex flex-wrap gap-0.5 justify-center">
+                                        {events.slice(0, 4).map((event, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => onEventClick?.(event)}
+                                                className="w-1.5 h-1.5 rounded-full transition-transform hover:scale-150"
+                                                style={{ backgroundColor: event.color }}
+                                                title={event.label}
+                                            />
+                                        ))}
+                                        {events.length > 4 && (
+                                            <button
+                                                onClick={() => onEventClick?.({ type: 'multiple', events, date: day })}
+                                                className="w-1.5 h-1.5 rounded-full bg-slate-500"
+                                                title={`+${events.length - 4} weitere`}
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* Desktop: Full event labels */}
+                                    <div className="hidden md:block space-y-1">
+                                        {events.slice(0, 3).map((event, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => onEventClick?.(event)}
+                                                className={cn(
+                                                    "w-full text-left px-2 py-1 rounded text-xs truncate transition-all hover:scale-105",
+                                                    "text-white font-medium cursor-pointer"
+                                                )}
+                                                style={{ backgroundColor: event.color }}
+                                                title={event.label}
+                                            >
+                                                {event.label}
+                                            </button>
+                                        ))}
+                                        {events.length > 3 && (
+                                            <button
+                                                onClick={() => onEventClick?.({ type: 'multiple', events, date: day })}
+                                                className="w-full text-left px-2 py-1 text-xs text-slate-400 hover:text-slate-200 transition-colors"
+                                            >
+                                                +{events.length - 3} weitere
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -175,17 +201,17 @@ export default function TeamCalendarView({
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-4 p-4 border-t border-slate-700 text-xs">
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded" style={{ backgroundColor: '#64748b' }}></div>
+            <div className="flex flex-wrap justify-center md:justify-start gap-3 md:gap-4 p-3 md:p-4 border-t border-slate-700 text-[10px] md:text-xs">
+                <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2 h-2 md:w-3 md:h-3 rounded" style={{ backgroundColor: '#64748b' }}></div>
                     <span className="text-slate-400">Schicht</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-purple-600"></div>
+                <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2 h-2 md:w-3 md:h-3 rounded bg-purple-600"></div>
                     <span className="text-slate-400">Urlaub</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded bg-red-600"></div>
+                <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2 h-2 md:w-3 md:h-3 rounded bg-red-600"></div>
                     <span className="text-slate-400">Feiertag</span>
                 </div>
             </div>

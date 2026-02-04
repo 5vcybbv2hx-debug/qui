@@ -115,8 +115,8 @@ export default function TeamCalendar() {
                         </Button>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* Stats - Hidden on mobile */}
+                    <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4">
                         <Card className="p-4 bg-slate-800 border-slate-700">
                             <div className="text-2xl font-bold text-white">{shifts.length}</div>
                             <div className="text-sm text-slate-400">Schichten</div>

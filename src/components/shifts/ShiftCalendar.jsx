@@ -239,15 +239,18 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 {dayShifts.map((shift) => (
                                     <div
                                         key={shift.id}
-                                        draggable
+                                        draggable={permissions.canEditShifts}
                                         onDragStart={(e) => handleDragStart(e, shift)}
                                         onDragEnd={handleDragEnd}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onSelectShift(shift);
+                                            if (permissions.canEditShifts) {
+                                                onSelectShift(shift);
+                                            }
                                         }}
                                         className={cn(
-                                            "px-1.5 py-1 rounded text-[10px] font-medium cursor-move hover:scale-105 transition-transform flex items-center gap-1 flex-shrink-0",
+                                            "px-1.5 py-1 rounded text-[10px] font-medium transition-transform flex items-center gap-1 flex-shrink-0",
+                                            permissions.canEditShifts ? "cursor-move hover:scale-105" : "cursor-default",
                                             draggedShift?.id === shift.id && "opacity-50 scale-95"
                                         )}
                                         style={{ 

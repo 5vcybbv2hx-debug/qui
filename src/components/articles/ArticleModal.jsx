@@ -161,10 +161,26 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                 type="button"
                                 variant="outline"
                                 onClick={() => setScannerOpen(true)}
+                                title="Barcode scannen"
                             >
                                 <Camera className="w-4 h-4" />
                             </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    const customCode = `CUSTOM-${Date.now().toString().slice(-8)}`;
+                                    setFormData({ ...formData, barcode: customCode });
+                                }}
+                                title="Eigenen Code generieren"
+                                className="text-xs px-3"
+                            >
+                                Code generieren
+                            </Button>
                         </div>
+                        <p className="text-xs text-slate-500">
+                            Tipp: Scanne einen Barcode oder generiere einen eigenen Code für Artikel ohne EAN
+                        </p>
                     </div>
 
                     <div className="space-y-2">

@@ -1,58 +1,143 @@
-const CACHE_NAME = 'barmanager-v1';
-const urlsToCache = ['/'];
+const CACHE_NAME = 'barmanager-v2';
+const STATIC_CACHE = 'barmanager-static-v2';
+const DYNAMIC_CACHE = 'barmanager-dynamic-v2';
 
 Deno.serve(() => {
     const swCode = `
-        const CACHE_NAME = 'barmanager-v1';
-        const urlsToCache = ['/'];
+        const CACHE_NAME = 'barmanager-v2';
+        const STATIC_CACHE = 'barmanager-static-v2';
+        const DYNAMIC_CACHE = 'barmanager-dynamic-v2';
+        
+        const urlsToCache = [
+            '/',
+            '/Dashboard',
+            '/Calendar',
+            '/Cleaning',
+            '/Warehouse',
+            '/Reservations',
+            '/MyArea'
+        ];
 
         self.addEventListener('install', (event) => {
             console.log('[SW] Installing...');
             event.waitUntil(
-                caches.open(CACHE_NAME)
-                    .then((cache) => cache.addAll(urlsToCache))
+                caches.open(STATIC_CACHE)
+                    .then((cache) => {
+                        console.log('[SW] Caching static assets');
+                        return cache.addAll(urlsToCache);
+                    })
                     .then(() => self.skipWaiting())
             );
         });
 
         self.addEventListener('activate', (event) => {
             console.log('[SW] Activating...');
-            const cacheWhitelist = [CACHE_NAME];
+            const cacheWhitelist = [STATIC_CACHE, DYNAMIC_CACHE];
             event.waitUntil(
                 caches.keys().then((cacheNames) => {
                     return Promise.all(
                         cacheNames.map((cacheName) => {
                             if (cacheWhitelist.indexOf(cacheName) === -1) {
+                                console.log('[SW] Deleting old cache:', cacheName);
                                 return caches.delete(cacheName);
                             }
                         })
                     );
-                }).then(() => self.clients.claim())
+                }).then(() => {
+                    console.log('[SW] Claiming clients');
+                    return self.clients.claim();
+                })
             );
         });
 
         self.addEventListener('fetch', (event) => {
             if (event.request.method !== 'GET') return;
             
-            event.respondWith(
-                caches.match(event.request)
-                    .then((response) => {
-                        if (response) {
-                            return response;
-                        }
-                        return fetch(event.request).then((response) => {
-                            if (response.status === 200) {
+            const { url } = event.request;
+            
+            // Cache-First für statische Assets (JS, CSS, Bilder)
+            if (url.includes('/assets/') || url.match(/\\.(js|css|png|jpg|jpeg|svg|woff2?)$/)) {
+                event.respondWith(
+                    caches.match(event.request).then((response) => {
+                        return response || fetch(event.request).then((fetchResponse) => {
+                            return caches.open(STATIC_CACHE).then((cache) => {
+                                cache.put(event.request, fetchResponse.clone());
+                                return fetchResponse;
+                            });
+                        }).catch(() => {
+                            console.log('[SW] Static asset failed to load:', url);
+                        });
+                    })
+                );
+                return;
+            }
+            
+            // Network-First für API-Anfragen
+            if (url.includes('/api/')) {
+                event.respondWith(
+                    fetch(event.request)
+                        .then((response) => {
+                            if (response.status === 200 && url.includes('/entities/')) {
                                 const responseClone = response.clone();
-                                caches.open(CACHE_NAME).then((cache) => {
+                                caches.open(DYNAMIC_CACHE).then((cache) => {
                                     cache.put(event.request, responseClone);
                                 });
                             }
                             return response;
+                        })
+                        .catch(() => {
+                            return caches.match(event.request).then((response) => {
+                                if (response) {
+                                    console.log('[SW] Serving cached API response for:', url);
+                                    return response;
+                                }
+                                return new Response(
+                                    JSON.stringify({ 
+                                        error: 'Offline', 
+                                        message: 'Diese Anfrage ist offline nicht verfügbar',
+                                        offline: true
+                                    }),
+                                    { 
+                                        headers: { 'Content-Type': 'application/json' },
+                                        status: 503
+                                    }
+                                );
+                            });
+                        })
+                );
+                return;
+            }
+            
+            // Cache-First für Seiten/Navigation
+            event.respondWith(
+                caches.match(event.request)
+                    .then((response) => {
+                        if (response) {
+                            // Update im Hintergrund
+                            fetch(event.request).then((fetchResponse) => {
+                                if (fetchResponse.status === 200) {
+                                    caches.open(STATIC_CACHE).then((cache) => {
+                                        cache.put(event.request, fetchResponse);
+                                    });
+                                }
+                            }).catch(() => {});
+                            return response;
+                        }
+                        
+                        return fetch(event.request).then((fetchResponse) => {
+                            if (fetchResponse.status === 200) {
+                                const responseClone = fetchResponse.clone();
+                                caches.open(DYNAMIC_CACHE).then((cache) => {
+                                    cache.put(event.request, responseClone);
+                                });
+                            }
+                            return fetchResponse;
                         }).catch(() => {
+                            console.log('[SW] Network request failed:', url);
                             return new Response(
                                 JSON.stringify({ 
                                     error: 'Offline', 
-                                    message: 'Diese Anfrage ist offline nicht verfügbar' 
+                                    message: 'Diese Seite ist offline nicht verfügbar' 
                                 }),
                                 { 
                                     headers: { 'Content-Type': 'application/json' },

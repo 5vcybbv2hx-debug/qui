@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { getHolidaysBW, getHolidayName } from './getHolidays';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
+    const permissions = usePermissions();
     const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
     const [currentDate, setCurrentDate] = useState(new Date());
     const [draggedShift, setDraggedShift] = useState(null);

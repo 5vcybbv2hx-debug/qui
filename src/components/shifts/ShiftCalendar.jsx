@@ -81,6 +81,10 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
     };
 
     const handleDragStart = (e, shift) => {
+        if (!permissions.canEditShifts) {
+            e.preventDefault();
+            return;
+        }
         setDraggedShift(shift);
         e.dataTransfer.effectAllowed = 'move';
     };

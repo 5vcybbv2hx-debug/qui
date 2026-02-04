@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, EyeOff, Eye } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,16 @@ export default function TaskManager({ task, areas }) {
     const handleDelete = () => {
         if (confirm('Aufgabe wirklich löschen?')) {
             deleteMutation.mutate(task.id);
+        }
+    };
+
+    const handleToggleActive = () => {
+        const newStatus = !task.is_active;
+        if (confirm(`Aufgabe wirklich ${newStatus ? 'aktivieren' : 'deaktivieren'}?`)) {
+            updateMutation.mutate({ 
+                id: task.id, 
+                data: { is_active: newStatus } 
+            });
         }
     };
 
@@ -118,22 +128,44 @@ export default function TaskManager({ task, areas }) {
                             </div>
                         </div>
 
-                        <div className="flex gap-2 pt-4">
-                            <Button 
-                                type="button" 
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={handleDelete}
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Löschen
-                            </Button>
-                            <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
-                                Abbrechen
-                            </Button>
-                            <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
-                                Speichern
-                            </Button>
+                        <div className="flex flex-col gap-3 pt-4">
+                            <div className="flex gap-2">
+                                <Button 
+                                    type="button" 
+                                    variant="outline"
+                                    className={task.is_active === false ? "text-green-600 hover:text-green-700 hover:bg-green-50" : "text-orange-600 hover:text-orange-700 hover:bg-orange-50"}
+                                    onClick={handleToggleActive}
+                                >
+                                    {task.is_active === false ? (
+                                        <>
+                                            <Eye className="w-4 h-4 mr-2" />
+                                            Aktivieren
+                                        </>
+                                    ) : (
+                                        <>
+                                            <EyeOff className="w-4 h-4 mr-2" />
+                                            Deaktivieren
+                                        </>
+                                    )}
+                                </Button>
+                                <Button 
+                                    type="button" 
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={handleDelete}
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Löschen
+                                </Button>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
+                                    Abbrechen
+                                </Button>
+                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
+                                    Speichern
+                                </Button>
+                            </div>
                         </div>
                     </form>
                 </DialogContent>

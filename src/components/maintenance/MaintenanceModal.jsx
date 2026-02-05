@@ -25,6 +25,9 @@ export default function MaintenanceModal({ task, open, onClose }) {
         next_maintenance: "",
         responsible: "",
         notes: "",
+        enable_reminders: true,
+        reminder_days_before: 7,
+        sync_to_calendar: true,
         is_active: true
     });
 
@@ -110,6 +113,7 @@ export default function MaintenanceModal({ task, open, onClose }) {
                                     <SelectItem value="quartalsweise">Quartalsweise</SelectItem>
                                     <SelectItem value="halbjährlich">Halbjährlich</SelectItem>
                                     <SelectItem value="jährlich">Jährlich</SelectItem>
+                                    <SelectItem value="alle zwei Jahre">Alle zwei Jahre</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -161,12 +165,40 @@ export default function MaintenanceModal({ task, open, onClose }) {
                         />
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <Switch
-                            checked={formData.is_active}
-                            onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                        />
-                        <Label>Aktiv</Label>
+                    <div className="space-y-3 border-t pt-4">
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={formData.sync_to_calendar}
+                                onCheckedChange={(checked) => setFormData({ ...formData, sync_to_calendar: checked })}
+                            />
+                            <Label>Mit Kalender synchronisieren</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={formData.enable_reminders}
+                                onCheckedChange={(checked) => setFormData({ ...formData, enable_reminders: checked })}
+                            />
+                            <Label>Erinnerungen aktivieren</Label>
+                        </div>
+                        {formData.enable_reminders && (
+                            <div className="ml-6">
+                                <Label>Erinnerung (Tage vor Termin)</Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    max="30"
+                                    value={formData.reminder_days_before}
+                                    onChange={(e) => setFormData({ ...formData, reminder_days_before: parseInt(e.target.value) })}
+                                />
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <Switch
+                                checked={formData.is_active}
+                                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                            />
+                            <Label>Aktiv</Label>
+                        </div>
                     </div>
 
                     <DialogFooter>

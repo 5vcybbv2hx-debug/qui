@@ -236,6 +236,72 @@ export default function Dashboard() {
                         </div>
                     </div>
 
+                    {/* Persönlicher Bereich für Manager */}
+                    {currentEmployee && (
+                        <>
+                            <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-850 border-slate-700">
+                                <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-amber-500" />
+                                    Mein Bereich
+                                </h2>
+                                <div className="grid sm:grid-cols-3 gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                                            <Clock className="w-6 h-6 text-blue-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold text-white">{hoursThisWeek.toFixed(1)}h</p>
+                                            <p className="text-xs text-slate-400">Diese Woche</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                                            <Umbrella className="w-6 h-6 text-purple-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold text-white">{remainingVacationDays}</p>
+                                            <p className="text-xs text-slate-400">Urlaubstage übrig</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
+                                            <Calendar className="w-6 h-6 text-green-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-bold text-white">{myUpcomingShifts.length}</p>
+                                            <p className="text-xs text-slate-400">Kommende Schichten</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {activeClockEntry && (
+                                    <div className="mt-4 p-3 bg-green-900/20 border border-green-800/30 rounded-lg">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <LogIn className="w-5 h-5 text-green-400" />
+                                                <div>
+                                                    <p className="text-sm font-semibold text-white">Eingestempelt</p>
+                                                    <p className="text-xs text-green-400">
+                                                        Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </Card>
+
+                            <div className="h-px bg-slate-700/50" />
+                        </>
+                    )}
+
+                    {/* Management Übersicht */}
+                    <div>
+                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-amber-500" />
+                            Management Übersicht
+                        </h2>
+                    </div>
+
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {stats.map((stat) => (
                             <Link to={createPageUrl(stat.link)} key={stat.title}>

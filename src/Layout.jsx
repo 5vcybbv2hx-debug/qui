@@ -37,7 +37,6 @@ const navigationSections = [
             { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees' },
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager' },
-            { name: 'Preiskalkulation', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
         ]
     },
     {

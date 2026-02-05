@@ -221,7 +221,7 @@ export default function PriceCalculator() {
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => removeIngredient(ing.id)}
-                                                    className="text-red-400 hover:text-red-300 h-6 w-6 p-0"
+                                                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-6 w-6 p-0"
                                                 >
                                                     ×
                                                 </Button>
@@ -365,10 +365,10 @@ export default function PriceCalculator() {
                                             <button
                                                 key={m}
                                                 onClick={() => setMargin(m.toString())}
-                                                className={`w-full text-left px-3 py-2 rounded transition-colors ${
+                                                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                                                     margin === m.toString() 
-                                                        ? 'bg-amber-600 text-white' 
-                                                        : 'bg-slate-900 text-slate-300 hover:bg-slate-700'
+                                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20' 
+                                                        : 'bg-slate-900/50 text-slate-300 hover:bg-slate-800/50 border border-slate-700/50'
                                                 }`}
                                             >
                                                 <div className="flex justify-between items-center">

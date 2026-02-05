@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Wine, Search, Eye, EyeOff, Link2 } from "lucide-react";
+import { Plus, Wine, Search, Eye, EyeOff, Link2, TrendingUp } from "lucide-react";
 import MenuItemModal from "../components/menu/MenuItemModal";
+import MarginCalculator from "../components/menu/MarginCalculator";
 import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
 
@@ -17,6 +18,7 @@ export default function DrinkMenuPage() {
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
+    const [expandedItem, setExpandedItem] = useState(null);
 
     const { data: items = [], isLoading } = useQuery({
         queryKey: ['menu-items'],
@@ -107,7 +109,7 @@ export default function DrinkMenuPage() {
                                 .map(item => (
                                     <Card key={item.id} className={!item.is_available ? 'opacity-60' : ''}>
                                         <CardContent className="p-4">
-                                            <div className="flex justify-between items-start">
+                                            <div className="flex justify-between items-start gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
                                                         <h3 className="font-semibold text-lg">{item.name}</h3>
@@ -144,6 +146,19 @@ export default function DrinkMenuPage() {
                                                             </Badge>
                                                         )}
                                                     </div>
+
+                                                    {/* Margin Indicator */}
+                                                    {(item.purchase_price || item.use_recipe_calculation) && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+                                                            className="mt-2 text-xs h-7"
+                                                        >
+                                                            <TrendingUp className="h-3 w-3 mr-1" />
+                                                            Marge anzeigen
+                                                        </Button>
+                                                    )}
                                                 </div>
                                                 {permissions.canEditEmployees && (
                                                     <div className="flex gap-2">
@@ -171,6 +186,13 @@ export default function DrinkMenuPage() {
                                                     </div>
                                                 )}
                                             </div>
+
+                                            {/* Expanded Margin Details */}
+                                            {expandedItem === item.id && (
+                                                <div className="mt-4 pt-4 border-t">
+                                                    <MarginCalculator menuItem={item} />
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 ))}

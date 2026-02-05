@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Calculator } from "lucide-react";
 
 export default function MenuItemModal({ item, open, onClose }) {
     const queryClient = useQueryClient();
@@ -24,6 +26,9 @@ export default function MenuItemModal({ item, open, onClose }) {
         description: "",
         price: "",
         size: "",
+        purchase_price: "",
+        use_recipe_calculation: false,
+        linked_recipe_id: "",
         is_available: true,
         is_seasonal: false,
         is_special: false,
@@ -38,6 +43,12 @@ export default function MenuItemModal({ item, open, onClose }) {
     const { data: articles = [] } = useQuery({
         queryKey: ['articles-for-linking'],
         queryFn: () => base44.entities.Article.list('-name', 500),
+        initialData: []
+    });
+
+    const { data: recipes = [] } = useQuery({
+        queryKey: ['recipes-for-linking'],
+        queryFn: () => base44.entities.Recipe.list('-name', 500),
         initialData: []
     });
 
@@ -73,6 +84,7 @@ export default function MenuItemModal({ item, open, onClose }) {
         const submitData = {
             ...formData,
             price: parseFloat(formData.price),
+            purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
             alcohol_content: formData.alcohol_content ? parseFloat(formData.alcohol_content) : undefined,
             order_position: formData.order_position ? parseInt(formData.order_position) : undefined
         };
@@ -132,7 +144,7 @@ export default function MenuItemModal({ item, open, onClose }) {
                         </div>
 
                         <div>
-                            <Label>Preis (€) *</Label>
+                            <Label>Verkaufspreis (€) *</Label>
                             <Input
                                 type="number"
                                 step="0.01"
@@ -150,6 +162,65 @@ export default function MenuItemModal({ item, open, onClose }) {
                                 onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                                 placeholder="z.B. 0,3l, 4cl"
                             />
+                        </div>
+
+                        {/* Margin Calculation Section */}
+                        <div className="col-span-2 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Calculator className="w-5 h-5 text-amber-700" />
+                                <Label className="text-amber-900 font-semibold">Margenberechnung</Label>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 mb-4">
+                                <Switch
+                                    checked={formData.use_recipe_calculation}
+                                    onCheckedChange={(checked) => setFormData({ 
+                                        ...formData, 
+                                        use_recipe_calculation: checked,
+                                        purchase_price: checked ? "" : formData.purchase_price 
+                                    })}
+                                />
+                                <Label className="text-sm">EK automatisch aus Rezept berechnen</Label>
+                            </div>
+
+                            {formData.use_recipe_calculation ? (
+                                <div>
+                                    <Label className="text-amber-900">Rezept verknüpfen</Label>
+                                    <Select
+                                        value={formData.linked_recipe_id || ""}
+                                        onValueChange={(value) => setFormData({ ...formData, linked_recipe_id: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Rezept auswählen..." />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-60">
+                                            <SelectItem value={null}>Kein Rezept</SelectItem>
+                                            {recipes.map(recipe => (
+                                                <SelectItem key={recipe.id} value={recipe.id}>
+                                                    {recipe.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-amber-700 mt-2">
+                                        ℹ️ EK wird automatisch aus Artikelpreisen berechnet
+                                    </p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <Label className="text-amber-900">Einkaufspreis (€)</Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={formData.purchase_price}
+                                        onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
+                                        placeholder="2.50"
+                                    />
+                                    <p className="text-xs text-amber-700 mt-2">
+                                        ℹ️ Manueller Einkaufspreis für einfache Getränke
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div>

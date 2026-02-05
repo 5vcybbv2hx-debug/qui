@@ -223,11 +223,11 @@ export default function Dashboard() {
         ];
 
         return (
-            <div className="min-h-screen bg-slate-950 p-4 sm:p-8">
-                <div className="max-w-7xl mx-auto space-y-6">
-                    <div className="flex items-center justify-between">
+            <div className="min-h-screen bg-slate-950 p-3 sm:p-8 pb-24 md:pb-0">
+                <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
+                    <div className="flex items-center justify-between gap-2 flex-col sm:flex-row">
                         <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
+                            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
                             <p className="text-slate-400 text-sm mt-1">{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</p>
                         </div>
                         <div className="flex gap-2">
@@ -499,10 +499,10 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 p-4 sm:p-8">
-            <div className="max-w-6xl mx-auto space-y-6">
+        <div className="min-h-screen bg-slate-900 p-3 sm:p-8 pb-24 md:pb-0">
+            <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-white">Willkommen, {currentEmployee.name}!</h1>
+                    <h1 className="text-lg sm:text-2xl font-bold text-white">Willkommen, {currentEmployee.name}!</h1>
                     <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
                 </div>
 

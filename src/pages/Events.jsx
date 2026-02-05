@@ -145,23 +145,25 @@ export default function Events() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-5 sm:mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Events</h1>
+                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Events</h1>
                         <p className="text-slate-400 text-sm mt-1">
                             {events.length} Event{events.length !== 1 ? 's' : ''}
                         </p>
                     </div>
                     <Button 
-                        onClick={() => openModal()}
-                        className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Event hinzufügen
-                    </Button>
+                         size="sm"
+                         onClick={() => openModal()}
+                         className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20 text-xs h-9"
+                     >
+                         <Plus className="w-4 h-4 mr-1" />
+                         <span className="hidden sm:inline">Event hinzufügen</span>
+                         <span className="sm:hidden">+Event</span>
+                     </Button>
                 </div>
 
                 {/* Filters */}

@@ -409,18 +409,18 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
     };
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-5 sm:mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Rezepte</h1>
+                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Rezepte</h1>
                         <p className="text-slate-400 text-sm mt-1">
                             {recipes.length} Rezept{recipes.length !== 1 ? 'e' : ''}
                         </p>
                     </div>
                     {permissions.isManager && (
-                        <div className="flex gap-2">
+                         <div className="flex gap-1 sm:gap-2 flex-wrap">
                             <PDFExportButton
                                 data={filteredRecipes}
                                 filename="rezepte"

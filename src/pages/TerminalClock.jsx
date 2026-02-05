@@ -165,14 +165,33 @@ export default function TerminalClock() {
                 const clockOut = new Date();
                 const hours = (clockOut - clockIn) / (1000 * 60 * 60);
 
+                // Automatische Pausen nach ArbZG (bezahlt)
+                let pauseMinuten = 0;
+                if (hours > 9) {
+                    pauseMinuten = 45; // > 9h = 45min
+                } else if (hours > 6) {
+                    pauseMinuten = 30; // 6-9h = 30min
+                }
+
                 await updateMutation.mutateAsync({
                     id: activeEntry.id,
                     data: {
                         clock_out: clockOut.toISOString(),
                         total_hours: Math.round(hours * 100) / 100,
+                        pause_minutes: pauseMinuten,
                         status: 'clocked_out'
                     }
                 });
+
+                // Automatische Pausen nach ArbZG (bezahlt)
+                let pauseMinuten = 0;
+                if (hours > 9) {
+                    pauseMinuten = 45;
+                } else if (hours > 6) {
+                    pauseMinuten = 30;
+                }
+                
+                const pauseText = pauseMinuten > 0 ? `\n${pauseMinuten}min Pause (bezahlt)` : '';
 
                 // Zeige Verdienst für Aushilfen (Minijob)
                 if (employeeToProcess.contract_type === 'Minijob' && employeeToProcess.hourly_rate) {
@@ -181,14 +200,15 @@ export default function TerminalClock() {
                         name: employeeToProcess.name,
                         hours: Math.round(hours * 100) / 100,
                         hourlyRate: employeeToProcess.hourly_rate,
-                        earnings: earnings
+                        earnings: earnings,
+                        pauseMinutes: pauseMinuten
                     });
                     setEarningsModalOpen(true);
                 } else {
                     const wasOtherEmployee = targetEmployee && targetEmployee.id !== selectedEmployee?.id;
                     const message = wasOtherEmployee 
-                        ? `✓ ${employeeToProcess.name} ausgestempelt (von ${selectedEmployee.name})\nArbeitszeit: ${Math.round(hours * 10) / 10}h`
-                        : `✓ ${employeeToProcess.name} ausgestempelt\nArbeitszeit: ${Math.round(hours * 10) / 10}h`;
+                        ? `✓ ${employeeToProcess.name} ausgestempelt (von ${selectedEmployee.name})\nArbeitszeit: ${Math.round(hours * 10) / 10}h${pauseText}`
+                        : `✓ ${employeeToProcess.name} ausgestempelt\nArbeitszeit: ${Math.round(hours * 10) / 10}h${pauseText}`;
                     alert(message);
                 }
             }
@@ -430,6 +450,11 @@ export default function TerminalClock() {
                                     </div>
                                     <div className="text-green-100 text-sm">
                                         {earningsData.hours.toFixed(2)}h × {earningsData.hourlyRate.toFixed(2)} €/h
+                                        {earningsData.pauseMinutes > 0 && (
+                                            <div className="mt-1 text-xs">
+                                                (inkl. {earningsData.pauseMinutes}min Pause bezahlt)
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

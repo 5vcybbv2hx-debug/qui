@@ -123,28 +123,31 @@ export default function Todos() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-5 sm:mb-6">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Aufgaben</h1>
-                        <p className="text-slate-400 text-sm mt-1">
-                            {openCount} offen · {inProgressCount} in Bearbeitung · {doneCount} erledigt
-                        </p>
+                        <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                             <span className="hidden sm:inline">{openCount} offen · {inProgressCount} in Bearbeitung · {doneCount} erledigt</span>
+                             <span className="sm:hidden">{openCount}|{inProgressCount}|{doneCount}</span>
+                         </p>
                     </div>
                     {permissions.canEditTodos && (
-                        <Button 
-                            onClick={() => {
-                                setSelectedTodo(null);
-                                setModalOpen(true);
-                            }}
-                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Neue Aufgabe
-                        </Button>
-                    )}
+                         <Button 
+                             size="sm"
+                             onClick={() => {
+                                 setSelectedTodo(null);
+                                 setModalOpen(true);
+                             }}
+                             className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20 text-xs h-9"
+                         >
+                             <Plus className="w-4 h-4 mr-1" />
+                             <span className="hidden sm:inline">Neue Aufgabe</span>
+                             <span className="sm:hidden">Neu</span>
+                         </Button>
+                     )}
                 </div>
 
                 {/* Filters */}

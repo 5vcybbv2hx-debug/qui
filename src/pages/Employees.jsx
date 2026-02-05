@@ -322,22 +322,22 @@ export default function Employees() {
     // }
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-5 sm:mb-6">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Team</h1>
+                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Team</h1>
                         <p className="text-slate-400 text-sm mt-1">
                             {filteredActiveEmployees.length} aktive Mitarbeiter
                         </p>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                        {permissions.isManager && (
-                            <>
-                                <WorkTimeModelsManager />
-                                <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries(['employees'])} />
-                                <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />
+                    <div className="flex gap-1 sm:gap-2 flex-wrap">
+                         {permissions.isManager && (
+                             <>
+                                 <WorkTimeModelsManager />
+                                 <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries(['employees'])} />
+                                 <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />
                                 <PDFExportButton
                                     data={filteredActiveEmployees}
                                     filename="mitarbeiter"

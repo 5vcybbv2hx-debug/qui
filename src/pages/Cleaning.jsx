@@ -278,11 +278,11 @@ export default function Cleaning() {
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
-                <div className="flex flex-col gap-3 mb-6">
-                    <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:gap-3 mb-5 sm:mb-6">
+                    <div className="flex items-center justify-between gap-2">
                         <div>
                             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Putzliste</h1>
                             <p className="text-slate-400 text-sm mt-1">
@@ -300,40 +300,48 @@ export default function Cleaning() {
                             </span>
                         </div>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                        <Button 
-                            variant="outline"
-                            onClick={() => setReportsModalOpen(true)}
-                            className="text-slate-300 border-slate-600 hover:bg-slate-700"
-                        >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Berichte
-                        </Button>
-                        <Button 
-                            variant="outline"
-                            onClick={generateWeeklyReport}
-                            className="text-white bg-green-600 hover:bg-green-700 border-green-600"
-                        >
-                            <FileText className="w-4 h-4 mr-2" />
-                            Wochenbericht
-                        </Button>
-                        <AreasManager />
-                        <Button 
-                            variant="outline"
-                            onClick={endDay}
-                            className="text-white bg-orange-600 hover:bg-orange-700 border-orange-600"
-                        >
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            Tag beenden
-                        </Button>
-                        <Button 
-                            onClick={() => setModalOpen(true)}
-                            className="bg-amber-600 hover:bg-amber-700"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Aufgabe
-                        </Button>
-                    </div>
+                    <div className="flex gap-1 sm:gap-2 flex-wrap">
+                         <Button 
+                             size="sm"
+                             variant="outline"
+                             onClick={() => setReportsModalOpen(true)}
+                             className="text-slate-300 border-slate-600 hover:bg-slate-700 text-xs h-9"
+                         >
+                             <FileText className="w-3 h-3 mr-1" />
+                             <span className="hidden sm:inline">Berichte</span>
+                             <span className="sm:hidden">B</span>
+                         </Button>
+                         <Button 
+                             size="sm"
+                             variant="outline"
+                             onClick={generateWeeklyReport}
+                             className="text-white bg-green-600 hover:bg-green-700 border-green-600 text-xs h-9"
+                         >
+                             <FileText className="w-3 h-3 mr-1" />
+                             <span className="hidden sm:inline">Wochenbericht</span>
+                             <span className="sm:hidden">W</span>
+                         </Button>
+                         <AreasManager />
+                         <Button 
+                             size="sm"
+                             variant="outline"
+                             onClick={endDay}
+                             className="text-white bg-orange-600 hover:bg-orange-700 border-orange-600 text-xs h-9"
+                         >
+                             <RefreshCw className="w-3 h-3 mr-1" />
+                             <span className="hidden sm:inline">Tag beenden</span>
+                             <span className="sm:hidden">Tag</span>
+                         </Button>
+                         <Button 
+                             size="sm"
+                             onClick={() => setModalOpen(true)}
+                             className="bg-amber-600 hover:bg-amber-700 text-xs h-9"
+                         >
+                             <Plus className="w-3 h-3 mr-1" />
+                             <span className="hidden sm:inline">Aufgabe</span>
+                             <span className="sm:hidden">+</span>
+                         </Button>
+                     </div>
                 </div>
 
                 {/* Progress */}

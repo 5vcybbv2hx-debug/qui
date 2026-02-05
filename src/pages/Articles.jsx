@@ -184,15 +184,15 @@ export default function Articles() {
 
     return (
         <div>
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-8 pb-24 md:pb-0">
                 {/* Header */}
-                <div className="flex flex-col gap-3 mb-6">
+                <div className="flex flex-col gap-2 sm:gap-3 mb-5 sm:mb-6">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Artikeldatenbank</h1>
+                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Artikeldatenbank</h1>
                         <p className="text-slate-400 text-sm mt-1">Verwalte alle Artikel für die Auffüllliste</p>
                     </div>
                     
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-1 sm:gap-2 flex-wrap">
                         <BulkImporter />
                         <LabelPrinter articles={filteredArticles} />
                         {permissions.isManager && (
@@ -245,9 +245,9 @@ export default function Articles() {
                 </div>
 
                 {/* Search & Filter */}
-                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
-                    <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row gap-3">
+                 <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-5 sm:mb-6">
+                     <div className="space-y-2 sm:space-y-3">
+                         <div className="flex flex-col gap-2 sm:gap-3">
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                                 <Input
@@ -260,9 +260,9 @@ export default function Articles() {
                             <select
                                 value={filterCategory}
                                 onChange={(e) => setFilterCategory(e.target.value)}
-                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                                className="px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm"
                             >
-                                <option value="all">Alle Kategorien</option>
+                                <option value="all">Kategorien</option>
                                 {categories.map(cat => (
                                     <option key={cat.name} value={cat.name}>{cat.name}</option>
                                 ))}
@@ -270,9 +270,9 @@ export default function Articles() {
                             <select
                                 value={filterSupplier}
                                 onChange={(e) => setFilterSupplier(e.target.value)}
-                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                                className="px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm"
                             >
-                                <option value="all">Alle Lieferanten</option>
+                                <option value="all">Lieferanten</option>
                                 {allSuppliers.map(sup => (
                                     <option key={sup} value={sup}>{sup}</option>
                                 ))}
@@ -280,9 +280,9 @@ export default function Articles() {
                             <select
                                 value={filterStock}
                                 onChange={(e) => setFilterStock(e.target.value)}
-                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                                className="px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm"
                             >
-                                <option value="all">Alle Bestände</option>
+                                <option value="all">Bestände</option>
                                 <option value="niedrig">Niedrig</option>
                                 <option value="leer">Leer</option>
                             </select>

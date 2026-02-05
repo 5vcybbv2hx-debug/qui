@@ -249,7 +249,7 @@ export default function Layout({ children, currentPageName }) {
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
-                            <nav className="p-4 space-y-6">
+                            <nav className="p-4 space-y-6 pt-2">
                                 {navigationSections.map((section) => {
                                     const visibleItems = section.items.filter(item => permissions[item.permission]);
                                     if (visibleItems.length === 0) return null;

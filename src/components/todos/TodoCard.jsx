@@ -110,7 +110,13 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
                                 isOverdue ? "text-red-400" : "text-slate-500"
                             )}>
                                 <Calendar className="w-3 h-3" />
-                                {format(new Date(todo.due_date), 'd. MMM', { locale: de })}
+                                {(() => {
+                                    try {
+                                        return format(new Date(todo.due_date), 'd. MMM', { locale: de });
+                                    } catch {
+                                        return todo.due_date;
+                                    }
+                                })()}
                             </div>
                         )}
                         

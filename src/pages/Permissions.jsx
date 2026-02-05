@@ -26,8 +26,6 @@ const PERMISSION_GROUPS = [
         permissions: [
             { key: 'canViewReservations', label: 'Reservierungen ansehen' },
             { key: 'canEditReservations', label: 'Reservierungen bearbeiten' },
-            { key: 'canViewEvents', label: 'Events ansehen' },
-            { key: 'canEditEvents', label: 'Events bearbeiten' },
         ]
     },
     {
@@ -49,12 +47,11 @@ const PERMISSION_GROUPS = [
         ]
     },
     {
-        title: 'Team & Rezepte',
+        title: 'Team',
         permissions: [
             { key: 'canViewEmployees', label: 'Team ansehen' },
             { key: 'canEditEmployees', label: 'Team bearbeiten' },
-            { key: 'canViewRecipes', label: 'Rezepte ansehen' },
-            { key: 'canEditRecipes', label: 'Rezepte bearbeiten' },
+            { key: 'canClockOutOthers', label: 'Andere ausstempeln' },
         ]
     },
     {

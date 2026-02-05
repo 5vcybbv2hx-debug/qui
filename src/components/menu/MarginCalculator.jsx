@@ -5,6 +5,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Calculator, AlertTriangle } from 'lucide-react';
 
+// Hilfsfunktion zum Parsen der Größenangabe
+const parseServingSize = (sizeString) => {
+    if (!sizeString) return 0;
+    
+    const size = sizeString.toLowerCase().replace(',', '.');
+    
+    // Liter: 0,3l, 0.5l
+    if (size.includes('l')) {
+        return parseFloat(size.replace('l', '').trim()) || 0;
+    }
+    
+    // Centiliter: 4cl, 2cl
+    if (size.includes('cl')) {
+        return (parseFloat(size.replace('cl', '').trim()) || 0) / 100;
+    }
+    
+    // Milliliter: 330ml, 500ml
+    if (size.includes('ml')) {
+        return (parseFloat(size.replace('ml', '').trim()) || 0) / 1000;
+    }
+    
+    return 0;
+};
+
 export default function MarginCalculator({ menuItem }) {
     const [calculatedData, setCalculatedData] = useState(null);
 
@@ -44,7 +68,17 @@ export default function MarginCalculator({ menuItem }) {
         else if (menuItem.linked_article_id) {
             const linkedArticle = articles.find(a => a.id === menuItem.linked_article_id);
             if (linkedArticle?.purchase_price) {
-                purchasePrice = linkedArticle.purchase_price;
+                // Mengenumrechnung: z.B. 4cl aus 0,7L Flasche
+                const articleSize = linkedArticle.unit_size || 1;
+                const servingSize = parseServingSize(menuItem.size);
+                
+                if (servingSize > 0) {
+                    // Preis pro Einheit * Ausschenkmenge / Artikelgröße
+                    purchasePrice = (linkedArticle.purchase_price / articleSize) * servingSize;
+                } else {
+                    // Fallback wenn keine Größe angegeben
+                    purchasePrice = linkedArticle.purchase_price;
+                }
                 calculationMethod = 'article';
             }
         }

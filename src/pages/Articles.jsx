@@ -195,20 +195,22 @@ export default function Articles() {
                     <div className="flex gap-2 flex-wrap">
                         <BulkImporter />
                         <LabelPrinter articles={filteredArticles} />
-                        <PDFExportButton
-                            data={filteredArticles}
-                            filename="artikel"
-                            title="Artikeldatenbank"
-                            columns={[
-                                { label: 'Name', field: 'name' },
-                                { label: 'Barcode', field: 'barcode' },
-                                { label: 'Kategorie', field: 'category' },
-                                { label: 'Bestand', render: (a) => `${a.current_stock || 0}/${a.min_stock || '-'}` },
-                                { label: 'Preis (€)', render: (a) => a.purchase_price?.toFixed(2) || '-' }
-                            ]}
-                            variant="outline"
-                            className="border-green-600 text-white bg-green-600 hover:bg-green-700"
-                        />
+                        {permissions.isManager && (
+                            <PDFExportButton
+                                data={filteredArticles}
+                                filename="artikel"
+                                title="Artikeldatenbank"
+                                columns={[
+                                    { label: 'Name', field: 'name' },
+                                    { label: 'Barcode', field: 'barcode' },
+                                    { label: 'Kategorie', field: 'category' },
+                                    { label: 'Bestand', render: (a) => `${a.current_stock || 0}/${a.min_stock || '-'}` },
+                                    { label: 'Preis (€)', render: (a) => a.purchase_price?.toFixed(2) || '-' }
+                                ]}
+                                variant="outline"
+                                className="border-green-600 text-white bg-green-600 hover:bg-green-700"
+                            />
+                        )}
                         <LowStockAlert />
                         <CategoryManager />
                         {selectedArticles.length > 0 && (

@@ -85,6 +85,24 @@ a,
   -ms-user-select: none;
 }
 
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  button:not([class*="h-"]):not([class*="w-"]),
+  a:not([class*="h-"]):not([class*="w-"]),
+  [role="button"]:not([class*="h-"]):not([class*="w-"]) {
+    padding: max(0.5rem, calc((44px - 1em) / 2));
+  }
+}
+
 p,
 span,
 div:not(button):not(a):not([role="button"]),

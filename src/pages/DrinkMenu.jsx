@@ -54,160 +54,173 @@ export default function DrinkMenuPage() {
     }, {});
 
     return (
-        <div className="p-4 max-w-7xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
-                        <Wine className="h-8 w-8" />
-                        Getränkekarte
-                    </h1>
-                    <p className="text-muted-foreground mt-1">Verwaltung der Getränke und Preise</p>
+        <div className="min-h-screen bg-slate-900 p-4 md:p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+                            <Wine className="h-8 w-8 text-amber-400" />
+                            Getränkekarte
+                        </h1>
+                        <p className="text-slate-400 mt-1">Verwaltung der Getränke und Preise</p>
+                    </div>
+                    {permissions.canEditEmployees && (
+                        <Button 
+                            onClick={() => { setSelectedItem(null); setShowModal(true); }}
+                            className="bg-amber-600 hover:bg-amber-700 text-white"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Neues Getränk
+                        </Button>
+                    )}
                 </div>
-                {permissions.canEditEmployees && (
-                    <Button onClick={() => { setSelectedItem(null); setShowModal(true); }}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Neues Getränk
-                    </Button>
-                )}
-            </div>
 
-            <Card>
-                <CardContent className="p-4">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex-1 relative">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                placeholder="Getränk suchen..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                        <div className="flex gap-2 flex-wrap">
-                            {categories.map(cat => (
-                                <Button
-                                    key={cat}
-                                    variant={selectedCategory === cat ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setSelectedCategory(cat)}
-                                >
-                                    {cat === "all" ? "Alle" : cat}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="space-y-6">
-                {Object.entries(groupedByCategory).map(([category, categoryItems]) => (
-                    <div key={category}>
-                        <h2 className="text-2xl font-bold mb-4">{category}</h2>
-                        <div className="grid gap-4">
-                            {categoryItems
-                                .sort((a, b) => (a.order_position || 999) - (b.order_position || 999))
-                                .map(item => (
-                                    <Card key={item.id} className={!item.is_available ? 'opacity-60' : ''}>
-                                        <CardContent className="p-4">
-                                            <div className="flex justify-between items-start gap-4">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <h3 className="font-semibold text-lg">{item.name}</h3>
-                                                        {!item.is_available && (
-                                                            <Badge variant="secondary">Nicht verfügbar</Badge>
-                                                        )}
-                                                        {item.is_seasonal && (
-                                                            <Badge className="bg-green-100 text-green-800">Saisonal</Badge>
-                                                        )}
-                                                        {item.is_special && (
-                                                            <Badge className="bg-yellow-100 text-yellow-800">Special</Badge>
-                                                        )}
-                                                    </div>
-                                                    {item.description && (
-                                                        <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                                                    )}
-                                                    <div className="flex gap-2 mt-2 flex-wrap items-center">
-                                                        <span className="text-xl font-bold text-primary">
-                                                            {item.price.toFixed(2)} €
-                                                        </span>
-                                                        {item.size && (
-                                                            <Badge variant="outline">{item.size}</Badge>
-                                                        )}
-                                                        {item.subcategory && (
-                                                            <Badge variant="outline">{item.subcategory}</Badge>
-                                                        )}
-                                                        {item.alcohol_content && (
-                                                            <Badge variant="outline">{item.alcohol_content}% Vol.</Badge>
-                                                        )}
-                                                        {item.linked_article_name && (
-                                                            <Badge className="bg-blue-100 text-blue-800">
-                                                                <Link2 className="h-3 w-3 mr-1" />
-                                                                {item.linked_article_name}
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Margin Indicator */}
-                                                    {(item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                                                            className="mt-2 text-xs h-7"
-                                                        >
-                                                            <TrendingUp className="h-3 w-3 mr-1" />
-                                                            Marge anzeigen
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                                {permissions.canEditEmployees && (
-                                                    <div className="flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => toggleAvailabilityMutation.mutate({
-                                                                id: item.id,
-                                                                is_available: !item.is_available
-                                                            })}
-                                                        >
-                                                            {item.is_available ? (
-                                                                <EyeOff className="h-4 w-4" />
-                                                            ) : (
-                                                                <Eye className="h-4 w-4" />
-                                                            )}
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => { setSelectedItem(item); setShowModal(true); }}
-                                                        >
-                                                            Bearbeiten
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Expanded Margin Details */}
-                                            {expandedItem === item.id && (
-                                                <div className="mt-4 pt-4 border-t">
-                                                    <MarginCalculator menuItem={item} />
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
+                <Card className="bg-slate-800 border-slate-700">
+                    <CardContent className="p-4">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Input
+                                    placeholder="Getränk suchen..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 bg-slate-900 border-slate-600 text-white placeholder:text-slate-500"
+                                />
+                            </div>
+                            <div className="flex gap-2 flex-wrap">
+                                {categories.map(cat => (
+                                    <Button
+                                        key={cat}
+                                        variant={selectedCategory === cat ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setSelectedCategory(cat)}
+                                        className={selectedCategory === cat 
+                                            ? "bg-amber-600 hover:bg-amber-700 text-white" 
+                                            : "border-slate-600 text-slate-300 hover:bg-slate-700"}
+                                    >
+                                        {cat === "all" ? "Alle" : cat}
+                                    </Button>
                                 ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </div>
-
-            {filteredItems.length === 0 && (
-                <Card>
-                    <CardContent className="p-8 text-center text-muted-foreground">
-                        Keine Getränke gefunden
                     </CardContent>
                 </Card>
-            )}
+
+                <div className="space-y-6">
+                    {Object.entries(groupedByCategory).map(([category, categoryItems]) => (
+                        <div key={category}>
+                            <h2 className="text-2xl font-bold text-white mb-4">{category}</h2>
+                            <div className="grid gap-4">
+                                {categoryItems
+                                    .sort((a, b) => (a.order_position || 999) - (b.order_position || 999))
+                                    .map(item => (
+                                        <Card 
+                                            key={item.id} 
+                                            className={`bg-slate-800 border-slate-700 ${!item.is_available ? 'opacity-60' : ''}`}
+                                        >
+                                            <CardContent className="p-4">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <h3 className="font-semibold text-lg text-white">{item.name}</h3>
+                                                            {!item.is_available && (
+                                                                <Badge className="bg-slate-700 text-slate-300 border-slate-600">Nicht verfügbar</Badge>
+                                                            )}
+                                                            {item.is_seasonal && (
+                                                                <Badge className="bg-green-900/50 text-green-300 border-green-800">Saisonal</Badge>
+                                                            )}
+                                                            {item.is_special && (
+                                                                <Badge className="bg-amber-900/50 text-amber-300 border-amber-800">Special</Badge>
+                                                            )}
+                                                        </div>
+                                                        {item.description && (
+                                                            <p className="text-sm text-slate-400 mt-1">{item.description}</p>
+                                                        )}
+                                                        <div className="flex gap-2 mt-2 flex-wrap items-center">
+                                                            <span className="text-xl font-bold text-amber-400">
+                                                                {item.price.toFixed(2)} €
+                                                            </span>
+                                                            {item.size && (
+                                                                <Badge variant="outline" className="border-slate-600 text-slate-300">{item.size}</Badge>
+                                                            )}
+                                                            {item.subcategory && (
+                                                                <Badge variant="outline" className="border-slate-600 text-slate-300">{item.subcategory}</Badge>
+                                                            )}
+                                                            {item.alcohol_content && (
+                                                                <Badge variant="outline" className="border-slate-600 text-slate-300">{item.alcohol_content}% Vol.</Badge>
+                                                            )}
+                                                            {item.linked_article_name && (
+                                                                <Badge className="bg-blue-900/50 text-blue-300 border-blue-800">
+                                                                    <Link2 className="h-3 w-3 mr-1" />
+                                                                    {item.linked_article_name}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Margin Indicator */}
+                                                        {(item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+                                                                className="mt-2 text-xs h-7 text-slate-300 hover:text-white hover:bg-slate-700"
+                                                            >
+                                                                <TrendingUp className="h-3 w-3 mr-1" />
+                                                                Marge anzeigen
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                    {permissions.canEditEmployees && (
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => toggleAvailabilityMutation.mutate({
+                                                                    id: item.id,
+                                                                    is_available: !item.is_available
+                                                                })}
+                                                                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                                                            >
+                                                                {item.is_available ? (
+                                                                    <EyeOff className="h-4 w-4" />
+                                                                ) : (
+                                                                    <Eye className="h-4 w-4" />
+                                                                )}
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => { setSelectedItem(item); setShowModal(true); }}
+                                                                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+                                                            >
+                                                                Bearbeiten
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Expanded Margin Details */}
+                                                {expandedItem === item.id && (
+                                                    <div className="mt-4 pt-4 border-t border-slate-700">
+                                                        <MarginCalculator menuItem={item} />
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                            </div>
+                        </div>
+                    ))}
+            </div>
+
+                {filteredItems.length === 0 && (
+                    <Card className="bg-slate-800 border-slate-700">
+                        <CardContent className="p-8 text-center text-slate-400">
+                            Keine Getränke gefunden
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
 
             {showModal && (
                 <MenuItemModal

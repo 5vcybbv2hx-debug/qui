@@ -52,10 +52,11 @@ export function PullToRefresh({ onRefresh, children }) {
         >
             {/* Pull indicator */}
             <div 
-                className="absolute top-0 left-0 right-0 flex items-center justify-center transition-all duration-200"
+                className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center transition-all duration-200 pointer-events-none"
                 style={{ 
                     height: `${pullDistance}px`,
-                    opacity: pullDistance / 100
+                    opacity: pullDistance / 100,
+                    marginTop: 'env(safe-area-inset-top)'
                 }}
             >
                 <div className="flex items-center gap-2 text-slate-400">

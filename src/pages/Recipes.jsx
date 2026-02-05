@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart, Lightbulb, CheckSquare, X } from 'lucide-react';
+import { Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart, Lightbulb, CheckSquare, X, Sparkles, ChefHat } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,8 @@ export default function Recipes() {
     });
     const [uploadingImage, setUploadingImage] = useState(false);
     const [viewServings, setViewServings] = useState({});
+    const [suggestingIngredients, setSuggestingIngredients] = useState(false);
+    const [generatingFromInventory, setGeneratingFromInventory] = useState(false);
 
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes'],
@@ -140,6 +142,138 @@ export default function Recipes() {
             alert('Fehler beim Hochladen des Bildes');
         } finally {
             setUploadingImage(false);
+        }
+    };
+
+    const suggestIngredients = async () => {
+        if (!formData.name) {
+            alert('Bitte gib zuerst einen Rezeptnamen ein');
+            return;
+        }
+
+        setSuggestingIngredients(true);
+        try {
+            const availableArticles = articles.map(a => ({
+                id: a.id,
+                name: a.name,
+                category: a.category
+            }));
+
+            const result = await base44.integrations.Core.InvokeLLM({
+                prompt: `Du bist ein professioneller Barkeeper. Erstelle eine Zutatenliste für: "${formData.name}".
+
+Verfügbare Artikel in der Datenbank:
+${JSON.stringify(availableArticles, null, 2)}
+
+WICHTIG: Nutze NUR Artikel aus der obigen Liste! Gib die article_id, article_name, amount (als Zahl) und unit (ml, cl, l, g, kg, oder Stück) zurück.
+
+Beispiel-Format:
+[
+  {"article_id": "123", "article_name": "Rum", "amount": 40, "unit": "ml"},
+  {"article_id": "456", "article_name": "Limettensaft", "amount": 20, "unit": "ml"}
+]`,
+                response_json_schema: {
+                    type: "object",
+                    properties: {
+                        ingredients: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    article_id: { type: "string" },
+                                    article_name: { type: "string" },
+                                    amount: { type: "number" },
+                                    unit: { type: "string" }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (result.ingredients && Array.isArray(result.ingredients)) {
+                setFormData({ ...formData, ingredients: result.ingredients });
+            }
+        } catch (error) {
+            alert('Fehler bei der KI-Vorschlagsfunktion');
+        } finally {
+            setSuggestingIngredients(false);
+        }
+    };
+
+    const generateRecipeFromInventory = async () => {
+        setGeneratingFromInventory(true);
+        try {
+            const availableArticles = articles
+                .filter(a => a.current_stock > 0)
+                .map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    category: a.category,
+                    stock: a.current_stock
+                }));
+
+            if (availableArticles.length === 0) {
+                alert('Keine Artikel mit Bestand im Inventar gefunden');
+                return;
+            }
+
+            const result = await base44.integrations.Core.InvokeLLM({
+                prompt: `Du bist ein kreativer Barkeeper. Erstelle ein interessantes Cocktail-Rezept basierend auf folgenden verfügbaren Artikeln:
+
+${JSON.stringify(availableArticles, null, 2)}
+
+Erstelle ein vollständiges Rezept mit:
+- name: kreativer Rezeptname
+- category: wähle aus (Cocktail, Longdrink, Shot, Mocktail)
+- ingredients: Array mit article_id, article_name, amount (Zahl), unit (ml/cl/l/g/kg/Stück)
+- preparation: detaillierte Zubereitungsanleitung
+- glass_type: passende Glasart
+- garnish: Garnitur
+
+Nutze NUR verfügbare Artikel aus der obigen Liste!`,
+                response_json_schema: {
+                    type: "object",
+                    properties: {
+                        name: { type: "string" },
+                        category: { type: "string" },
+                        ingredients: {
+                            type: "array",
+                            items: {
+                                type: "object",
+                                properties: {
+                                    article_id: { type: "string" },
+                                    article_name: { type: "string" },
+                                    amount: { type: "number" },
+                                    unit: { type: "string" }
+                                }
+                            }
+                        },
+                        preparation: { type: "string" },
+                        glass_type: { type: "string" },
+                        garnish: { type: "string" }
+                    }
+                }
+            });
+
+            if (result.name) {
+                setFormData({
+                    name: result.name,
+                    category: result.category || 'Cocktail',
+                    servings: 1,
+                    ingredients: result.ingredients || [],
+                    preparation: result.preparation || '',
+                    glass_type: result.glass_type || '',
+                    garnish: result.garnish || '',
+                    notes: 'Automatisch generiert aus verfügbaren Artikeln',
+                    image_url: ''
+                });
+                setModalOpen(true);
+            }
+        } catch (error) {
+            alert('Fehler bei der Rezeptgenerierung');
+        } finally {
+            setGeneratingFromInventory(false);
         }
     };
 
@@ -300,6 +434,15 @@ export default function Recipes() {
                                 variant="outline"
                                 className="border-green-600 text-green-600 hover:bg-green-50"
                             />
+                            <Button 
+                                onClick={generateRecipeFromInventory}
+                                disabled={generatingFromInventory}
+                                variant="outline"
+                                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                            >
+                                <ChefHat className="w-4 h-4 mr-2" />
+                                {generatingFromInventory ? 'Generiere...' : 'KI-Rezept'}
+                            </Button>
                             <Button 
                                 onClick={() => setCategoriesModalOpen(true)}
                                 variant="outline"
@@ -690,11 +833,27 @@ export default function Recipes() {
                                 </div>
                             </div>
 
-                            <IngredientSelector
-                                ingredients={formData.ingredients}
-                                onChange={(newIngredients) => setFormData({ ...formData, ingredients: newIngredients })}
-                                articles={articles}
-                            />
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label>Zutaten</Label>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={suggestIngredients}
+                                        disabled={suggestingIngredients || !formData.name}
+                                        className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                                    >
+                                        <Sparkles className="w-3 h-3 mr-1" />
+                                        {suggestingIngredients ? 'Vorschläge...' : 'KI-Vorschläge'}
+                                    </Button>
+                                </div>
+                                <IngredientSelector
+                                    ingredients={formData.ingredients}
+                                    onChange={(newIngredients) => setFormData({ ...formData, ingredients: newIngredients })}
+                                    articles={articles}
+                                />
+                            </div>
 
                             <div className="space-y-2">
                                 <Label>Zubereitung</Label>

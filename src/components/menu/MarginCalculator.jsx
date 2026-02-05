@@ -54,38 +54,99 @@ export default function MarginCalculator({ menuItem }) {
         // Berechnung aus Rezept
         if (menuItem.use_recipe_calculation && recipe?.ingredients) {
             let totalCost = 0;
+            console.log('🔍 Rezeptberechnung:', {
+                recipeName: recipe.name,
+                ingredientsCount: recipe.ingredients.length
+            });
+            
             recipe.ingredients.forEach(ingredient => {
                 const article = articles.find(a => a.id === ingredient.article_id);
-                if (article?.price_per_liter && ingredient.amount) {
-                    // Fallback für alte Rezepte ohne unit: nehme ml an
+                console.log('📦 Zutat:', {
+                    name: ingredient.article_name,
+                    amount: ingredient.amount,
+                    unit: ingredient.unit,
+                    article_found: !!article,
+                    price_per_liter: article?.price_per_liter,
+                    purchase_price: article?.purchase_price
+                });
+                
+                if (article && ingredient.amount) {
                     const unit = ingredient.unit || 'ml';
-                    let amountInLiters = 0;
-                    switch (unit.toLowerCase()) {
-                        case 'ml':
-                            amountInLiters = ingredient.amount / 1000;
-                            break;
-                        case 'cl':
-                            amountInLiters = ingredient.amount / 100;
-                            break;
-                        case 'l':
-                            amountInLiters = ingredient.amount;
-                            break;
-                        case 'g':
-                            amountInLiters = ingredient.amount / 1000;
-                            break;
-                        case 'kg':
-                            amountInLiters = ingredient.amount;
-                            break;
-                        case 'stk':
-                        case 'stück':
-                            totalCost += article.purchase_price ? article.purchase_price * ingredient.amount : 0;
-                            return;
+                    let cost = 0;
+                    
+                    // Wenn price_per_liter vorhanden ist, nutze das
+                    if (article.price_per_liter) {
+                        let amountInLiters = 0;
+                        switch (unit.toLowerCase()) {
+                            case 'ml':
+                                amountInLiters = ingredient.amount / 1000;
+                                break;
+                            case 'cl':
+                                amountInLiters = ingredient.amount / 100;
+                                break;
+                            case 'l':
+                                amountInLiters = ingredient.amount;
+                                break;
+                            case 'g':
+                                amountInLiters = ingredient.amount / 1000;
+                                break;
+                            case 'kg':
+                                amountInLiters = ingredient.amount;
+                                break;
+                            case 'stk':
+                            case 'stück':
+                                cost = article.purchase_price ? article.purchase_price * ingredient.amount : 0;
+                                break;
+                        }
+                        if (amountInLiters > 0) {
+                            cost = amountInLiters * article.price_per_liter;
+                        }
                     }
-                    if (amountInLiters > 0) {
-                        totalCost += amountInLiters * article.price_per_liter;
+                    // Fallback: Berechne price_per_liter aus purchase_price und content
+                    else if (article.purchase_price && article.content_amount) {
+                        let contentInLiters = article.content_amount;
+                        const contentUnit = article.content_unit || 'ml';
+                        
+                        // Umrechnung Inhalt in Liter
+                        if (contentUnit === 'ml') contentInLiters = article.content_amount / 1000;
+                        else if (contentUnit === 'g') contentInLiters = article.content_amount / 1000;
+                        else if (contentUnit === 'l' || contentUnit === 'kg') contentInLiters = article.content_amount;
+                        
+                        const calculatedPricePerLiter = article.purchase_price / contentInLiters;
+                        
+                        let amountInLiters = 0;
+                        switch (unit.toLowerCase()) {
+                            case 'ml':
+                                amountInLiters = ingredient.amount / 1000;
+                                break;
+                            case 'cl':
+                                amountInLiters = ingredient.amount / 100;
+                                break;
+                            case 'l':
+                                amountInLiters = ingredient.amount;
+                                break;
+                            case 'g':
+                                amountInLiters = ingredient.amount / 1000;
+                                break;
+                            case 'kg':
+                                amountInLiters = ingredient.amount;
+                                break;
+                            case 'stk':
+                            case 'stück':
+                                cost = article.purchase_price * ingredient.amount;
+                                break;
+                        }
+                        if (amountInLiters > 0) {
+                            cost = amountInLiters * calculatedPricePerLiter;
+                        }
                     }
+                    
+                    console.log('💰 Kosten:', cost);
+                    totalCost += cost;
                 }
             });
+            
+            console.log('✅ Gesamtkosten:', totalCost);
             purchasePrice = totalCost;
             calculationMethod = 'recipe';
         }

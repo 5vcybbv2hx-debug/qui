@@ -153,19 +153,53 @@ export default function MarginCalculator({ menuItem }) {
         // Berechnung aus verknüpftem Artikel
         else if (menuItem.linked_article_id) {
             const linkedArticle = articles.find(a => a.id === menuItem.linked_article_id);
-            if (linkedArticle?.purchase_price) {
-                // Mengenumrechnung: z.B. 4cl aus 0,7L Flasche
-                const articleSize = linkedArticle.unit_size || 1;
+            console.log('🔗 Verknüpfter Artikel:', {
+                article: linkedArticle?.name,
+                purchase_price: linkedArticle?.purchase_price,
+                content_amount: linkedArticle?.content_amount,
+                content_unit: linkedArticle?.content_unit,
+                price_per_liter: linkedArticle?.price_per_liter,
+                menuItemSize: menuItem.size
+            });
+            
+            if (linkedArticle) {
                 const servingSize = parseServingSize(menuItem.size);
+                console.log('📏 Serving Size (in Litern):', servingSize);
                 
-                if (servingSize > 0) {
-                    // Preis pro Einheit * Ausschenkmenge / Artikelgröße
-                    purchasePrice = (linkedArticle.purchase_price / articleSize) * servingSize;
-                } else {
-                    // Fallback wenn keine Größe angegeben
-                    purchasePrice = linkedArticle.purchase_price;
+                // Verwende price_per_liter wenn vorhanden
+                if (linkedArticle.price_per_liter && servingSize > 0) {
+                    purchasePrice = linkedArticle.price_per_liter * servingSize;
+                    console.log('💰 Berechnung über price_per_liter:', purchasePrice);
                 }
-                calculationMethod = 'article';
+                // Sonst berechne aus purchase_price und content_amount
+                else if (linkedArticle.purchase_price && linkedArticle.content_amount && servingSize > 0) {
+                    let contentInLiters = linkedArticle.content_amount;
+                    const contentUnit = (linkedArticle.content_unit || 'ml').toLowerCase();
+                    
+                    // Umrechnung in Liter
+                    if (contentUnit === 'ml') contentInLiters = linkedArticle.content_amount / 1000;
+                    else if (contentUnit === 'cl') contentInLiters = linkedArticle.content_amount / 100;
+                    else if (contentUnit === 'g') contentInLiters = linkedArticle.content_amount / 1000;
+                    else if (contentUnit === 'l' || contentUnit === 'kg') contentInLiters = linkedArticle.content_amount;
+                    
+                    const pricePerLiter = linkedArticle.purchase_price / contentInLiters;
+                    purchasePrice = pricePerLiter * servingSize;
+                    console.log('💰 Berechnung:', {
+                        contentInLiters,
+                        pricePerLiter,
+                        servingSize,
+                        purchasePrice
+                    });
+                }
+                // Fallback: direkter Preis
+                else if (linkedArticle.purchase_price) {
+                    purchasePrice = linkedArticle.purchase_price;
+                    console.log('💰 Fallback: direkter Preis');
+                }
+                
+                if (purchasePrice > 0) {
+                    calculationMethod = 'article';
+                }
             }
         }
         // Manueller EK

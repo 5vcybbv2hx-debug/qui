@@ -146,10 +146,17 @@ export default function Layout({ children, currentPageName }) {
                                     <div className="space-y-1">
                                         {visibleItems.map((item) => {
                                             const isActive = currentPageName === item.page;
-                                            return (
+                                            const handleNavClick = (e) => {
+                                        if (isActive) {
+                                            e.preventDefault();
+                                        }
+                                    };
+
+                                    return (
                                                 <Link
                                                     key={item.name}
                                                     to={createPageUrl(item.page)}
+                                                    onClick={handleNavClick}
                                                     className={cn(
                                                         "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                                                         isActive 
@@ -244,11 +251,18 @@ export default function Layout({ children, currentPageName }) {
                                             <div className="space-y-1">
                                                 {visibleItems.map((item) => {
                                                     const isActive = currentPageName === item.page;
+                                                    const handleMobileNavClick = (e) => {
+                                                        if (isActive) {
+                                                            e.preventDefault();
+                                                        }
+                                                        setMobileMenuOpen(false);
+                                                    };
+
                                                     return (
                                                         <Link
                                                             key={item.name}
                                                             to={createPageUrl(item.page)}
-                                                            onClick={() => setMobileMenuOpen(false)}
+                                                            onClick={handleMobileNavClick}
                                                             className={cn(
                                                                 "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all",
                                                                 isActive 

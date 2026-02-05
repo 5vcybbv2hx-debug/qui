@@ -179,6 +179,7 @@ export default function Reservations() {
                             variant="outline"
                             onClick={handleExportCalendar}
                             disabled={allReservations.length === 0}
+                            className="border-slate-700 text-slate-300 hover:bg-slate-800"
                         >
                             <Download className="w-4 h-4 mr-2" />
                             Kalender
@@ -189,7 +190,7 @@ export default function Reservations() {
                                     setSelectedReservation(null);
                                     setModalOpen(true);
                                 }}
-                                className="bg-slate-800 hover:bg-slate-900"
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20"
                             >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Reservierung
@@ -335,7 +336,7 @@ export default function Reservations() {
                                                         setSelectedReservation(res);
                                                         setModalOpen(true);
                                                     }}
-                                                    className="h-8 w-8 text-slate-400 hover:text-slate-200"
+                                                    className="h-8 w-8 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10"
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </Button>
@@ -343,7 +344,7 @@ export default function Reservations() {
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleArchive(res.id, res.is_archived)}
-                                                    className="h-8 w-8 text-slate-400 hover:text-amber-400"
+                                                    className="h-8 w-8 text-slate-400 hover:text-blue-400 hover:bg-blue-500/10"
                                                     title={res.is_archived ? 'Wiederherstellen' : 'Archivieren'}
                                                 >
                                                     <Archive className="w-4 h-4" />
@@ -355,7 +356,7 @@ export default function Reservations() {
                                                 variant="ghost"
                                                 size="icon"
                                                 onClick={() => handleDelete(res.id)}
-                                                className="h-8 w-8 text-red-500 hover:text-red-400"
+                                                className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>

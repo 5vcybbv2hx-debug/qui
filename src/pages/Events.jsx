@@ -157,7 +157,7 @@ export default function Events() {
                     </div>
                     <Button 
                         onClick={() => openModal()}
-                        className="bg-amber-600 hover:bg-amber-700"
+                        className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Event hinzufügen
@@ -271,7 +271,7 @@ export default function Events() {
                                                 e.stopPropagation();
                                                 openModal(event);
                                             }}
-                                            className="h-8 w-8 text-slate-400 hover:text-slate-200"
+                                            className="h-8 w-8 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10"
                                         >
                                             <Edit className="w-4 h-4" />
                                         </Button>
@@ -282,7 +282,7 @@ export default function Events() {
                                                 e.stopPropagation();
                                                 handleDelete(event.id);
                                             }}
-                                            className="h-8 w-8 text-red-500 hover:text-red-400"
+                                            className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -418,10 +418,10 @@ export default function Events() {
                             </div>
 
                             <div className="flex gap-2 pt-4">
-                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
+                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
+                                <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20">
                                     {selectedEvent ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>

@@ -350,7 +350,7 @@ export default function Employees() {
                                         { label: 'Email', field: 'email' }
                                     ]}
                                     variant="outline"
-                                    className="border-green-600 text-white bg-green-600 hover:bg-green-700"
+                                    className="border-slate-700 text-slate-300 hover:bg-slate-800"
                                 />
                             </>
                         )}
@@ -358,7 +358,7 @@ export default function Employees() {
                             href={whatsappGroupLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg transition-all shadow-lg shadow-green-500/20"
                         >
                             <MessageCircle className="w-4 h-4" />
                             Team-Gruppe
@@ -366,7 +366,7 @@ export default function Employees() {
                         {permissions.isManager && (
                             <Button 
                                 onClick={() => openModal()}
-                                className="bg-amber-600 hover:bg-amber-700"
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20"
                             >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Mitarbeiter hinzufügen
@@ -460,7 +460,7 @@ export default function Employees() {
                                     <>
                                         <a
                                             href={`tel:${employee.phone}`}
-                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition-colors text-sm"
+                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all text-sm"
                                             title="Anrufen"
                                         >
                                             <Phone className="w-4 h-4" />
@@ -470,7 +470,7 @@ export default function Employees() {
                                             href={`https://wa.me/${employee.phone.replace(/\D/g, '')}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-green-600 hover:bg-green-500 text-white transition-colors text-sm"
+                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white transition-all text-sm shadow-lg shadow-green-500/10"
                                             title="WhatsApp"
                                         >
                                             <MessageCircle className="w-4 h-4" />
@@ -480,12 +480,12 @@ export default function Employees() {
                                 )}
                                 {employee.email && !employee.phone && (
                                     <a
-                                        href={`mailto:${employee.email}`}
-                                        className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white transition-colors text-sm"
-                                        title="E-Mail"
+                                    href={`mailto:${employee.email}`}
+                                    className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all text-sm"
+                                    title="E-Mail"
                                     >
-                                        <Mail className="w-4 h-4" />
-                                        <span className="hidden sm:inline">E-Mail</span>
+                                    <Mail className="w-4 h-4" />
+                                    <span className="hidden sm:inline">E-Mail</span>
                                     </a>
                                 )}
                             </div>
@@ -530,7 +530,7 @@ export default function Employees() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleOrderItem('tshirt', employee.tshirt_size, employee.name)}
-                                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                                            className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50 text-xs"
                                         >
                                             <ShoppingBag className="w-3 h-3 mr-1" />
                                             T-Shirt
@@ -541,7 +541,7 @@ export default function Employees() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleOrderItem('pullover', employee.pullover_size, employee.name)}
-                                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700 text-xs"
+                                            className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50 text-xs"
                                         >
                                             <ShoppingBag className="w-3 h-3 mr-1" />
                                             Pullover
@@ -567,7 +567,7 @@ export default function Employees() {
                                                    variant="outline"
                                                    size="sm"
                                                    onClick={() => handleInvite(employee)}
-                                                   className="flex-1 border-green-600 text-white bg-green-600 hover:bg-green-700"
+                                                   className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0 shadow-lg shadow-green-500/10"
                                                 >
                                                    <UserPlus className="w-4 h-4 mr-1" />
                                                    Einladen
@@ -582,7 +582,7 @@ export default function Employees() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => openModal(employee)}
-                                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                                            className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50"
                                         >
                                             <Pencil className="w-4 h-4 mr-1" />
                                             Bearbeiten
@@ -592,7 +592,7 @@ export default function Employees() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => handleDelete(employee.id)}
-                                                className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                                                className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
@@ -936,10 +936,10 @@ export default function Employees() {
                             )}
 
                             <div className="flex gap-2 pt-4">
-                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
+                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
+                                <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20">
                                     {selectedEmployee ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>

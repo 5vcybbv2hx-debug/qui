@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -77,19 +77,43 @@ const navigationSections = [
 const navigation = navigationSections.flatMap(section => section.items);
 
 export default function Layout({ children, currentPageName }) {
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const permissions = usePermissions();
-    const [currentUser, setCurrentUser] = React.useState(null);
+     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+     const permissions = usePermissions();
+     const [currentUser, setCurrentUser] = React.useState(null);
 
-    React.useEffect(() => {
-        base44.auth.me().then(setCurrentUser).catch(() => {});
-    }, []);
+     React.useEffect(() => {
+         base44.auth.me().then(setCurrentUser).catch(() => {});
+     }, []);
+
+     const isRootPage = currentPageName === 'Dashboard';
+     const getRootPage = () => {
+         const rootItem = navigation.find(item => item.page === currentPageName);
+         return rootItem?.page;
+     };
 
     return (
         <div className="min-h-screen bg-slate-950">
             <ServiceWorkerRegistration />
             <PWAInstallPrompt />
             <OfflineIndicator />
+            {/* Fixed Top Header */}
+            <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900/95 border-b border-slate-800/50 backdrop-blur-xl pt-safe">
+                <div className="flex items-center gap-3 px-3 py-3">
+                    {!isRootPage && (
+                        <button
+                            onClick={() => window.history.back()}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-white transition-all"
+                            title="Zurück"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                    <h1 className="text-lg font-bold text-white flex-1">
+                        {navigation.find(item => item.page === currentPageName)?.name || 'BarManager'}
+                    </h1>
+                </div>
+            </header>
+
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0">
                 <div className="flex flex-col flex-grow bg-slate-900 border-r border-slate-800/50 pt-8 overflow-y-auto backdrop-blur-xl">
@@ -254,7 +278,10 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Main Content */}
             <main className="md:pl-72 pt-safe pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-                <div className="pt-[env(safe-area-inset-top)]">
+                <div className="pt-[env(safe-area-inset-top)] md:pt-0 md:block hidden md:pt-safe">
+                    {children}
+                </div>
+                <div className="pt-[calc(4rem+env(safe-area-inset-top))] md:hidden md:pt-0">
                     {children}
                 </div>
             </main>

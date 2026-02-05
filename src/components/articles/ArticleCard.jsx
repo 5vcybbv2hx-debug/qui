@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2 } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 const ArticleCard = memo(function ArticleCard({ 
     article, 
@@ -15,6 +16,7 @@ const ArticleCard = memo(function ArticleCard({
     onEdit,
     onDelete 
 }) {
+    const permissions = usePermissions();
     let touchStartX = 0;
     let touchEndX = 0;
     
@@ -91,7 +93,7 @@ const ArticleCard = memo(function ArticleCard({
                     {article.quantity && article.unit && (
                         <p>📦 {article.quantity} {article.unit}</p>
                     )}
-                    {article.purchase_price && (
+                    {permissions.isManager && article.purchase_price && (
                         <p className="font-semibold text-green-400">💰 {article.purchase_price.toFixed(2)} €</p>
                     )}
                     {article.min_stock && (

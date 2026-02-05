@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
@@ -90,6 +91,11 @@ export default function Layout({ children, currentPageName }) {
      const getRootPage = () => {
          const rootItem = navigation.find(item => item.page === currentPageName);
          return rootItem?.page;
+     };
+
+     const handleRefresh = async () => {
+         // Reload current page data using react-query's refetch
+         window.location.reload();
      };
 
     return (
@@ -279,28 +285,30 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Main Content */}
             <main className="md:pl-72 pt-safe pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={currentPageName}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                        className="pt-[env(safe-area-inset-top)] md:pt-0 md:block hidden md:pt-safe"
-                    >
-                        {children}
-                    </motion.div>
-                    <motion.div
-                        key={`mobile-${currentPageName}`}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.3 }}
-                        className="pt-[calc(4rem+env(safe-area-inset-top))] md:hidden md:pt-0"
-                    >
-                        {children}
-                    </motion.div>
-                </AnimatePresence>
+                <PullToRefresh onRefresh={handleRefresh}>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentPageName}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="pt-[env(safe-area-inset-top)] md:pt-0 md:block hidden md:pt-safe"
+                        >
+                            {children}
+                        </motion.div>
+                        <motion.div
+                            key={`mobile-${currentPageName}`}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="pt-[calc(4rem+env(safe-area-inset-top))] md:hidden md:pt-0"
+                        >
+                            {children}
+                        </motion.div>
+                    </AnimatePresence>
+                </PullToRefresh>
             </main>
         </div>
     );

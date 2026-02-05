@@ -69,18 +69,49 @@ export default function SalesAnalyticsDashboard() {
             .slice(0, 10);
     }, [filteredSalesData]);
 
-    // Revenue trend
+    // Revenue trend - dynamisch basierend auf Zeitraum
     const revenueTrend = useMemo(() => {
+        const range = parseInt(timeRange);
         const dailyRevenue = {};
+        
+        // Bestimme Gruppierung basierend auf Zeitraum
+        const shouldGroupByWeek = range > 60;
+        const shouldGroupByMonth = range > 180;
+        
         filteredReports.forEach(report => {
-            const date = new Date(report.report_date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-            dailyRevenue[date] = (dailyRevenue[date] || 0) + (report.total_revenue || 0);
+            let dateKey;
+            const reportDate = new Date(report.report_date);
+            
+            if (shouldGroupByMonth) {
+                // Gruppiere nach Monat
+                dateKey = reportDate.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
+            } else if (shouldGroupByWeek) {
+                // Gruppiere nach Woche
+                const weekStart = new Date(reportDate);
+                weekStart.setDate(reportDate.getDate() - reportDate.getDay() + 1); // Montag
+                dateKey = weekStart.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+            } else {
+                // Tägliche Ansicht
+                dateKey = reportDate.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+            }
+            
+            dailyRevenue[dateKey] = (dailyRevenue[dateKey] || 0) + (report.total_revenue || 0);
         });
 
         return Object.entries(dailyRevenue)
             .map(([date, revenue]) => ({ date, revenue }))
-            .slice(-14); // Last 14 days
-    }, [filteredReports]);
+            .sort((a, b) => {
+                // Sortiere chronologisch
+                const parseDate = (str) => {
+                    const parts = str.split('.');
+                    if (parts.length === 2) {
+                        return new Date(2000 + parseInt(parts[1]), parseInt(parts[0]) - 1);
+                    }
+                    return new Date(str);
+                };
+                return parseDate(a.date) - parseDate(b.date);
+            });
+    }, [filteredReports, timeRange]);
 
     // Category breakdown
     const categoryBreakdown = useMemo(() => {
@@ -171,19 +202,38 @@ export default function SalesAnalyticsDashboard() {
                 <TabsContent value="trend">
                     <Card className="bg-slate-800/50 border-slate-700">
                         <CardHeader>
-                            <CardTitle className="text-white">Umsatzentwicklung</CardTitle>
+                            <CardTitle className="text-white flex items-center justify-between">
+                                <span>Umsatzentwicklung</span>
+                                <span className="text-sm font-normal text-slate-400">
+                                    {parseInt(timeRange) > 180 ? 'Monatlich' : parseInt(timeRange) > 60 ? 'Wöchentlich' : 'Täglich'}
+                                </span>
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
                                 <LineChart data={revenueTrend}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                                    <XAxis dataKey="date" stroke="#9ca3af" />
+                                    <XAxis 
+                                        dataKey="date" 
+                                        stroke="#9ca3af"
+                                        angle={revenueTrend.length > 20 ? -45 : 0}
+                                        textAnchor={revenueTrend.length > 20 ? "end" : "middle"}
+                                        height={revenueTrend.length > 20 ? 80 : 30}
+                                    />
                                     <YAxis stroke="#9ca3af" />
                                     <Tooltip 
                                         contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px' }}
                                         labelStyle={{ color: '#f1f5f9' }}
+                                        formatter={(value) => [`${value.toFixed(2)} €`, 'Umsatz']}
                                     />
-                                    <Line type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={2} dot={{ fill: '#f59e0b' }} />
+                                    <Line 
+                                        type="monotone" 
+                                        dataKey="revenue" 
+                                        stroke="#f59e0b" 
+                                        strokeWidth={2} 
+                                        dot={revenueTrend.length <= 30}
+                                        activeDot={{ r: 6 }}
+                                    />
                                 </LineChart>
                             </ResponsiveContainer>
                         </CardContent>

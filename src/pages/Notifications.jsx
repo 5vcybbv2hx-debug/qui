@@ -124,15 +124,15 @@ export default function Notifications() {
     const unreadCount = visibleNotifications.filter(n => !n.read_by?.includes(currentUser.email)).length;
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+            <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div className="mb-6 sm:mb-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
                         <div className="flex items-center gap-3">
                             <Bell className="w-8 h-8 text-amber-400" />
                             <div>
-                                <h1 className="text-2xl font-bold text-white tracking-tight">Benachrichtigungen</h1>
+                                     <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Benachrichtigungen</h1>
                                 <p className="text-slate-400 text-sm">
                                     Alle wichtigen Updates an einem Ort
                                 </p>

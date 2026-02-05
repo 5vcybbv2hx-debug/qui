@@ -1,16 +1,17 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import webpush from 'npm:web-push';
 
-// VAPID-Keys (diese sollten als Secrets gesetzt werden, hier als Beispiel)
-const vapidKeys = {
-    publicKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SdzE9k0vXz3WJRbBlOWE7pXGlPnIbPzJ7ScTyHPjQyq-DuKYGDnT3Xg',
-    privateKey: 'UUxDK_SfkJbOYpPH3R8yoMJEyNYqZQZp5K1H0_WKqTo'
-};
+const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
+const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+
+if (!vapidPublicKey || !vapidPrivateKey) {
+    throw new Error('VAPID_PUBLIC_KEY und VAPID_PRIVATE_KEY müssen als Secrets gesetzt werden');
+}
 
 webpush.setVapidDetails(
-    'mailto:your-email@example.com',
-    vapidKeys.publicKey,
-    vapidKeys.privateKey
+    'mailto:admin@barmanager.de',
+    vapidPublicKey,
+    vapidPrivateKey
 );
 
 Deno.serve(async (req) => {

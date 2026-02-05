@@ -59,9 +59,10 @@ export default function PushNotificationManager({ userEmail }) {
             }
 
             const registration = await navigator.serviceWorker.ready;
-            
-            // Öffentlicher VAPID-Key (muss mit dem Backend übereinstimmen)
-            const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SdzE9k0vXz3WJRbBlOWE7pXGlPnIbPzJ7ScTyHPjQyq-DuKYGDnT3Xg';
+
+            // VAPID-Key vom Server abrufen
+            const response = await fetch('/api/vapid-public-key');
+            const { publicKey: vapidPublicKey } = await response.json();
             
             const sub = await registration.pushManager.subscribe({
                 userVisibleOnly: true,

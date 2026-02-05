@@ -1,210 +1,189 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Send, Bell } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bell, Send, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 
 export default function SendNotificationModal() {
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        type: 'general',
-        title: '',
-        message: '',
-        targetRoles: [],
-        sendPush: false
-    });
+    const [title, setTitle] = useState('');
+    const [message, setMessage] = useState('');
+    const [sendPush, setSendPush] = useState(false);
+    const [targetRoles, setTargetRoles] = useState(['admin', 'user']);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.list('name')
     });
 
-    const createNotificationMutation = useMutation({
-        mutationFn: async (data) => {
-            // Erstelle Benachrichtigung in der Datenbank
-            const notification = await base44.entities.Notification.create({
-                type: data.type,
-                title: data.title,
-                message: data.message,
-                target_roles: data.targetRoles.length > 0 ? data.targetRoles : undefined
-            });
+    const sendMutation = useMutation({
+        mutationFn: async () => {
+            // Speichere Benachrichtigung in DB
+            const notificationData = {
+                title,
+                message,
+                type: 'general',
+                target_roles: targetRoles,
+                read_by: []
+            };
 
-            // Wenn Push aktiviert ist, sende Push-Benachrichtigung
-            if (data.sendPush) {
+            const notification = await base44.entities.Notification.create(notificationData);
+
+            // Sende Push wenn aktiviert
+            if (sendPush) {
                 try {
                     await base44.functions.invoke('sendPushNotification', {
-                        title: data.title,
-                        body: data.message,
-                        target_roles: data.targetRoles.length > 0 ? data.targetRoles : null
+                        title,
+                        message,
+                        targetRoles
                     });
                 } catch (error) {
-                    console.error('Push notification error:', error);
-                    toast.error('Benachrichtigung erstellt, aber Push-Versand fehlgeschlagen');
+                    console.error('Push-Fehler:', error);
+                    toast.warning('Benachrichtigung erstellt, aber Push-Versand fehlgeschlagen');
                 }
             }
 
             return notification;
         },
         onSuccess: () => {
+            toast.success('Benachrichtigung versendet!');
             queryClient.invalidateQueries(['notifications']);
-            toast.success('Benachrichtigung gesendet');
+            setTitle('');
+            setMessage('');
+            setSendPush(false);
             setOpen(false);
-            setFormData({
-                type: 'general',
-                title: '',
-                message: '',
-                targetRoles: [],
-                sendPush: false
-            });
         },
-        onError: () => {
-            toast.error('Fehler beim Senden der Benachrichtigung');
+        onError: (error) => {
+            toast.error('Fehler beim Versenden: ' + error.message);
         }
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        if (!formData.title || !formData.message) {
-            toast.error('Bitte alle Felder ausfüllen');
+        if (!title.trim() || !message.trim()) {
+            toast.error('Titel und Nachricht erforderlich');
             return;
         }
-
-        createNotificationMutation.mutate(formData);
+        sendMutation.mutate();
     };
 
     const toggleRole = (role) => {
-        setFormData(prev => ({
-            ...prev,
-            targetRoles: prev.targetRoles.includes(role)
-                ? prev.targetRoles.filter(r => r !== role)
-                : [...prev.targetRoles, role]
-        }));
+        setTargetRoles(prev =>
+            prev.includes(role)
+                ? prev.filter(r => r !== role)
+                : [...prev, role]
+        );
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="bg-amber-600 hover:bg-amber-700">
-                    <Send className="w-4 h-4 mr-2" />
-                    Neue Benachrichtigung
+                <Button className="bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm h-9">
+                    <Bell className="w-4 h-4 mr-1" />
+                    <span className="hidden sm:inline">Benachrichtigung</span>
+                    <span className="sm:hidden">+</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Bell className="w-5 h-5 text-amber-500" />
+                        <Bell className="w-5 h-5 text-amber-400" />
                         Benachrichtigung senden
                     </DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                     <div className="space-y-2">
-                        <Label>Typ</Label>
-                        <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="general">Allgemein</SelectItem>
-                                <SelectItem value="alert">Warnung</SelectItem>
-                                <SelectItem value="success">Erfolg</SelectItem>
-                                <SelectItem value="task">Aufgabe</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Titel</Label>
+                        <Label>Titel *</Label>
                         <Input
-                            value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            placeholder="z.B. Wichtige Ankündigung"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="z.B. Wichtige Mitteilung"
                             required
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Nachricht</Label>
+                        <Label>Nachricht *</Label>
                         <Textarea
-                            value={formData.message}
-                            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                            placeholder="Deine Nachricht..."
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder="Deine Benachrichtigung..."
                             rows={4}
                             required
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Empfänger</Label>
+                    <div className="space-y-3 py-4 border-y border-slate-700">
+                        <Label className="text-sm font-medium">Zielgruppe</Label>
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="role-all"
-                                    checked={formData.targetRoles.length === 0}
-                                    onCheckedChange={(checked) => {
-                                        if (checked) {
-                                            setFormData({ ...formData, targetRoles: [] });
-                                        }
-                                    }}
-                                />
-                                <label htmlFor="role-all" className="text-sm text-slate-700 cursor-pointer">
-                                    Alle Mitarbeiter
+                            {['admin', 'user'].map(role => (
+                                <label key={role} className="flex items-center gap-2 cursor-pointer">
+                                    <Checkbox
+                                        checked={targetRoles.includes(role)}
+                                        onCheckedChange={() => toggleRole(role)}
+                                    />
+                                    <span className="text-sm capitalize text-slate-300">
+                                        {role === 'admin' ? 'Manager' : 'Mitarbeiter'}
+                                    </span>
                                 </label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="role-manager"
-                                    checked={formData.targetRoles.includes('Manager')}
-                                    onCheckedChange={() => toggleRole('Manager')}
-                                />
-                                <label htmlFor="role-manager" className="text-sm text-slate-700 cursor-pointer">
-                                    Nur Manager
-                                </label>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="role-admin"
-                                    checked={formData.targetRoles.includes('admin')}
-                                    onCheckedChange={() => toggleRole('admin')}
-                                />
-                                <label htmlFor="role-admin" className="text-sm text-slate-700 cursor-pointer">
-                                    Nur Admins
-                                </label>
-                            </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
                         <Checkbox
-                            id="sendPush"
-                            checked={formData.sendPush}
-                            onCheckedChange={(checked) => setFormData({ ...formData, sendPush: checked })}
+                            id="push"
+                            checked={sendPush}
+                            onCheckedChange={setSendPush}
                         />
-                        <label htmlFor="sendPush" className="text-sm text-blue-800 cursor-pointer flex-1">
-                            <div className="font-medium">Push-Benachrichtigung senden</div>
-                            <div className="text-xs text-blue-600">An alle Benutzer, die Push aktiviert haben</div>
+                        <label htmlFor="push" className="text-sm text-blue-300 cursor-pointer flex-1">
+                            Auch als Push-Benachrichtigung senden
                         </label>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                    {sendPush && (
+                        <Alert className="bg-blue-900/20 border-blue-800/30">
+                            <AlertDescription className="text-blue-300 text-sm">
+                                Wird an alle Nutzer mit aktivierten Push-Benachrichtigungen versendet
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    <div className="flex gap-2 pt-4">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                            className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800"
+                            disabled={sendMutation.isPending}
+                        >
                             Abbrechen
                         </Button>
-                        <Button 
-                            type="submit" 
-                            disabled={createNotificationMutation.isPending}
-                            className="bg-amber-600 hover:bg-amber-700"
+                        <Button
+                            type="submit"
+                            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                            disabled={sendMutation.isPending}
                         >
-                            {createNotificationMutation.isPending ? 'Wird gesendet...' : 'Senden'}
+                            {sendMutation.isPending ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    Wird versendet...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Senden
+                                </>
+                            )}
                         </Button>
                     </div>
                 </form>

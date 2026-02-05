@@ -87,7 +87,8 @@ export default function Layout({ children, currentPageName }) {
          base44.auth.me().then(setCurrentUser).catch(() => {});
      }, []);
 
-     const isRootPage = currentPageName === 'Dashboard';
+     const primaryPages = ['Dashboard', 'Calendar'];
+     const isRootPage = primaryPages.includes(currentPageName);
      const getRootPage = () => {
          const rootItem = navigation.find(item => item.page === currentPageName);
          return rootItem?.page;

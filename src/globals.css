@@ -75,6 +75,29 @@ css
   -webkit-tap-highlight-color: transparent;
 }
 
+button,
+a,
+[role="button"],
+.icon {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+p,
+span,
+div:not(button):not(a):not([role="button"]),
+li,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  user-select: text;
+}
+
 body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   background: hsl(var(--background));

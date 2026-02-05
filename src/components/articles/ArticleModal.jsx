@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { Camera, X, Upload, Image as ImageIcon, Crop } from 'lucide-react';
+import { Camera, X, Upload, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
     const [uploading, setUploading] = useState(false);
     const [imageEditorOpen, setImageEditorOpen] = useState(false);
     const [tempImageUrl, setTempImageUrl] = useState('');
+    const [detectingAllergens, setDetectingAllergens] = useState(false);
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
@@ -36,6 +37,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         current_stock: '',
         min_stock: '',
         image_url: '',
+        allergens: '',
         notes: ''
     });
 
@@ -54,6 +56,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 current_stock: article.current_stock || '',
                 min_stock: article.min_stock || '',
                 image_url: article.image_url || '',
+                allergens: article.allergens || '',
                 notes: article.notes || ''
             });
         } else {
@@ -70,11 +73,43 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 current_stock: '',
                 min_stock: '',
                 image_url: '',
+                allergens: '',
                 notes: ''
             });
         }
         setNewSupplier('');
     }, [article, open]);
+
+    const detectAllergens = async () => {
+        if (!formData.name) {
+            alert('Bitte Artikelname eingeben');
+            return;
+        }
+        
+        setDetectingAllergens(true);
+        try {
+            const result = await base44.integrations.Core.InvokeLLM({
+                prompt: `Analysiere den folgenden Artikel und liste NUR die enthaltenen Allergene auf: "${formData.name}". 
+                
+Gib nur die Allergene als kommaseparierte Liste zurück (z.B. "Gluten, Milch, Sulfite"). 
+Wenn keine Allergene vorhanden sind, antworte mit "Keine".
+Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, Soja, Milch, Schalenfrüchte, Sellerie, Senf, Sesam, Sulfite, Lupinen, Weichtiere.`,
+                response_json_schema: {
+                    type: "object",
+                    properties: {
+                        allergens: { type: "string" }
+                    }
+                }
+            });
+            
+            const detected = result.allergens === "Keine" ? "" : result.allergens;
+            setFormData({ ...formData, allergens: detected });
+        } catch (error) {
+            alert('Fehler bei der Allergenerkennung');
+        } finally {
+            setDetectingAllergens(false);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -373,6 +408,28 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                 </label>
                             </div>
                         )}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Allergene</Label>
+                        <div className="space-y-2">
+                            <Textarea
+                                value={formData.allergens}
+                                onChange={(e) => setFormData({ ...formData, allergens: e.target.value })}
+                                placeholder="z.B. Gluten, Sulfite, Milch"
+                                rows={2}
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={detectAllergens}
+                                disabled={detectingAllergens}
+                                className="w-full"
+                            >
+                                {detectingAllergens ? 'Erkenne Allergene...' : '🤖 Allergene automatisch erkennen'}
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="space-y-2">

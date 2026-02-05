@@ -25,6 +25,11 @@ export default function DrinkMenuPage() {
         queryFn: () => base44.entities.MenuItem.list('-category', 1000)
     });
 
+    const { data: articles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list()
+    });
+
     const toggleAvailabilityMutation = useMutation({
         mutationFn: ({ id, is_available }) => 
             base44.entities.MenuItem.update(id, { is_available }),
@@ -150,12 +155,23 @@ export default function DrinkMenuPage() {
                                                                 <Badge variant="outline" className="border-slate-600 text-slate-300">{item.alcohol_content}% Vol.</Badge>
                                                             )}
                                                             {item.linked_article_name && (
-                                                                <Badge className="bg-blue-900/50 text-blue-300 border-blue-800">
-                                                                    <Link2 className="h-3 w-3 mr-1" />
-                                                                    {item.linked_article_name}
-                                                                </Badge>
+                                                               <Badge className="bg-blue-900/50 text-blue-300 border-blue-800">
+                                                                   <Link2 className="h-3 w-3 mr-1" />
+                                                                   {item.linked_article_name}
+                                                               </Badge>
                                                             )}
-                                                        </div>
+                                                            </div>
+
+                                                            {/* Allergene anzeigen */}
+                                                            {(() => {
+                                                            const allergens = item.allergens || 
+                                                               (item.linked_article_id && articles.find(a => a.id === item.linked_article_id)?.allergens);
+                                                            return allergens ? (
+                                                               <div className="mt-2 text-xs text-slate-400">
+                                                                   <span className="font-semibold">Allergene:</span> {allergens}
+                                                               </div>
+                                                            ) : null;
+                                                            })()}
 
                                                         {/* Margin Indicator */}
                                                         {(item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (

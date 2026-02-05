@@ -204,14 +204,26 @@ export default function Layout({ children, currentPageName }) {
             <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 border-t border-slate-800/50 pb-safe shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center justify-around px-1 py-3">
                     <Link 
-                        to={createPageUrl('Dashboard')}
+                        to={createPageUrl(currentPageName === 'Dashboard' ? 'Dashboard' : 'Dashboard')}
+                        onClick={(e) => {
+                            if (currentPageName === 'Dashboard') {
+                                e.preventDefault();
+                                window.location.href = createPageUrl('Dashboard');
+                            }
+                        }}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Home className="w-6 h-6" />
                         <span className="text-xs font-medium">Home</span>
                     </Link>
                     <Link 
-                        to={createPageUrl('Calendar')}
+                        to={createPageUrl(currentPageName === 'Calendar' ? 'Calendar' : 'Calendar')}
+                        onClick={(e) => {
+                            if (currentPageName === 'Calendar') {
+                                e.preventDefault();
+                                window.location.href = createPageUrl('Calendar');
+                            }
+                        }}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Calendar className="w-6 h-6" />

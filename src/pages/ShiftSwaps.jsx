@@ -179,21 +179,21 @@ export default function ShiftSwaps() {
     const getStatusBadge = (status) => {
         if (status === 'ausstehend') {
             return (
-                <Badge className="bg-amber-100 text-amber-700">
+                <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30">
                     <Clock className="w-3 h-3 mr-1" />
                     Ausstehend
                 </Badge>
             );
         } else if (status === 'genehmigt') {
             return (
-                <Badge className="bg-green-100 text-green-700">
+                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">
                     <Check className="w-3 h-3 mr-1" />
                     Genehmigt
                 </Badge>
             );
         } else {
             return (
-                <Badge className="bg-red-100 text-red-700">
+                <Badge className="bg-red-500/20 text-red-400 border border-red-500/30">
                     <X className="w-3 h-3 mr-1" />
                     Abgelehnt
                 </Badge>
@@ -203,48 +203,48 @@ export default function ShiftSwaps() {
 
     if (loadingRequests) {
         return (
-            <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-950 p-6 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
-                    <p className="text-slate-600">Lade Schichttausch-Anfragen...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
+                    <p className="text-slate-400">Lade Schichttausch-Anfragen...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6">
+        <div className="min-h-screen bg-slate-950 p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                            <RepeatIcon className="w-6 h-6 text-white" />
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                            <RepeatIcon className="w-7 h-7 text-slate-900" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-slate-800">Schichttausch</h1>
-                            <p className="text-slate-600">Schichten anbieten, anfragen und genehmigen</p>
+                            <h1 className="text-3xl font-bold text-white">Schichttausch</h1>
+                            <p className="text-slate-400">Schichten anbieten, anfragen und genehmigen</p>
                         </div>
                     </div>
                 </div>
 
                 <Tabs defaultValue={permissions.isManager ? "pending" : "my-requests"} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
-                        <TabsTrigger value="my-requests" className="gap-2">
+                    <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid bg-slate-900/50 border border-slate-800/50">
+                        <TabsTrigger value="my-requests" className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">
                             <User className="w-4 h-4" />
                             Meine Anfragen
                             {myRequests.filter(r => r.status === 'ausstehend').length > 0 && (
-                                <Badge className="ml-1 bg-amber-500 text-white text-xs px-1.5 py-0">
+                                <Badge className="ml-1 bg-amber-500 text-slate-900 text-xs px-1.5 py-0">
                                     {myRequests.filter(r => r.status === 'ausstehend').length}
                                 </Badge>
                             )}
                         </TabsTrigger>
-                        <TabsTrigger value="my-shifts" className="gap-2">
+                        <TabsTrigger value="my-shifts" className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">
                             <Calendar className="w-4 h-4" />
                             Meine Schichten
                         </TabsTrigger>
                         {permissions.isManager && (
-                            <TabsTrigger value="pending" className="gap-2">
+                            <TabsTrigger value="pending" className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">
                                 <AlertCircle className="w-4 h-4" />
                                 Zu genehmigen
                                 {pendingRequests.length > 0 && (
@@ -263,7 +263,7 @@ export default function ShiftSwaps() {
                                 {myRequests.map(request => {
                                     const isRequester = request.requesting_employee_id === currentEmployee?.id;
                                     return (
-                                        <Card key={request.id} className="p-5 hover:shadow-md transition-shadow">
+                                        <Card key={request.id} className="p-5 bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl">
                                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-3">
@@ -276,7 +276,7 @@ export default function ShiftSwaps() {
                                                     <div className="space-y-2">
                                                         <div className="flex items-center gap-2">
                                                             <RepeatIcon className="w-4 h-4 text-slate-400" />
-                                                            <p className="text-sm font-medium text-slate-700">
+                                                            <p className="text-sm font-medium text-white">
                                                                 {isRequester ? (
                                                                     <>Du → {request.target_employee_name}</>
                                                                 ) : (
@@ -286,16 +286,16 @@ export default function ShiftSwaps() {
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <Calendar className="w-4 h-4 text-slate-400" />
-                                                            <p className="text-sm text-slate-600">
+                                                            <p className="text-sm text-slate-300">
                                                                 {format(parseISO(request.shift_date), 'EEEE, d. MMMM yyyy', { locale: de })} • {request.shift_time}
                                                             </p>
                                                         </div>
                                                     </div>
                                                     
                                                     {request.reason && (
-                                                        <div className="mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                        <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                                                             <p className="text-xs text-slate-500 mb-1">Grund:</p>
-                                                            <p className="text-sm text-slate-700">{request.reason}</p>
+                                                            <p className="text-sm text-slate-300">{request.reason}</p>
                                                         </div>
                                                     )}
 
@@ -311,10 +311,10 @@ export default function ShiftSwaps() {
                                 })}
                             </div>
                         ) : (
-                            <Card className="p-12">
-                                <div className="text-center text-slate-500">
+                            <Card className="p-12 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl">
+                                <div className="text-center text-slate-400">
                                     <RepeatIcon className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                    <p className="text-lg font-medium mb-1">Keine Tauschanfragen</p>
+                                    <p className="text-lg font-medium mb-1 text-white">Keine Tauschanfragen</p>
                                     <p className="text-sm">Gehe zu "Meine Schichten", um eine Schicht anzubieten</p>
                                 </div>
                             </Card>
@@ -331,7 +331,7 @@ export default function ShiftSwaps() {
                                     placeholder="Schichten durchsuchen..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10"
+                                    className="pl-10 bg-slate-900/50 border-slate-800/50 text-white placeholder:text-slate-500"
                                 />
                             </div>
                         </div>
@@ -343,24 +343,24 @@ export default function ShiftSwaps() {
                                         r.shift_id === shift.id && r.status === 'ausstehend'
                                     );
                                     return (
-                                        <Card key={shift.id} className="p-5 hover:shadow-md transition-shadow">
+                                        <Card key={shift.id} className="p-5 bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl">
                                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        <Badge className="bg-blue-100 text-blue-700">
+                                                        <Badge className="bg-blue-500/20 text-blue-400 border border-blue-500/30">
                                                             {shift.shift_type}
                                                         </Badge>
                                                         {hasPendingRequest && (
-                                                            <Badge className="bg-amber-100 text-amber-700">
+                                                            <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30">
                                                                 <Clock className="w-3 h-3 mr-1" />
                                                                 Tausch läuft
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <p className="text-lg font-semibold text-slate-800 mb-1">
+                                                    <p className="text-lg font-semibold text-white mb-1">
                                                         {format(parseISO(shift.date), 'EEEE, d. MMMM yyyy', { locale: de })}
                                                     </p>
-                                                    <p className="text-sm text-slate-600">
+                                                    <p className="text-sm text-slate-300">
                                                         {shift.start_time} - {shift.end_time}
                                                     </p>
                                                     {shift.notes && (
@@ -371,7 +371,7 @@ export default function ShiftSwaps() {
                                                     <Button
                                                         onClick={() => handleCreateRequest(shift)}
                                                         disabled={hasPendingRequest}
-                                                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                                                        className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 disabled:opacity-50 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500"
                                                     >
                                                         <RepeatIcon className="w-4 h-4 mr-2" />
                                                         {hasPendingRequest ? 'Anfrage läuft' : 'Tausch anfragen'}
@@ -383,10 +383,10 @@ export default function ShiftSwaps() {
                                 })}
                             </div>
                         ) : (
-                            <Card className="p-12">
-                                <div className="text-center text-slate-500">
+                            <Card className="p-12 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl">
+                                <div className="text-center text-slate-400">
                                     <Calendar className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                    <p className="text-lg font-medium mb-1">Keine Schichten gefunden</p>
+                                    <p className="text-lg font-medium mb-1 text-white">Keine Schichten gefunden</p>
                                     <p className="text-sm">Du hast aktuell keine bevorstehenden Schichten</p>
                                 </div>
                             </Card>
@@ -399,11 +399,11 @@ export default function ShiftSwaps() {
                             {pendingRequests.length > 0 ? (
                                 <div className="grid gap-4">
                                     {pendingRequests.map(request => (
-                                        <Card key={request.id} className="p-5 hover:shadow-md transition-shadow border-l-4 border-l-amber-500">
+                                        <Card key={request.id} className="p-5 bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl border-l-4 border-l-amber-500">
                                             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-3">
-                                                        <Badge className="bg-amber-100 text-amber-700">
+                                                        <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30">
                                                             <Clock className="w-3 h-3 mr-1" />
                                                             Ausstehend
                                                         </Badge>
@@ -413,18 +413,18 @@ export default function ShiftSwaps() {
                                                     </div>
                                                     
                                                     <div className="space-y-2 mb-4">
-                                                        <p className="text-lg font-semibold text-slate-800">
+                                                        <p className="text-lg font-semibold text-white">
                                                             {request.requesting_employee_name} → {request.target_employee_name}
                                                         </p>
-                                                        <p className="text-sm text-slate-600">
+                                                        <p className="text-sm text-slate-300">
                                                             {format(parseISO(request.shift_date), 'EEEE, d. MMMM yyyy', { locale: de })} • {request.shift_time}
                                                         </p>
                                                     </div>
                                                     
                                                     {request.reason && (
-                                                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                        <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
                                                             <p className="text-xs text-slate-500 mb-1">Grund:</p>
-                                                            <p className="text-sm text-slate-700">{request.reason}</p>
+                                                            <p className="text-sm text-slate-300">{request.reason}</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -433,14 +433,14 @@ export default function ShiftSwaps() {
                                                     <Button
                                                         variant="outline"
                                                         onClick={() => handleReject(request)}
-                                                        className="flex-1 lg:flex-none border-red-200 text-red-600 hover:bg-red-50"
+                                                        className="flex-1 lg:flex-none border-red-500/30 text-red-400 hover:bg-red-500/10"
                                                     >
                                                         <X className="w-4 h-4 mr-2" />
                                                         Ablehnen
                                                     </Button>
                                                     <Button
                                                         onClick={() => handleApprove(request)}
-                                                        className="flex-1 lg:flex-none bg-green-600 hover:bg-green-700"
+                                                        className="flex-1 lg:flex-none bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                                                     >
                                                         <Check className="w-4 h-4 mr-2" />
                                                         Genehmigen
@@ -451,10 +451,10 @@ export default function ShiftSwaps() {
                                     ))}
                                 </div>
                             ) : (
-                                <Card className="p-12">
-                                    <div className="text-center text-slate-500">
+                                <Card className="p-12 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl">
+                                    <div className="text-center text-slate-400">
                                         <Check className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                        <p className="text-lg font-medium mb-1">Keine ausstehenden Anfragen</p>
+                                        <p className="text-lg font-medium mb-1 text-white">Keine ausstehenden Anfragen</p>
                                         <p className="text-sm">Alle Tauschanfragen wurden bearbeitet</p>
                                     </div>
                                 </Card>

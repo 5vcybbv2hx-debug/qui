@@ -68,6 +68,7 @@ const navigationSections = [
     {
         title: 'Einstellungen',
         items: [
+            { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'canViewEmployees' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Shield, permission: 'isManager' },
         ]
     },

@@ -18,12 +18,12 @@ import BarcodeScanner from '../components/restock/BarcodeScanner';
 
 const getSupplierColor = (index) => {
     const colors = [
-        'bg-blue-100 text-blue-700 border-blue-200',
-        'bg-orange-100 text-orange-700 border-orange-200',
-        'bg-purple-100 text-purple-700 border-purple-200',
-        'bg-red-100 text-red-700 border-red-200',
-        'bg-green-100 text-green-700 border-green-200',
-        'bg-pink-100 text-pink-700 border-pink-200'
+        'bg-blue-500/20 text-blue-400 border-blue-500/30',
+        'bg-orange-500/20 text-orange-400 border-orange-500/30',
+        'bg-purple-500/20 text-purple-400 border-purple-500/30',
+        'bg-red-500/20 text-red-400 border-red-500/30',
+        'bg-green-500/20 text-green-400 border-green-500/30',
+        'bg-pink-500/20 text-pink-400 border-pink-500/30'
     ];
     return colors[index % colors.length];
 };
@@ -278,10 +278,10 @@ export default function Shopping() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                    <TabsList className={`grid w-full mb-6`} style={{ gridTemplateColumns: `repeat(${activeSuppliers.length + 1}, minmax(0, 1fr))` }}>
-                        <TabsTrigger value="alle">Alle</TabsTrigger>
+                    <TabsList className={`grid w-full mb-6 bg-slate-900/50 border border-slate-800/50`} style={{ gridTemplateColumns: `repeat(${activeSuppliers.length + 1}, minmax(0, 1fr))` }}>
+                        <TabsTrigger value="alle" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">Alle</TabsTrigger>
                         {activeSuppliers.map(supplier => (
-                            <TabsTrigger key={supplier.id} value={supplier.name}>
+                            <TabsTrigger key={supplier.id} value={supplier.name} className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">
                                 {supplier.name}
                             </TabsTrigger>
                         ))}
@@ -291,12 +291,12 @@ export default function Shopping() {
                         {/* Open Items */}
                         {openItems.length > 0 && (
                             <div>
-                                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3">
+                                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
                                     Offen ({openItems.length})
                                 </h3>
                                 <div className="grid gap-3">
                                     {openItems.map(item => (
-                                        <Card key={item.id} className="p-4 bg-white border-0 shadow-sm">
+                                        <Card key={item.id} className="p-4 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl hover:border-amber-500/30 transition-all">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-start gap-3 mb-2">
@@ -311,28 +311,28 @@ export default function Shopping() {
                                                             ) : null;
                                                         })()}
                                                         <div className="flex-1">
-                                                            <h4 className="font-semibold text-slate-800">
-                                                                {item.item_name}
-                                                            </h4>
-                                                            <Badge className={cn("text-xs mt-1", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
-                                                                {item.category}
-                                                            </Badge>
+                                                           <h4 className="font-semibold text-white">
+                                                               {item.item_name}
+                                                           </h4>
+                                                           <Badge className={cn("text-xs mt-1 border", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
+                                                               {item.category}
+                                                           </Badge>
                                                         </div>
-                                                    </div>
-                                                    <div className="text-sm text-slate-600 mb-3">
+                                                        </div>
+                                                        <div className="text-sm text-slate-300 mb-3">
                                                         <span className="font-semibold">{item.quantity}</span>
                                                         {item.unit && <span> {item.unit}</span>}
-                                                    </div>
-                                                    {item.notes && (
-                                                        <p className="text-sm text-slate-500 italic">{item.notes}</p>
-                                                    )}
+                                                        </div>
+                                                        {item.notes && (
+                                                        <p className="text-sm text-slate-400 italic">{item.notes}</p>
+                                                        )}
                                                 </div>
                                                 <div className="flex gap-2">
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleStatusChange(item, 'bestellt')}
-                                                        className="text-white bg-blue-600 hover:bg-blue-700 border-blue-600"
+                                                        className="text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 border-0"
                                                     >
                                                         <Package className="w-4 h-4" />
                                                     </Button>
@@ -340,13 +340,14 @@ export default function Shopping() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => openModal(item)}
+                                                        className="border-slate-700/50 text-slate-300 hover:bg-slate-800/50"
                                                     >
                                                         Bearbeiten
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                                         onClick={() => handleDelete(item.id)}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -362,24 +363,24 @@ export default function Shopping() {
                         {/* Ordered Items */}
                         {orderedItems.length > 0 && (
                             <div>
-                                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3">
+                                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
                                     Bestellt ({orderedItems.length})
                                 </h3>
                                 <div className="grid gap-3">
                                     {orderedItems.map(item => (
-                                        <Card key={item.id} className="p-4 bg-blue-50 border-blue-100">
+                                        <Card key={item.id} className="p-4 bg-blue-500/10 border-blue-500/30 backdrop-blur-xl">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        <Package className="w-4 h-4 text-blue-600" />
-                                                        <h4 className="font-semibold text-slate-800">
+                                                        <Package className="w-4 h-4 text-blue-400" />
+                                                        <h4 className="font-semibold text-white">
                                                             {item.item_name}
                                                         </h4>
-                                                        <Badge className={cn("text-xs", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
+                                                        <Badge className={cn("text-xs border", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
                                                             {item.category}
                                                         </Badge>
                                                     </div>
-                                                    <div className="text-sm text-slate-600">
+                                                    <div className="text-sm text-slate-300">
                                                         <span className="font-semibold">{item.quantity}</span>
                                                         {item.unit && <span> {item.unit}</span>}
                                                     </div>
@@ -389,14 +390,14 @@ export default function Shopping() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleStatusChange(item, 'erhalten')}
-                                                        className="text-white bg-green-600 hover:bg-green-700 border-green-600"
+                                                        className="text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 border-0"
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                                         onClick={() => handleDelete(item.id)}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -413,14 +414,14 @@ export default function Shopping() {
                         {receivedItems.length > 0 && (
                             <div>
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
                                         Erhalten ({receivedItems.length})
                                     </h3>
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={handleDeleteReceived}
-                                        className="text-white bg-red-600 hover:bg-red-700 border-red-600"
+                                        className="text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-0"
                                     >
                                         <Trash2 className="w-4 h-4 mr-2" />
                                         Alle löschen
@@ -428,19 +429,19 @@ export default function Shopping() {
                                 </div>
                                 <div className="grid gap-3">
                                     {receivedItems.map(item => (
-                                        <Card key={item.id} className="p-4 bg-green-50 border-green-100 opacity-75">
+                                        <Card key={item.id} className="p-4 bg-green-500/10 border-green-500/30 opacity-75 backdrop-blur-xl">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        <Check className="w-4 h-4 text-green-600" />
-                                                        <h4 className="font-medium text-slate-700 line-through">
+                                                        <Check className="w-4 h-4 text-green-400" />
+                                                        <h4 className="font-medium text-slate-400 line-through">
                                                             {item.item_name}
                                                         </h4>
-                                                        <Badge className={cn("text-xs", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
+                                                        <Badge className={cn("text-xs border", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
                                                             {item.category}
                                                         </Badge>
                                                     </div>
-                                                    <div className="text-sm text-slate-600">
+                                                    <div className="text-sm text-slate-400">
                                                         <span className="font-semibold">{item.quantity}</span>
                                                         {item.unit && <span> {item.unit}</span>}
                                                     </div>
@@ -448,7 +449,7 @@ export default function Shopping() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="text-slate-400 hover:text-red-500 hover:bg-red-50"
+                                                    className="text-slate-500 hover:text-red-400 hover:bg-red-500/10"
                                                     onClick={() => handleDelete(item.id)}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -461,10 +462,10 @@ export default function Shopping() {
                         )}
 
                         {filteredItems.length === 0 && (
-                            <Card className="p-12 bg-white border-0 shadow-sm">
+                            <Card className="p-12 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl">
                                 <div className="text-center text-slate-400">
-                                    <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                    <p className="text-lg font-medium">Keine Artikel</p>
+                                    <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                    <p className="text-lg font-medium text-white">Keine Artikel</p>
                                     <p className="text-sm mt-1">Füge Artikel zur Einkaufsliste hinzu</p>
                                 </div>
                             </Card>

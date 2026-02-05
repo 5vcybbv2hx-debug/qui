@@ -6,6 +6,7 @@ export default function Home() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Redirect to Dashboard as the default landing page
         navigate(createPageUrl('Dashboard'), { replace: true });
     }, [navigate]);
 

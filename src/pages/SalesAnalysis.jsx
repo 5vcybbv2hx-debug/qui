@@ -8,12 +8,16 @@ import { FileText, Trash2, TrendingUp, Eye, Download } from 'lucide-react';
 import ReportUploader from '@/components/sales/ReportUploader';
 import SalesAnalyticsDashboard from '@/components/sales/SalesAnalyticsDashboard';
 import ReportDetailsModal from '@/components/sales/ReportDetailsModal';
+import ReportComparison from '@/components/sales/ReportComparison';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export default function SalesAnalysisPage() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [selectedReport, setSelectedReport] = useState(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
+    const [selectedReports, setSelectedReports] = useState([]);
+    const [showComparisonModal, setShowComparisonModal] = useState(false);
 
     const { data: reports = [], refetch } = useQuery({
         queryKey: ['sales-reports'],
@@ -32,6 +36,24 @@ export default function SalesAnalysisPage() {
             }
         }
     };
+
+    const toggleReportSelection = (reportId) => {
+        setSelectedReports(prev => 
+            prev.includes(reportId) 
+                ? prev.filter(id => id !== reportId)
+                : [...prev, reportId]
+        );
+    };
+
+    const handleCompare = () => {
+        if (selectedReports.length < 2) {
+            toast.error('Bitte mindestens 2 Berichte auswählen');
+            return;
+        }
+        setShowComparisonModal(true);
+    };
+
+    const selectedReportObjects = reports.filter(r => selectedReports.includes(r.id));
 
     const getStatusBadge = (status) => {
         const variants = {
@@ -128,6 +150,41 @@ export default function SalesAnalysisPage() {
                             </Card>
                         ) : (
                             <div className="space-y-6">
+                                {selectedReports.length > 0 && (
+                                    <Card className="bg-amber-900/20 border-amber-600/30">
+                                        <CardContent className="py-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Badge className="bg-amber-600 text-white">
+                                                        {selectedReports.length} ausgewählt
+                                                    </Badge>
+                                                    <span className="text-sm text-slate-300">
+                                                        Berichte zum Vergleichen
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => setSelectedReports([])}
+                                                        className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                                                    >
+                                                        Auswahl aufheben
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={handleCompare}
+                                                        disabled={selectedReports.length < 2}
+                                                        className="bg-amber-600 hover:bg-amber-700"
+                                                    >
+                                                        <TrendingUp className="w-4 h-4 mr-2" />
+                                                        Vergleichen
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
                                 {reportsByMonth.map((month, idx) => (
                                     <Card key={idx} className="bg-slate-800/50 border-slate-700">
                                         <CardHeader>
@@ -146,6 +203,12 @@ export default function SalesAnalysisPage() {
                                                         className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700 hover:border-amber-600/50 transition-colors"
                                                     >
                                                         <div className="flex items-start gap-4 flex-1">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedReports.includes(report.id)}
+                                                                onChange={() => toggleReportSelection(report.id)}
+                                                                className="w-5 h-5 mt-1 rounded border-slate-600 text-amber-600 focus:ring-amber-600 cursor-pointer bg-slate-800"
+                                                            />
                                                             <FileText className="w-8 h-8 text-amber-500 flex-shrink-0 mt-1" />
                                                             <div className="flex-1">
                                                                 <div className="flex items-center gap-3 mb-2">
@@ -224,6 +287,12 @@ export default function SalesAnalysisPage() {
                         setDetailsOpen(false);
                         setSelectedReport(null);
                     }}
+                />
+
+                <ReportComparison
+                    reports={selectedReportObjects}
+                    open={showComparisonModal}
+                    onClose={() => setShowComparisonModal(false)}
                 />
             </div>
         </div>

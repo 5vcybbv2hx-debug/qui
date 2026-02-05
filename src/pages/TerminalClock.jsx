@@ -183,14 +183,6 @@ export default function TerminalClock() {
                     }
                 });
 
-                // Automatische Pausen nach ArbZG (bezahlt)
-                let pauseMinuten = 0;
-                if (hours > 9) {
-                    pauseMinuten = 45;
-                } else if (hours > 6) {
-                    pauseMinuten = 30;
-                }
-                
                 const pauseText = pauseMinuten > 0 ? `\n${pauseMinuten}min Pause (bezahlt)` : '';
 
                 // Zeige Verdienst für Aushilfen (Minijob)

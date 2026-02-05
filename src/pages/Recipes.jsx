@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart, Lightbulb, CheckSquare } from 'lucide-react';
+import { Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart, Lightbulb, CheckSquare, X } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,8 +46,10 @@ export default function Recipes() {
         preparation: '',
         glass_type: '',
         garnish: '',
-        notes: ''
+        notes: '',
+        image_url: ''
     });
+    const [uploadingImage, setUploadingImage] = useState(false);
     const [viewServings, setViewServings] = useState({});
 
     const { data: recipes = [] } = useQuery({
@@ -106,7 +108,8 @@ export default function Recipes() {
                 preparation: recipe.preparation || '',
                 glass_type: recipe.glass_type || '',
                 garnish: recipe.garnish || '',
-                notes: recipe.notes || ''
+                notes: recipe.notes || '',
+                image_url: recipe.image_url || ''
             });
         } else {
             setSelectedRecipe(null);
@@ -118,10 +121,26 @@ export default function Recipes() {
                 preparation: '',
                 glass_type: '',
                 garnish: '',
-                notes: ''
+                notes: '',
+                image_url: ''
             });
         }
         setModalOpen(true);
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        try {
+            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            setFormData({ ...formData, image_url: file_url });
+        } catch (error) {
+            alert('Fehler beim Hochladen des Bildes');
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     const getScaledIngredients = (ingredients, baseServings, targetServings) => {
@@ -387,29 +406,39 @@ export default function Recipes() {
                 {filteredRecipes.length > 0 ? (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredRecipes.map(recipe => (
-                            <Card key={recipe.id} className="p-5 bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-center gap-2 flex-1">
-                                        <button
-                                            onClick={() => toggleRecipeSelection(recipe.id)}
-                                            className={cn(
-                                                "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                                                selectedRecipes.has(recipe.id)
-                                                    ? "bg-amber-600 border-amber-600"
-                                                    : "border-slate-600 hover:border-amber-500"
-                                            )}
-                                        >
-                                            {selectedRecipes.has(recipe.id) && (
-                                                <CheckSquare className="w-3 h-3 text-white" />
-                                            )}
-                                        </button>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-white mb-2">{recipe.name}</h3>
-                                            <Badge className={cn("text-xs", categoryColors[recipe.category])}>
-                                                {recipe.category}
-                                            </Badge>
-                                        </div>
+                            <Card key={recipe.id} className="overflow-hidden bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow">
+                                {recipe.image_url && (
+                                    <div className="w-full h-40 overflow-hidden bg-slate-900">
+                                        <img 
+                                            src={recipe.image_url} 
+                                            alt={recipe.name}
+                                            className="w-full h-full object-cover"
+                                        />
                                     </div>
+                                )}
+                                <div className="p-5">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center gap-2 flex-1">
+                                            <button
+                                                onClick={() => toggleRecipeSelection(recipe.id)}
+                                                className={cn(
+                                                    "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                                                    selectedRecipes.has(recipe.id)
+                                                        ? "bg-amber-600 border-amber-600"
+                                                        : "border-slate-600 hover:border-amber-500"
+                                                )}
+                                            >
+                                                {selectedRecipes.has(recipe.id) && (
+                                                    <CheckSquare className="w-3 h-3 text-white" />
+                                                )}
+                                            </button>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-white mb-2">{recipe.name}</h3>
+                                                <Badge className={cn("text-xs", categoryColors[recipe.category])}>
+                                                    {recipe.category}
+                                                </Badge>
+                                            </div>
+                                        </div>
                                     <div className="flex gap-1">
                                         <Button
                                             variant="ghost"
@@ -596,8 +625,9 @@ export default function Recipes() {
                                             {recipe.garnish && <p>Garnitur: {recipe.garnish}</p>}
                                         </div>
                                     )}
-                                </div>
-                            </Card>
+                                    </div>
+                                    </div>
+                                    </Card>
                         ))}
                     </div>
                 ) : (
@@ -703,6 +733,33 @@ export default function Recipes() {
                                     placeholder="Zusätzliche Hinweise..."
                                     rows={2}
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Bild</Label>
+                                <div className="space-y-2">
+                                    {formData.image_url && (
+                                        <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-300">
+                                            <img src={formData.image_url} alt="Rezeptbild" className="w-full h-full object-cover" />
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => setFormData({ ...formData, image_url: '' })}
+                                                className="absolute top-2 right-2"
+                                            >
+                                                Entfernen
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        disabled={uploadingImage}
+                                    />
+                                    {uploadingImage && <p className="text-xs text-slate-500">Wird hochgeladen...</p>}
+                                </div>
                             </div>
 
                             <div className="flex gap-2 pt-4">

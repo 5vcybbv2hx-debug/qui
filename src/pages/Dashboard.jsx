@@ -8,7 +8,7 @@ import { de } from 'date-fns/locale';
 import { 
     Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, Users, ShoppingCart, 
     Sparkles, CheckSquare, Package, AlertTriangle, CalendarCheck, LogIn, LogOut,
-    Umbrella, FileText, TrendingUp
+    Umbrella, FileText, TrendingUp, Wine, BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -186,6 +186,13 @@ export default function Dashboard() {
     const activeClockEntry = currentEmployee ? clockEntries.find(
         e => e.employee_id === currentEmployee.id && e.status === 'clocked_in'
     ) : null;
+
+    const myOpenTodos = currentEmployee ? todos.filter(
+        t => (t.assigned_to === currentEmployee.email || t.assigned_to === currentEmployee.name) && t.status !== 'erledigt'
+    ) : [];
+
+    const myCleaningTasks = cleaningTasks.filter(t => !t.is_completed && t.is_active);
+    const todayOpenShoppingItems = openShoppingItems.slice(0, 5);
 
     const getWorkingDuration = (clockIn) => {
         const now = new Date();
@@ -470,7 +477,7 @@ export default function Dashboard() {
                     </div>
                 </Card>
 
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Link to={createPageUrl('Calendar')}>
                         <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
                             <div className="flex items-center gap-3">
@@ -479,35 +486,51 @@ export default function Dashboard() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-slate-400">Kalender</p>
-                                    <p className="font-semibold text-white">Ansehen</p>
+                                    <p className="font-semibold text-white">Schichten</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
-                    <Link to={createPageUrl('MyArea')}>
+                    <Link to={createPageUrl('Recipes')}>
                         <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
-                                    <Umbrella className="w-6 h-6 text-purple-500" />
+                                <div className="w-12 h-12 rounded-lg bg-pink-600/20 flex items-center justify-center">
+                                    <Wine className="w-6 h-6 text-pink-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Mein Bereich</p>
-                                    <p className="font-semibold text-white">Profil & Urlaub</p>
+                                    <p className="text-sm text-slate-400">Rezepte</p>
+                                    <p className="font-semibold text-white">Nachschlagen</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
-                    <Link to={createPageUrl('TimeManagement')}>
+                    <Link to={createPageUrl('Cleaning')}>
+                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-lg bg-teal-600/20 flex items-center justify-center">
+                                    <Sparkles className="w-6 h-6 text-teal-500" />
+                                </div>
+                                <div>
+                                    <p className="text-sm text-slate-400">Putzen</p>
+                                    <p className="font-semibold text-white">
+                                        {myCleaningTasks.length} offen
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </Link>
+
+                    <Link to={createPageUrl('DrinkMenu')}>
                         <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-amber-600/20 flex items-center justify-center">
-                                    <FileText className="w-6 h-6 text-amber-500" />
+                                    <BookOpen className="w-6 h-6 text-amber-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Zeit</p>
-                                    <p className="font-semibold text-white">Erfassen</p>
+                                    <p className="text-sm text-slate-400">Getränke</p>
+                                    <p className="font-semibold text-white">Karte</p>
                                 </div>
                             </div>
                         </Card>
@@ -556,41 +579,143 @@ export default function Dashboard() {
                     </Card>
                 </div>
 
-                <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold text-white">Kommende Schichten</h2>
-                        <Link to={createPageUrl('Calendar')}>
-                            <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">Alle</Button>
-                        </Link>
+                {(todayEvents.length > 0 || todayReservations.length > 0 || todayShifts.length > 0) && (
+                    <Card className="p-6 bg-slate-800 border-slate-700">
+                        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 text-green-500" />
+                            Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
+                        </h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <p className="text-xs text-slate-400 mb-2 uppercase">Schichten ({todayShifts.length})</p>
+                                <div className="space-y-2">
+                                    {todayShifts.slice(0, 3).map(shift => (
+                                        <div key={shift.id} className="flex items-center gap-2 text-sm">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: shift.color || '#64748b' }} />
+                                            <span className="text-slate-300 truncate">{shift.employee_name}</span>
+                                            <span className="text-slate-500 text-xs ml-auto">{shift.start_time?.substring(0, 5)}</span>
+                                        </div>
+                                    ))}
+                                    {todayShifts.length === 0 && <p className="text-sm text-slate-500 italic">Keine Schichten</p>}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-slate-400 mb-2 uppercase">Events ({todayEvents.length})</p>
+                                <div className="space-y-2">
+                                    {todayEvents.map(event => (
+                                        <div key={event.id} className="text-sm">
+                                            <p className="text-slate-300 font-medium truncate">{event.title}</p>
+                                            {event.expected_guests && <p className="text-xs text-slate-500">{event.expected_guests} Gäste</p>}
+                                        </div>
+                                    ))}
+                                    {todayEvents.length === 0 && <p className="text-sm text-slate-500 italic">Keine Events</p>}
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-slate-400 mb-2 uppercase">Reservierungen ({todayReservations.length})</p>
+                                <div className="space-y-2">
+                                    {todayReservations.slice(0, 3).map(res => (
+                                        <div key={res.id} className="text-sm">
+                                            <p className="text-slate-300 truncate">{res.customer_name}</p>
+                                            <p className="text-xs text-slate-500">{res.time} • {res.guests} Gäste</p>
+                                        </div>
+                                    ))}
+                                    {todayReservations.length === 0 && <p className="text-sm text-slate-500 italic">Keine Reservierungen</p>}
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Calendar className="w-5 h-5 text-blue-500" />
+                                Kommende Schichten
+                            </h2>
+                            <Link to={createPageUrl('Calendar')}>
+                                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">Alle</Button>
+                            </Link>
+                        </div>
+
+                        {myUpcomingShifts.length === 0 ? (
+                            <Card className="p-8 text-center bg-slate-800 border-slate-700">
+                                <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                                <p className="text-slate-400">Keine kommenden Schichten</p>
+                            </Card>
+                        ) : (
+                            <div className="space-y-3">
+                                {myUpcomingShifts.slice(0, 3).map(shift => (
+                                    <Card key={shift.id} className="p-4 bg-slate-800 border-slate-700">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-start gap-4 flex-1">
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-bold text-white">{format(parseISO(shift.date), 'dd')}</p>
+                                                    <p className="text-xs text-slate-400 uppercase">{format(parseISO(shift.date), 'MMM', { locale: de })}</p>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-semibold text-white">{format(parseISO(shift.date), 'EEEE', { locale: de })}</p>
+                                                    <p className="text-sm text-slate-400">{shift.start_time} - {shift.end_time}</p>
+                                                    {shift.notes && <p className="text-xs text-slate-500 mt-1">{shift.notes}</p>}
+                                                </div>
+                                            </div>
+                                            <Badge className="bg-amber-600/20 text-amber-400">{shift.shift_type || 'Schicht'}</Badge>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {myUpcomingShifts.length === 0 ? (
-                        <Card className="p-8 text-center bg-slate-800 border-slate-700">
-                            <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                            <p className="text-slate-400">Keine kommenden Schichten</p>
-                        </Card>
-                    ) : (
-                        <div className="space-y-3">
-                            {myUpcomingShifts.map(shift => (
-                                <Card key={shift.id} className="p-4 bg-slate-800 border-slate-700">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex items-start gap-4 flex-1">
-                                            <div className="text-center">
-                                                <p className="text-2xl font-bold text-white">{format(parseISO(shift.date), 'dd')}</p>
-                                                <p className="text-xs text-slate-400 uppercase">{format(parseISO(shift.date), 'MMM', { locale: de })}</p>
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-white">{format(parseISO(shift.date), 'EEEE', { locale: de })}</p>
-                                                <p className="text-sm text-slate-400">{shift.start_time} - {shift.end_time}</p>
-                                                {shift.notes && <p className="text-xs text-slate-500 mt-1">{shift.notes}</p>}
-                                            </div>
-                                        </div>
-                                        <Badge className="bg-amber-600/20 text-amber-400">{shift.shift_type}</Badge>
-                                    </div>
-                                </Card>
-                            ))}
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                <CheckSquare className="w-5 h-5 text-orange-500" />
+                                Meine Aufgaben
+                            </h2>
+                            <Link to={createPageUrl('Todos')}>
+                                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">Alle</Button>
+                            </Link>
                         </div>
-                    )}
+
+                        {myOpenTodos.length === 0 ? (
+                            <Card className="p-8 text-center bg-slate-800 border-slate-700">
+                                <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
+                                <p className="text-slate-400">Keine offenen Aufgaben</p>
+                            </Card>
+                        ) : (
+                            <div className="space-y-3">
+                                {myOpenTodos.slice(0, 3).map(todo => (
+                                    <Card key={todo.id} className="p-4 bg-slate-800 border-slate-700">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-white">{todo.title}</p>
+                                                {todo.description && (
+                                                    <p className="text-sm text-slate-400 mt-1 line-clamp-1">{todo.description}</p>
+                                                )}
+                                                {todo.due_date && (
+                                                    <p className="text-xs text-slate-500 mt-2">
+                                                        Fällig: {format(parseISO(todo.due_date), 'dd.MM.yyyy', { locale: de })}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <Badge className={
+                                                todo.priority === 'dringend' ? 'bg-red-600/20 text-red-400' :
+                                                todo.priority === 'hoch' ? 'bg-orange-600/20 text-orange-400' :
+                                                'bg-slate-600/20 text-slate-400'
+                                            }>
+                                                {todo.priority}
+                                            </Badge>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

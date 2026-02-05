@@ -79,12 +79,53 @@ export default function MenuItemModal({ item, open, onClose }) {
         }
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        let calculatedPurchasePrice = formData.purchase_price ? parseFloat(formData.purchase_price) : undefined;
+
+        // EK aus Rezept berechnen wenn aktiviert
+        if (formData.use_recipe_calculation && formData.linked_recipe_id) {
+            const recipe = recipes.find(r => r.id === formData.linked_recipe_id);
+            if (recipe?.ingredients) {
+                let totalCost = 0;
+                recipe.ingredients.forEach(ingredient => {
+                    const article = articles.find(a => a.id === ingredient.article_id);
+                    if (article && article.price_per_liter && ingredient.amount) {
+                        totalCost += (ingredient.amount / 1000) * article.price_per_liter;
+                    }
+                });
+                calculatedPurchasePrice = totalCost;
+            }
+        }
+        // EK aus Artikel berechnen wenn verknüpft
+        else if (formData.linked_article_id && !formData.use_recipe_calculation) {
+            const linkedArticle = articles.find(a => a.id === formData.linked_article_id);
+            if (linkedArticle?.purchase_price) {
+                const parseServingSize = (sizeString) => {
+                    if (!sizeString) return 0;
+                    const size = sizeString.toLowerCase().replace(',', '.');
+                    if (size.includes('l')) return parseFloat(size.replace('l', '').trim()) || 0;
+                    if (size.includes('cl')) return (parseFloat(size.replace('cl', '').trim()) || 0) / 100;
+                    if (size.includes('ml')) return (parseFloat(size.replace('ml', '').trim()) || 0) / 1000;
+                    return 0;
+                };
+                
+                const articleSize = linkedArticle.unit_size || 1;
+                const servingSize = parseServingSize(formData.size);
+                
+                if (servingSize > 0) {
+                    calculatedPurchasePrice = (linkedArticle.purchase_price / articleSize) * servingSize;
+                } else {
+                    calculatedPurchasePrice = linkedArticle.purchase_price;
+                }
+            }
+        }
+
         const submitData = {
             ...formData,
             price: parseFloat(formData.price),
-            purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
+            purchase_price: calculatedPurchasePrice,
             alcohol_content: formData.alcohol_content ? parseFloat(formData.alcohol_content) : undefined,
             order_position: formData.order_position ? parseInt(formData.order_position) : undefined
         };

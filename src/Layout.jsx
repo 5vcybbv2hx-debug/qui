@@ -239,6 +239,16 @@ export default function Layout({ children, currentPageName }) {
                             onClick={() => setMobileMenuOpen(false)}
                         />
                         <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-slate-900/95 border-t border-slate-800/50 shadow-2xl max-h-[75vh] overflow-y-auto z-50 rounded-t-3xl backdrop-blur-xl">
+                            <div className="sticky top-0 bg-slate-900/95 border-b border-slate-800/50 flex items-center justify-between px-4 py-3">
+                                <h2 className="text-sm font-semibold text-white">Menü</h2>
+                                <button
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-800 active:bg-slate-700 text-slate-400 hover:text-white transition-all"
+                                    title="Schließen"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                             <nav className="p-4 space-y-6">
                                 {navigationSections.map((section) => {
                                     const visibleItems = section.items.filter(item => permissions[item.permission]);

@@ -91,9 +91,11 @@ export default function MenuItemModal({ item, open, onClose }) {
                 let totalCost = 0;
                 recipe.ingredients.forEach(ingredient => {
                     const article = articles.find(a => a.id === ingredient.article_id);
-                    if (article?.price_per_liter && ingredient.amount && ingredient.unit) {
+                    if (article?.price_per_liter && ingredient.amount) {
+                        // Fallback für alte Rezepte ohne unit: nehme ml an
+                        const unit = ingredient.unit || 'ml';
                         let amountInLiters = 0;
-                        switch (ingredient.unit?.toLowerCase()) {
+                        switch (unit.toLowerCase()) {
                             case 'ml':
                                 amountInLiters = ingredient.amount / 1000;
                                 break;

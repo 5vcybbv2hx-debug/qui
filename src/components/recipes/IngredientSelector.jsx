@@ -36,11 +36,14 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
 
     const calculateIngredientCost = (ingredient) => {
         const article = articles.find(a => a.id === ingredient.article_id);
-        if (!article?.price_per_liter || !ingredient.amount || !ingredient.unit) return 0;
+        if (!article?.price_per_liter || !ingredient.amount) return 0;
 
+        // Fallback für alte Rezepte ohne unit: nehme ml an
+        const unit = ingredient.unit || 'ml';
+        
         // Konvertiere Zutatenmenge in Liter/kg
         let amountInLiters = 0;
-        switch (ingredient.unit.toLowerCase()) {
+        switch (unit.toLowerCase()) {
             case 'ml':
                 amountInLiters = ingredient.amount / 1000;
                 break;

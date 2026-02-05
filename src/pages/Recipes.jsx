@@ -485,10 +485,11 @@ export default function Recipes() {
                                                    const article = articles.find(a => a.id === ing.article_id);
                                                    let cost = 0;
 
-                                                   // Kostenberechnung basierend auf Einheit
-                                                   if (article?.price_per_liter && ing.amount && ing.unit) {
+                                                   // Kostenberechnung basierend auf Einheit (Fallback zu ml für alte Rezepte)
+                                                   if (article?.price_per_liter && ing.amount) {
+                                                       const unit = ing.unit || 'ml';
                                                        let amountInLiters = 0;
-                                                       switch (ing.unit?.toLowerCase()) {
+                                                       switch (unit.toLowerCase()) {
                                                            case 'ml':
                                                                amountInLiters = ing.amount / 1000;
                                                                break;
@@ -545,9 +546,10 @@ export default function Recipes() {
                                                    let totalCost = 0;
                                                    scaledIngredients.forEach(ing => {
                                                        const article = articles.find(a => a.id === ing.article_id);
-                                                       if (article?.price_per_liter && ing.amount && ing.unit) {
+                                                       if (article?.price_per_liter && ing.amount) {
+                                                           const unit = ing.unit || 'ml';
                                                            let amountInLiters = 0;
-                                                           switch (ing.unit?.toLowerCase()) {
+                                                           switch (unit.toLowerCase()) {
                                                                case 'ml':
                                                                    amountInLiters = ing.amount / 1000;
                                                                    break;

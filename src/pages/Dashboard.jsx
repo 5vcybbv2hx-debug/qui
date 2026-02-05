@@ -440,42 +440,34 @@ export default function Dashboard() {
                     <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
                 </div>
 
-                <Card className="p-6 bg-slate-800 border-slate-700">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl"
-                                 style={{ backgroundColor: currentEmployee.color || '#64748b' }}>
-                                {currentEmployee.name?.charAt(0).toUpperCase()}
+                <Link to={createPageUrl('TerminalClock')}>
+                    <Card className="p-6 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl"
+                                     style={{ backgroundColor: currentEmployee.color || '#64748b' }}>
+                                    {currentEmployee.name?.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    {activeClockEntry ? (
+                                        <>
+                                            <p className="text-white font-semibold">Eingestempelt</p>
+                                            <p className="text-green-400 text-sm">
+                                                Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p className="text-white font-semibold">Nicht eingestempelt</p>
+                                            <p className="text-slate-400 text-sm">Bereit zum Einstempeln</p>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                            <div>
-                                {activeClockEntry ? (
-                                    <>
-                                        <p className="text-white font-semibold">Eingestempelt</p>
-                                        <p className="text-green-400 text-sm">
-                                            Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
-                                        </p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-white font-semibold">Nicht eingestempelt</p>
-                                        <p className="text-slate-400 text-sm">Bereit zum Einstempeln</p>
-                                    </>
-                                )}
-                            </div>
+                            <ArrowRight className="w-6 h-6 text-slate-400" />
                         </div>
-                        {activeClockEntry ? (
-                            <Button onClick={() => clockOutMutation.mutate(activeClockEntry.id)}
-                                    size="lg" className="bg-red-600 hover:bg-red-700">
-                                <LogOut className="w-5 h-5 mr-2" /> Ausstempeln
-                            </Button>
-                        ) : (
-                            <Button onClick={() => clockInMutation.mutate(currentEmployee.id)}
-                                    size="lg" className="bg-green-600 hover:bg-green-700">
-                                <LogIn className="w-5 h-5 mr-2" /> Einstempeln
-                            </Button>
-                        )}
-                    </div>
-                </Card>
+                    </Card>
+                </Link>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Link to={createPageUrl('Calendar')}>

@@ -223,12 +223,12 @@ export default function Dashboard() {
         ];
 
         return (
-            <div className="min-h-screen bg-gray-50 p-4 sm:p-8">
+            <div className="min-h-screen bg-slate-950 p-4 sm:p-8">
                 <div className="max-w-7xl mx-auto space-y-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                            <p className="text-gray-600 text-sm mt-1">{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</p>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
+                            <p className="text-slate-400 text-sm mt-1">{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</p>
                         </div>
                         <div className="flex gap-2">
                             <HolidayCreditManager />
@@ -239,48 +239,48 @@ export default function Dashboard() {
                     {/* Persönlicher Bereich für Manager */}
                     {currentEmployee && (
                         <>
-                            <Card className="p-6 bg-white border-gray-200 shadow-sm">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-blue-500" />
+                            <Card className="p-6 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl shadow-xl">
+                                <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+                                    <Users className="w-5 h-5 text-amber-500" />
                                     Mein Bereich
                                 </h2>
                                 <div className="grid sm:grid-cols-3 gap-6">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center">
-                                            <Clock className="w-7 h-7 text-blue-500" />
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center border border-blue-500/20 shadow-lg shadow-blue-500/10">
+                                            <Clock className="w-8 h-8 text-blue-400" />
                                         </div>
                                         <div>
-                                            <p className="text-2xl font-bold text-gray-900">{hoursThisWeek.toFixed(1)}h</p>
-                                            <p className="text-sm text-gray-600">Diese Woche</p>
+                                            <p className="text-3xl font-bold text-white">{hoursThisWeek.toFixed(1)}h</p>
+                                            <p className="text-sm text-slate-400">Diese Woche</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-purple-50 flex items-center justify-center">
-                                            <Umbrella className="w-7 h-7 text-purple-500" />
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/20 shadow-lg shadow-purple-500/10">
+                                            <Umbrella className="w-8 h-8 text-purple-400" />
                                         </div>
                                         <div>
-                                            <p className="text-2xl font-bold text-gray-900">{remainingVacationDays}</p>
-                                            <p className="text-sm text-gray-600">Urlaubstage übrig</p>
+                                            <p className="text-3xl font-bold text-white">{remainingVacationDays}</p>
+                                            <p className="text-sm text-slate-400">Urlaubstage übrig</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center">
-                                            <Calendar className="w-7 h-7 text-green-500" />
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center border border-green-500/20 shadow-lg shadow-green-500/10">
+                                            <Calendar className="w-8 h-8 text-green-400" />
                                         </div>
                                         <div>
-                                            <p className="text-2xl font-bold text-gray-900">{myUpcomingShifts.length}</p>
-                                            <p className="text-sm text-gray-600">Kommende Schichten</p>
+                                            <p className="text-3xl font-bold text-white">{myUpcomingShifts.length}</p>
+                                            <p className="text-sm text-slate-400">Kommende Schichten</p>
                                         </div>
                                     </div>
                                 </div>
                                 {activeClockEntry && (
-                                    <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-2xl">
+                                    <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-2xl backdrop-blur">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-3">
-                                                <LogIn className="w-5 h-5 text-green-600" />
+                                                <LogIn className="w-5 h-5 text-green-400" />
                                                 <div>
-                                                    <p className="text-sm font-semibold text-gray-900">Eingestempelt</p>
-                                                    <p className="text-xs text-green-600">
+                                                    <p className="text-sm font-bold text-white">Eingestempelt</p>
+                                                    <p className="text-xs text-green-400">
                                                         Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
                                                     </p>
                                                 </div>
@@ -290,14 +290,14 @@ export default function Dashboard() {
                                 )}
                             </Card>
 
-                            <div className="h-px bg-gray-200" />
+                            <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
                         </>
                     )}
 
                     {/* Management Übersicht */}
                     <div>
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-blue-500" />
+                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-amber-500" />
                             Management Übersicht
                         </h2>
                     </div>
@@ -305,16 +305,16 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {stats.map((stat) => (
                             <Link to={createPageUrl(stat.link)} key={stat.title}>
-                                <Card className="bg-white border-gray-200 hover:shadow-md transition-all">
+                                <Card className="bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl group hover:shadow-xl hover:shadow-amber-500/5">
                                     <CardContent className="p-6">
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div className={`${stat.color} p-3 rounded-2xl`}>
-                                                <stat.icon className="w-5 h-5 text-white" />
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className={`${stat.color} p-3 rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow`}>
+                                                <stat.icon className="w-6 h-6 text-white" />
                                             </div>
-                                            {stat.badge && <Badge className="bg-red-100 text-red-600 text-xs">{stat.badge}</Badge>}
+                                            {stat.badge && <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs">{stat.badge}</Badge>}
                                         </div>
-                                        <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                                        <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                                        <p className="text-sm text-slate-400 mb-2">{stat.title}</p>
+                                        <p className="text-3xl font-bold text-white">{stat.value}</p>
                                     </CardContent>
                                 </Card>
                             </Link>

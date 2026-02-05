@@ -85,19 +85,19 @@ export default function Layout({ children, currentPageName }) {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-slate-950">
             <ServiceWorkerRegistration />
             <PWAInstallPrompt />
             <OfflineIndicator />
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0">
-                <div className="flex flex-col flex-grow bg-white border-r border-gray-200 pt-8 overflow-y-auto">
+                <div className="flex flex-col flex-grow bg-slate-900 border-r border-slate-800/50 pt-8 overflow-y-auto backdrop-blur-xl">
                     {/* Logo */}
                     <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-10 group">
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                            <span className="text-white font-bold text-xl">B</span>
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-all">
+                            <span className="text-slate-900 font-bold text-xl">B</span>
                         </div>
-                        <span className="text-xl font-semibold text-gray-900 tracking-tight">BarManager</span>
+                        <span className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent tracking-tight">BarManager</span>
                     </Link>
 
                     {/* Navigation */}
@@ -108,7 +108,7 @@ export default function Layout({ children, currentPageName }) {
 
                             return (
                                 <div key={section.title}>
-                                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                                    <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
                                         {section.title}
                                     </h3>
                                     <div className="space-y-1">
@@ -119,10 +119,10 @@ export default function Layout({ children, currentPageName }) {
                                                     key={item.name}
                                                     to={createPageUrl(item.page)}
                                                     className={cn(
-                                                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                                                        "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                                                         isActive 
-                                                            ? "bg-blue-50 text-blue-600 shadow-sm" 
-                                                            : "text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
+                                                            : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
                                                     )}
                                                 >
                                                     <item.icon className="w-5 h-5" />
@@ -137,21 +137,21 @@ export default function Layout({ children, currentPageName }) {
                     </nav>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-gray-200 space-y-3">
+                    <div className="p-4 border-t border-slate-800/50 space-y-3">
                         {permissions.isManager && currentUser && (
                             <div className="flex justify-center">
                                 <NotificationBell userEmail={currentUser.email} />
                             </div>
                         )}
-                        <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100">
-                            <p className="text-xs font-semibold text-gray-900">Bar Management</p>
-                            <p className="text-[10px] text-gray-600 mt-0.5">
+                        <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur">
+                            <p className="text-xs font-bold text-amber-500">Bar Management</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">
                                 {permissions.employeeRole || 'Alles im Griff'}
                             </p>
                         </div>
                         <button
                             onClick={() => base44.auth.logout()}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors text-sm font-medium"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-sm font-medium border border-slate-700/50"
                         >
                             <LogOut className="w-4 h-4" />
                             Abmelden
@@ -161,18 +161,18 @@ export default function Layout({ children, currentPageName }) {
             </aside>
 
             {/* Mobile Bottom Navigation */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 pb-safe shadow-lg">
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 border-t border-slate-800/50 pb-safe shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center justify-around px-1 py-3">
                     <Link 
                         to={createPageUrl('Dashboard')}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-gray-50 active:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors min-w-[72px]"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Home className="w-6 h-6" />
                         <span className="text-xs font-medium">Home</span>
                     </Link>
                     <Link 
                         to={createPageUrl('Calendar')}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-gray-50 active:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors min-w-[72px]"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Calendar className="w-6 h-6" />
                         <span className="text-xs font-medium">Kalender</span>
@@ -184,7 +184,7 @@ export default function Layout({ children, currentPageName }) {
                     )}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-gray-50 active:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors min-w-[72px]"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Menu className="w-6 h-6" />
                         <span className="text-xs font-medium">Menü</span>
@@ -195,10 +195,10 @@ export default function Layout({ children, currentPageName }) {
                 {mobileMenuOpen && (
                     <>
                         <div 
-                            className="fixed inset-0 bg-black/20 z-40"
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
                             onClick={() => setMobileMenuOpen(false)}
                         />
-                        <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-white border-t border-gray-200 shadow-2xl max-h-[75vh] overflow-y-auto z-50 rounded-t-3xl">
+                        <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-slate-900/95 border-t border-slate-800/50 shadow-2xl max-h-[75vh] overflow-y-auto z-50 rounded-t-3xl backdrop-blur-xl">
                             <nav className="p-4 space-y-6">
                                 {navigationSections.map((section) => {
                                     const visibleItems = section.items.filter(item => permissions[item.permission]);
@@ -206,7 +206,7 @@ export default function Layout({ children, currentPageName }) {
 
                                     return (
                                         <div key={section.title}>
-                                            <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                                            <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
                                                 {section.title}
                                             </h3>
                                             <div className="space-y-1">
@@ -218,10 +218,10 @@ export default function Layout({ children, currentPageName }) {
                                                             to={createPageUrl(item.page)}
                                                             onClick={() => setMobileMenuOpen(false)}
                                                             className={cn(
-                                                                "flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm font-medium transition-colors",
+                                                                "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all",
                                                                 isActive 
-                                                                    ? "bg-blue-50 text-blue-600 shadow-sm" 
-                                                                    : "text-gray-700 hover:bg-gray-50 active:bg-gray-100"
+                                                                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
+                                                                    : "text-slate-300 hover:bg-slate-800/50 active:bg-slate-800"
                                                             )}
                                                             >
                                                             <item.icon className="w-5 h-5" />
@@ -234,13 +234,13 @@ export default function Layout({ children, currentPageName }) {
                                     );
                                 })}
                             </nav>
-                            <div className="p-4 border-t border-gray-200">
+                            <div className="p-4 border-t border-slate-800/50">
                                 <button
                                     onClick={() => {
                                         base44.auth.logout();
                                         setMobileMenuOpen(false);
                                     }}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 text-sm font-medium transition-colors"
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 active:bg-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-all border border-slate-700/50"
                                 >
                                     <LogOut className="w-5 h-5" />
                                     Abmelden

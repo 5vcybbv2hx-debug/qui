@@ -8,6 +8,7 @@ import { AlertCircle, CheckCircle, Clock, Plus, Wrench } from "lucide-react";
 import MaintenanceModal from "../components/maintenance/MaintenanceModal";
 import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
+import { syncMaintenanceToCalendar, createReminderEvent } from "../components/maintenance/MaintenanceCalendarSync";
 
 export default function MaintenancePage() {
     const permissions = usePermissions();
@@ -24,11 +25,15 @@ export default function MaintenancePage() {
         mutationFn: async (task) => {
             const today = new Date().toISOString().split('T')[0];
             const nextDate = calculateNextMaintenance(today, task.frequency);
-            return base44.entities.MaintenanceTask.update(task.id, {
+            const updated = await base44.entities.MaintenanceTask.update(task.id, {
                 last_maintenance: today,
                 next_maintenance: nextDate,
                 status: 'erledigt'
             });
+            // Sync updated task to calendar
+            await syncMaintenanceToCalendar(updated);
+            await createReminderEvent(updated);
+            return updated;
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['maintenance-tasks']);

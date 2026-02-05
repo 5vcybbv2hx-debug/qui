@@ -191,38 +191,49 @@ export default function MaintenancePage() {
 
                 {dueSoon.length > 0 && (
                     <div>
-                        <h2 className="text-xl font-semibold mb-3 text-yellow-700">Bald fällig</h2>
+                        <h2 className="text-lg md:text-xl font-semibold mb-3 text-yellow-700">Bald fällig</h2>
                         <div className="grid gap-3">
                             {dueSoon.map(task => (
                                 <Card key={task.id} className="border-yellow-200">
-                                    <CardContent className="p-4">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg">{task.equipment_name}</h3>
-                                                <p className="text-sm text-muted-foreground">{task.task_description}</p>
-                                                <div className="flex gap-2 mt-2 flex-wrap">
-                                                    <Badge variant="outline">{task.frequency}</Badge>
-                                                    {task.next_maintenance && (
-                                                        <Badge className="bg-yellow-100 text-yellow-800">
-                                                            Fällig: {new Date(task.next_maintenance).toLocaleDateString('de-DE')}
-                                                        </Badge>
-                                                    )}
-                                                    {task.responsible && (
-                                                        <Badge variant="secondary">{task.responsible}</Badge>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {permissions.canEditEmployees && (
-                                                <div className="flex gap-2">
-                                                    <Button size="sm" onClick={() => completeMutation.mutate(task)}>
-                                                        Erledigt
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" onClick={() => { setSelectedTask(task); setShowModal(true); }}>
-                                                        Bearbeiten
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
+                                    <CardContent className="p-3 md:p-4">
+                                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                                             <div className="flex-1 min-w-0">
+                                                 <h3 className="font-semibold text-base md:text-lg break-words">{task.equipment_name}</h3>
+                                                 <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">{task.task_description}</p>
+                                                 <div className="flex gap-2 mt-2 flex-wrap">
+                                                     <Badge variant="outline" className="text-xs">{task.frequency}</Badge>
+                                                     {task.next_maintenance && (
+                                                         <Badge className="bg-yellow-100 text-yellow-800 text-xs whitespace-nowrap">
+                                                             {new Date(task.next_maintenance).toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
+                                                         </Badge>
+                                                     )}
+                                                     {task.responsible && (
+                                                         <Badge variant="secondary" className="text-xs hidden md:inline-block">{task.responsible}</Badge>
+                                                     )}
+                                                 </div>
+                                             </div>
+                                             {permissions.canEditEmployees && (
+                                                 <div className="flex gap-2 w-full md:w-auto md:flex-col lg:flex-row">
+                                                     <Button 
+                                                         size="sm" 
+                                                         onClick={() => completeMutation.mutate(task)}
+                                                         className="flex-1 md:flex-none text-xs h-8 md:h-9"
+                                                     >
+                                                         <span className="hidden md:inline">Erledigt</span>
+                                                         <span className="md:hidden">OK</span>
+                                                     </Button>
+                                                     <Button 
+                                                         size="sm" 
+                                                         variant="outline" 
+                                                         onClick={() => { setSelectedTask(task); setShowModal(true); }}
+                                                         className="flex-1 md:flex-none text-xs h-8 md:h-9"
+                                                     >
+                                                         <span className="hidden md:inline">Bearbeiten</span>
+                                                         <span className="md:hidden">Edit</span>
+                                                     </Button>
+                                                 </div>
+                                             )}
+                                         </div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -232,33 +243,39 @@ export default function MaintenancePage() {
 
                 {completed.length > 0 && (
                     <div>
-                        <h2 className="text-xl font-semibold mb-3 text-green-700">Erledigt</h2>
+                        <h2 className="text-lg md:text-xl font-semibold mb-3 text-green-700">Erledigt</h2>
                         <div className="grid gap-3">
                             {completed.map(task => (
                                 <Card key={task.id}>
-                                    <CardContent className="p-4">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg">{task.equipment_name}</h3>
-                                                <p className="text-sm text-muted-foreground">{task.task_description}</p>
-                                                <div className="flex gap-2 mt-2 flex-wrap">
-                                                    <Badge variant="outline">{task.frequency}</Badge>
-                                                    {task.next_maintenance && (
-                                                        <Badge variant="secondary">
-                                                            Nächste: {new Date(task.next_maintenance).toLocaleDateString('de-DE')}
-                                                        </Badge>
-                                                    )}
-                                                    {task.responsible && (
-                                                        <Badge variant="secondary">{task.responsible}</Badge>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            {permissions.canEditEmployees && (
-                                                <Button size="sm" variant="outline" onClick={() => { setSelectedTask(task); setShowModal(true); }}>
-                                                    Bearbeiten
-                                                </Button>
-                                            )}
-                                        </div>
+                                    <CardContent className="p-3 md:p-4">
+                                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3">
+                                             <div className="flex-1 min-w-0">
+                                                 <h3 className="font-semibold text-base md:text-lg break-words">{task.equipment_name}</h3>
+                                                 <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">{task.task_description}</p>
+                                                 <div className="flex gap-2 mt-2 flex-wrap">
+                                                     <Badge variant="outline" className="text-xs">{task.frequency}</Badge>
+                                                     {task.next_maintenance && (
+                                                         <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                                                             {new Date(task.next_maintenance).toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
+                                                         </Badge>
+                                                     )}
+                                                     {task.responsible && (
+                                                         <Badge variant="secondary" className="text-xs hidden md:inline-block">{task.responsible}</Badge>
+                                                     )}
+                                                 </div>
+                                             </div>
+                                             {permissions.canEditEmployees && (
+                                                 <Button 
+                                                     size="sm" 
+                                                     variant="outline" 
+                                                     onClick={() => { setSelectedTask(task); setShowModal(true); }}
+                                                     className="w-full md:w-auto text-xs h-8 md:h-9"
+                                                 >
+                                                     <span className="hidden md:inline">Bearbeiten</span>
+                                                     <span className="md:hidden">Edit</span>
+                                                 </Button>
+                                             )}
+                                         </div>
                                     </CardContent>
                                 </Card>
                             ))}

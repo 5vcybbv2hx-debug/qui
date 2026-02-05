@@ -94,11 +94,15 @@ export default function MarginCalculator({ menuItem }) {
             ? ((marginAbsolute / purchasePrice) * 100)
             : 0;
 
+        // Empfohlener VK (70% Marge = Faktor 3.33)
+        const recommendedPrice = purchasePrice > 0 ? purchasePrice * 3.33 : 0;
+
         setCalculatedData({
             purchasePrice,
             marginAbsolute,
             marginPercentage,
             calculationMethod,
+            recommendedPrice,
             hasData: purchasePrice > 0
         });
     }, [menuItem, recipe, articles]);
@@ -133,28 +137,34 @@ export default function MarginCalculator({ menuItem }) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-2">
                     <div>
                         <p className="text-xs text-slate-400 mb-1">VK</p>
-                        <p className="text-lg font-bold text-white">
+                        <p className="text-base font-bold text-white">
                             {menuItem.price?.toFixed(2)} €
                         </p>
                     </div>
                     <div>
                         <p className="text-xs text-slate-400 mb-1">EK</p>
-                        <p className="text-lg font-bold text-slate-300">
+                        <p className="text-base font-bold text-slate-300">
                             {calculatedData.purchasePrice.toFixed(2)} €
                         </p>
                     </div>
                     <div>
+                        <p className="text-xs text-slate-400 mb-1">Empf.</p>
+                        <p className="text-base font-bold text-blue-400">
+                            {calculatedData.recommendedPrice.toFixed(2)} €
+                        </p>
+                    </div>
+                    <div>
                         <p className="text-xs text-slate-400 mb-1">Gewinn</p>
-                        <p className="text-lg font-bold text-green-400">
+                        <p className="text-base font-bold text-green-400">
                             {calculatedData.marginAbsolute.toFixed(2)} €
                         </p>
                     </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-700">
+                <div className="pt-2 border-t border-slate-700 space-y-2">
                     <div className="flex items-center justify-between">
                         <span className="text-sm text-slate-400">Aufschlag</span>
                         <div className="flex items-center gap-2">
@@ -174,11 +184,24 @@ export default function MarginCalculator({ menuItem }) {
                             </span>
                         </div>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-500">
                         {isGoodMargin ? '✓ Sehr gut' : 
                          isOkMargin ? '⚠ OK' : 
                          '⚠ Zu niedrig'}
                     </p>
+                    
+                    {Math.abs(menuItem.price - calculatedData.recommendedPrice) > 0.5 && (
+                        <div className={`p-2 rounded-lg text-xs ${
+                            menuItem.price < calculatedData.recommendedPrice
+                                ? 'bg-blue-900/30 border border-blue-800/50 text-blue-300'
+                                : 'bg-green-900/30 border border-green-800/50 text-green-300'
+                        }`}>
+                            {menuItem.price < calculatedData.recommendedPrice 
+                                ? `💡 Potenzial: +${(calculatedData.recommendedPrice - menuItem.price).toFixed(2)} €`
+                                : `✓ Über Empfehlung (+${(menuItem.price - calculatedData.recommendedPrice).toFixed(2)} €)`
+                            }
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>

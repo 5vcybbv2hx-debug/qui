@@ -20,7 +20,7 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
             article_id: article.id,
             article_name: article.name,
             amount: 0,
-            article_content_unit: article.content_unit || 'ml'
+            unit: 'ml'
         };
         onChange([...safeIngredients, newIngredient]);
         setSearchTerm('');
@@ -34,33 +34,37 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
         onChange(updated);
     };
 
-    const getDisplayUnit = (ingredient) => {
-        const unit = ingredient.article_content_unit;
-        if (unit === 'l') return 'ml';
-        if (unit === 'kg') return 'g';
-        return unit || 'ml';
-    };
-
-    const getConversionInfo = (ingredient) => {
+    const calculateIngredientCost = (ingredient) => {
         const article = articles.find(a => a.id === ingredient.article_id);
-        if (!article || !article.content_unit) return null;
+        if (!article?.price_per_liter || !ingredient.amount || !ingredient.unit) return 0;
 
-        const sourceUnit = article.content_unit;
-        const displayUnit = getDisplayUnit(ingredient);
-        
-        if (sourceUnit === displayUnit) return null;
+        // Konvertiere Zutatenmenge in Liter/kg
+        let amountInLiters = 0;
+        switch (ingredient.unit.toLowerCase()) {
+            case 'ml':
+                amountInLiters = ingredient.amount / 1000;
+                break;
+            case 'cl':
+                amountInLiters = ingredient.amount / 100;
+                break;
+            case 'l':
+                amountInLiters = ingredient.amount;
+                break;
+            case 'g':
+                amountInLiters = ingredient.amount / 1000;
+                break;
+            case 'kg':
+                amountInLiters = ingredient.amount;
+                break;
+            case 'stk':
+            case 'stück':
+                // Für Stück-Artikel verwende den Artikel-EK direkt
+                return article.purchase_price ? article.purchase_price * ingredient.amount : 0;
+            default:
+                return 0;
+        }
 
-        // Konvertierungsfaktor berechnen
-        let factor = 1;
-        if (sourceUnit === 'l' && displayUnit === 'ml') factor = 1000;
-        if (sourceUnit === 'kg' && displayUnit === 'g') factor = 1000;
-
-        return {
-            sourceUnit,
-            displayUnit,
-            factor,
-            articleAmount: article.content_amount
-        };
+        return amountInLiters * article.price_per_liter;
     };
 
     const removeIngredient = (index) => {
@@ -127,40 +131,65 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
             {safeIngredients.length > 0 ? (
                 <div className="space-y-2">
                     {safeIngredients.map((ing, index) => {
-                        const conversionInfo = getConversionInfo(ing);
-                        const displayUnit = getDisplayUnit(ing);
+                        const cost = calculateIngredientCost(ing);
                         
                         return (
-                            <div key={index} className="flex gap-2 items-center p-3 bg-slate-50 rounded-lg border border-slate-200">
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-slate-900">{ing.article_name}</p>
-                                    {conversionInfo && (
-                                        <p className="text-xs text-slate-500 mt-0.5">
-                                            Artikel: {conversionInfo.articleAmount} {conversionInfo.sourceUnit} = {conversionInfo.articleAmount * conversionInfo.factor} {conversionInfo.displayUnit}
-                                        </p>
-                                    )}
+                            <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <p className="text-sm font-medium text-slate-900 truncate">{ing.article_name}</p>
+                                        {cost > 0 && (
+                                            <p className="text-xs font-semibold text-green-600 whitespace-nowrap">
+                                                {cost.toFixed(2)} €
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
                                 <Input
                                     type="number"
                                     value={ing.amount}
                                     onChange={(e) => updateIngredient(index, 'amount', parseFloat(e.target.value) || 0)}
                                     placeholder="Menge"
-                                    className="w-24 h-9"
+                                    className="w-20 h-9"
                                     step="0.1"
                                 />
-                                <span className="text-sm text-slate-500 w-12">{displayUnit}</span>
+                                <select
+                                    value={ing.unit || 'ml'}
+                                    onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
+                                    className="h-9 px-2 rounded-md border border-slate-300 bg-white text-sm w-16"
+                                >
+                                    <option value="ml">ml</option>
+                                    <option value="cl">cl</option>
+                                    <option value="l">l</option>
+                                    <option value="g">g</option>
+                                    <option value="kg">kg</option>
+                                    <option value="Stk">Stk</option>
+                                </select>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => removeIngredient(index)}
-                                    className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                    className="h-9 w-9 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 shrink-0"
                                 >
                                     <X className="w-4 h-4" />
                                 </Button>
                             </div>
                         );
                     })}
+                    
+                    {/* Gesamtkosten */}
+                    {(() => {
+                        const totalCost = safeIngredients.reduce((sum, ing) => sum + calculateIngredientCost(ing), 0);
+                        return totalCost > 0 ? (
+                            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-semibold text-green-900">Gesamtkosten (EK):</span>
+                                    <span className="text-lg font-bold text-green-600">{totalCost.toFixed(2)} €</span>
+                                </div>
+                            </div>
+                        ) : null;
+                    })()}
                 </div>
             ) : (
                 <div className="text-center py-6 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">

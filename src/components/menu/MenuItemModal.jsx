@@ -91,8 +91,32 @@ export default function MenuItemModal({ item, open, onClose }) {
                 let totalCost = 0;
                 recipe.ingredients.forEach(ingredient => {
                     const article = articles.find(a => a.id === ingredient.article_id);
-                    if (article && article.price_per_liter && ingredient.amount) {
-                        totalCost += (ingredient.amount / 1000) * article.price_per_liter;
+                    if (article?.price_per_liter && ingredient.amount && ingredient.unit) {
+                        let amountInLiters = 0;
+                        switch (ingredient.unit?.toLowerCase()) {
+                            case 'ml':
+                                amountInLiters = ingredient.amount / 1000;
+                                break;
+                            case 'cl':
+                                amountInLiters = ingredient.amount / 100;
+                                break;
+                            case 'l':
+                                amountInLiters = ingredient.amount;
+                                break;
+                            case 'g':
+                                amountInLiters = ingredient.amount / 1000;
+                                break;
+                            case 'kg':
+                                amountInLiters = ingredient.amount;
+                                break;
+                            case 'stk':
+                            case 'stück':
+                                totalCost += article.purchase_price ? article.purchase_price * ingredient.amount : 0;
+                                return;
+                        }
+                        if (amountInLiters > 0) {
+                            totalCost += amountInLiters * article.price_per_liter;
+                        }
                     }
                 });
                 calculatedPurchasePrice = totalCost;

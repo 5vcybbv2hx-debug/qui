@@ -129,7 +129,7 @@ export default function Recipes() {
         const factor = targetServings / baseServings;
         return ingredients.map(ing => ({
             ...ing,
-            amount: Math.round(ing.amount * factor)
+            amount: ing.amount ? Math.round(ing.amount * factor * 10) / 10 : 0
         }));
     };
 
@@ -484,20 +484,40 @@ export default function Recipes() {
                                                ).map((ing, idx) => {
                                                    const article = articles.find(a => a.id === ing.article_id);
                                                    let cost = 0;
-                                                   if (article && article.purchase_price && article.content_amount) {
-                                                       let contentInMl = article.content_amount;
-                                                       if (article.content_unit === 'l') {
-                                                           contentInMl = article.content_amount * 1000;
-                                                       } else if (article.content_unit === 'kg') {
-                                                           contentInMl = article.content_amount * 1000;
+
+                                                   // Kostenberechnung basierend auf Einheit
+                                                   if (article?.price_per_liter && ing.amount && ing.unit) {
+                                                       let amountInLiters = 0;
+                                                       switch (ing.unit?.toLowerCase()) {
+                                                           case 'ml':
+                                                               amountInLiters = ing.amount / 1000;
+                                                               break;
+                                                           case 'cl':
+                                                               amountInLiters = ing.amount / 100;
+                                                               break;
+                                                           case 'l':
+                                                               amountInLiters = ing.amount;
+                                                               break;
+                                                           case 'g':
+                                                               amountInLiters = ing.amount / 1000;
+                                                               break;
+                                                           case 'kg':
+                                                               amountInLiters = ing.amount;
+                                                               break;
+                                                           case 'stk':
+                                                           case 'stück':
+                                                               cost = article.purchase_price ? article.purchase_price * ing.amount : 0;
+                                                               break;
                                                        }
-                                                       const pricePerMl = article.purchase_price / contentInMl;
-                                                       cost = pricePerMl * ing.amount;
+                                                       if (amountInLiters > 0) {
+                                                           cost = amountInLiters * article.price_per_liter;
+                                                       }
                                                    }
+
                                                    return (
                                                        <p key={idx} className="flex justify-between items-center">
                                                            <span>
-                                                               {ing.amount > 0 && `${ing.amount}ml `}
+                                                               {ing.amount > 0 && `${ing.amount}${ing.unit || 'ml'} `}
                                                                {ing.article_name}
                                                            </span>
                                                            {permissions.isManager && cost > 0 && (
@@ -514,7 +534,7 @@ export default function Recipes() {
 
                                    {permissions.isManager && recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
                                        <div className="pt-2 border-t border-slate-700">
-                                           <p className="font-medium text-green-400 mb-1">Kosten (EK netto):</p>
+                                           <p className="font-medium text-green-400 mb-1">Gesamtkosten (EK):</p>
                                            <div className="text-green-300 text-xs">
                                                {(() => {
                                                    const scaledIngredients = getScaledIngredients(
@@ -525,18 +545,32 @@ export default function Recipes() {
                                                    let totalCost = 0;
                                                    scaledIngredients.forEach(ing => {
                                                        const article = articles.find(a => a.id === ing.article_id);
-                                                       if (article && article.purchase_price && article.content_amount) {
-                                                           // Umrechnung in ml
-                                                           let contentInMl = article.content_amount;
-                                                           if (article.content_unit === 'l') {
-                                                               contentInMl = article.content_amount * 1000;
-                                                           } else if (article.content_unit === 'kg') {
-                                                               contentInMl = article.content_amount * 1000;
+                                                       if (article?.price_per_liter && ing.amount && ing.unit) {
+                                                           let amountInLiters = 0;
+                                                           switch (ing.unit?.toLowerCase()) {
+                                                               case 'ml':
+                                                                   amountInLiters = ing.amount / 1000;
+                                                                   break;
+                                                               case 'cl':
+                                                                   amountInLiters = ing.amount / 100;
+                                                                   break;
+                                                               case 'l':
+                                                                   amountInLiters = ing.amount;
+                                                                   break;
+                                                               case 'g':
+                                                                   amountInLiters = ing.amount / 1000;
+                                                                   break;
+                                                               case 'kg':
+                                                                   amountInLiters = ing.amount;
+                                                                   break;
+                                                               case 'stk':
+                                                               case 'stück':
+                                                                   totalCost += article.purchase_price ? article.purchase_price * ing.amount : 0;
+                                                                   return;
                                                            }
-                                                           
-                                                           const pricePerMl = article.purchase_price / contentInMl;
-                                                           const ingredientCost = pricePerMl * ing.amount;
-                                                           totalCost += ingredientCost;
+                                                           if (amountInLiters > 0) {
+                                                               totalCost += amountInLiters * article.price_per_liter;
+                                                           }
                                                        }
                                                    });
                                                    return totalCost > 0 ? `${totalCost.toFixed(2)} €` : 'Keine Preise hinterlegt';

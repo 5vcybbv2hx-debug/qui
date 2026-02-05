@@ -101,6 +101,11 @@ const ArticleCard = memo(function ArticleCard({
                             📊 Bestand: {article.current_stock || 0} / {article.min_stock}
                         </p>
                     )}
+                    {article.allergens && (
+                        <p className="text-amber-400">
+                            ⚠️ Allergene: {article.allergens}
+                        </p>
+                    )}
                 </div>
             </div>
         </Card>

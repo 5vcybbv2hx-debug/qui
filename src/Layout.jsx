@@ -65,6 +65,12 @@ const navigationSections = [
             { name: 'Berichte', page: 'Reports', icon: TrendingUp, permission: 'canViewAnalytics' },
         ]
     },
+    {
+        title: 'Einstellungen',
+        items: [
+            { name: 'Firmendaten', page: 'CompanySettings', icon: Shield, permission: 'isManager' },
+        ]
+    },
 ];
 
 const navigation = navigationSections.flatMap(section => section.items);

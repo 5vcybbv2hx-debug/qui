@@ -39,7 +39,15 @@ export default function MarginCalculator({ menuItem }) {
             });
             purchasePrice = totalCost;
             calculationMethod = 'recipe';
-        } 
+        }
+        // Berechnung aus verknüpftem Artikel
+        else if (menuItem.linked_article_id) {
+            const linkedArticle = articles.find(a => a.id === menuItem.linked_article_id);
+            if (linkedArticle?.purchase_price) {
+                purchasePrice = linkedArticle.purchase_price;
+                calculationMethod = 'article';
+            }
+        }
         // Manueller EK
         else if (menuItem.purchase_price) {
             purchasePrice = menuItem.purchase_price;
@@ -84,7 +92,9 @@ export default function MarginCalculator({ menuItem }) {
                     <Calculator className="w-4 h-4" />
                     Margenanalyse
                     <Badge variant="outline" className="ml-auto text-xs">
-                        {calculatedData.calculationMethod === 'recipe' ? 'Automatisch' : 'Manuell'}
+                        {calculatedData.calculationMethod === 'recipe' ? 'Rezept' : 
+                         calculatedData.calculationMethod === 'article' ? 'Artikel' : 
+                         'Manuell'}
                     </Badge>
                 </CardTitle>
             </CardHeader>

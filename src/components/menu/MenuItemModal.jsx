@@ -273,7 +273,7 @@ export default function MenuItemModal({ item, open, onClose }) {
 
                         <div className="col-span-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <Label className="text-blue-900">🔗 Artikel verknüpfen (optional)</Label>
-                            <p className="text-xs text-blue-700 mb-2 mt-1">Verknüpfung mit Lagerbestand für automatisches Tracking</p>
+                            <p className="text-xs text-blue-700 mb-2 mt-1">Verknüpfung mit Lagerbestand + automatische EK-Übernahme</p>
                             <Select
                                 value={formData.linked_article_id || ""}
                                 onValueChange={(value) => {

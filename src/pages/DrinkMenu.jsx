@@ -148,7 +148,7 @@ export default function DrinkMenuPage() {
                                                     </div>
 
                                                     {/* Margin Indicator */}
-                                                    {(item.purchase_price || item.use_recipe_calculation) && (
+                                                    {(item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"

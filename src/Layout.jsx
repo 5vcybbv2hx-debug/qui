@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/components/utils/haptics';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft, Settings } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft, Settings, QrCode } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -43,6 +43,12 @@ const navigationSections = [
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
             { name: 'Preisrechner', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager' },
+        ]
+    },
+    {
+        title: 'Gäste',
+        items: [
+            { name: 'QR-Codes', page: 'QRCodes', icon: QrCode, permission: 'isManager' },
         ]
     },
     {
@@ -124,7 +130,7 @@ export default function Layout({ children, currentPageName }) {
      const tabSections = {
          Dashboard: ['Dashboard', 'Notifications', 'MyArea', 'TimeManagement', 'TeamMeeting'],
          Calendar: ['Calendar', 'Shifts', 'TeamCalendar', 'CalendarIntegration', 'Vacation', 'ShiftSwaps'],
-         More: ['More', 'Settings', 'Onboarding', 'Employees', 'Permissions', 'Warehouse', 'DrinkMenu', 'Recipes', 'PriceCalculator', 'Suppliers', 'Events', 'Reservations', 'Todos', 'Cleaning', 'Maintenance', 'MaintenanceHistory', 'SalesAnalysis', 'LaborCostAnalysis', 'Budget', 'Reports', 'Documents', 'CompanySettings', 'NotificationSettings']
+         More: ['More', 'Settings', 'Onboarding', 'Employees', 'Permissions', 'Warehouse', 'DrinkMenu', 'Recipes', 'PriceCalculator', 'Suppliers', 'Events', 'Reservations', 'Todos', 'Cleaning', 'Maintenance', 'MaintenanceHistory', 'SalesAnalysis', 'LaborCostAnalysis', 'Budget', 'Reports', 'Documents', 'CompanySettings', 'NotificationSettings', 'QRCodes']
      };
 
      // Get current tab section

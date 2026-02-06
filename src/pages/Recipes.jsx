@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import SavedFilters from '@/components/filters/SavedFilters';
 import IngredientSelector from '@/components/recipes/IngredientSelector';
 import PDFExportButton from '@/components/export/PDFExportButton';
+import QRCodeGenerator from '@/components/qr/QRCodeGenerator';
 
 const categoryColors = {
     'Cocktail': 'bg-pink-100 text-pink-700',
@@ -53,6 +54,8 @@ export default function Recipes() {
     const [viewServings, setViewServings] = useState({});
     const [suggestingIngredients, setSuggestingIngredients] = useState(false);
     const [generatingFromInventory, setGeneratingFromInventory] = useState(false);
+    const [qrCodeOpen, setQrCodeOpen] = useState(false);
+    const [qrCodeRecipe, setQrCodeRecipe] = useState(null);
 
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes'],
@@ -597,6 +600,18 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
+                                                    onClick={() => {
+                                                        setQrCodeRecipe(recipe);
+                                                        setQrCodeOpen(true);
+                                                    }}
+                                                    className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                                                    title="QR-Code"
+                                                >
+                                                    <Wine className="w-4 h-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
                                                     onClick={() => openModal(recipe)}
                                                     className="h-8 w-8 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
                                                 >
@@ -963,6 +978,24 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                         >
                             Schließen
                         </Button>
+                    </DialogContent>
+                </Dialog>
+
+                {/* QR Code Modal */}
+                <Dialog open={qrCodeOpen} onOpenChange={setQrCodeOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>
+                                QR-Code: {qrCodeRecipe?.name}
+                            </DialogTitle>
+                        </DialogHeader>
+                        {qrCodeRecipe && (
+                            <QRCodeGenerator 
+                                itemId={qrCodeRecipe.id} 
+                                itemName={qrCodeRecipe.name}
+                                type="recipe"
+                            />
+                        )}
                     </DialogContent>
                 </Dialog>
 

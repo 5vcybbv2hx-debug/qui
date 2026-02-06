@@ -859,7 +859,7 @@ export default function Employees() {
 
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
-                                        <Label>T-Shirt</Label>
+                                        <Label>T-Shirt (Dienstkleidung)</Label>
                                         <Select value={formData.tshirt_size} onValueChange={(v) => setFormData({ ...formData, tshirt_size: v })}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Größe" />
@@ -877,7 +877,7 @@ export default function Employees() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Pullover</Label>
+                                        <Label>Pullover (Dienstkleidung)</Label>
                                         <Select value={formData.pullover_size} onValueChange={(v) => setFormData({ ...formData, pullover_size: v })}>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Größe" />

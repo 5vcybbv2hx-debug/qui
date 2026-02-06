@@ -192,6 +192,24 @@ export default function Dashboard() {
     ) : [];
 
     const myCleaningTasks = cleaningTasks.filter(t => !t.is_completed && t.is_active);
+    
+    // BiWeekly Cleaning Tasks für heute
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const cycleStart = new Date(2025, 0, 6);
+    const weeksDiff = Math.floor((today - cycleStart) / (7 * 24 * 60 * 60 * 1000));
+    const cycleWeek = weeksDiff % 2;
+    
+    const biweeklyPattern = (() => {
+        if (dayOfWeek === 3) return cycleWeek === 0 ? 'mi_1' : 'mi_2';
+        if (dayOfWeek === 4) return cycleWeek === 0 ? 'do_1' : 'do_2';
+        return null;
+    })();
+    
+    const biweeklyTasks = biweeklyPattern 
+        ? cleaningTasks.filter(t => t.biweekly_pattern === biweeklyPattern && t.is_active)
+        : [];
+    
     const todayOpenShoppingItems = openShoppingItems.slice(0, 5);
 
     const getWorkingDuration = (clockIn) => {
@@ -394,7 +412,12 @@ export default function Dashboard() {
                                         <Sparkles className="w-6 h-6 text-white" />
                                     </div>
                                     <p className="text-sm font-medium text-white mb-1">Putzen</p>
-                                    <p className="text-xs text-slate-400">{cleaningProgress}% erledigt</p>
+                                    <p className="text-xs text-slate-400">
+                                        {biweeklyTasks.length > 0 
+                                            ? `${biweeklyTasks.filter(t => !t.is_completed).length}/${biweeklyTasks.length} Spezial` 
+                                            : `${cleaningProgress}% erledigt`
+                                        }
+                                    </p>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -660,6 +683,36 @@ export default function Dashboard() {
                         )}
                     </Card>
                 </div>
+
+                {biweeklyTasks.length > 0 && (
+                    <Card className="p-6 bg-slate-800 border-slate-700">
+                        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-pink-500" />
+                            Spezielle Putzaufgaben heute
+                        </h3>
+                        <div className="space-y-2">
+                            {biweeklyTasks.map(task => (
+                                <Link key={task.id} to={createPageUrl('Cleaning')}>
+                                    <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={task.is_completed}
+                                            onChange={() => {}}
+                                            className="w-4 h-4 rounded"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-white font-medium text-sm truncate">{task.title}</p>
+                                            <p className="text-xs text-slate-400">{task.area}</p>
+                                        </div>
+                                        {task.is_completed && (
+                                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                                        )}
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </Card>
+                )}
 
                 {(todayEvents.length > 0 || todayReservations.length > 0 || todayShifts.length > 0) && (
                     <Card className="p-6 bg-slate-800 border-slate-700">

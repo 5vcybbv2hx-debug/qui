@@ -14,8 +14,8 @@ export default function PublicReservation() {
     const { data: companyInfo } = useQuery({
         queryKey: ['companyInfo'],
         queryFn: async () => {
-            const infos = await base44.entities.CompanyInfo.list();
-            return infos[0] || {};
+            const response = await base44.functions.invoke('getCompanyInfo', {});
+            return response.data || {};
         }
     });
 

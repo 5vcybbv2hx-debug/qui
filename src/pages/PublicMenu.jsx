@@ -16,16 +16,16 @@ export default function PublicMenu() {
     const { data: menuItems = [], isLoading } = useQuery({
         queryKey: ['publicMenu'],
         queryFn: async () => {
-            const items = await base44.entities.MenuItem.filter({ is_available: true });
-            return items.sort((a, b) => (a.order_position || 999) - (b.order_position || 999));
+            const response = await base44.functions.invoke('getPublicMenu', {});
+            return response.data.items || [];
         }
     });
 
     const { data: companyInfo } = useQuery({
         queryKey: ['companyInfo'],
         queryFn: async () => {
-            const infos = await base44.entities.CompanyInfo.list();
-            return infos[0] || {};
+            const response = await base44.functions.invoke('getCompanyInfo', {});
+            return response.data || {};
         }
     });
 

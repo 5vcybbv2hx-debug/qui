@@ -17,17 +17,18 @@ export default function GuestReservationView() {
         queryKey: ['guestReservation', token],
         queryFn: async () => {
             if (!token) throw new Error('Kein Token vorhanden');
-            const reservations = await base44.entities.Reservation.filter({ guest_token: token });
-            if (reservations.length === 0) throw new Error('Reservierung nicht gefunden');
-            return reservations[0];
+            const response = await base44.functions.invoke('getGuestReservation', { token });
+            if (!response.data) throw new Error('Reservierung nicht gefunden');
+            return response.data;
         },
         enabled: !!token
     });
 
     const cancelMutation = useMutation({
         mutationFn: async () => {
-            await base44.entities.Reservation.update(reservation.id, {
-                status: 'storniert'
+            await base44.functions.invoke('cancelGuestReservation', { 
+                token,
+                reservationId: reservation.id 
             });
         },
         onSuccess: () => {
@@ -39,8 +40,8 @@ export default function GuestReservationView() {
     const { data: companyInfo } = useQuery({
         queryKey: ['companyInfo'],
         queryFn: async () => {
-            const infos = await base44.entities.CompanyInfo.list();
-            return infos[0] || {};
+            const response = await base44.functions.invoke('getCompanyInfo', {});
+            return response.data || {};
         }
     });
 

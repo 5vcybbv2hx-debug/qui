@@ -140,7 +140,7 @@ export default function Layout({ children, currentPageName }) {
      };
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background" onContextMenu={(e) => e.preventDefault()}>
             <ServiceWorkerRegistration />
             <PWAInstallPrompt />
             <OfflineIndicator />

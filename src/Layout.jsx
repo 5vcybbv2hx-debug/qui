@@ -180,7 +180,7 @@ export default function Layout({ children, currentPageName }) {
 
                             return (
                                 <div key={section.title}>
-                                    <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+                                    <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
                                         {section.title}
                                     </h3>
                                     <div className="space-y-1">
@@ -295,7 +295,7 @@ export default function Layout({ children, currentPageName }) {
 
                                 return (
                                     <div key={section.title}>
-                                        <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+                                        <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
                                             {section.title}
                                         </h3>
                                         <div className="space-y-1">

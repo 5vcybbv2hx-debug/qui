@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Pencil, Trash2, Package, Camera, CheckSquare } from 'lucide-react';
+import { useIsMobile } from '@/components/utils/useIsMobile';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -35,8 +38,10 @@ const categoryColors = {
 };
 
 export default function Articles() {
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const permissions = usePermissions();
+    const isMobile = useIsMobile();
     const [modalOpen, setModalOpen] = useState(false);
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
@@ -136,11 +141,33 @@ export default function Articles() {
 
     const handleScan = (barcode) => {
         const existing = articles.find(a => a.barcode === barcode);
-        if (existing) {
-            setSelectedArticle(existing);
-            setModalOpen(true);
+        if (isMobile) {
+            navigate(createPageUrl('ArticleEdit'), { state: { article: existing || { barcode } } });
         } else {
-            setSelectedArticle({ barcode });
+            if (existing) {
+                setSelectedArticle(existing);
+                setModalOpen(true);
+            } else {
+                setSelectedArticle({ barcode });
+                setModalOpen(true);
+            }
+        }
+    };
+
+    const handleEdit = (article) => {
+        if (isMobile) {
+            navigate(createPageUrl('ArticleEdit'), { state: { article } });
+        } else {
+            setSelectedArticle(article);
+            setModalOpen(true);
+        }
+    };
+
+    const handleAdd = () => {
+        if (isMobile) {
+            navigate(createPageUrl('ArticleEdit'));
+        } else {
+            setSelectedArticle(null);
             setModalOpen(true);
         }
     };
@@ -232,10 +259,7 @@ export default function Articles() {
                             Scannen
                         </Button>
                         <Button 
-                            onClick={() => {
-                                setSelectedArticle(null);
-                                setModalOpen(true);
-                            }}
+                            onClick={handleAdd}
                             className="bg-amber-600 hover:bg-amber-700"
                         >
                             <Plus className="w-4 h-4 mr-2" />
@@ -314,10 +338,7 @@ export default function Articles() {
                                 isLowStock={isLowStock}
                                 categories={categories}
                                 onToggleSelect={toggleSelectArticle}
-                                onEdit={(article) => {
-                                    setSelectedArticle(article);
-                                    setModalOpen(true);
-                                }}
+                                onEdit={handleEdit}
                                 onDelete={handleDelete}
                             />
                         );
@@ -331,16 +352,18 @@ export default function Articles() {
                     </div>
                 )}
 
-                {/* Modals */}
-                <ArticleModal
-                    open={modalOpen}
-                    onClose={() => {
-                        setModalOpen(false);
-                        setSelectedArticle(null);
-                    }}
-                    article={selectedArticle}
-                    onSave={handleSave}
-                />
+                {/* Modals - Desktop only */}
+                {!isMobile && (
+                    <ArticleModal
+                        open={modalOpen}
+                        onClose={() => {
+                            setModalOpen(false);
+                            setSelectedArticle(null);
+                        }}
+                        article={selectedArticle}
+                        onSave={handleSave}
+                    />
+                )}
 
                 <BarcodeScanner
                     open={scannerOpen}

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import ImageEditor from '@/components/articles/ImageEditor';
 import { haptics } from "@/components/utils/haptics";
+import { toast } from 'sonner';
 
 export default function ArticleModal({ open, onClose, article, onSave }) {
     const { data: categories = [] } = useQuery({
@@ -83,7 +84,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
 
     const detectAllergens = async () => {
         if (!formData.name) {
-            alert('Bitte Artikelname eingeben');
+            toast.error('Bitte Artikelname eingeben');
             return;
         }
         
@@ -105,8 +106,9 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
             
             const detected = result.allergens === "Keine" ? "" : result.allergens;
             setFormData({ ...formData, allergens: detected });
+            toast.success('Allergene erkannt');
         } catch (error) {
-            alert('Fehler bei der Allergenerkennung');
+            toast.error('Fehler bei der Allergenerkennung');
         } finally {
             setDetectingAllergens(false);
         }
@@ -169,8 +171,9 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
             setFormData({ ...formData, image_url: file_url });
             URL.revokeObjectURL(tempImageUrl);
             setTempImageUrl('');
+            toast.success('Bild hochgeladen');
         } catch (error) {
-            alert('Fehler beim Hochladen: ' + error.message);
+            toast.error('Fehler beim Hochladen: ' + error.message);
         } finally {
             setUploading(false);
         }

@@ -23,6 +23,7 @@ import LabelPrinter from '@/components/articles/LabelPrinter';
 import BulkImporter from '@/components/articles/BulkImporter';
 import ArticleCard from '@/components/articles/ArticleCard';
 import { useMemo } from 'react';
+import { useAlertDialog } from '@/components/ui/use-alert-dialog';
 
 
 const categoryColors = {
@@ -42,6 +43,7 @@ export default function Articles() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
     const isMobile = useIsMobile();
+    const { showAlert } = useAlertDialog();
     const [modalOpen, setModalOpen] = useState(false);
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
@@ -133,8 +135,16 @@ export default function Articles() {
         }
     };
 
-    const handleDelete = (id) => {
-        if (confirm('Artikel wirklich löschen?')) {
+    const handleDelete = async (id) => {
+        const confirmed = await showAlert({
+            title: 'Artikel löschen',
+            description: 'Möchtest du diesen Artikel wirklich löschen?',
+            confirmText: 'Löschen',
+            cancelText: 'Abbrechen',
+            variant: 'destructive'
+        });
+        
+        if (confirmed) {
             deleteMutation.mutate(id);
         }
     };

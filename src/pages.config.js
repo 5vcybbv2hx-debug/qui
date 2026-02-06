@@ -98,6 +98,10 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
+import PublicMenu from './pages/PublicMenu';
+import PublicReservation from './pages/PublicReservation';
+import GuestReservationView from './pages/GuestReservationView';
+import QRCodes from './pages/QRCodes';
 import __Layout from './Layout.jsx';
 
 
@@ -153,6 +157,10 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
+    "PublicMenu": PublicMenu,
+    "PublicReservation": PublicReservation,
+    "GuestReservationView": GuestReservationView,
+    "QRCodes": QRCodes,
 }
 
 export const pagesConfig = {

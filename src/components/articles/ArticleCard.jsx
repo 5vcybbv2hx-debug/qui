@@ -61,17 +61,17 @@ const ArticleCard = memo(function ArticleCard({
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(article)}
-                        className="h-8 w-8 text-slate-400 hover:text-white"
+                        className="h-11 w-11 text-slate-400 hover:text-white"
                     >
-                        <Pencil className="w-3 h-3" />
+                        <Pencil className="w-4 h-4" />
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => onDelete(article.id)}
-                        className="h-8 w-8 text-red-400 hover:text-red-300"
+                        className="h-11 w-11 text-red-400 hover:text-red-300"
                     >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-4 h-4" />
                     </Button>
                 </div>
             </div>

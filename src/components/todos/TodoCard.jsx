@@ -71,27 +71,27 @@ export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArc
                                 variant="ghost" 
                                 size="icon" 
                                 onClick={() => onEdit(todo)}
-                                className="h-7 w-7 text-slate-400 hover:text-slate-200"
+                                className="h-11 w-11 text-slate-400 hover:text-slate-200"
                             >
-                                <Pencil className="w-3.5 h-3.5" />
+                                <Pencil className="w-4 h-4" />
                             </Button>
                             {showArchiveButton && (
                                 <Button 
                                     variant="ghost" 
                                     size="icon"
                                     onClick={() => onArchive(todo.id)}
-                                    className="h-7 w-7 text-slate-400 hover:text-amber-400"
+                                    className="h-11 w-11 text-slate-400 hover:text-amber-400"
                                 >
-                                    <Archive className="w-3.5 h-3.5" />
+                                    <Archive className="w-4 h-4" />
                                 </Button>
                             )}
                             <Button 
                                 variant="ghost" 
                                 size="icon"
                                 onClick={() => onDelete(todo.id)}
-                                className="h-7 w-7 text-red-500 hover:text-red-400"
+                                className="h-11 w-11 text-red-500 hover:text-red-400"
                             >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                             </Button>
                         </div>
                     </div>

@@ -66,7 +66,7 @@ export default function DocumentsPage() {
         return acc;
     }, {});
 
-    if (!permissions.canViewEmployees) {
+    if (!permissions.isManager) {
         return <PermissionDenied />;
     }
 
@@ -91,7 +91,7 @@ export default function DocumentsPage() {
                             <Archive className="w-4 h-4 mr-2" />
                             {showArchived ? 'Aktive anzeigen' : 'Archiv anzeigen'}
                         </Button>
-                        {permissions.canEditEmployees && (
+                        {permissions.isManager && (
                             <Button
                                 onClick={() => setShowUploader(true)}
                                 className="bg-amber-600 hover:bg-amber-700"
@@ -200,7 +200,7 @@ export default function DocumentsPage() {
                                             document={doc}
                                             onDelete={() => deleteMutation.mutate(doc.id)}
                                             onArchive={(isArchived) => archiveMutation.mutate({ id: doc.id, isArchived })}
-                                            canEdit={permissions.canEditEmployees}
+                                            canEdit={permissions.isManager}
                                         />
                                     ))}
                                 </div>

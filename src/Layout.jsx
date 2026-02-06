@@ -119,12 +119,9 @@ export default function Layout({ children, currentPageName }) {
          const lastPage = localStorage.getItem(`lastPage_${tabName}`);
          
          if (currentTab === tabName) {
-             // Already in this tab section
-             if (currentPageName === tabName) {
-                 // On root page, reload
-                 e.preventDefault();
-                 navigate(createPageUrl(tabName));
-             }
+             // Already in this tab section, force navigate to root
+             e.preventDefault();
+             navigate(createPageUrl(tabName));
          } else if (lastPage && lastPage !== tabName) {
              // Navigate to last visited page in this tab
              e.preventDefault();

@@ -3,13 +3,14 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff } from 'lucide-react';
+import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff, Archive } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CleaningList from '@/components/cleaning/CleaningList';
 import AreasManager from '@/components/cleaning/AreasManager';
 import PinVerification from '@/components/terminal/PinVerification';
@@ -84,10 +85,13 @@ export default function Cleaning() {
         queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name')
     });
 
-    const { data: tasks = [], isLoading } = useQuery({
+    const { data: allTasks = [], isLoading } = useQuery({
         queryKey: ['cleaning'],
         queryFn: () => base44.entities.CleaningTask.list('area')
     });
+
+    const tasks = allTasks.filter(t => t.is_active !== false);
+    const deactivatedTasks = allTasks.filter(t => t.is_active === false);
 
     const { data: allAreas = [] } = useQuery({
         queryKey: ['cleaning-areas'],
@@ -359,13 +363,44 @@ export default function Cleaning() {
                 </div>
 
                 {/* Task List */}
-                <CleaningList 
-                    tasks={tasks}
-                    areas={areas}
-                    onComplete={handleComplete}
-                    onReset={handleReset}
-                    userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
-                />
+                <Tabs defaultValue="active" className="space-y-4">
+                    <TabsList className="bg-slate-800 border border-slate-700 grid w-full grid-cols-2">
+                        <TabsTrigger value="active" className="text-slate-300">
+                            Aktiv ({tasks.length})
+                        </TabsTrigger>
+                        <TabsTrigger value="deactivated" className="text-slate-300">
+                            <Archive className="w-4 h-4 mr-2" />
+                            Deaktiviert ({deactivatedTasks.length})
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="active">
+                        <CleaningList 
+                            tasks={tasks}
+                            areas={areas}
+                            onComplete={handleComplete}
+                            onReset={handleReset}
+                            userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="deactivated">
+                        {deactivatedTasks.length === 0 ? (
+                            <div className="text-center py-12 text-slate-400">
+                                <Archive className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                                <p>Keine deaktivierten Aufgaben</p>
+                            </div>
+                        ) : (
+                            <CleaningList 
+                                tasks={deactivatedTasks}
+                                areas={areas}
+                                onComplete={handleComplete}
+                                onReset={handleReset}
+                                userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
+                            />
+                        )}
+                    </TabsContent>
+                </Tabs>
 
                 {/* Add Modal */}
                 <Dialog open={modalOpen} onOpenChange={setModalOpen}>

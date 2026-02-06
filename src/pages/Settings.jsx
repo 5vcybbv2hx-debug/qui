@@ -193,7 +193,7 @@ export default function Settings() {
                             </Label>
                             <Select value={timeFormat} onValueChange={(val) => handleSettingChange('timeFormat', val)}>
                                 <SelectTrigger id="timeFormat">
-                                    <SelectValue />
+                                    <SelectValue placeholder="Zeitformat wählen" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="24h">24-Stunden (14:30)</SelectItem>
@@ -208,7 +208,7 @@ export default function Settings() {
                             </Label>
                             <Select value={dateFormat} onValueChange={(val) => handleSettingChange('dateFormat', val)}>
                                 <SelectTrigger id="dateFormat">
-                                    <SelectValue />
+                                    <SelectValue placeholder="Datumsformat wählen" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="de">Deutsch (06.02.2026)</SelectItem>
@@ -235,7 +235,7 @@ export default function Settings() {
                         </Label>
                         <Select value={language} onValueChange={(val) => handleSettingChange('language', val)}>
                             <SelectTrigger id="language">
-                                <SelectValue />
+                                <SelectValue placeholder="Sprache wählen" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="de">Deutsch</SelectItem>

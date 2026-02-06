@@ -3,7 +3,7 @@ Deno.serve(async (req) => {
         name: "BarManager - Bar Management App",
         short_name: "BarManager",
         description: "Komplette Bar Management Lösung für Mitarbeiter, Schichten, Zeiterfassung und mehr",
-        start_url: "/",
+        start_url: "/?page=Dashboard",
         display: "standalone",
         background_color: "#0f172a",
         theme_color: "#d97706",

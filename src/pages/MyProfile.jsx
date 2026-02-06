@@ -37,28 +37,8 @@ export default function MyProfilePage() {
 
     const deleteDataMutation = useMutation({
         mutationFn: async () => {
-            // Delete employee record
-            if (myEmployee?.id) {
-                await base44.entities.Employee.delete(myEmployee.id);
-            }
-            
-            // Delete all shifts
-            const shifts = await base44.entities.Shift.filter({ employee_id: myEmployee?.id });
-            for (const shift of shifts) {
-                await base44.entities.Shift.delete(shift.id);
-            }
-            
-            // Delete all clock entries
-            const clockEntries = await base44.entities.ClockEntry.filter({ employee_id: myEmployee?.id });
-            for (const entry of clockEntries) {
-                await base44.entities.ClockEntry.delete(entry.id);
-            }
-            
-            // Delete all time entries
-            const timeEntries = await base44.entities.TimeEntry.filter({ employee_id: myEmployee?.id });
-            for (const entry of timeEntries) {
-                await base44.entities.TimeEntry.delete(entry.id);
-            }
+            // Delete user account and all related data via backend function
+            await base44.functions.invoke('deleteMyAccount', {});
             
             // Logout after deletion
             await base44.auth.logout();

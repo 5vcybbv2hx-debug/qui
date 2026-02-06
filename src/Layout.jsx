@@ -248,7 +248,12 @@ export default function Layout({ children, currentPageName }) {
                             haptics.selection();
                             navigateToTab('Dashboard', e);
                         }}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-amber-500 transition-all min-w-[72px]"
+                        className={cn(
+                            "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",
+                            getCurrentTab(currentPageName) === 'Dashboard' 
+                                ? "text-amber-500" 
+                                : "text-muted-foreground hover:text-amber-500"
+                        )}
                     >
                         <Home className="w-6 h-6" />
                         <span className="text-sm font-medium">Home</span>
@@ -259,7 +264,12 @@ export default function Layout({ children, currentPageName }) {
                             haptics.selection();
                             navigateToTab('Calendar', e);
                         }}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-amber-500 transition-all min-w-[72px]"
+                        className={cn(
+                            "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",
+                            getCurrentTab(currentPageName) === 'Calendar' 
+                                ? "text-amber-500" 
+                                : "text-muted-foreground hover:text-amber-500"
+                        )}
                     >
                         <Calendar className="w-6 h-6" />
                         <span className="text-sm font-medium">Kalender</span>
@@ -272,7 +282,12 @@ export default function Layout({ children, currentPageName }) {
                     <Link
                         to={createPageUrl('More')}
                         onClick={() => haptics.selection()}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-amber-500 transition-all min-w-[72px]"
+                        className={cn(
+                            "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",
+                            currentPageName === 'More' 
+                                ? "text-amber-500" 
+                                : "text-muted-foreground hover:text-amber-500"
+                        )}
                     >
                         <Menu className="w-6 h-6" />
                         <span className="text-sm font-medium">Mehr</span>

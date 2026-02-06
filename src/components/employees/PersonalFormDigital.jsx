@@ -334,7 +334,7 @@ BarManager System
                                     </div>
 
                                     <div className="pt-4 border-t">
-                                        <h4 className="font-semibold mb-3 text-sm text-slate-600">Für Personalakte (nicht an Steuerberater)</h4>
+                                        <h4 className="font-semibold mb-3 text-sm text-slate-900">Für Personalakte (nicht an Steuerberater)</h4>
                                         
                                         <div className="space-y-3">
                                             <div className="space-y-2">
@@ -577,7 +577,7 @@ BarManager System
                                                 checked={formData.pension_exemption}
                                                 onCheckedChange={(checked) => setFormData({...formData, pension_exemption: checked})}
                                             />
-                                            <span className="text-sm">Befreiungsantrag Rentenversicherung wird gestellt</span>
+                                            <span className="text-sm text-slate-900">Befreiungsantrag Rentenversicherung wird gestellt</span>
                                         </label>
 
                                         <label className="flex items-center gap-2 cursor-pointer">
@@ -585,7 +585,7 @@ BarManager System
                                                 checked={formData.has_main_job}
                                                 onCheckedChange={(checked) => setFormData({...formData, has_main_job: checked})}
                                             />
-                                            <span className="text-sm">Versicherungspflichtige Beschäftigung wird ausgeübt</span>
+                                            <span className="text-sm text-slate-900">Versicherungspflichtige Beschäftigung wird ausgeübt</span>
                                         </label>
 
                                         <label className="flex items-center gap-2 cursor-pointer">
@@ -593,7 +593,7 @@ BarManager System
                                                 checked={formData.has_other_minijob}
                                                 onCheckedChange={(checked) => setFormData({...formData, has_other_minijob: checked})}
                                             />
-                                            <span className="text-sm">Weitere geringfügige Beschäftigung wird ausgeübt</span>
+                                            <span className="text-sm text-slate-900">Weitere geringfügige Beschäftigung wird ausgeübt</span>
                                         </label>
 
                                         {formData.has_other_minijob && (
@@ -693,7 +693,7 @@ BarManager System
                                                 checked={formData.confirmed}
                                                 onCheckedChange={(checked) => setFormData({...formData, confirmed: checked})}
                                             />
-                                            <span className="text-sm text-slate-700">
+                                            <span className="text-sm text-slate-900 font-medium">
                                                 Ich versichere, dass ich die vorstehenden Angaben nach bestem Wissen und Gewissen gemacht habe. 
                                                 Ich verpflichte mich, alle Veränderungen unverzüglich meinem Arbeitgeber mitzuteilen.
                                             </span>

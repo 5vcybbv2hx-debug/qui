@@ -60,6 +60,7 @@ import Documents from './pages/Documents';
 import DrinkMenu from './pages/DrinkMenu';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
+import GuestReservationView from './pages/GuestReservationView';
 import Home from './pages/Home';
 import Inventory from './pages/Inventory';
 import LaborCostAnalysis from './pages/LaborCostAnalysis';
@@ -76,6 +77,9 @@ import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
+import PublicMenu from './pages/PublicMenu';
+import PublicReservation from './pages/PublicReservation';
+import QRCodes from './pages/QRCodes';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
@@ -98,10 +102,6 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
-import PublicMenu from './pages/PublicMenu';
-import PublicReservation from './pages/PublicReservation';
-import GuestReservationView from './pages/GuestReservationView';
-import QRCodes from './pages/QRCodes';
 import __Layout from './Layout.jsx';
 
 
@@ -119,6 +119,7 @@ export const PAGES = {
     "DrinkMenu": DrinkMenu,
     "Employees": Employees,
     "Events": Events,
+    "GuestReservationView": GuestReservationView,
     "Home": Home,
     "Inventory": Inventory,
     "LaborCostAnalysis": LaborCostAnalysis,
@@ -135,6 +136,9 @@ export const PAGES = {
     "Onboarding": Onboarding,
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
+    "PublicMenu": PublicMenu,
+    "PublicReservation": PublicReservation,
+    "QRCodes": QRCodes,
     "Recipes": Recipes,
     "Reports": Reports,
     "Reservations": Reservations,
@@ -157,10 +161,6 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
-    "PublicMenu": PublicMenu,
-    "PublicReservation": PublicReservation,
-    "GuestReservationView": GuestReservationView,
-    "QRCodes": QRCodes,
 }
 
 export const pagesConfig = {

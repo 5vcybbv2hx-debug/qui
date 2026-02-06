@@ -24,27 +24,14 @@ export default function ReservationForm({ onSuccess }) {
         setIsSubmitting(true);
 
         try {
-            // Generiere eindeutigen Token für Gastzugriff
-            const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-            // Erstelle Reservierung
-            const reservation = await base44.entities.Reservation.create({
-                ...formData,
-                guest_token: token,
-                status: 'vorgemerkt',
-                source: 'online'
-            });
-
-            // Sende Bestätigungsmail
-            try {
-                await base44.functions.invoke('sendReservationConfirmation', {
-                    reservationId: reservation.id
-                });
-            } catch (emailError) {
-                console.warn('Email konnte nicht gesendet werden:', emailError);
+            // Erstelle Reservierung über Backend-Funktion
+            const response = await base44.functions.invoke('createPublicReservation', formData);
+            
+            if (response.data.success) {
+                onSuccess(response.data.reservation);
+            } else {
+                throw new Error(response.data.error || 'Fehler beim Erstellen der Reservierung');
             }
-
-            onSuccess(reservation);
         } catch (error) {
             console.error('Fehler beim Erstellen der Reservierung:', error);
             alert('Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.');

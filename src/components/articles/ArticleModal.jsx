@@ -211,11 +211,11 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                                 onClick={() => {
                                     const customCode = `CUSTOM-${Date.now().toString().slice(-8)}`;
                                     setFormData({ ...formData, barcode: customCode });
+                                    toast.success('Code generiert: ' + customCode);
                                 }}
                                 title="Eigenen Code generieren"
-                                className="text-xs px-3"
                             >
-                                Code generieren
+                                <Sparkles className="w-4 h-4" />
                             </Button>
                         </div>
                         <p className="text-xs text-slate-500">

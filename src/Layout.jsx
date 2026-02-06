@@ -240,10 +240,7 @@ export default function Layout({ children, currentPageName }) {
             </aside>
 
             {/* Mobile Bottom Navigation */}
-            <div className={cn(
-                "md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl transition-transform",
-                !isRootPage && "translate-y-full"
-            )}>
+            <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center justify-around px-1 py-3">
                     <Link 
                         to={createPageUrl(localStorage.getItem('lastPage_Dashboard') || 'Dashboard')}

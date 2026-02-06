@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/components/utils/haptics';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft, Settings } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -75,7 +75,7 @@ const navigationSections = [
     {
         title: 'Einstellungen',
         items: [
-            { name: 'Einstellungen', page: 'Settings', icon: Shield, permission: 'canViewDashboard' },
+            { name: 'Einstellungen', page: 'Settings', icon: Settings, permission: 'canViewDashboard' },
             { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'canViewEmployees' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Shield, permission: 'isManager' },
         ]

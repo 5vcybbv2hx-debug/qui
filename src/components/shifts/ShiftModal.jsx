@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import ShiftSwapRequest from './ShiftSwapRequest';
+import { haptics } from "@/components/utils/haptics";
 
 export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete, existingShifts = [] }) {
     const { data: shiftTypes = [] } = useQuery({
@@ -160,6 +161,8 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        haptics.light();
         
         if (shift) {
             // Edit existing shift
@@ -594,7 +597,10 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                 type="button"
                                 variant="outline"
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => onDelete(shift.id)}
+                                onClick={() => {
+                                    haptics.light();
+                                    onDelete(shift.id);
+                                }}
                             >
                                 <Trash2 className="w-4 h-4" />
                             </Button>

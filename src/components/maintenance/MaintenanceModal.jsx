@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { haptics } from "@/components/utils/haptics";
 
 export default function MaintenanceModal({ task, open, onClose }) {
     const queryClient = useQueryClient();
@@ -50,6 +51,7 @@ export default function MaintenanceModal({ task, open, onClose }) {
             return base44.entities.MaintenanceTask.create(data);
         },
         onSuccess: () => {
+            haptics.light();
             queryClient.invalidateQueries(['maintenance-tasks']);
             onClose();
         }
@@ -58,6 +60,7 @@ export default function MaintenanceModal({ task, open, onClose }) {
     const deleteMutation = useMutation({
         mutationFn: () => base44.entities.MaintenanceTask.delete(task.id),
         onSuccess: () => {
+            haptics.light();
             queryClient.invalidateQueries(['maintenance-tasks']);
             onClose();
         }

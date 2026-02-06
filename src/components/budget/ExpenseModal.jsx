@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { haptics } from "@/components/utils/haptics";
 
 export default function ExpenseModal({ open, onClose, expense }) {
     const queryClient = useQueryClient();
@@ -40,6 +41,7 @@ export default function ExpenseModal({ open, onClose, expense }) {
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Expense.create(data),
         onSuccess: () => {
+            haptics.light();
             queryClient.invalidateQueries(['expenses']);
             onClose();
         }

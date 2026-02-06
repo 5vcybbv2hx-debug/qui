@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import ImageEditor from '@/components/articles/ImageEditor';
+import { haptics } from "@/components/utils/haptics";
 
 export default function ArticleModal({ open, onClose, article, onSave }) {
     const { data: categories = [] } = useQuery({
@@ -123,6 +124,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
         };
         
+        haptics.light();
         onSave(dataToSave, article?.id);
     };
 

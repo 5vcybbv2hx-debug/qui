@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { haptics } from "@/components/utils/haptics";
 
 export default function TimeEntryModal({ open, onClose, entry, currentEmployee, allEmployees, isManager, onSave }) {
     const [formData, setFormData] = useState({
@@ -69,6 +70,7 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
             total_hours: totalHours
         };
         
+        haptics.light();
         onSave(dataToSave, entry?.id);
     };
 

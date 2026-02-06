@@ -11,6 +11,7 @@ import { format, isSameDay, addWeeks, addMonths } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch } from "@/components/ui/switch";
+import { haptics } from "@/components/utils/haptics";
 
 export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false }) {
     const queryClient = useQueryClient();
@@ -113,6 +114,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
             return;
         }
         
+        haptics.light();
         if (formData.is_recurring && !reservation) {
             createRecurringMutation.mutate(formData);
         } else {
@@ -291,7 +293,10 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                                 type="button"
                                 variant="outline"
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => onDelete(reservation.id)}
+                                onClick={() => {
+                                    haptics.light();
+                                    onDelete(reservation.id);
+                                }}
                             >
                                 <Trash2 className="w-4 h-4" />
                             </Button>

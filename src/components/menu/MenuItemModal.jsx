@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Calculator } from "lucide-react";
+import { haptics } from "@/components/utils/haptics";
 
 export default function MenuItemModal({ item, open, onClose }) {
     const queryClient = useQueryClient();
@@ -66,6 +67,7 @@ export default function MenuItemModal({ item, open, onClose }) {
             return base44.entities.MenuItem.create(data);
         },
         onSuccess: () => {
+            haptics.light();
             queryClient.invalidateQueries(['menu-items']);
             onClose();
         }
@@ -74,6 +76,7 @@ export default function MenuItemModal({ item, open, onClose }) {
     const deleteMutation = useMutation({
         mutationFn: () => base44.entities.MenuItem.delete(item.id),
         onSuccess: () => {
+            haptics.light();
             queryClient.invalidateQueries(['menu-items']);
             onClose();
         }

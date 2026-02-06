@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { haptics } from "@/components/utils/haptics";
 
 export default function BudgetModal({ open, onClose, selectedMonth }) {
     const queryClient = useQueryClient();
@@ -20,6 +21,7 @@ export default function BudgetModal({ open, onClose, selectedMonth }) {
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Budget.create(data),
         onSuccess: () => {
+            haptics.light();
             queryClient.invalidateQueries(['budgets']);
             onClose();
             setFormData({ category: 'Einkauf', planned_amount: '', notes: '' });

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { haptics } from "@/components/utils/haptics";
 
 export default function TodoModal({ open, onClose, todo, employees, onSave }) {
     const [formData, setFormData] = useState({
@@ -44,6 +45,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        haptics.light();
         onSave(formData, todo?.id);
     };
 

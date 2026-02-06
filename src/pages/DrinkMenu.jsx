@@ -116,7 +116,7 @@ export default function DrinkMenuPage() {
                     </CardContent>
                 </Card>
 
-                {permissions.canEditEmployees && (
+                {permissions.isAdmin && (
                     <DailySpecialGenerator menuItems={items} />
                 )}
 
@@ -182,17 +182,17 @@ export default function DrinkMenuPage() {
                                                             ) : null;
                                                             })()}
 
-                                                        {/* Margin Indicator */}
-                                                        {(item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                                                                className="mt-2 text-xs h-7 text-slate-300 hover:text-white hover:bg-slate-700"
-                                                            >
-                                                                <TrendingUp className="h-3 w-3 mr-1" />
-                                                                Marge anzeigen
-                                                            </Button>
+                                                        {/* Margin Indicator - Admin Only */}
+                                                        {permissions.isAdmin && (item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
+                                                           <Button
+                                                               variant="ghost"
+                                                               size="sm"
+                                                               onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+                                                               className="mt-2 text-xs h-7 text-slate-300 hover:text-white hover:bg-slate-700"
+                                                           >
+                                                               <TrendingUp className="h-3 w-3 mr-1" />
+                                                               Marge anzeigen
+                                                           </Button>
                                                         )}
                                                     </div>
                                                     {permissions.canEditEmployees && (
@@ -236,8 +236,8 @@ export default function DrinkMenuPage() {
                                                     )}
                                                 </div>
 
-                                                {/* Expanded Margin Details */}
-                                                {expandedItem === item.id && (
+                                                {/* Expanded Margin Details - Admin Only */}
+                                                {permissions.isAdmin && expandedItem === item.id && (
                                                     <div className="mt-4 pt-4 border-t border-slate-700">
                                                         <MarginCalculator menuItem={item} />
                                                     </div>

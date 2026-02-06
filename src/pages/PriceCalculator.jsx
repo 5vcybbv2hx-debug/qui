@@ -168,32 +168,42 @@ export default function PriceCalculator() {
                             </div>
 
                             <div className="space-y-3">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                    <Input
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Artikel suchen..."
-                                        className="pl-10 bg-slate-900 border-slate-600 text-white"
-                                    />
-                                </div>
+                                 <div className="relative">
+                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                     <Input
+                                         value={searchTerm}
+                                         onChange={(e) => setSearchTerm(e.target.value)}
+                                         placeholder="Artikel suchen oder eingeben..."
+                                         className="pl-10 bg-slate-900 border-slate-600 text-white"
+                                         list="price-calc-articles"
+                                     />
+                                     <datalist id="price-calc-articles">
+                                         {articles.filter(a => a.purchase_price).map(article => (
+                                             <option key={article.id} value={article.name} />
+                                         ))}
+                                     </datalist>
+                                 </div>
 
-                                {searchTerm && filteredArticles.length > 0 && (
-                                    <div className="max-h-48 overflow-y-auto space-y-1 border border-slate-700 rounded-lg p-2 bg-slate-900">
-                                        {filteredArticles.slice(0, 5).map(article => (
-                                            <button
-                                                key={article.id}
-                                                onClick={() => handleArticleSelect(article)}
-                                                className="w-full text-left px-3 py-2 rounded hover:bg-slate-700 transition-colors"
-                                            >
-                                                <p className="text-sm text-white font-medium">{article.name}</p>
-                                                <p className="text-xs text-slate-400">
-                                                    {article.purchase_price?.toFixed(2)} € · {article.unit}
-                                                </p>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
+                                 {searchTerm && filteredArticles.length > 0 && (
+                                     <div className="max-h-64 overflow-y-auto border border-slate-700 rounded-lg bg-slate-900">
+                                         {filteredArticles.map(article => (
+                                             <button
+                                                 key={article.id}
+                                                 onClick={() => handleArticleSelect(article)}
+                                                 className="w-full text-left px-4 py-3 border-b border-slate-800 hover:bg-slate-800 transition-colors last:border-b-0"
+                                             >
+                                                 <p className="text-sm text-white font-medium">{article.name}</p>
+                                                 <p className="text-xs text-slate-400 mt-0.5">
+                                                     {article.purchase_price?.toFixed(2)} € · {article.content_amount}{article.content_unit || 'Stück'}
+                                                 </p>
+                                             </button>
+                                         ))}
+                                     </div>
+                                 )}
+
+                                 {searchTerm && filteredArticles.length === 0 && (
+                                     <p className="text-xs text-slate-400 text-center py-3">Keine Artikel gefunden</p>
+                                 )}
                             </div>
                         </Card>
 

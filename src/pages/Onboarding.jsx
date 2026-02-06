@@ -193,9 +193,9 @@ export default function Onboarding() {
                         <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
                             <SelectValue placeholder="Mitarbeiter auswählen..." />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-900 border-slate-600">
                             {employees.filter(e => e.is_active !== false).map(emp => (
-                                <SelectItem key={emp.id} value={emp.id}>
+                                <SelectItem key={emp.id} value={emp.id} className="text-white focus:bg-slate-800 focus:text-white">
                                     {emp.name} - {emp.role}
                                 </SelectItem>
                             ))}

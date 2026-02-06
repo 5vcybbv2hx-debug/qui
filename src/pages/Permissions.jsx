@@ -52,6 +52,7 @@ const PERMISSION_GROUPS = [
             { key: 'canViewEmployees', label: 'Team ansehen' },
             { key: 'canEditEmployees', label: 'Team bearbeiten' },
             { key: 'canClockOutOthers', label: 'Andere ausstempeln' },
+            { key: 'canViewOnboarding', label: 'Einlernliste verwalten' },
         ]
     },
     {

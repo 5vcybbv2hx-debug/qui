@@ -144,8 +144,8 @@ export default function Onboarding() {
         }
     });
 
-    if (!permissions.canViewDashboard) {
-        return <PermissionDenied />;
+    if (!permissions.canViewOnboarding) {
+        return <PermissionDenied message="Du hast keine Berechtigung für die Einlernliste. Wende dich an einen Manager." />;
     }
 
     const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);

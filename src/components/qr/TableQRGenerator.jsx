@@ -13,7 +13,7 @@ export default function TableQRGenerator() {
     const [isGenerating, setIsGenerating] = useState(false);
 
     const generateQRCode = async (tableNumber) => {
-        const url = `${window.location.origin}/public-menu?table=${tableNumber}`;
+        const url = `${window.location.origin}/api/functions/public-menu?table=${tableNumber}`;
         const qrCodeDataUrl = await QRCode.toDataURL(url, {
             width: 800,
             margin: 2,

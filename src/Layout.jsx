@@ -139,23 +139,23 @@ export default function Layout({ children, currentPageName }) {
      };
 
     return (
-        <div className="min-h-screen bg-slate-950">
+        <div className="min-h-screen bg-background">
             <ServiceWorkerRegistration />
             <PWAInstallPrompt />
             <OfflineIndicator />
             {/* Fixed Top Header */}
-            <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-slate-900/95 border-b border-slate-800/50 backdrop-blur-xl pt-safe">
+            <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-card/95 border-b border-border/50 backdrop-blur-xl pt-safe">
                 <div className="flex items-center gap-3 px-3 py-3">
                     {!isRootPage && (
                         <button
                             onClick={() => navigate(-1)}
-                            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-white transition-all"
+                            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-foreground transition-all"
                             title="Zurück"
                         >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                     )}
-                    <h1 className="text-lg font-bold text-white flex-1">
+                    <h1 className="text-lg font-bold text-foreground flex-1">
                         {navigation.find(item => item.page === currentPageName)?.name || 'BarManager'}
                     </h1>
                 </div>
@@ -163,13 +163,13 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0">
-                <div className="flex flex-col flex-grow bg-slate-900 border-r border-slate-800/50 pt-8 overflow-y-auto backdrop-blur-xl">
+                <div className="flex flex-col flex-grow bg-card border-r border-border/50 pt-8 overflow-y-auto backdrop-blur-xl">
                     {/* Logo */}
                     <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-10 group">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-all">
                             <span className="text-slate-900 font-bold text-xl">B</span>
                         </div>
-                        <span className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent tracking-tight">BarManager</span>
+                        <span className="text-xl font-bold text-foreground tracking-tight">BarManager</span>
                     </Link>
 
                     {/* Navigation */}
@@ -201,7 +201,7 @@ export default function Layout({ children, currentPageName }) {
                                                         "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                                                         isActive 
                                                             ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
-                                                            : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
+                                                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                                                     )}
                                                 >
                                                     <item.icon className="w-5 h-5" />
@@ -216,7 +216,7 @@ export default function Layout({ children, currentPageName }) {
                     </nav>
 
                     {/* Footer */}
-                    <div className="p-4 border-t border-slate-800/50 space-y-3">
+                    <div className="p-4 border-t border-border/50 space-y-3">
                         {permissions.isManager && currentUser && (
                             <div className="flex justify-center">
                                 <NotificationBell userEmail={currentUser.email} />
@@ -224,13 +224,13 @@ export default function Layout({ children, currentPageName }) {
                         )}
                         <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur">
                             <p className="text-sm font-bold text-amber-500">Bar Management</p>
-                            <p className="text-xs text-slate-400 mt-0.5">
+                            <p className="text-xs text-muted-foreground mt-0.5">
                                 {permissions.employeeRole || 'Alles im Griff'}
                             </p>
                         </div>
                         <button
                             onClick={() => base44.auth.logout()}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white transition-all text-sm font-medium border border-slate-700/50"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all text-sm font-medium border border-border/50"
                         >
                             <LogOut className="w-4 h-4" />
                             Abmelden
@@ -241,7 +241,7 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Mobile Bottom Navigation */}
             <div className={cn(
-                "md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 border-t border-slate-800/50 pb-safe shadow-2xl backdrop-blur-xl transition-transform",
+                "md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl transition-transform",
                 !isRootPage && "translate-y-full"
             )}>
                 <div className="flex items-center justify-around px-1 py-3">
@@ -251,7 +251,7 @@ export default function Layout({ children, currentPageName }) {
                             haptics.selection();
                             navigateToTab('Dashboard', e);
                         }}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Home className="w-6 h-6" />
                         <span className="text-sm font-medium">Home</span>
@@ -262,7 +262,7 @@ export default function Layout({ children, currentPageName }) {
                             haptics.selection();
                             navigateToTab('Calendar', e);
                         }}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Calendar className="w-6 h-6" />
                         <span className="text-sm font-medium">Kalender</span>
@@ -275,7 +275,7 @@ export default function Layout({ children, currentPageName }) {
                     <Link
                         to={createPageUrl('More')}
                         onClick={() => haptics.selection()}
-                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
+                        className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Menu className="w-6 h-6" />
                         <span className="text-sm font-medium">Mehr</span>
@@ -284,9 +284,9 @@ export default function Layout({ children, currentPageName }) {
 
                 {/* Mobile Menu Drawer */}
                 <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                    <DrawerContent className="bg-slate-900 border-slate-800 max-h-[80vh]">
-                        <DrawerHeader className="border-b border-slate-800">
-                            <DrawerTitle className="text-white">Menü</DrawerTitle>
+                    <DrawerContent className="bg-card border-border max-h-[80vh]">
+                        <DrawerHeader className="border-b border-border">
+                            <DrawerTitle className="text-foreground">Menü</DrawerTitle>
                         </DrawerHeader>
                         <nav className="overflow-y-auto p-4 space-y-6">
                             {navigationSections.map((section) => {
@@ -318,7 +318,7 @@ export default function Layout({ children, currentPageName }) {
                                                             "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all",
                                                             isActive 
                                                                 ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
-                                                                : "text-slate-300 hover:bg-slate-800/50 active:bg-slate-800"
+                                                                : "text-muted-foreground hover:bg-accent/50 active:bg-accent"
                                                         )}
                                                     >
                                                         <item.icon className="w-5 h-5" />
@@ -330,14 +330,14 @@ export default function Layout({ children, currentPageName }) {
                                     </div>
                                 );
                             })}
-                            <div className="pt-2 border-t border-slate-800">
+                            <div className="pt-2 border-t border-border">
                                 <button
                                     onClick={() => {
                                         haptics.light();
                                         base44.auth.logout();
                                         setMobileMenuOpen(false);
                                     }}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 active:bg-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-all border border-slate-700/50"
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-secondary/50 hover:bg-secondary active:bg-secondary text-muted-foreground hover:text-foreground text-sm font-medium transition-all border border-border/50"
                                 >
                                     <LogOut className="w-5 h-5" />
                                     Abmelden

@@ -94,6 +94,25 @@ export default function Layout({ children, currentPageName }) {
          base44.auth.me().then(setCurrentUser).catch(() => {});
      }, []);
 
+     // Theme beim App-Start laden und anwenden
+     React.useEffect(() => {
+         const savedTheme = localStorage.getItem('theme') || 'dark';
+         const root = document.documentElement;
+         
+         if (savedTheme === 'light') {
+             root.classList.remove('dark');
+         } else if (savedTheme === 'dark') {
+             root.classList.add('dark');
+         } else if (savedTheme === 'system') {
+             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+             if (prefersDark) {
+                 root.classList.add('dark');
+             } else {
+                 root.classList.remove('dark');
+             }
+         }
+     }, []);
+
      // Tab sections for history tracking
      const tabSections = {
          Dashboard: ['Dashboard', 'Notifications', 'MyArea', 'TimeManagement', 'TeamMeeting'],

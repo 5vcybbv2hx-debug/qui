@@ -51,8 +51,19 @@ const DropdownMenuContent = React.forwardRef(({ className, sideOffset = 4, child
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
-    const trigger = document.querySelector('[data-state="open"][data-radix-dropdown-menu-trigger]');
-    setOpen(!!trigger);
+    const checkOpen = () => {
+      const trigger = document.querySelector('[data-state="open"][data-radix-dropdown-menu-trigger]');
+      setOpen(!!trigger);
+    };
+    
+    checkOpen();
+    const observer = new MutationObserver(checkOpen);
+    const triggers = document.querySelectorAll('[data-radix-dropdown-menu-trigger]');
+    triggers.forEach(trigger => {
+      observer.observe(trigger, { attributes: true, attributeFilter: ['data-state'] });
+    });
+    
+    return () => observer.disconnect();
   }, []);
 
   if (isMobile) {

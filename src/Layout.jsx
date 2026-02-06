@@ -147,7 +147,7 @@ export default function Layout({ children, currentPageName }) {
                 <div className="flex items-center gap-3 px-3 py-3">
                     {!isRootPage && (
                         <button
-                            onClick={() => window.history.back()}
+                            onClick={() => navigate(-1)}
                             className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-white transition-all"
                             title="Zurück"
                         >

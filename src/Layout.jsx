@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -82,6 +82,7 @@ export default function Layout({ children, currentPageName }) {
      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
      const permissions = usePermissions();
      const [currentUser, setCurrentUser] = React.useState(null);
+     const navigate = useNavigate();
 
      React.useEffect(() => {
          base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -119,12 +120,12 @@ export default function Layout({ children, currentPageName }) {
              if (currentPageName === tabName) {
                  // On root page, reload
                  e.preventDefault();
-                 window.location.href = createPageUrl(tabName);
+                 navigate(createPageUrl(tabName));
              }
          } else if (lastPage && lastPage !== tabName) {
              // Navigate to last visited page in this tab
              e.preventDefault();
-             window.location.href = createPageUrl(lastPage);
+             navigate(createPageUrl(lastPage));
          }
      };
 

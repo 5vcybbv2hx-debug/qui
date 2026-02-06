@@ -369,7 +369,7 @@ export default function PriceCalculator() {
                             <Card className="p-6 bg-slate-800 border-slate-700">
                                 <h3 className="text-sm font-semibold text-white mb-3">Aufschlag-Vergleich</h3>
                                 <div className="space-y-2">
-                                    {[150, 200, 250, 300].map(m => {
+                                    {[250, 300, 330, 350, 380, 400].map(m => {
                                         const testPrice = prices.totalCost * (1 + m / 100) * (1 + parseFloat(vatRate) / 100);
                                         return (
                                             <button

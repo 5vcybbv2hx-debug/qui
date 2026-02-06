@@ -10,6 +10,8 @@ import MenuItemModal from "../components/menu/MenuItemModal";
 import MarginCalculator from "../components/menu/MarginCalculator";
 import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import QRCodeGenerator from "@/components/qr/QRCodeGenerator";
 
 export default function DrinkMenuPage() {
     const permissions = usePermissions();
@@ -19,6 +21,8 @@ export default function DrinkMenuPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("all");
     const [expandedItem, setExpandedItem] = useState(null);
+    const [qrCodeOpen, setQrCodeOpen] = useState(false);
+    const [qrCodeItem, setQrCodeItem] = useState(null);
 
     const { data: items = [], isLoading } = useQuery({
         queryKey: ['menu-items'],
@@ -191,6 +195,18 @@ export default function DrinkMenuPage() {
                                                             <Button
                                                                 size="sm"
                                                                 variant="outline"
+                                                                onClick={() => {
+                                                                    setQrCodeItem(item);
+                                                                    setQrCodeOpen(true);
+                                                                }}
+                                                                className="border-blue-600 text-blue-300 hover:bg-blue-900/20"
+                                                                title="QR-Code"
+                                                            >
+                                                                QR
+                                                            </Button>
+                                                             <Button
+                                                                size="sm"
+                                                                variant="outline"
                                                                 onClick={() => toggleAvailabilityMutation.mutate({
                                                                     id: item.id,
                                                                     is_available: !item.is_available
@@ -245,6 +261,24 @@ export default function DrinkMenuPage() {
                     onClose={() => { setShowModal(false); setSelectedItem(null); }}
                 />
             )}
+
+            {/* QR Code Modal */}
+            <Dialog open={qrCodeOpen} onOpenChange={setQrCodeOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>
+                            QR-Code: {qrCodeItem?.name}
+                        </DialogTitle>
+                    </DialogHeader>
+                    {qrCodeItem && (
+                        <QRCodeGenerator 
+                            itemId={qrCodeItem.id} 
+                            itemName={qrCodeItem.name}
+                            type="menuitem"
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

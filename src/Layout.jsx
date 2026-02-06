@@ -21,8 +21,7 @@ const navigationSections = [
         title: 'Übersicht',
         items: [
             { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
-            { name: 'Benachrichtigungen', page: 'Notifications', icon: Bell, permission: 'canViewDashboard' },
-            { name: 'Benachrichtigungs-Einstellungen', page: 'NotificationSettings', icon: Bell, permission: 'canViewDashboard' },
+            { name: 'Benachrichtigungen', page: 'Notifications', icon: Bell, permission: 'isManager' },
         ]
     },
     {

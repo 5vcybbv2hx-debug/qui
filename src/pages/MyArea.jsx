@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Umbrella, RepeatIcon, QrCode } from 'lucide-react';
+import { User, Umbrella, RepeatIcon, QrCode, Bell } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 
 // Import existing page components
@@ -8,6 +8,7 @@ import MyProfilePage from './MyProfile';
 import VacationPage from './Vacation';
 import ShiftSwapsPage from './ShiftSwaps';
 import DigitalBusinessCard from '@/components/company/DigitalBusinessCard';
+import NotificationSettingsPage from './NotificationSettings';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
@@ -34,22 +35,26 @@ export default function MyAreaPage() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-                    <TabsList className="grid w-full grid-cols-4 bg-slate-800 border-slate-700 h-auto p-1">
+                    <TabsList className="grid w-full grid-cols-5 bg-slate-800 border-slate-700 h-auto p-1">
                         <TabsTrigger value="profile" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                             <User className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Profil</span>
+                            <span className="hidden sm:inline">Profil</span>
                         </TabsTrigger>
                         <TabsTrigger value="vacation" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                             <Umbrella className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Urlaub</span>
+                            <span className="hidden sm:inline">Urlaub</span>
                         </TabsTrigger>
                         <TabsTrigger value="swaps" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                             <RepeatIcon className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Tausch</span>
+                            <span className="hidden sm:inline">Tausch</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="notifications" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                            <Bell className="w-5 h-5 sm:w-4 sm:h-4" />
+                            <span className="hidden sm:inline">Benachrichtigungen</span>
                         </TabsTrigger>
                         <TabsTrigger value="card" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                             <QrCode className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Karte</span>
+                            <span className="hidden sm:inline">Karte</span>
                         </TabsTrigger>
                     </TabsList>
 
@@ -63,6 +68,10 @@ export default function MyAreaPage() {
 
                     <TabsContent value="swaps" className="space-y-0">
                         <ShiftSwapsPage />
+                    </TabsContent>
+
+                    <TabsContent value="notifications" className="space-y-0">
+                        <NotificationSettingsPage />
                     </TabsContent>
 
                     <TabsContent value="card" className="space-y-0">

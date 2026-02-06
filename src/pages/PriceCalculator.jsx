@@ -14,7 +14,7 @@ export default function PriceCalculator() {
     const permissions = usePermissions();
     const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [margin, setMargin] = useState('200');
+    const [margin, setMargin] = useState('3');
     const [vatRate, setVatRate] = useState('19');
     const [selectedRecipe, setSelectedRecipe] = useState(null);
 
@@ -76,7 +76,7 @@ export default function PriceCalculator() {
 
     // Berechnungen
     const calculatePrices = () => {
-        const marginPercent = parseFloat(margin) || 0;
+        const marginMultiplier = parseFloat(margin) || 1;
         const vat = parseFloat(vatRate) || 0;
 
         // Gesamtkosten aller Zutaten
@@ -100,11 +100,14 @@ export default function PriceCalculator() {
             return sum + costForAmount;
         }, 0);
 
-        // Verkaufspreis netto
-        const sellingPriceNet = totalCost * (1 + marginPercent / 100);
+        // Verkaufspreis netto (EK × Aufschlag-Multiplikator)
+        const sellingPriceNet = totalCost * marginMultiplier;
 
         // Verkaufspreis brutto
         const sellingPriceGross = sellingPriceNet * (1 + vat / 100);
+
+        // MwSt-Betrag
+        const vatAmount = sellingPriceNet * (vat / 100);
 
         // Gewinn
         const profit = sellingPriceNet - totalCost;
@@ -115,7 +118,8 @@ export default function PriceCalculator() {
             sellingPriceNet,
             sellingPriceGross,
             profit,
-            profitPercent
+            profitPercent,
+            vatAmount
         };
     };
 
@@ -259,14 +263,16 @@ export default function PriceCalculator() {
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label className="text-slate-300">Aufschlag (%)</Label>
+                                    <Label className="text-slate-300">Aufschlag (Multiplikator)</Label>
                                     <Input
                                         type="number"
+                                        step="0.1"
                                         value={margin}
                                         onChange={(e) => setMargin(e.target.value)}
-                                        placeholder="z.B. 200"
+                                        placeholder="z.B. 3"
                                         className="bg-slate-900 border-slate-600 text-white"
                                     />
+                                    <p className="text-xs text-slate-400">EK × Aufschlag = Netto-Preis</p>
                                 </div>
 
                                 <div className="space-y-2">
@@ -307,7 +313,7 @@ export default function PriceCalculator() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-slate-900/50 rounded-lg p-4">
-                                            <p className="text-xs text-slate-400 mb-1">Gesamtkosten</p>
+                                            <p className="text-xs text-slate-400 mb-1">Gesamtkosten (EK)</p>
                                             <p className="text-xl font-semibold text-white">
                                                 {prices.totalCost.toFixed(2)} €
                                             </p>
@@ -321,16 +327,16 @@ export default function PriceCalculator() {
                                         </div>
 
                                         <div className="bg-slate-900/50 rounded-lg p-4">
-                                            <p className="text-xs text-slate-400 mb-1">Gewinn</p>
-                                            <p className="text-xl font-semibold text-green-400">
-                                                +{prices.profit.toFixed(2)} €
+                                            <p className="text-xs text-slate-400 mb-1">MwSt-Betrag</p>
+                                            <p className="text-xl font-semibold text-blue-400">
+                                                +{prices.vatAmount.toFixed(2)} €
                                             </p>
                                         </div>
 
                                         <div className="bg-slate-900/50 rounded-lg p-4">
-                                            <p className="text-xs text-slate-400 mb-1">Marge</p>
+                                            <p className="text-xs text-slate-400 mb-1">Gewinn</p>
                                             <p className="text-xl font-semibold text-green-400">
-                                                {prices.profitPercent.toFixed(0)}%
+                                                +{prices.profit.toFixed(2)} €
                                             </p>
                                         </div>
                                     </div>
@@ -369,8 +375,9 @@ export default function PriceCalculator() {
                             <Card className="p-6 bg-slate-800 border-slate-700">
                                 <h3 className="text-sm font-semibold text-white mb-3">Aufschlag-Vergleich</h3>
                                 <div className="space-y-2">
-                                    {[250, 300, 330, 350, 380, 400].map(m => {
-                                        const testPrice = prices.totalCost * (1 + m / 100) * (1 + parseFloat(vatRate) / 100);
+                                    {[2.5, 3, 3.3, 3.5, 3.8, 4].map(m => {
+                                        const nettoTest = prices.totalCost * m;
+                                        const testPrice = nettoTest + (nettoTest * parseFloat(vatRate) / 100);
                                         return (
                                             <button
                                                 key={m}
@@ -382,7 +389,7 @@ export default function PriceCalculator() {
                                                 }`}
                                             >
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-sm font-medium">{m}% Aufschlag</span>
+                                                    <span className="text-sm font-medium">×{m.toFixed(1)}</span>
                                                     <span className="text-sm font-semibold">{testPrice.toFixed(2)} €</span>
                                                 </div>
                                             </button>

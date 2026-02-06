@@ -194,10 +194,9 @@ export default function Dashboard() {
     const myCleaningTasks = cleaningTasks.filter(t => !t.is_completed && t.is_active);
     
     // BiWeekly Cleaning Tasks für heute
-    const today = new Date();
-    const dayOfWeek = today.getDay();
+    const dayOfWeek = new Date().getDay();
     const cycleStart = new Date(2025, 0, 6);
-    const weeksDiff = Math.floor((today - cycleStart) / (7 * 24 * 60 * 60 * 1000));
+    const weeksDiff = Math.floor((new Date() - cycleStart) / (7 * 24 * 60 * 60 * 1000));
     const cycleWeek = weeksDiff % 2;
     
     const biweeklyPattern = (() => {

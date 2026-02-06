@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
+import { haptics } from '@/components/utils/haptics';
 import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
@@ -245,7 +246,10 @@ export default function Layout({ children, currentPageName }) {
                 <div className="flex items-center justify-around px-1 py-3">
                     <Link 
                         to={createPageUrl(localStorage.getItem('lastPage_Dashboard') || 'Dashboard')}
-                        onClick={(e) => navigateToTab('Dashboard', e)}
+                        onClick={(e) => {
+                            haptics.selection();
+                            navigateToTab('Dashboard', e);
+                        }}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Home className="w-6 h-6" />
@@ -253,7 +257,10 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                     <Link 
                         to={createPageUrl(localStorage.getItem('lastPage_Calendar') || 'Calendar')}
-                        onClick={(e) => navigateToTab('Calendar', e)}
+                        onClick={(e) => {
+                            haptics.selection();
+                            navigateToTab('Calendar', e);
+                        }}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Calendar className="w-6 h-6" />
@@ -265,7 +272,10 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                     )}
                     <button
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        onClick={() => {
+                            haptics.selection();
+                            setMobileMenuOpen(!mobileMenuOpen);
+                        }}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Menu className="w-6 h-6" />

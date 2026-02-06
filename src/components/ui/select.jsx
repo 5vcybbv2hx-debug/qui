@@ -52,6 +52,7 @@ SelectScrollDownButton.displayName =
 
 const SelectContent = React.forwardRef(({ className, children, position = "popper", ...props }, ref) => {
   const [isMobile, setIsMobile] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -60,9 +61,25 @@ const SelectContent = React.forwardRef(({ className, children, position = "poppe
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  React.useEffect(() => {
+    const checkOpen = () => {
+      const trigger = document.querySelector('[data-state="open"][data-radix-select-trigger]');
+      setOpen(!!trigger);
+    };
+    
+    checkOpen();
+    const observer = new MutationObserver(checkOpen);
+    const trigger = document.querySelector('[data-radix-select-trigger]');
+    if (trigger) {
+      observer.observe(trigger, { attributes: true, attributeFilter: ['data-state'] });
+    }
+    
+    return () => observer.disconnect();
+  }, []);
+
   if (isMobile) {
     return (
-      <Drawer>
+      <Drawer open={open} onOpenChange={setOpen}>
         <DrawerContent className="bg-popover text-popover-foreground border-0">
           <div className="px-4 py-3">
             <SelectPrimitive.Viewport className="p-1">

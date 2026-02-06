@@ -269,16 +269,14 @@ export default function Layout({ children, currentPageName }) {
                             <NotificationBell userEmail={currentUser.email} />
                         </div>
                     )}
-                    <button
-                        onClick={() => {
-                            haptics.selection();
-                            setMobileMenuOpen(!mobileMenuOpen);
-                        }}
+                    <Link
+                        to={createPageUrl('More')}
+                        onClick={() => haptics.selection()}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Menu className="w-6 h-6" />
-                        <span className="text-sm font-medium">Menü</span>
-                    </button>
+                        <span className="text-sm font-medium">Mehr</span>
+                    </Link>
                 </div>
 
                 {/* Mobile Menu Drawer */}

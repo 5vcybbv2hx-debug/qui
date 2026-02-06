@@ -95,6 +95,8 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
+import AdminDashboard from './pages/AdminDashboard';
+import TenantForm from './pages/TenantForm';
 import __Layout from './Layout.jsx';
 
 
@@ -147,6 +149,8 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
+    "AdminDashboard": AdminDashboard,
+    "TenantForm": TenantForm,
 }
 
 export const pagesConfig = {

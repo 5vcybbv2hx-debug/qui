@@ -65,6 +65,7 @@ import LazyBudget from './pages/LazyBudget';
 import LazyReports from './pages/LazyReports';
 import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import Maintenance from './pages/Maintenance';
+import MaintenanceHistory from './pages/MaintenanceHistory';
 import MyArea from './pages/MyArea';
 import MyProfile from './pages/MyProfile';
 import Notifications from './pages/Notifications';
@@ -90,7 +91,6 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
-import MaintenanceHistory from './pages/MaintenanceHistory';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +113,7 @@ export const PAGES = {
     "LazyReports": LazyReports,
     "LazySalesAnalysis": LazySalesAnalysis,
     "Maintenance": Maintenance,
+    "MaintenanceHistory": MaintenanceHistory,
     "MyArea": MyArea,
     "MyProfile": MyProfile,
     "Notifications": Notifications,
@@ -138,7 +139,6 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
-    "MaintenanceHistory": MaintenanceHistory,
 }
 
 export const pagesConfig = {

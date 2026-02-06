@@ -87,6 +87,47 @@ export default function Layout({ children, currentPageName }) {
          base44.auth.me().then(setCurrentUser).catch(() => {});
      }, []);
 
+     // Tab sections for history tracking
+     const tabSections = {
+         Dashboard: ['Dashboard', 'Notifications', 'MyArea', 'TimeManagement', 'TeamMeeting'],
+         Calendar: ['Calendar', 'Shifts', 'TeamCalendar', 'CalendarIntegration', 'Vacation', 'ShiftSwaps']
+     };
+
+     // Get current tab section
+     const getCurrentTab = (pageName) => {
+         for (const [tab, pages] of Object.entries(tabSections)) {
+             if (pages.includes(pageName)) return tab;
+         }
+         return null;
+     };
+
+     // Save current page to tab history
+     React.useEffect(() => {
+         const currentTab = getCurrentTab(currentPageName);
+         if (currentTab) {
+             localStorage.setItem(`lastPage_${currentTab}`, currentPageName);
+         }
+     }, [currentPageName]);
+
+     // Navigate to tab with history
+     const navigateToTab = (tabName, e) => {
+         const currentTab = getCurrentTab(currentPageName);
+         const lastPage = localStorage.getItem(`lastPage_${tabName}`);
+         
+         if (currentTab === tabName) {
+             // Already in this tab section
+             if (currentPageName === tabName) {
+                 // On root page, reload
+                 e.preventDefault();
+                 window.location.href = createPageUrl(tabName);
+             }
+         } else if (lastPage && lastPage !== tabName) {
+             // Navigate to last visited page in this tab
+             e.preventDefault();
+             window.location.href = createPageUrl(lastPage);
+         }
+     };
+
      const primaryPages = ['Dashboard', 'Calendar'];
      const isRootPage = primaryPages.includes(currentPageName);
      const getRootPage = () => {
@@ -204,26 +245,16 @@ export default function Layout({ children, currentPageName }) {
             <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 border-t border-slate-800/50 pb-safe shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center justify-around px-1 py-3">
                     <Link 
-                        to={createPageUrl(currentPageName === 'Dashboard' ? 'Dashboard' : 'Dashboard')}
-                        onClick={(e) => {
-                            if (currentPageName === 'Dashboard') {
-                                e.preventDefault();
-                                window.location.href = createPageUrl('Dashboard');
-                            }
-                        }}
+                        to={createPageUrl(localStorage.getItem('lastPage_Dashboard') || 'Dashboard')}
+                        onClick={(e) => navigateToTab('Dashboard', e)}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Home className="w-6 h-6" />
                         <span className="text-xs font-medium">Home</span>
                     </Link>
                     <Link 
-                        to={createPageUrl(currentPageName === 'Calendar' ? 'Calendar' : 'Calendar')}
-                        onClick={(e) => {
-                            if (currentPageName === 'Calendar') {
-                                e.preventDefault();
-                                window.location.href = createPageUrl('Calendar');
-                            }
-                        }}
+                        to={createPageUrl(localStorage.getItem('lastPage_Calendar') || 'Calendar')}
+                        onClick={(e) => navigateToTab('Calendar', e)}
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Calendar className="w-6 h-6" />

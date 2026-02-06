@@ -14,6 +14,7 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
 import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 const navigationSections = [
     {
@@ -280,69 +281,58 @@ export default function Layout({ children, currentPageName }) {
                     </button>
                 </div>
 
-                {/* Mobile Menu Overlay */}
-                {mobileMenuOpen && (
-                    <>
-                        <div 
-                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                            onClick={() => setMobileMenuOpen(false)}
-                        />
-                        <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-0 right-0 bg-slate-900/95 border-t border-slate-800/50 shadow-2xl max-h-[75vh] overflow-y-auto z-50 rounded-t-3xl backdrop-blur-xl">
-                            <div className="sticky top-0 bg-slate-900/95 border-b border-slate-800/50 flex items-center justify-between px-4 py-3">
-                                <h2 className="text-sm font-semibold text-white">Menü</h2>
-                                <button
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-800 active:bg-slate-700 text-slate-400 hover:text-white transition-all"
-                                    title="Schließen"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <nav className="p-4 space-y-6 pt-2">
-                                {navigationSections.map((section) => {
-                                    const visibleItems = section.items.filter(item => permissions[item.permission]);
-                                    if (visibleItems.length === 0) return null;
+                {/* Mobile Menu Drawer */}
+                <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                    <DrawerContent className="bg-slate-900 border-slate-800 max-h-[80vh]">
+                        <DrawerHeader className="border-b border-slate-800">
+                            <DrawerTitle className="text-white">Menü</DrawerTitle>
+                        </DrawerHeader>
+                        <nav className="overflow-y-auto p-4 space-y-6">
+                            {navigationSections.map((section) => {
+                                const visibleItems = section.items.filter(item => permissions[item.permission]);
+                                if (visibleItems.length === 0) return null;
 
-                                    return (
-                                        <div key={section.title}>
-                                            <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
-                                                {section.title}
-                                            </h3>
-                                            <div className="space-y-1">
-                                                {visibleItems.map((item) => {
-                                                    const isActive = currentPageName === item.page;
-                                                    const handleMobileNavClick = (e) => {
-                                                        if (isActive) {
-                                                            e.preventDefault();
-                                                        }
-                                                        setMobileMenuOpen(false);
-                                                    };
+                                return (
+                                    <div key={section.title}>
+                                        <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">
+                                            {section.title}
+                                        </h3>
+                                        <div className="space-y-1">
+                                            {visibleItems.map((item) => {
+                                                const isActive = currentPageName === item.page;
+                                                const handleMobileNavClick = (e) => {
+                                                    haptics.selection();
+                                                    if (isActive) {
+                                                        e.preventDefault();
+                                                    }
+                                                    setMobileMenuOpen(false);
+                                                };
 
-                                                    return (
-                                                        <Link
-                                                            key={item.name}
-                                                            to={createPageUrl(item.page)}
-                                                            onClick={handleMobileNavClick}
-                                                            className={cn(
-                                                                "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all",
-                                                                isActive 
-                                                                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
-                                                                    : "text-slate-300 hover:bg-slate-800/50 active:bg-slate-800"
-                                                            )}
-                                                            >
-                                                            <item.icon className="w-5 h-5" />
-                                                            {item.name}
-                                                            </Link>
-                                                    );
-                                                })}
-                                            </div>
+                                                return (
+                                                    <Link
+                                                        key={item.name}
+                                                        to={createPageUrl(item.page)}
+                                                        onClick={handleMobileNavClick}
+                                                        className={cn(
+                                                            "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all",
+                                                            isActive 
+                                                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
+                                                                : "text-slate-300 hover:bg-slate-800/50 active:bg-slate-800"
+                                                        )}
+                                                    >
+                                                        <item.icon className="w-5 h-5" />
+                                                        {item.name}
+                                                    </Link>
+                                                );
+                                            })}
                                         </div>
-                                    );
-                                })}
-                            </nav>
-                            <div className="p-4 border-t border-slate-800/50">
+                                    </div>
+                                );
+                            })}
+                            <div className="pt-2 border-t border-slate-800">
                                 <button
                                     onClick={() => {
+                                        haptics.light();
                                         base44.auth.logout();
                                         setMobileMenuOpen(false);
                                     }}
@@ -352,9 +342,9 @@ export default function Layout({ children, currentPageName }) {
                                     Abmelden
                                 </button>
                             </div>
-                        </div>
-                    </>
-                )}
+                        </nav>
+                    </DrawerContent>
+                </Drawer>
             </div>
 
             {/* Main Content */}

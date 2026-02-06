@@ -83,6 +83,7 @@ a,
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 @media (max-width: 768px) {

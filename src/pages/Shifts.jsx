@@ -60,6 +60,7 @@ export default function Shifts() {
         mutationFn: (data) => base44.entities.Shift.create(data),
         onSuccess: (newShift) => {
             queryClient.setQueryData(['shifts'], (old) => [newShift, ...(old || [])]);
+            queryClient.invalidateQueries(['shifts']);
             setModalOpen(false);
             setSelectedShift(null);
         }
@@ -67,10 +68,19 @@ export default function Shifts() {
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Shift.update(id, data),
-        onSuccess: (updatedShift) => {
+        onMutate: async ({ id, data }) => {
+            await queryClient.cancelQueries(['shifts']);
+            const previous = queryClient.getQueryData(['shifts']);
             queryClient.setQueryData(['shifts'], (old) => 
-                (old || []).map(shift => shift.id === updatedShift.id ? updatedShift : shift)
+                (old || []).map(shift => shift.id === id ? { ...shift, ...data } : shift)
             );
+            return { previous };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['shifts'], context.previous);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shifts']);
             setModalOpen(false);
             setSelectedShift(null);
         }
@@ -78,10 +88,19 @@ export default function Shifts() {
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Shift.delete(id),
-        onSuccess: (_, deletedId) => {
+        onMutate: async (id) => {
+            await queryClient.cancelQueries(['shifts']);
+            const previous = queryClient.getQueryData(['shifts']);
             queryClient.setQueryData(['shifts'], (old) => 
-                (old || []).filter(shift => shift.id !== deletedId)
+                (old || []).filter(shift => shift.id !== id)
             );
+            return { previous };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['shifts'], context.previous);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['shifts']);
             setModalOpen(false);
             setSelectedShift(null);
         }

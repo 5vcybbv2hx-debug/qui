@@ -57,7 +57,10 @@ export default function Reservations() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Reservation.create(data),
-        onSuccess: () => {
+        onSuccess: (newReservation) => {
+            queryClient.setQueryData(['reservations'], (old) => 
+                old ? [...old, newReservation] : [newReservation]
+            );
             queryClient.invalidateQueries(['reservations']);
             setModalOpen(false);
             setSelectedReservation(null);
@@ -66,6 +69,17 @@ export default function Reservations() {
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Reservation.update(id, data),
+        onMutate: async ({ id, data }) => {
+            await queryClient.cancelQueries(['reservations']);
+            const previous = queryClient.getQueryData(['reservations']);
+            queryClient.setQueryData(['reservations'], (old) => 
+                old.map(res => res.id === id ? { ...res, ...data } : res)
+            );
+            return { previous };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['reservations'], context.previous);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['reservations']);
             setModalOpen(false);
@@ -75,6 +89,17 @@ export default function Reservations() {
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Reservation.delete(id),
+        onMutate: async (id) => {
+            await queryClient.cancelQueries(['reservations']);
+            const previous = queryClient.getQueryData(['reservations']);
+            queryClient.setQueryData(['reservations'], (old) => 
+                old.filter(res => res.id !== id)
+            );
+            return { previous };
+        },
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['reservations'], context.previous);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries(['reservations']);
             setModalOpen(false);

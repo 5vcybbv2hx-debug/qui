@@ -97,6 +97,7 @@ import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import AdminDashboard from './pages/AdminDashboard';
 import TenantForm from './pages/TenantForm';
+import TenantDetail from './pages/TenantDetail';
 import __Layout from './Layout.jsx';
 
 
@@ -151,6 +152,7 @@ export const PAGES = {
     "Wastage": Wastage,
     "AdminDashboard": AdminDashboard,
     "TenantForm": TenantForm,
+    "TenantDetail": TenantDetail,
 }
 
 export const pagesConfig = {

@@ -4,6 +4,7 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { Check, ChevronDown, ChevronUp } from "lucide-react"
 import { Drawer, DrawerContent } from "@/components/ui/drawer"
+import { useIsMobile } from "@/components/utils/useIsMobile"
 
 import { cn } from "@/lib/utils"
 
@@ -51,15 +52,8 @@ SelectScrollDownButton.displayName =
   SelectPrimitive.ScrollDownButton.displayName
 
 const SelectContent = React.forwardRef(({ className, children, position = "popper", ...props }, ref) => {
-  const [isMobile, setIsMobile] = React.useState(false);
+  const isMobile = useIsMobile();
   const [open, setOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   React.useEffect(() => {
     const checkOpen = () => {

@@ -13,7 +13,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import BackupManager from '@/components/backup/BackupManager';
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 
@@ -249,7 +248,6 @@ export default function Dashboard() {
                         </div>
                         <div className="flex gap-2">
                             <HolidayCreditManager />
-                            <BackupManager />
                         </div>
                     </div>
 

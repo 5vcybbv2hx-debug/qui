@@ -8,6 +8,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import BackupManager from '@/components/backup/BackupManager';
 
 export default function Settings() {
     const queryClient = useQueryClient();
@@ -246,6 +247,21 @@ export default function Settings() {
                 </div>
 
 
+
+                {/* Backup Section */}
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Download className="w-5 h-5" />
+                        Sicherung
+                    </h2>
+
+                    <Card className="p-6 bg-card border-border">
+                        <p className="text-sm text-muted-foreground mb-4">
+                            Erstelle Sicherungen deiner Daten und exportiere Informationen.
+                        </p>
+                        <BackupManager />
+                    </Card>
+                </div>
 
                 {/* Über die App Section */}
                 <div className="mt-8">

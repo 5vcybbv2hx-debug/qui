@@ -158,7 +158,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
             <div className="grid grid-cols-7 border-b border-slate-700 bg-slate-900/30">
                 {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, idx) => (
                     <div key={idx} className="py-2 text-center border-r border-slate-700 last:border-r-0">
-                        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
                             {day}
                         </span>
                     </div>
@@ -205,7 +205,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                     "flex items-center gap-1 px-1.5 py-0.5 rounded-md",
                                     isToday ? "bg-amber-600 text-white" : "bg-slate-900/50 text-slate-300"
                                 )}>
-                                    <span className="text-xs font-bold">
+                                    <span className="text-sm font-bold">
                                         {format(day, 'd')}
                                     </span>
                                     {required && (

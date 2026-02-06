@@ -225,8 +225,8 @@ export default function Layout({ children, currentPageName }) {
                             </div>
                         )}
                         <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur">
-                            <p className="text-xs font-bold text-amber-500">Bar Management</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">
+                            <p className="text-sm font-bold text-amber-500">Bar Management</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
                                 {permissions.employeeRole || 'Alles im Griff'}
                             </p>
                         </div>
@@ -250,7 +250,7 @@ export default function Layout({ children, currentPageName }) {
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Home className="w-6 h-6" />
-                        <span className="text-xs font-medium">Home</span>
+                        <span className="text-sm font-medium">Home</span>
                     </Link>
                     <Link 
                         to={createPageUrl(localStorage.getItem('lastPage_Calendar') || 'Calendar')}
@@ -258,7 +258,7 @@ export default function Layout({ children, currentPageName }) {
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Calendar className="w-6 h-6" />
-                        <span className="text-xs font-medium">Kalender</span>
+                        <span className="text-sm font-medium">Kalender</span>
                     </Link>
                     {permissions.isManager && currentUser && (
                         <div className="flex flex-col items-center gap-1 px-3 py-2">
@@ -270,7 +270,7 @@ export default function Layout({ children, currentPageName }) {
                         className="flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-slate-800/50 active:bg-slate-800 text-slate-400 hover:text-amber-500 transition-all min-w-[72px]"
                     >
                         <Menu className="w-6 h-6" />
-                        <span className="text-xs font-medium">Menü</span>
+                        <span className="text-sm font-medium">Menü</span>
                     </button>
                 </div>
 

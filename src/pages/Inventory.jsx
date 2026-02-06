@@ -280,15 +280,15 @@ export default function Inventory() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-6">
                     <Card className="p-4 bg-slate-800 border-slate-700">
-                        <p className="text-xs text-slate-400 mb-1">Gezählt</p>
+                        <p className="text-sm text-slate-400 mb-1">Gezählt</p>
                         <p className="text-2xl font-bold text-white">{countedArticles.length}</p>
                     </Card>
                     <Card className="p-4 bg-slate-800 border-slate-700">
-                        <p className="text-xs text-slate-400 mb-1">Offen</p>
+                        <p className="text-sm text-slate-400 mb-1">Offen</p>
                         <p className="text-2xl font-bold text-amber-500">{uncountedArticles.length}</p>
                     </Card>
                     <Card className="p-4 bg-slate-800 border-slate-700">
-                        <p className="text-xs text-slate-400 mb-1">Differenzen</p>
+                        <p className="text-sm text-slate-400 mb-1">Differenzen</p>
                         <p className="text-2xl font-bold text-red-500">{totalDiff}</p>
                     </Card>
                 </div>
@@ -354,7 +354,7 @@ export default function Inventory() {
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-3 text-xs text-slate-400">
+                                            <div className="flex items-center gap-3 text-sm text-slate-400">
                                                 {article.barcode && (
                                                     <span className="font-mono">{article.barcode}</span>
                                                 )}
@@ -374,7 +374,7 @@ export default function Inventory() {
 
                                         <div className="flex items-center gap-4">
                                             <div className="text-center">
-                                                <p className="text-xs text-slate-400 mb-1">Soll</p>
+                                                <p className="text-sm text-slate-400 mb-1">Soll</p>
                                                 <p className="text-lg font-semibold text-slate-300">{systemStock}</p>
                                             </div>
 
@@ -394,7 +394,7 @@ export default function Inventory() {
                                                     diff < 0 && "text-red-400",
                                                     diff === 0 && "text-slate-400"
                                                 )}>
-                                                    <p className="text-xs mb-1">Diff</p>
+                                                    <p className="text-sm mb-1">Diff</p>
                                                     <p className="text-lg font-bold">
                                                         {diff > 0 ? '+' : ''}{diff}
                                                     </p>

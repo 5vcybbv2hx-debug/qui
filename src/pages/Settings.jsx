@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Volume2, Globe, Download, Trash2, Info, AlertCircle, BarChart3 } from 'lucide-react';
+import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -16,11 +15,6 @@ export default function Settings() {
     const [timeFormat, setTimeFormat] = useState('24h');
     const [dateFormat, setDateFormat] = useState('de');
     const [language, setLanguage] = useState('de');
-    const [soundEnabled, setSoundEnabled] = useState(true);
-    const [vibrationEnabled, setVibrationEnabled] = useState(true);
-    const [barcodeSoundEnabled, setBarcodeSoundEnabled] = useState(true);
-    const [showOfflineStatus, setShowOfflineStatus] = useState(true);
-    const [currentUser, setCurrentUser] = useState(null);
     const [appVersion] = useState('1.0.0');
 
     useEffect(() => {
@@ -28,20 +22,12 @@ export default function Settings() {
         const savedTimeFormat = localStorage.getItem('timeFormat') || '24h';
         const savedDateFormat = localStorage.getItem('dateFormat') || 'de';
         const savedLanguage = localStorage.getItem('language') || 'de';
-        const savedSound = localStorage.getItem('soundEnabled') !== 'false';
-        const savedVibration = localStorage.getItem('vibrationEnabled') !== 'false';
-        const savedBarcodeSound = localStorage.getItem('barcodeSoundEnabled') !== 'false';
 
         setTheme(savedTheme);
         setTimeFormat(savedTimeFormat);
         setDateFormat(savedDateFormat);
         setLanguage(savedLanguage);
-        setSoundEnabled(savedSound);
-        setVibrationEnabled(savedVibration);
-        setBarcodeSoundEnabled(savedBarcodeSound);
         applyTheme(savedTheme);
-
-        base44.auth.me().then(setCurrentUser);
     }, []);
 
     const applyTheme = (newTheme) => {
@@ -68,9 +54,6 @@ export default function Settings() {
             timeFormat: setTimeFormat,
             dateFormat: setDateFormat,
             language: setLanguage,
-            soundEnabled: setSoundEnabled,
-            vibrationEnabled: setVibrationEnabled,
-            barcodeSoundEnabled: setBarcodeSoundEnabled,
         };
         
         if (stateSetters[key]) {
@@ -78,41 +61,6 @@ export default function Settings() {
             localStorage.setItem(storageKey || key, value);
         }
     };
-
-    const exportDataMutation = useMutation({
-        mutationFn: async () => {
-            const data = await base44.functions.invoke('exportUserData', {});
-            return data;
-        },
-        onSuccess: (data) => {
-            const element = document.createElement('a');
-            element.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(JSON.stringify(data.data, null, 2))}`);
-            element.setAttribute('download', `backup-${new Date().toISOString().split('T')[0]}.json`);
-            element.style.display = 'none';
-            document.body.appendChild(element);
-            element.click();
-            document.body.removeChild(element);
-            toast.success('Daten exportiert');
-        },
-        onError: () => {
-            toast.error('Fehler beim Exportieren');
-        }
-    });
-
-    const deleteAccountMutation = useMutation({
-        mutationFn: async () => {
-            await base44.functions.invoke('deleteMyAccount', {});
-        },
-        onSuccess: () => {
-            toast.success('Account wird gelöscht...');
-            setTimeout(() => {
-                base44.auth.logout();
-            }, 2000);
-        },
-        onError: () => {
-            toast.error('Fehler beim Löschen des Accounts');
-        }
-    });
 
     const themes = [
         {
@@ -271,57 +219,7 @@ export default function Settings() {
                     </div>
                 </div>
 
-                {/* Benachrichtigungen Section */}
-                <div className="mt-8">
-                    <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                        <Volume2 className="w-5 h-5" />
-                        Benachrichtigungen
-                    </h2>
 
-                    <div className="space-y-3">
-                        <Card className="p-4 bg-card border-border">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="sound" className="text-sm font-medium text-foreground">
-                                    Benachrichtigungstöne
-                                </Label>
-                                <Switch 
-                                    id="sound"
-                                    checked={soundEnabled}
-                                    onCheckedChange={(val) => handleSettingChange('soundEnabled', val, 'soundEnabled')}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">Töne bei neuen Benachrichtigungen abspielen</p>
-                        </Card>
-
-                        <Card className="p-4 bg-card border-border">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="vibration" className="text-sm font-medium text-foreground">
-                                    Vibrationen
-                                </Label>
-                                <Switch 
-                                    id="vibration"
-                                    checked={vibrationEnabled}
-                                    onCheckedChange={(val) => handleSettingChange('vibrationEnabled', val, 'vibrationEnabled')}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">Gerät vibrieren lassen bei Benachrichtigungen</p>
-                        </Card>
-
-                        <Card className="p-4 bg-card border-border">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="barcode" className="text-sm font-medium text-foreground">
-                                    Barcode-Scanner Ton
-                                </Label>
-                                <Switch 
-                                    id="barcode"
-                                    checked={barcodeSoundEnabled}
-                                    onCheckedChange={(val) => handleSettingChange('barcodeSoundEnabled', val, 'barcodeSoundEnabled')}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">Ton beim Scannen von Barcodes abspielen</p>
-                        </Card>
-                    </div>
-                </div>
 
                 {/* Sprache Section */}
                 <div className="mt-8">
@@ -347,67 +245,7 @@ export default function Settings() {
                     </Card>
                 </div>
 
-                {/* Datenmanagement Section */}
-                <div className="mt-8">
-                    <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5" />
-                        Daten
-                    </h2>
 
-                    <div className="space-y-3">
-                        <Card className="p-4 bg-card border-border">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <Label className="text-sm font-medium text-foreground">
-                                        Daten exportieren
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground mt-1">Speichere ein Backup deiner Daten als JSON</p>
-                                </div>
-                                <Button 
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => exportDataMutation.mutate()}
-                                    disabled={exportDataMutation.isPending}
-                                    className="gap-2"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    {exportDataMutation.isPending ? 'Lädt...' : 'Export'}
-                                </Button>
-                            </div>
-                        </Card>
-
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Card className="p-4 bg-red-500/10 border-red-500/20 cursor-pointer hover:bg-red-500/20 transition-colors">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <Label className="text-sm font-medium text-red-400">
-                                                Account löschen
-                                            </Label>
-                                            <p className="text-xs text-red-300/70 mt-1">Löscht deinen Account und alle Daten</p>
-                                        </div>
-                                        <Trash2 className="w-4 h-4 text-red-400" />
-                                    </div>
-                                </Card>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Account löschen?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Dies kann nicht rückgängig gemacht werden. Alle deine Daten werden permanent gelöscht.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                                <AlertDialogAction 
-                                    onClick={() => deleteAccountMutation.mutate()}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                    Löschen
-                                </AlertDialogAction>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </div>
 
                 {/* Über die App Section */}
                 <div className="mt-8">

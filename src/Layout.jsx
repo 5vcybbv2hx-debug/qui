@@ -75,6 +75,7 @@ const navigationSections = [
     {
         title: 'Einstellungen',
         items: [
+            { name: 'Einstellungen', page: 'Settings', icon: Shield, permission: 'canViewDashboard' },
             { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'canViewEmployees' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Shield, permission: 'isManager' },
         ]
@@ -98,7 +99,7 @@ export default function Layout({ children, currentPageName }) {
      const tabSections = {
          Dashboard: ['Dashboard', 'Notifications', 'MyArea', 'TimeManagement', 'TeamMeeting'],
          Calendar: ['Calendar', 'Shifts', 'TeamCalendar', 'CalendarIntegration', 'Vacation', 'ShiftSwaps'],
-         More: ['More', 'Onboarding', 'Employees', 'Permissions', 'Warehouse', 'DrinkMenu', 'Recipes', 'PriceCalculator', 'Suppliers', 'Events', 'Reservations', 'Todos', 'Cleaning', 'Maintenance', 'MaintenanceHistory', 'SalesAnalysis', 'LaborCostAnalysis', 'Budget', 'Reports', 'Documents', 'CompanySettings', 'NotificationSettings']
+         More: ['More', 'Settings', 'Onboarding', 'Employees', 'Permissions', 'Warehouse', 'DrinkMenu', 'Recipes', 'PriceCalculator', 'Suppliers', 'Events', 'Reservations', 'Todos', 'Cleaning', 'Maintenance', 'MaintenanceHistory', 'SalesAnalysis', 'LaborCostAnalysis', 'Budget', 'Reports', 'Documents', 'CompanySettings', 'NotificationSettings']
      };
 
      // Get current tab section

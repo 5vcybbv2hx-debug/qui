@@ -131,12 +131,9 @@ export default function Layout({ children, currentPageName }) {
          }
      };
 
-     const primaryPages = ['Dashboard', 'Calendar'];
+     // All main navigation sections are root pages (no back button)
+     const primaryPages = navigation.map(item => item.page);
      const isRootPage = primaryPages.includes(currentPageName);
-     const getRootPage = () => {
-         const rootItem = navigation.find(item => item.page === currentPageName);
-         return rootItem?.page;
-     };
 
      const handleRefresh = async () => {
          await queryClient.invalidateQueries();

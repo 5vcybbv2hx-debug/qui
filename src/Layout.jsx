@@ -41,6 +41,7 @@ const navigationSections = [
             { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewShopping' },
             { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees' },
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
+            { name: 'Preisrechner', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager' },
         ]
     },

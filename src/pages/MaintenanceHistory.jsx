@@ -82,7 +82,7 @@ export default function MaintenanceHistoryPage() {
     const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
     if (permissions.loading) return <div className="flex justify-center p-8">Lädt...</div>;
-    if (!permissions.canViewEmployees) return <PermissionDenied />;
+    if (!permissions.isManager) return <PermissionDenied />;
 
     const resetFilters = () => {
         setDateFrom("");

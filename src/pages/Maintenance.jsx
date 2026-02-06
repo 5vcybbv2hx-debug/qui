@@ -62,7 +62,7 @@ export default function MaintenancePage() {
     }
 
     if (permissions.loading) return <div className="flex justify-center p-8">Lädt...</div>;
-    if (!permissions.canViewEmployees) return <PermissionDenied />;
+    if (!permissions.isManager) return <PermissionDenied />;
 
     const overdueTask = tasks.filter(t => getTaskStatus(t) === 'überfällig');
     const dueSoon = tasks.filter(t => getTaskStatus(t) === 'bald fällig');

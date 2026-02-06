@@ -358,7 +358,7 @@ BarManager System
 
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-2">
-                                                    <Label>T-Shirt Größe</Label>
+                                                    <Label>T-Shirt Größe (Dienstkleidung)</Label>
                                                     <Select
                                                         value={formData.tshirt_size}
                                                         onValueChange={(value) => setFormData({...formData, tshirt_size: value})}
@@ -378,7 +378,7 @@ BarManager System
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label>Pullover Größe</Label>
+                                                    <Label>Pullover Größe (Dienstkleidung)</Label>
                                                     <Select
                                                         value={formData.pullover_size}
                                                         onValueChange={(value) => setFormData({...formData, pullover_size: value})}

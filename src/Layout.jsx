@@ -58,8 +58,6 @@ const navigationSections = [
         items: [
             { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos' },
             { name: 'Putzen', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
-            { name: 'Wartung', page: 'Maintenance', icon: Wrench, permission: 'canViewEmployees' },
-            { name: 'Wartungshistorie', page: 'MaintenanceHistory', icon: TrendingUp, permission: 'canViewEmployees' },
             { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard' },
         ]
     },

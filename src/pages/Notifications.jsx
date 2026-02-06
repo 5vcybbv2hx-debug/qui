@@ -10,7 +10,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
-import PushNotificationManager from '@/components/notifications/PushNotificationManager';
 import SendNotificationModal from '@/components/notifications/SendNotificationModal';
 
 const typeIcons = {
@@ -144,7 +143,6 @@ export default function Notifications() {
                             )}
                         </div>
                         <div className="flex items-center gap-3">
-                            {currentUser && <PushNotificationManager userEmail={currentUser.email} />}
                             {permissions.isManager && <SendNotificationModal />}
                         </div>
                     </div>

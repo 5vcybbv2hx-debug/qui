@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
@@ -303,16 +304,20 @@ export default function Inventory() {
                                 className="pl-10 bg-slate-900 border-slate-700 text-white"
                             />
                         </div>
-                        <select
+                        <Select
                             value={filterCategory}
-                            onChange={(e) => setFilterCategory(e.target.value)}
-                            className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
+                            onValueChange={setFilterCategory}
                         >
-                            <option value="all">Alle Kategorien</option>
-                            {categories.map(cat => (
-                                <option key={cat.name} value={cat.name}>{cat.name}</option>
-                            ))}
-                        </select>
+                            <SelectTrigger className="w-full sm:w-[200px] bg-slate-900 border-slate-700 text-white">
+                                <SelectValue placeholder="Kategorie wählen" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Alle Kategorien</SelectItem>
+                                {categories.map(cat => (
+                                    <SelectItem key={cat.name} value={cat.name}>{cat.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </Card>
 

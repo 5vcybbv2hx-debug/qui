@@ -1,12 +1,20 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
-        
+        const appId = Deno.env.get('BASE44_APP_ID');
+        if (!appId) {
+            throw new Error('App ID nicht gefunden');
+        }
+
+        const baseUrl = 'https://api.base44.com';
+        const headers = {
+            'X-App-Id': appId,
+            'Content-Type': 'application/json'
+        };
+
         // Hole Firmendaten
-        const companyInfos = await base44.asServiceRole.entities.CompanyInfo.list();
-        const companyInfo = companyInfos[0] || {};
+        const companyResponse = await fetch(`${baseUrl}/entities/CompanyInfo`, { headers });
+        const companyData = await companyResponse.json();
+        const companyInfo = (companyData.data && companyData.data[0]) || {};
         const barName = companyInfo.company_name || 'BarManager';
 
         if (req.method === 'POST') {
@@ -18,28 +26,24 @@ Deno.serve(async (req) => {
                 date: formData.get('date'),
                 time: formData.get('time'),
                 guests: parseInt(formData.get('guests')),
-                notes: formData.get('notes') || ''
-            };
-
-            // Generiere Token
-            const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-            // Erstelle Reservierung
-            const reservation = await base44.asServiceRole.entities.Reservation.create({
-                ...data,
-                guest_token: token,
+                notes: formData.get('notes') || '',
+                guest_token: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
                 status: 'vorgemerkt',
                 source: 'online'
+            };
+
+            // Erstelle Reservierung
+            const createResponse = await fetch(`${baseUrl}/entities/Reservation`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(data)
             });
 
-            // Sende Bestätigungsmail
-            try {
-                await base44.asServiceRole.functions.invoke('sendReservationConfirmation', {
-                    reservationId: reservation.id
-                });
-            } catch (emailError) {
-                console.warn('Email konnte nicht gesendet werden:', emailError);
+            if (!createResponse.ok) {
+                throw new Error('Fehler beim Erstellen der Reservierung');
             }
+
+            const reservation = await createResponse.json();
 
             // Erfolgsseite
             const dateObj = new Date(reservation.date);
@@ -387,7 +391,7 @@ Deno.serve(async (req) => {
         });
     } catch (error) {
         console.error('Fehler:', error);
-        return new Response(`<html><body><h1>Fehler beim Laden der Reservierungsseite</h1></body></html>`, {
+        return new Response(`<html><body><h1>Fehler</h1><p>${error.message}</p></body></html>`, {
             status: 500,
             headers: { 'Content-Type': 'text/html' }
         });

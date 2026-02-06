@@ -4,6 +4,7 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
+import { useQueryClient } from '@tanstack/react-query';
 import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
@@ -83,6 +84,7 @@ export default function Layout({ children, currentPageName }) {
      const permissions = usePermissions();
      const [currentUser, setCurrentUser] = React.useState(null);
      const navigate = useNavigate();
+     const queryClient = useQueryClient();
 
      React.useEffect(() => {
          base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -137,8 +139,7 @@ export default function Layout({ children, currentPageName }) {
      };
 
      const handleRefresh = async () => {
-         // Reload current page data using react-query's refetch
-         window.location.reload();
+         await queryClient.invalidateQueries();
      };
 
     return (

@@ -367,17 +367,7 @@ export default function Layout({ children, currentPageName }) {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ duration: 0.3 }}
-                            className="pt-[env(safe-area-inset-top)] md:pt-0 md:block hidden md:pt-safe"
-                        >
-                            {children}
-                        </motion.div>
-                        <motion.div
-                            key={`mobile-${currentPageName}`}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.3 }}
-                            className="pt-[calc(4rem+env(safe-area-inset-top))] md:hidden md:pt-0"
+                            className="pt-[calc(4rem+env(safe-area-inset-top))] md:pt-0"
                         >
                             {children}
                         </motion.div>

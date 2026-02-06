@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { LogOut, ChevronRight, Home, Calendar, Users, Package, Wine, BookOpen, CalendarCheck, CheckSquare, Sparkles, Wrench, TrendingUp, Bell, Shield, GraduationCap, Clock } from 'lucide-react';
+import { LogOut, ChevronRight, Home, Calendar, Users, Package, Wine, BookOpen, CalendarCheck, CheckSquare, Sparkles, Wrench, TrendingUp, Bell, Shield, GraduationCap, Clock, Settings } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { haptics } from '@/components/utils/haptics';
 import { Card } from '@/components/ui/card';
@@ -64,6 +64,7 @@ const navigationSections = [
     {
         title: 'Einstellungen',
         items: [
+            { name: 'Einstellungen', page: 'Settings', icon: Settings, permission: 'canViewDashboard' },
             { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'canViewEmployees' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Shield, permission: 'isManager' },
         ]

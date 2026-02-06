@@ -1,10 +1,11 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    color-scheme: light dark;
+    color-scheme: dark;
     --background: 222.2 47.4% 11.2%;
     --foreground: 210 40% 98%;
     --card: 217.2 32.6% 17.5%;
@@ -25,30 +26,6 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 38 92% 50%;
     --radius: 0.75rem;
-  }
-
-  @media (prefers-color-scheme: light) {
-    :root {
-      --background: 210 40% 96%;
-      --foreground: 222.2 47.4% 11.2%;
-      --card: 210 40% 98%;
-      --card-foreground: 222.2 47.4% 11.2%;
-      --popover: 210 40% 98%;
-      --popover-foreground: 222.2 47.4% 11.2%;
-      --primary: 38 92% 50%;
-      --primary-foreground: 210 40% 98%;
-      --secondary: 217.2 32.6% 91%;
-      --secondary-foreground: 222.2 47.4% 11.2%;
-      --muted: 217.2 32.6% 91%;
-      --muted-foreground: 215 20.2% 25%;
-      --accent: 217.2 32.6% 91%;
-      --accent-foreground: 222.2 47.4% 11.2%;
-      --destructive: 0 84% 60%;
-      --destructive-foreground: 210 40% 98%;
-      --border: 217.2 32.6% 91%;
-      --input: 210 40% 96%;
-      --ring: 38 92% 50%;
-    }
   }
 }
 

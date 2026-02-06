@@ -15,12 +15,12 @@ export function PullToRefresh({ onRefresh, children }) {
     };
 
     const handleTouchMove = (e) => {
-        if (isRefreshing || !containerRef.current || containerRef.current.scrollTop > 0) return;
+        if (isRefreshing || !containerRef.current || containerRef.current.scrollTop > 0 || startY.current === 0) return;
         
         const currentY = e.touches[0].clientY;
         const distance = Math.max(0, currentY - startY.current);
         
-        if (distance > 0) {
+        if (distance > 5) {
             e.preventDefault();
             setPullDistance(Math.min(distance, 120));
         }

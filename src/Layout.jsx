@@ -92,6 +92,13 @@ export default function Layout({ children, currentPageName }) {
 
      React.useEffect(() => {
          base44.auth.me().then(setCurrentUser).catch(() => {});
+         
+         // Beim App-Start immer zur Dashboard-Seite navigieren
+         const isInitialLoad = sessionStorage.getItem('hasVisited') !== 'true';
+         if (isInitialLoad) {
+             sessionStorage.setItem('hasVisited', 'true');
+             navigate(createPageUrl('Dashboard'), { replace: true });
+         }
      }, []);
 
      // Theme beim App-Start laden und anwenden

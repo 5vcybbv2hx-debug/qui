@@ -8,7 +8,7 @@ import { AlertCircle, CheckCircle, Clock, Plus, Wrench } from "lucide-react";
 import MaintenanceModal from "../components/maintenance/MaintenanceModal";
 import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
-import { syncMaintenanceToCalendar, createReminderEvent } from "../components/maintenance/MaintenanceCalendarSync";
+
 
 export default function MaintenancePage() {
     const permissions = usePermissions();
@@ -30,9 +30,6 @@ export default function MaintenancePage() {
                 next_maintenance: nextDate,
                 status: 'erledigt'
             });
-            // Sync updated task to calendar
-            await syncMaintenanceToCalendar(updated);
-            await createReminderEvent(updated);
             return updated;
         },
         onSuccess: () => {

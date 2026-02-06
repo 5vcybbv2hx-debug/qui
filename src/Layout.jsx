@@ -96,7 +96,8 @@ export default function Layout({ children, currentPageName }) {
      // Tab sections for history tracking
      const tabSections = {
          Dashboard: ['Dashboard', 'Notifications', 'MyArea', 'TimeManagement', 'TeamMeeting'],
-         Calendar: ['Calendar', 'Shifts', 'TeamCalendar', 'CalendarIntegration', 'Vacation', 'ShiftSwaps']
+         Calendar: ['Calendar', 'Shifts', 'TeamCalendar', 'CalendarIntegration', 'Vacation', 'ShiftSwaps'],
+         More: ['More', 'Onboarding', 'Employees', 'Permissions', 'Warehouse', 'DrinkMenu', 'Recipes', 'PriceCalculator', 'Suppliers', 'Events', 'Reservations', 'Todos', 'Cleaning', 'Maintenance', 'MaintenanceHistory', 'SalesAnalysis', 'LaborCostAnalysis', 'Budget', 'Reports', 'Documents', 'CompanySettings']
      };
 
      // Get current tab section
@@ -281,11 +282,14 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                     )}
                     <Link
-                        to={createPageUrl('More')}
-                        onClick={() => haptics.selection()}
+                        to={createPageUrl(localStorage.getItem('lastPage_More') || 'More')}
+                        onClick={(e) => {
+                            haptics.selection();
+                            navigateToTab('More', e);
+                        }}
                         className={cn(
                             "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",
-                            currentPageName === 'More' 
+                            getCurrentTab(currentPageName) === 'More' 
                                 ? "text-amber-500" 
                                 : "text-muted-foreground hover:text-amber-500"
                         )}

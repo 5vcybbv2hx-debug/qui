@@ -12,6 +12,7 @@ import PermissionDenied from '@/components/auth/PermissionDenied';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import PDFExportButton from '@/components/export/PDFExportButton';
 import { cn } from "@/lib/utils";
+import VirtualizedList from '@/components/ui/virtualized-list';
 
 export default function Inventory() {
     const permissions = usePermissions();
@@ -322,86 +323,90 @@ export default function Inventory() {
                 </Card>
 
                 {/* Articles */}
-                <div className="space-y-2">
-                    {filteredArticles.map(article => {
-                        const counted = counts[article.id];
-                        const systemStock = article.current_stock || 0;
-                        const diff = counted !== undefined ? counted - systemStock : 0;
-                        const hasDiff = counted !== undefined && diff !== 0;
-                        
-                        return (
-                            <Card 
-                                key={article.id}
-                                id={`article-${article.id}`}
-                                className={cn(
-                                    "p-4 bg-slate-800 border-slate-700 transition-all",
-                                    activeArticle === article.id && "ring-2 ring-blue-500",
-                                    counted !== undefined && "bg-slate-800/50"
-                                )}
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <h3 className="font-semibold text-white">{article.name}</h3>
-                                            {hasDiff && (
-                                                <Badge variant="destructive" className="text-xs">
-                                                    <AlertTriangle className="w-3 h-3 mr-1" />
-                                                    {diff > 0 ? '+' : ''}{diff}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-3 text-xs text-slate-400">
-                                            {article.barcode && (
-                                                <span className="font-mono">{article.barcode}</span>
-                                            )}
-                                            {article.category && (
-                                                <Badge 
-                                                    variant="outline"
-                                                    style={{ 
-                                                        borderColor: categories.find(c => c.name === article.category)?.color,
-                                                        color: categories.find(c => c.name === article.category)?.color 
-                                                    }}
-                                                >
-                                                    {article.category}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </div>
-
+                {filteredArticles.length > 0 ? (
+                    <VirtualizedList
+                        items={filteredArticles}
+                        height={Math.min(filteredArticles.length * 110, 800)}
+                        itemHeight={110}
+                        renderItem={(article) => {
+                            const counted = counts[article.id];
+                            const systemStock = article.current_stock || 0;
+                            const diff = counted !== undefined ? counted - systemStock : 0;
+                            const hasDiff = counted !== undefined && diff !== 0;
+                            
+                            return (
+                                <Card 
+                                    id={`article-${article.id}`}
+                                    className={cn(
+                                        "p-4 bg-slate-800 border-slate-700 transition-all mx-0 my-1",
+                                        activeArticle === article.id && "ring-2 ring-blue-500",
+                                        counted !== undefined && "bg-slate-800/50"
+                                    )}
+                                >
                                     <div className="flex items-center gap-4">
-                                        <div className="text-center">
-                                            <p className="text-xs text-slate-400 mb-1">Soll</p>
-                                            <p className="text-lg font-semibold text-slate-300">{systemStock}</p>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <h3 className="font-semibold text-white">{article.name}</h3>
+                                                {hasDiff && (
+                                                    <Badge variant="destructive" className="text-xs">
+                                                        <AlertTriangle className="w-3 h-3 mr-1" />
+                                                        {diff > 0 ? '+' : ''}{diff}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-3 text-xs text-slate-400">
+                                                {article.barcode && (
+                                                    <span className="font-mono">{article.barcode}</span>
+                                                )}
+                                                {article.category && (
+                                                    <Badge 
+                                                        variant="outline"
+                                                        style={{ 
+                                                            borderColor: categories.find(c => c.name === article.category)?.color,
+                                                            color: categories.find(c => c.name === article.category)?.color 
+                                                        }}
+                                                    >
+                                                        {article.category}
+                                                    </Badge>
+                                                )}
+                                            </div>
                                         </div>
 
-                                        <Input
-                                            type="number"
-                                            value={counted !== undefined ? counted : ''}
-                                            onChange={(e) => handleCountChange(article.id, e.target.value)}
-                                            placeholder="Ist"
-                                            className="w-20 text-center bg-slate-900 border-slate-700 text-white text-lg font-semibold"
-                                            min="0"
-                                        />
-
-                                        {counted !== undefined && (
-                                            <div className={cn(
-                                                "text-center min-w-[50px]",
-                                                diff > 0 && "text-green-400",
-                                                diff < 0 && "text-red-400",
-                                                diff === 0 && "text-slate-400"
-                                            )}>
-                                                <p className="text-xs mb-1">Diff</p>
-                                                <p className="text-lg font-bold">
-                                                    {diff > 0 ? '+' : ''}{diff}
-                                                </p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="text-center">
+                                                <p className="text-xs text-slate-400 mb-1">Soll</p>
+                                                <p className="text-lg font-semibold text-slate-300">{systemStock}</p>
                                             </div>
-                                        )}
+
+                                            <Input
+                                                type="number"
+                                                value={counted !== undefined ? counted : ''}
+                                                onChange={(e) => handleCountChange(article.id, e.target.value)}
+                                                placeholder="Ist"
+                                                className="w-20 text-center bg-slate-900 border-slate-700 text-white text-lg font-semibold"
+                                                min="0"
+                                            />
+
+                                            {counted !== undefined && (
+                                                <div className={cn(
+                                                    "text-center min-w-[50px]",
+                                                    diff > 0 && "text-green-400",
+                                                    diff < 0 && "text-red-400",
+                                                    diff === 0 && "text-slate-400"
+                                                )}>
+                                                    <p className="text-xs mb-1">Diff</p>
+                                                    <p className="text-lg font-bold">
+                                                        {diff > 0 ? '+' : ''}{diff}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </Card>
-                        );
-                    })}
-                </div>
+                                </Card>
+                            );
+                        }}
+                    />
+                ) : null}
 
                 {filteredArticles.length === 0 && (
                     <div className="text-center py-12">

@@ -12,6 +12,7 @@ import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QRCodeGenerator from "@/components/qr/QRCodeGenerator";
+import DailySpecialGenerator from "../components/menu/DailySpecialGenerator";
 
 export default function DrinkMenuPage() {
     const permissions = usePermissions();
@@ -114,6 +115,10 @@ export default function DrinkMenuPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {permissions.canEditEmployees && (
+                    <DailySpecialGenerator menuItems={items} />
+                )}
 
                 <div className="space-y-6">
                     {Object.entries(groupedByCategory).map(([category, categoryItems]) => (

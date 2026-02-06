@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AdminDashboard from './pages/AdminDashboard';
 import ArticleEdit from './pages/ArticleEdit';
 import Articles from './pages/Articles';
 import Budget from './pages/Budget';
@@ -88,6 +89,8 @@ import Shopping from './pages/Shopping';
 import Suppliers from './pages/Suppliers';
 import TeamCalendar from './pages/TeamCalendar';
 import TeamMeeting from './pages/TeamMeeting';
+import TenantDetail from './pages/TenantDetail';
+import TenantForm from './pages/TenantForm';
 import TerminalClock from './pages/TerminalClock';
 import TimeManagement from './pages/TimeManagement';
 import TimeTracking from './pages/TimeTracking';
@@ -95,13 +98,11 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
-import AdminDashboard from './pages/AdminDashboard';
-import TenantForm from './pages/TenantForm';
-import TenantDetail from './pages/TenantDetail';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AdminDashboard": AdminDashboard,
     "ArticleEdit": ArticleEdit,
     "Articles": Articles,
     "Budget": Budget,
@@ -143,6 +144,8 @@ export const PAGES = {
     "Suppliers": Suppliers,
     "TeamCalendar": TeamCalendar,
     "TeamMeeting": TeamMeeting,
+    "TenantDetail": TenantDetail,
+    "TenantForm": TenantForm,
     "TerminalClock": TerminalClock,
     "TimeManagement": TimeManagement,
     "TimeTracking": TimeTracking,
@@ -150,9 +153,6 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
-    "AdminDashboard": AdminDashboard,
-    "TenantForm": TenantForm,
-    "TenantDetail": TenantDetail,
 }
 
 export const pagesConfig = {

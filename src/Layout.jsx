@@ -361,7 +361,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
 
             {/* Main Content */}
-            <main className="md:pl-72 pt-safe pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+            <main className="md:pl-72 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
                 <PullToRefresh onRefresh={handleRefresh}>
                     <AnimatePresence mode="wait">
                         <motion.div

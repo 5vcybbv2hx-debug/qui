@@ -506,34 +506,58 @@ export default function Dashboard() {
                     <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
                 </div>
 
-                <Link to={createPageUrl('TerminalClock')}>
-                    <Card className="p-6 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl"
-                                     style={{ backgroundColor: currentEmployee.color || '#64748b' }}>
-                                    {currentEmployee.name?.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                    {activeClockEntry ? (
-                                        <>
-                                            <p className="text-white font-semibold">Eingestempelt</p>
-                                            <p className="text-green-400 text-sm">
-                                                Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-white font-semibold">Nicht eingestempelt</p>
-                                            <p className="text-slate-400 text-sm">Bereit zum Einstempeln</p>
-                                        </>
-                                    )}
-                                </div>
+                <Card className="p-6 bg-slate-800 border-slate-700">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4 flex-1">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl"
+                                 style={{ backgroundColor: currentEmployee.color || '#64748b' }}>
+                                {currentEmployee.name?.charAt(0).toUpperCase()}
                             </div>
-                            <ArrowRight className="w-6 h-6 text-slate-400" />
+                            <div>
+                                {activeClockEntry ? (
+                                    <>
+                                        <p className="text-white font-semibold">Eingestempelt</p>
+                                        <p className="text-green-400 text-sm">
+                                            Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-white font-semibold">Nicht eingestempelt</p>
+                                        <p className="text-slate-400 text-sm">Bereit zum Einstempeln</p>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </Card>
-                </Link>
+                    </div>
+
+                    <div className="flex gap-3">
+                        {activeClockEntry ? (
+                            <Button
+                                onClick={() => clockOutMutation.mutate(activeClockEntry.id)}
+                                disabled={clockOutMutation.isPending}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white gap-2"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Ausstempeln
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={() => clockInMutation.mutate(currentEmployee.id)}
+                                disabled={clockInMutation.isPending}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
+                            >
+                                <LogIn className="w-4 h-4" />
+                                Einstempeln
+                            </Button>
+                        )}
+                        <Link to={createPageUrl('TerminalClock')} className="flex-1">
+                            <Button variant="outline" className="w-full border-slate-600 text-slate-300">
+                                Details
+                            </Button>
+                        </Link>
+                    </div>
+                </Card>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Link to={createPageUrl('Calendar')}>

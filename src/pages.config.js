@@ -70,6 +70,7 @@ import MaintenanceHistory from './pages/MaintenanceHistory';
 import More from './pages/More';
 import MyArea from './pages/MyArea';
 import MyProfile from './pages/MyProfile';
+import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
@@ -79,6 +80,7 @@ import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
 import SalesAnalysis from './pages/SalesAnalysis';
+import Settings from './pages/Settings';
 import ShiftAnalytics from './pages/ShiftAnalytics';
 import ShiftSwaps from './pages/ShiftSwaps';
 import Shifts from './pages/Shifts';
@@ -93,8 +95,6 @@ import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
-import NotificationSettings from './pages/NotificationSettings';
-import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
@@ -122,6 +122,7 @@ export const PAGES = {
     "More": More,
     "MyArea": MyArea,
     "MyProfile": MyProfile,
+    "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
     "Onboarding": Onboarding,
     "Permissions": Permissions,
@@ -131,6 +132,7 @@ export const PAGES = {
     "Reservations": Reservations,
     "Restock": Restock,
     "SalesAnalysis": SalesAnalysis,
+    "Settings": Settings,
     "ShiftAnalytics": ShiftAnalytics,
     "ShiftSwaps": ShiftSwaps,
     "Shifts": Shifts,
@@ -145,8 +147,6 @@ export const PAGES = {
     "Vacation": Vacation,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
-    "NotificationSettings": NotificationSettings,
-    "Settings": Settings,
 }
 
 export const pagesConfig = {

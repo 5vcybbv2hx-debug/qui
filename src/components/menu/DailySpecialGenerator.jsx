@@ -3,22 +3,81 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
+
+// Hilfsfunktion zum Parsen der Größenangabe in Liter
+const parseServingSize = (sizeString) => {
+    if (!sizeString) return 0;
+    
+    const size = sizeString.toLowerCase().replace(',', '.');
+    
+    if (size.includes('l')) {
+        return parseFloat(size.replace('l', '').trim()) || 0;
+    }
+    if (size.includes('cl')) {
+        return (parseFloat(size.replace('cl', '').trim()) || 0) / 100;
+    }
+    if (size.includes('ml')) {
+        return (parseFloat(size.replace('ml', '').trim()) || 0) / 1000;
+    }
+    
+    return 0;
+};
 
 export default function DailySpecialGenerator({ menuItems = [] }) {
     const [specials, setSpecials] = useState([]);
     const [isGenerating, setIsGenerating] = useState(false);
 
+    const { data: articles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list()
+    });
+
     const generateSpecials = () => {
         setIsGenerating(true);
         
-        // Berechne Marge für alle Getränke mit Einkaufspreis
+        // Berechne Marge für alle Getränke
         const itemsWithMargin = menuItems
-            .filter(item => item.purchase_price && item.purchase_price > 0 && item.price > 0)
             .map(item => {
-                const margin = item.price - item.purchase_price;
-                const margin_percentage = (margin / item.price) * 100;
-                return { ...item, margin, margin_percentage };
-            });
+                let purchasePrice = 0;
+
+                // Wenn mit Artikel verknüpft, berechne EK anhand Größe
+                if (item.linked_article_id) {
+                    const linkedArticle = articles.find(a => a.id === item.linked_article_id);
+                    if (linkedArticle) {
+                        const servingSize = parseServingSize(item.size);
+                        
+                        if (linkedArticle.price_per_liter && servingSize > 0) {
+                            purchasePrice = linkedArticle.price_per_liter * servingSize;
+                        } else if (linkedArticle.purchase_price && linkedArticle.content_amount && servingSize > 0) {
+                            let contentInLiters = linkedArticle.content_amount;
+                            const contentUnit = (linkedArticle.content_unit || 'ml').toLowerCase();
+                            
+                            if (contentUnit === 'ml') contentInLiters = linkedArticle.content_amount / 1000;
+                            else if (contentUnit === 'cl') contentInLiters = linkedArticle.content_amount / 100;
+                            else if (contentUnit === 'g') contentInLiters = linkedArticle.content_amount / 1000;
+                            else if (contentUnit === 'l' || contentUnit === 'kg') contentInLiters = linkedArticle.content_amount;
+                            
+                            const pricePerLiter = linkedArticle.purchase_price / contentInLiters;
+                            purchasePrice = pricePerLiter * servingSize;
+                        }
+                    }
+                }
+                // Sonst nehme manuellen EK
+                else if (item.purchase_price) {
+                    purchasePrice = item.purchase_price;
+                }
+
+                if (purchasePrice > 0 && item.price > 0) {
+                    const margin = item.price - purchasePrice;
+                    const margin_percentage = (margin / purchasePrice) * 100;
+                    return { ...item, margin, margin_percentage, calculated_purchase_price: purchasePrice };
+                }
+                
+                return null;
+            })
+            .filter(item => item !== null);
 
         if (itemsWithMargin.length === 0) {
             toast.error('Keine Getränke mit Einkaufspreis verfügbar');

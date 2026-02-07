@@ -66,7 +66,7 @@ export default function DrinkMenuPage() {
     return (
         <div className="min-h-screen bg-slate-900 p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-4">
                     <div>
                         <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                             <Wine className="h-8 w-8 text-amber-400" />
@@ -74,15 +74,31 @@ export default function DrinkMenuPage() {
                         </h1>
                         <p className="text-slate-400 mt-1">Verwaltung der Getränke und Preise</p>
                     </div>
-                    {permissions.canEditEmployees && (
-                        <Button 
-                            onClick={() => { setSelectedItem(null); setShowModal(true); }}
-                            className="bg-amber-600 hover:bg-amber-700 text-white"
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Neues Getränk
-                        </Button>
-                    )}
+                    <div className="flex gap-2">
+                        {permissions.canEditEmployees && (
+                            <>
+                                <Button 
+                                    onClick={() => {
+                                        const url = `${window.location.origin}/PublicMenu`;
+                                        navigator.clipboard.writeText(url);
+                                        alert('Link zur öffentlichen Getränkekarte wurde kopiert!');
+                                    }}
+                                    variant="outline"
+                                    className="border-amber-600 text-amber-400 hover:bg-amber-900/20"
+                                >
+                                    <Link2 className="h-4 w-4 mr-2" />
+                                    Gäste-Link
+                                </Button>
+                                <Button 
+                                    onClick={() => { setSelectedItem(null); setShowModal(true); }}
+                                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Neues Getränk
+                                </Button>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 <Card className="bg-slate-800 border-slate-700">

@@ -16,16 +16,26 @@ export default function PublicMenu() {
     const { data: menuItems = [], isLoading } = useQuery({
         queryKey: ['publicMenu'],
         queryFn: async () => {
-            const response = await base44.functions.invoke('getPublicMenu', {});
-            return response.data.items || [];
+            try {
+                const items = await base44.entities.MenuItem.filter({ is_available: true });
+                return items.sort((a, b) => (a.order_position || 999) - (b.order_position || 999));
+            } catch (error) {
+                console.error('Fehler beim Laden der Menü-Items:', error);
+                return [];
+            }
         }
     });
 
     const { data: companyInfo } = useQuery({
         queryKey: ['companyInfo'],
         queryFn: async () => {
-            const response = await base44.functions.invoke('getCompanyInfo', {});
-            return response.data || {};
+            try {
+                const data = await base44.entities.CompanyInfo.list();
+                return data[0] || {};
+            } catch (error) {
+                console.error('Fehler beim Laden der Firmendaten:', error);
+                return {};
+            }
         }
     });
 

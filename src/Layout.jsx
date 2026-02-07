@@ -81,6 +81,7 @@ const navigationSections = [
         title: 'Einstellungen',
         items: [
             { name: 'Einstellungen', page: 'Settings', icon: Settings, permission: 'canViewDashboard' },
+            { name: 'Benachrichtigungen', page: 'NotificationSettings', icon: Bell, permission: 'canViewDashboard' },
             { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'isManager' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Shield, permission: 'isManager' },
         ]

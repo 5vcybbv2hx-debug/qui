@@ -30,10 +30,7 @@ const frequencyLabels = {
 };
 
 export default function CleaningList({ tasks, areas, onComplete, onReset, userName }) {
-    // Filtere nur aktive Tasks
-    const activeTasks = tasks.filter(task => task.is_active !== false);
-    
-    const groupedTasks = activeTasks.reduce((acc, task) => {
+    const groupedTasks = tasks.reduce((acc, task) => {
         const area = task.area || 'Sonstiges';
         if (!acc[area]) acc[area] = [];
         acc[area].push(task);
@@ -185,7 +182,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                 );
             })}
             
-            {activeTasks.length === 0 && (
+            {tasks.length === 0 && (
                 <div className="text-center py-12 text-slate-400">
                     <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
                     <p>Keine aktiven Aufgaben vorhanden</p>

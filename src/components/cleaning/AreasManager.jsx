@@ -104,97 +104,103 @@ export default function AreasManager({ trigger }) {
                         <DialogTitle>Bereiche verwalten</DialogTitle>
                     </DialogHeader>
 
-                    {!editingArea ? (
-                        <div className="space-y-4 mt-4">
+                    <div className="space-y-6 mt-4">
+                        {/* Bereiche Liste */}
+                        <div className="space-y-3">
+                            <h3 className="text-sm font-semibold text-slate-700">Vorhandene Bereiche</h3>
                             <div className="space-y-2 max-h-64 overflow-y-auto">
-                                {areas.map((area) => (
-                                    <div 
-                                        key={area.id}
-                                        className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
-                                    >
-                                        <GripVertical className="w-4 h-4 text-slate-400" />
+                                {areas.length === 0 ? (
+                                    <p className="text-sm text-slate-500 text-center py-4">Noch keine Bereiche vorhanden</p>
+                                ) : (
+                                    areas.map((area) => (
                                         <div 
-                                            className="w-4 h-4 rounded-full"
-                                            style={{ backgroundColor: area.color }}
-                                        />
-                                        <span className="flex-1 font-medium text-slate-800">
-                                            {area.name}
-                                        </span>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => openModal(area)}
+                                            key={area.id}
+                                            className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
                                         >
-                                            <Pencil className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-red-500 hover:text-red-600"
-                                            onClick={() => handleDelete(area.id)}
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                ))}
+                                            <GripVertical className="w-4 h-4 text-slate-400" />
+                                            <div 
+                                                className="w-4 h-4 rounded-full"
+                                                style={{ backgroundColor: area.color }}
+                                            />
+                                            <span className="flex-1 font-medium text-slate-800">
+                                                {area.name}
+                                            </span>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => openModal(area)}
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-500 hover:text-red-600"
+                                                onClick={() => handleDelete(area.id)}
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    ))
+                                )}
                             </div>
-                            
-                            <Button 
-                                onClick={() => openModal()}
-                                className="w-full bg-amber-600 hover:bg-amber-700"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Neuer Bereich
-                            </Button>
                         </div>
-                    ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <Label>Name</Label>
-                                <Input
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="z.B. Theke"
-                                    required
-                                />
-                            </div>
 
-                            <div className="space-y-2">
-                                <Label>Farbe</Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {DEFAULT_COLORS.map(color => (
-                                        <button
-                                            key={color}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, color })}
-                                            className={cn(
-                                                "w-8 h-8 rounded-full transition-transform",
-                                                formData.color === color && "ring-2 ring-offset-2 ring-slate-400 scale-110"
-                                            )}
-                                            style={{ backgroundColor: color }}
-                                        />
-                                    ))}
+                        {/* Neuer Bereich Formular */}
+                        <div className="space-y-3 pt-4 border-t border-slate-200">
+                            <h3 className="text-sm font-semibold text-slate-700">
+                                {editingArea ? 'Bereich bearbeiten' : 'Neuer Bereich'}
+                            </h3>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label>Name</Label>
+                                    <Input
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        placeholder="z.B. Theke"
+                                        required
+                                    />
                                 </div>
-                            </div>
 
-                            <div className="flex gap-2 pt-4">
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    onClick={closeModal}
-                                    className="flex-1"
-                                >
-                                    Abbrechen
-                                </Button>
-                                <Button 
-                                    type="submit"
-                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
-                                >
-                                    Speichern
-                                </Button>
-                            </div>
-                        </form>
-                    )}
+                                <div className="space-y-2">
+                                    <Label>Farbe</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {DEFAULT_COLORS.map(color => (
+                                            <button
+                                                key={color}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, color })}
+                                                className={cn(
+                                                    "w-8 h-8 rounded-full transition-transform",
+                                                    formData.color === color && "ring-2 ring-offset-2 ring-slate-400 scale-110"
+                                                )}
+                                                style={{ backgroundColor: color }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 pt-2">
+                                    {editingArea && (
+                                        <Button 
+                                            type="button" 
+                                            variant="outline" 
+                                            onClick={closeModal}
+                                            className="flex-1"
+                                        >
+                                            Abbrechen
+                                        </Button>
+                                    )}
+                                    <Button 
+                                        type="submit"
+                                        className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                    >
+                                        {editingArea ? 'Speichern' : 'Hinzufügen'}
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

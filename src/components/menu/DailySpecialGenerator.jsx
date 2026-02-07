@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { createPageUrl } from '@/utils';
 
 // Hilfsfunktion zum Parsen der Größenangabe in Liter
 const parseServingSize = (sizeString) => {
@@ -113,14 +114,25 @@ export default function DailySpecialGenerator({ menuItems = [] }) {
                         <Sparkles className="w-5 h-5 text-amber-400" />
                         Tages-Specials
                     </CardTitle>
-                    <Button
-                        size="sm"
-                        onClick={generateSpecials}
-                        disabled={isGenerating}
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
-                    >
-                        {isGenerating ? 'Generiert...' : 'Neu generieren'}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            onClick={generateSpecials}
+                            disabled={isGenerating}
+                            className="bg-amber-600 hover:bg-amber-700 text-white"
+                        >
+                            {isGenerating ? 'Generiert...' : 'Neu generieren'}
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(createPageUrl('DailySpecialsDisplay'), '_blank')}
+                            className="border-amber-600 text-amber-400 hover:bg-amber-600/10"
+                        >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Display
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
 

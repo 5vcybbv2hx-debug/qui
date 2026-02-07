@@ -11,20 +11,24 @@ export default function DailySpecialGenerator({ menuItems = [] }) {
     const generateSpecials = () => {
         setIsGenerating(true);
         
-        // Filtere Getränke mit Marge
-        const itemsWithMargin = menuItems.filter(item => 
-            item.margin_percentage !== undefined && item.margin_percentage !== null
-        );
+        // Berechne Marge für alle Getränke mit Einkaufspreis
+        const itemsWithMargin = menuItems
+            .filter(item => item.purchase_price && item.purchase_price > 0 && item.price > 0)
+            .map(item => {
+                const margin = item.price - item.purchase_price;
+                const margin_percentage = (margin / item.price) * 100;
+                return { ...item, margin, margin_percentage };
+            });
 
         if (itemsWithMargin.length === 0) {
-            toast.error('Keine Getränke mit Margen-Daten verfügbar');
+            toast.error('Keine Getränke mit Einkaufspreis verfügbar');
             setIsGenerating(false);
             return;
         }
 
         // Sortiere nach Marge (höchste zuerst)
         const sorted = [...itemsWithMargin].sort((a, b) => 
-            (b.margin_percentage || 0) - (a.margin_percentage || 0)
+            b.margin_percentage - a.margin_percentage
         );
 
         // Nimm die besten 50% und wähle zufällig 3 aus

@@ -12,6 +12,9 @@ const parseServingSize = (sizeString) => {
     return 0;
 };
 
+// Prevent Layout from wrapping this page
+DailySpecialsDisplay.noLayout = true;
+
 export default function DailySpecialsDisplay() {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [specials, setSpecials] = useState([]);

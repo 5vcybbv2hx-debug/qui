@@ -3,14 +3,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        
-        // Öffentlicher Zugriff auf Firmendaten (ohne Auth)
-        const infos = await base44.asServiceRole.entities.CompanyInfo.list();
-        const companyInfo = infos[0] || {};
+
+        // Hole Firmendaten (Service Role da öffentlich)
+        const companyData = await base44.asServiceRole.entities.CompanyInfo.list();
+        const companyInfo = companyData[0] || {};
 
         return Response.json(companyInfo);
     } catch (error) {
-        console.error('Fehler beim Abrufen der Firmendaten:', error);
-        return Response.json({}, { status: 500 });
+        console.error('Fehler beim Laden der Firmendaten:', error);
+        return Response.json({ 
+            error: error.message,
+            company_name: 'BarManager'
+        }, { status: 500 });
     }
 });

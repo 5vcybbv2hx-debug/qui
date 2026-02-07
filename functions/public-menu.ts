@@ -1,35 +1,18 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
 Deno.serve(async (req) => {
     try {
+        const base44 = createClientFromRequest(req);
         const url = new URL(req.url);
         const tableNumber = url.searchParams.get('table');
-        
-        // Hole App ID aus Environment
-        const appId = Deno.env.get('BASE44_APP_ID');
-        if (!appId) {
-            throw new Error('App ID nicht gefunden');
-        }
 
-        // Hole Daten direkt aus der Base44 API
-        const baseUrl = 'https://api.base44.com';
-        const headers = {
-            'X-App-Id': appId,
-            'Content-Type': 'application/json'
-        };
-
-        // Hole Menü-Items
-        const menuResponse = await fetch(`${baseUrl}/entities/MenuItem?filter=${encodeURIComponent(JSON.stringify({ is_available: true }))}`, {
-            headers
-        });
-        const menuData = await menuResponse.json();
-        const items = menuData.data || [];
+        // Hole Menü-Items (ohne Authentifizierung, daher asServiceRole)
+        const items = await base44.asServiceRole.entities.MenuItem.filter({ is_available: true });
         const sortedItems = items.sort((a, b) => (a.order_position || 999) - (b.order_position || 999));
 
         // Hole Firmendaten
-        const companyResponse = await fetch(`${baseUrl}/entities/CompanyInfo`, {
-            headers
-        });
-        const companyData = await companyResponse.json();
-        const companyInfo = (companyData.data && companyData.data[0]) || {};
+        const companyData = await base44.asServiceRole.entities.CompanyInfo.list();
+        const companyInfo = companyData[0] || {};
         const barName = companyInfo.company_name || 'BarManager';
 
         // Gruppiere Items nach Kategorie

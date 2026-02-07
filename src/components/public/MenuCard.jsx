@@ -1,83 +1,66 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Wine, Coffee, Beer, Sparkles } from 'lucide-react';
-
-const getCategoryIcon = (category) => {
-    switch (category) {
-        case 'Cocktails':
-        case 'Moonshiner-Cocktails':
-        case 'Longdrinks':
-            return <Sparkles className="w-4 h-4" />;
-        case 'Bier':
-            return <Beer className="w-4 h-4" />;
-        case 'Heißgetränke':
-            return <Coffee className="w-4 h-4" />;
-        default:
-            return <Wine className="w-4 h-4" />;
-    }
-};
 
 export default function MenuCard({ item }) {
     return (
-        <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+        <Card className="bg-slate-800 border-slate-700 overflow-hidden hover:scale-[1.02] transition-transform">
             {item.image_url && (
-                <div className="aspect-video w-full overflow-hidden bg-muted">
-                    <img 
-                        src={item.image_url} 
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                    />
-                </div>
+                <img 
+                    src={item.image_url} 
+                    alt={item.name}
+                    className="w-full h-48 object-cover"
+                />
             )}
-            <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                        <CardTitle className="text-lg">{item.name}</CardTitle>
-                        {item.size && (
-                            <p className="text-sm text-muted-foreground mt-0.5">{item.size}</p>
-                        )}
+            <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-white mb-2">{item.name}</h3>
+                
+                {item.description && (
+                    <p className="text-slate-400 text-sm mb-4">{item.description}</p>
+                )}
+
+                <div className="flex items-center justify-between">
+                    <div className="text-2xl font-bold text-amber-500">
+                        €{item.price.toFixed(2)}
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                            {getCategoryIcon(item.category)}
+                    {item.category && (
+                        <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20">
                             {item.category}
                         </Badge>
-                        <span className="text-xl font-bold text-primary">
-                            {item.price.toFixed(2)}€
-                        </span>
-                    </div>
+                    )}
                 </div>
-            </CardHeader>
-            {(item.description || item.allergens || item.alcohol_content) && (
-                <CardContent className="pt-0 space-y-2">
-                    {item.description && (
-                        <p className="text-sm text-muted-foreground">{item.description}</p>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                    {item.size && (
+                        <Badge variant="outline" className="border-slate-600 text-slate-300">
+                            {item.size}
+                        </Badge>
                     )}
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        {item.alcohol_content > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                                {item.alcohol_content}% Vol.
-                            </Badge>
-                        )}
-                        {item.is_special && (
-                            <Badge className="text-xs bg-amber-500">
-                                Tagesangebot
-                            </Badge>
-                        )}
-                        {item.is_seasonal && (
-                            <Badge className="text-xs bg-green-500">
-                                Saisonal
-                            </Badge>
-                        )}
-                    </div>
-                    {item.allergens && (
-                        <p className="text-xs text-muted-foreground pt-1">
-                            <strong>Allergene:</strong> {item.allergens}
+                    {item.alcohol_content && (
+                        <Badge variant="outline" className="border-slate-600 text-slate-300">
+                            {item.alcohol_content}% Vol.
+                        </Badge>
+                    )}
+                    {item.is_seasonal && (
+                        <Badge className="bg-green-900/50 text-green-300 border-green-800">
+                            Saisonal
+                        </Badge>
+                    )}
+                    {item.is_special && (
+                        <Badge className="bg-amber-900/50 text-amber-300 border-amber-800">
+                            Special
+                        </Badge>
+                    )}
+                </div>
+
+                {item.allergens && (
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                        <p className="text-xs text-slate-500">
+                            <span className="font-semibold">Allergene:</span> {item.allergens}
                         </p>
-                    )}
-                </CardContent>
-            )}
+                    </div>
+                )}
+            </CardContent>
         </Card>
     );
 }

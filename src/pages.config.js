@@ -102,6 +102,7 @@ import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import AdminDashboard from './pages/AdminDashboard';
+import WeeklyTasks from './pages/WeeklyTasks';
 import __Layout from './Layout.jsx';
 
 
@@ -161,6 +162,7 @@ export const PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "AdminDashboard": AdminDashboard,
+    "WeeklyTasks": WeeklyTasks,
 }
 
 export const pagesConfig = {

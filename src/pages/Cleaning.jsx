@@ -518,7 +518,7 @@ export default function Cleaning() {
                                                 <SelectValue placeholder="Automatisch zuweisen" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value={null}>Automatisch (Aushilfe des Tages)</SelectItem>
+                                                   <SelectItem value={null}>Automatisch (Aushilfe des Tages)</SelectItem>
                                                 {allEmployees.map(emp => (
                                                     <SelectItem key={emp.id} value={emp.id}>
                                                         {emp.name} ({emp.role})

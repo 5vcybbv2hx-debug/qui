@@ -40,6 +40,13 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
         return acc;
     }, {});
 
+    // Sortiere Bereiche: "Wochentagsaufgaben" immer zuerst
+    const sortedAreas = Object.keys(groupedTasks).sort((a, b) => {
+        if (a === 'Wochentagsaufgaben') return -1;
+        if (b === 'Wochentagsaufgaben') return 1;
+        return a.localeCompare(b);
+    });
+
     const getAreaColor = (areaName) => {
         const area = areas.find(a => a.name === areaName);
         return area?.color || '#64748b';
@@ -47,7 +54,8 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
 
     return (
         <div className="space-y-4">
-            {Object.entries(groupedTasks).map(([area, areaTasks]) => {
+            {sortedAreas.map((area) => {
+                const areaTasks = groupedTasks[area];
                 const completedCount = areaTasks.filter(t => t.is_completed).length;
                 const progress = (completedCount / areaTasks.length) * 100;
                 
@@ -122,26 +130,36 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                         
                                         <div className="flex-1 min-w-0">
                                             <p className={cn(
-                                                "text-sm font-medium",
-                                                task.is_completed ? "text-slate-500 line-through" : "text-white"
+                                               "text-sm font-medium",
+                                               task.is_completed ? "text-slate-500 line-through" : "text-white"
                                             )}>
-                                                {task.title}
+                                               {task.title}
                                             </p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] uppercase tracking-wider text-slate-500">
-                                                    {frequencyLabels[task.frequency]}
-                                                </span>
-                                                {task.is_completed && task.completed_by && (
-                                                    <Link 
-                                                        to={createPageUrl('Employees')}
-                                                        className="text-[10px] text-slate-500 hover:text-amber-500 transition-colors flex items-center gap-1"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        • {task.completed_by.split(' ')[0]}
-                                                        {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
-                                                        <ExternalLink className="w-2 h-2" />
-                                                    </Link>
-                                                )}
+                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                               <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                                                   {frequencyLabels[task.frequency]}
+                                               </span>
+                                               {task.due_date && (
+                                                   <span className="text-[10px] text-amber-500">
+                                                       • Fällig: {format(new Date(task.due_date), 'dd.MM.yyyy', { locale: de })}
+                                                   </span>
+                                               )}
+                                               {task.assigned_to_name && (
+                                                   <span className="text-[10px] text-blue-400">
+                                                       • {task.assigned_to_name}
+                                                   </span>
+                                               )}
+                                               {task.is_completed && task.completed_by && (
+                                                   <Link 
+                                                       to={createPageUrl('Employees')}
+                                                       className="text-[10px] text-slate-500 hover:text-amber-500 transition-colors flex items-center gap-1"
+                                                       onClick={(e) => e.stopPropagation()}
+                                                   >
+                                                       • {task.completed_by.split(' ')[0]}
+                                                       {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
+                                                       <ExternalLink className="w-2 h-2" />
+                                                   </Link>
+                                               )}
                                             </div>
                                         </div>
                                         

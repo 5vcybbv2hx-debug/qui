@@ -26,7 +26,10 @@ export default function Cleaning() {
     const [formData, setFormData] = useState({
         title: '',
         area: 'Theke',
-        frequency: 'täglich'
+        frequency: 'täglich',
+        due_date: '',
+        assigned_to: '',
+        assigned_to_name: ''
     });
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [pendingUpdates, setPendingUpdates] = useState([]);
@@ -98,6 +101,16 @@ export default function Cleaning() {
         queryFn: () => base44.entities.CleaningArea.list('order')
     });
 
+    const { data: shifts = [] } = useQuery({
+        queryKey: ['shifts'],
+        queryFn: () => base44.entities.Shift.list()
+    });
+
+    const { data: allEmployees = [] } = useQuery({
+        queryKey: ['all-employees'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+    });
+
     const { data: reports = [] } = useQuery({
         queryKey: ['cleaning-reports'],
         queryFn: () => base44.entities.CleaningReport.list('-created_date', 20)
@@ -113,7 +126,7 @@ export default function Cleaning() {
         onSuccess: () => {
             queryClient.invalidateQueries(['cleaning']);
             setModalOpen(false);
-            setFormData({ title: '', area: 'Theke', frequency: 'täglich' });
+            setFormData({ title: '', area: 'Theke', frequency: 'täglich', due_date: '', assigned_to: '', assigned_to_name: '' });
         }
     });
 
@@ -240,7 +253,23 @@ export default function Cleaning() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        createMutation.mutate(formData);
+        
+        // Automatische Zuweisung für Wochentagsaufgaben mit Datum
+        let finalData = { ...formData };
+        if (formData.area === 'Wochentagsaufgaben' && formData.due_date && !formData.assigned_to) {
+            // Finde Aushilfe die an diesem Tag arbeitet
+            const dateShifts = shifts.filter(s => s.date === formData.due_date);
+            const aushilfe = dateShifts
+                .map(s => allEmployees.find(e => e.id === s.employee_id))
+                .find(e => e && e.role === 'Aushilfe');
+            
+            if (aushilfe) {
+                finalData.assigned_to = aushilfe.id;
+                finalData.assigned_to_name = aushilfe.name;
+            }
+        }
+        
+        createMutation.mutate(finalData);
     };
 
     const generateWeeklyReport = async () => {
@@ -460,6 +489,49 @@ export default function Cleaning() {
                                     </Select>
                                 </div>
                             </div>
+
+                            {formData.area === 'Wochentagsaufgaben' && (
+                                <div className="space-y-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                    <div className="space-y-2">
+                                        <Label>Fälligkeitsdatum</Label>
+                                        <Input
+                                            type="date"
+                                            value={formData.due_date}
+                                            onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Zuweisen an (optional)</Label>
+                                        <Select 
+                                            value={formData.assigned_to} 
+                                            onValueChange={(v) => {
+                                                const emp = allEmployees.find(e => e.id === v);
+                                                setFormData({ 
+                                                    ...formData, 
+                                                    assigned_to: v,
+                                                    assigned_to_name: emp?.name || ''
+                                                });
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Automatisch zuweisen" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value={null}>Automatisch (Aushilfe des Tages)</SelectItem>
+                                                {allEmployees.map(emp => (
+                                                    <SelectItem key={emp.id} value={emp.id}>
+                                                        {emp.name} ({emp.role})
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-slate-500">
+                                            Ohne Auswahl wird automatisch die Aushilfe zugewiesen, die an diesem Tag arbeitet
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex gap-2 pt-4">
                                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">

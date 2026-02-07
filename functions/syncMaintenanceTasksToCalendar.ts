@@ -15,6 +15,17 @@ Deno.serve(async (req) => {
             sync_to_calendar: true
         });
 
+        // Delete old maintenance events and reminders from Event entity
+        const allEvents = await base44.asServiceRole.entities.Event.list();
+        const eventsToDelete = allEvents.filter(event => 
+            event.title?.startsWith('Wartung: ') || 
+            event.title?.startsWith('⏰ Erinnerung: ')
+        );
+        
+        for (const event of eventsToDelete) {
+            await base44.asServiceRole.entities.Event.delete(event.id);
+        }
+
         let synced = 0;
         let reminders = 0;
 

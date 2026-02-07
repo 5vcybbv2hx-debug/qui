@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AdminDashboard from './pages/AdminDashboard';
 import ArticleEdit from './pages/ArticleEdit';
 import Articles from './pages/Articles';
 import Budget from './pages/Budget';
@@ -105,6 +106,7 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AdminDashboard": AdminDashboard,
     "ArticleEdit": ArticleEdit,
     "Articles": Articles,
     "Budget": Budget,

@@ -7,8 +7,12 @@ export default function MenuFilters({ selectedCategory, onCategoryChange }) {
     const { data: menuItems = [] } = useQuery({
         queryKey: ['publicMenu'],
         queryFn: async () => {
-            const response = await base44.functions.invoke('getPublicMenu', {});
-            return response.data.items || [];
+            try {
+                const items = await base44.entities.MenuItem.filter({ is_available: true });
+                return items.sort((a, b) => (a.order_position || 999) - (b.order_position || 999));
+            } catch (error) {
+                return [];
+            }
         }
     });
 

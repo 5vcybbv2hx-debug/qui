@@ -32,16 +32,26 @@ Deno.serve(async (req) => {
             color: #f1f5f9;
             min-height: 100vh;
             padding-bottom: 2rem;
+            overflow-x: hidden;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
         }
         .header {
-            background: rgba(30, 41, 59, 0.95);
-            backdrop-filter: blur(12px);
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(148, 163, 184, 0.1);
             padding: 1.5rem;
             position: sticky;
             top: 0;
             z-index: 100;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.5s ease-out;
         }
         .header-content {
             max-width: 1200px;
@@ -54,16 +64,18 @@ Deno.serve(async (req) => {
             margin-bottom: 1rem;
         }
         .logo {
-            width: 48px;
-            height: 48px;
-            border-radius: 16px;
+            width: 56px;
+            height: 56px;
+            border-radius: 18px;
             background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 8px 16px rgba(245, 158, 11, 0.2);
+            font-size: 1.75rem;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+            transition: transform 0.3s ease;
         }
+        .logo:hover { transform: scale(1.05) rotate(5deg); }
         h1 { font-size: 1.75rem; color: #f1f5f9; font-weight: 700; }
         .table-info { color: #94a3b8; font-size: 0.875rem; margin-top: 0.25rem; }
         .filters {
@@ -77,23 +89,41 @@ Deno.serve(async (req) => {
         .filters::-webkit-scrollbar-track { background: rgba(148, 163, 184, 0.1); }
         .filters::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.5); border-radius: 2px; }
         .filter-btn {
-            padding: 0.5rem 1rem;
+            padding: 0.625rem 1.25rem;
             border-radius: 9999px;
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            border: 2px solid rgba(148, 163, 184, 0.2);
             background: rgba(30, 41, 59, 0.5);
             color: #94a3b8;
             cursor: pointer;
             white-space: nowrap;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
         }
-        .filter-btn:hover { background: rgba(30, 41, 59, 0.8); }
+        .filter-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .filter-btn:hover {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(245, 158, 11, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .filter-btn:hover::before { opacity: 1; }
         .filter-btn.active {
             background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%);
             color: #0f172a;
             border-color: transparent;
-            font-weight: 600;
+            font-weight: 700;
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+            transform: translateY(-2px);
         }
         .content {
             max-width: 1200px;
@@ -102,39 +132,67 @@ Deno.serve(async (req) => {
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+        @media (max-width: 640px) {
+            .grid { grid-template-columns: 1fr; }
         }
         .card {
             background: rgba(30, 41, 59, 0.8);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 1rem;
+            border-radius: 1.25rem;
             overflow: hidden;
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeIn 0.6s ease-out backwards;
+            position: relative;
         }
-        .card:hover { 
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.4s;
         }
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        .card:hover::before { opacity: 1; }
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
         .card-image {
             width: 100%;
-            height: 200px;
+            height: 280px;
             object-fit: cover;
             background: linear-gradient(135deg, rgba(148, 163, 184, 0.1) 0%, rgba(100, 116, 139, 0.1) 100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card:hover .card-image {
+            transform: scale(1.08);
         }
         .card-content { padding: 1.5rem; }
         .card-title {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             color: #f1f5f9;
+            line-height: 1.3;
+            transition: color 0.3s;
         }
+        .card:hover .card-title { color: #fbbf24; }
         .card-description {
             color: #94a3b8;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-            line-height: 1.5;
+            font-size: 0.9375rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.6;
         }
         .card-footer {
             display: flex;
@@ -144,32 +202,42 @@ Deno.serve(async (req) => {
             gap: 0.5rem;
         }
         .price {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #f59e0b;
+            font-size: 2.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.025em;
+            transition: transform 0.3s;
         }
+        .card:hover .price { transform: scale(1.05); }
         .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
         .badge {
             display: inline-block;
-            padding: 0.25rem 0.75rem;
+            padding: 0.375rem 0.875rem;
             border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            transition: all 0.3s;
         }
+        .badge:hover { transform: translateY(-2px); }
         .badge-category {
-            background: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
         }
         .badge-outline {
             background: transparent;
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            color: #cbd5e1;
         }
         .badge-special {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.2);
-            color: #22c55e;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
         }
         .allergens {
             margin-top: 1rem;
@@ -274,14 +342,28 @@ Deno.serve(async (req) => {
                 }
             });
             
+            let delay = 0;
             cards.forEach(card => {
                 if (category === 'Alle' || card.dataset.category === category) {
-                    card.style.display = 'block';
+                    setTimeout(() => {
+                        card.style.display = 'block';
+                        card.style.animation = 'fadeIn 0.5s ease-out backwards';
+                    }, delay);
+                    delay += 50;
                 } else {
                     card.style.display = 'none';
                 }
             });
         }
+
+        // Smooth scroll bei Page Load
+        window.addEventListener('load', () => {
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.transition = 'opacity 0.5s';
+                document.body.style.opacity = '1';
+            }, 100);
+        });
     </script>
 </body>
 </html>`;

@@ -38,6 +38,7 @@ export function usePermissions() {
         canViewAnalytics: false,
         canClockOutOthers: false,
         canViewOnboarding: false,
+        canViewInventory: false,
     });
 
     useEffect(() => {
@@ -96,6 +97,7 @@ export function usePermissions() {
                     canViewPriceCalculator: isTerminal ? false : (perms.canViewPriceCalculator ?? (userRole === ROLES.ADMIN)),
                     canClockOutOthers: isTerminal ? false : (perms.canClockOutOthers ?? isManager),
                     canViewOnboarding: isTerminal ? false : (perms.canViewOnboarding ?? isManager),
+                    canViewInventory: isTerminal ? false : (perms.canViewInventory ?? isManager),
                 });
             } catch (error) {
                 console.error('Error loading permissions:', error);

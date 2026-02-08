@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { Calculator, Search, TrendingUp, Package, Wine } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Calculator, Search, TrendingUp, Package, Wine, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -12,11 +14,14 @@ import PermissionDenied from '@/components/auth/PermissionDenied';
 
 export default function PriceCalculator() {
     const permissions = usePermissions();
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [ingredients, setIngredients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [margin, setMargin] = useState('3');
     const [vatRate, setVatRate] = useState('19');
     const [selectedRecipe, setSelectedRecipe] = useState(null);
+    const [menuItemName, setMenuItemName] = useState('');
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -26,6 +31,25 @@ export default function PriceCalculator() {
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes'],
         queryFn: () => base44.entities.Recipe.list('name')
+    });
+
+    // URL-Parameter für Rezept-Vorauswahl
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const recipeId = urlParams.get('recipe');
+        if (recipeId && recipes.length > 0) {
+            const recipe = recipes.find(r => r.id === recipeId);
+            if (recipe) loadRecipe(recipe);
+        }
+    }, [recipes]);
+
+    const createMenuItemMutation = useMutation({
+        mutationFn: (itemData) => base44.entities.MenuItem.create(itemData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['menuItems'] });
+            alert('Erfolgreich zur Getränkekarte hinzugefügt!');
+            navigate(createPageUrl('DrinkMenu'));
+        }
     });
 
     if (!permissions.canViewPriceCalculator) {
@@ -62,6 +86,23 @@ export default function PriceCalculator() {
 
         setIngredients(newIngredients);
         setSelectedRecipe(recipe);
+        setMenuItemName(recipe.name || '');
+    };
+
+    const handleAddToMenu = () => {
+        if (!menuItemName.trim()) {
+            alert('Bitte gib einen Namen für das Getränk ein');
+            return;
+        }
+
+        createMenuItemMutation.mutate({
+            name: menuItemName,
+            price: parseFloat(prices.sellingPriceGross.toFixed(2)),
+            category: selectedRecipe?.category || 'Sonstiges',
+            recipe_id: selectedRecipe?.id,
+            cost_price: parseFloat(prices.totalCost.toFixed(2)),
+            is_available: true
+        });
     };
 
     const updateIngredient = (id, field, value) => {
@@ -342,32 +383,50 @@ export default function PriceCalculator() {
                                     </div>
 
                                     <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                                        <p className="text-sm text-blue-400 font-medium mb-2">Zutatenübersicht</p>
-                                        <div className="space-y-1 text-xs text-blue-300">
-                                            {ingredients.map(ing => {
-                                                const amount = parseFloat(ing.amount) || 0;
-                                                let contentInMl = ing.article.content_amount || 1000;
-                                                if (ing.article.content_unit === 'l') {
-                                                    contentInMl = ing.article.content_amount * 1000;
-                                                } else if (ing.article.content_unit === 'kg') {
-                                                    contentInMl = ing.article.content_amount * 1000;
-                                                }
-                                                const cost = (ing.article.purchase_price / contentInMl) * amount;
-                                                return (
-                                                    <p key={ing.id}>
-                                                        {ing.article.name}: {amount}ml → {cost.toFixed(2)} €
-                                                    </p>
-                                                );
-                                            })}
-                                        </div>
+                                       <p className="text-sm text-blue-400 font-medium mb-2">Zutatenübersicht</p>
+                                       <div className="space-y-1 text-xs text-blue-300">
+                                           {ingredients.map(ing => {
+                                               const amount = parseFloat(ing.amount) || 0;
+                                               let contentInMl = ing.article.content_amount || 1000;
+                                               if (ing.article.content_unit === 'l') {
+                                                   contentInMl = ing.article.content_amount * 1000;
+                                               } else if (ing.article.content_unit === 'kg') {
+                                                   contentInMl = ing.article.content_amount * 1000;
+                                               }
+                                               const cost = (ing.article.purchase_price / contentInMl) * amount;
+                                               return (
+                                                   <p key={ing.id}>
+                                                       {ing.article.name}: {amount}ml → {cost.toFixed(2)} €
+                                                   </p>
+                                               );
+                                           })}
+                                       </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="text-center py-12 text-slate-400">
+
+                                    <div className="pt-4 border-t border-amber-700/50">
+                                       <Label className="text-white mb-2 block">Name für Getränkekarte</Label>
+                                       <Input
+                                           value={menuItemName}
+                                           onChange={(e) => setMenuItemName(e.target.value)}
+                                           placeholder="z.B. Mojito Classic"
+                                           className="bg-slate-900 border-slate-600 text-white mb-3"
+                                       />
+                                       <Button
+                                           onClick={handleAddToMenu}
+                                           disabled={!menuItemName.trim() || createMenuItemMutation.isPending}
+                                           className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold"
+                                       >
+                                           <Plus className="w-4 h-4 mr-2" />
+                                           Zur Getränkekarte hinzufügen
+                                       </Button>
+                                    </div>
+                                    </div>
+                                    ) : (
+                                    <div className="text-center py-12 text-slate-400">
                                     <Calculator className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                     <p>Füge Zutaten hinzu,<br />um die Kalkulation zu starten</p>
-                                </div>
-                            )}
+                                    </div>
+                                    )}
                         </Card>
 
                         {/* Schnellvergleich */}

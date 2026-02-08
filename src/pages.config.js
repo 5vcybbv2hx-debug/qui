@@ -68,7 +68,6 @@ import LazyBudget from './pages/LazyBudget';
 import LazyReports from './pages/LazyReports';
 import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import Maintenance from './pages/Maintenance';
-import MaintenanceHistory from './pages/MaintenanceHistory';
 import More from './pages/More';
 import MyArea from './pages/MyArea';
 import MyProfile from './pages/MyProfile';
@@ -126,7 +125,6 @@ export const PAGES = {
     "LazyReports": LazyReports,
     "LazySalesAnalysis": LazySalesAnalysis,
     "Maintenance": Maintenance,
-    "MaintenanceHistory": MaintenanceHistory,
     "More": More,
     "MyArea": MyArea,
     "MyProfile": MyProfile,

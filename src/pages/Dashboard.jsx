@@ -87,13 +87,6 @@ export default function Dashboard() {
         queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date', 50)
     });
 
-    const { data: onboardingItems = [] } = useQuery({
-        queryKey: ['onboarding-items', currentEmployee?.id],
-        queryFn: () => base44.entities.OnboardingChecklistItem.filter({ employee_id: currentEmployee.id }),
-        enabled: !!currentEmployee?.id,
-        initialData: []
-    });
-
     const clockInMutation = useMutation({
         mutationFn: async (employeeId) => {
             const employee = employees.find(e => e.id === employeeId);
@@ -142,6 +135,14 @@ export default function Dashboard() {
     });
 
     const currentEmployee = employees.find(e => e.email === user?.email);
+    
+    const { data: onboardingItems = [] } = useQuery({
+        queryKey: ['onboarding-items', currentEmployee?.id],
+        queryFn: () => base44.entities.OnboardingChecklistItem.filter({ employee_id: currentEmployee.id }),
+        enabled: !!currentEmployee?.id,
+        initialData: []
+    });
+
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     const monthStart = startOfMonth(new Date());

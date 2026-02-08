@@ -15,11 +15,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Calculator } from "lucide-react";
+import { Calculator, ExternalLink } from "lucide-react";
 import { haptics } from "@/components/utils/haptics";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function MenuItemModal({ item, open, onClose }) {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         name: "",
         category: "Cocktails",
@@ -236,9 +239,24 @@ export default function MenuItemModal({ item, open, onClose }) {
 
                         {/* Margin Calculation Section */}
                         <div className="col-span-2 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Calculator className="w-5 h-5 text-amber-700" />
-                                <Label className="text-amber-900 font-semibold">Margenberechnung</Label>
+                            <div className="flex items-center gap-2 mb-3 justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Calculator className="w-5 h-5 text-amber-700" />
+                                    <Label className="text-amber-900 font-semibold">Margenberechnung</Label>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                        onClose();
+                                        navigate(createPageUrl('PriceCalculator') + (formData.linked_recipe_id ? '?recipe=' + formData.linked_recipe_id : ''));
+                                    }}
+                                    className="h-7 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100"
+                                >
+                                    <ExternalLink className="w-3 h-3 mr-1" />
+                                    Zum Preisrechner
+                                </Button>
                             </div>
                             
                             <div className="flex items-center gap-2 mb-4">

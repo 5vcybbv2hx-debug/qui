@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Wine, Search, Eye, EyeOff, Link2, TrendingUp } from "lucide-react";
+import { Plus, Wine, Search, Eye, EyeOff, Link2, TrendingUp, Calculator } from "lucide-react";
 import MenuItemModal from "../components/menu/MenuItemModal";
 import MarginCalculator from "../components/menu/MarginCalculator";
 import { usePermissions } from "../components/auth/usePermissions";
@@ -13,10 +13,13 @@ import PermissionDenied from "../components/auth/PermissionDenied";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QRCodeGenerator from "@/components/qr/QRCodeGenerator";
 import DailySpecialGenerator from "../components/menu/DailySpecialGenerator";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function DrinkMenuPage() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -198,17 +201,32 @@ export default function DrinkMenuPage() {
                                                             ) : null;
                                                             })()}
 
-                                                        {/* Margin Indicator - Admin Only */}
-                                                        {permissions.isAdmin && (item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
-                                                           <Button
-                                                               variant="ghost"
-                                                               size="sm"
-                                                               onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                                                               className="mt-2 text-xs h-7 text-slate-300 hover:text-white hover:bg-slate-700"
-                                                           >
-                                                               <TrendingUp className="h-3 w-3 mr-1" />
-                                                               Marge anzeigen
-                                                           </Button>
+                                                        {/* Margin Indicator & Price Calculator - Admin Only */}
+                                                        {permissions.isAdmin && (
+                                                            <div className="flex gap-2 mt-2">
+                                                                {(item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
+                                                                        className="text-xs h-7 text-slate-300 hover:text-white hover:bg-slate-700"
+                                                                    >
+                                                                        <TrendingUp className="h-3 w-3 mr-1" />
+                                                                        Marge anzeigen
+                                                                    </Button>
+                                                                )}
+                                                                {item.recipe_id && (
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={() => navigate(createPageUrl('PriceCalculator') + '?recipe=' + item.recipe_id)}
+                                                                        className="text-xs h-7 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
+                                                                    >
+                                                                        <Calculator className="h-3 w-3 mr-1" />
+                                                                        Preis kalkulieren
+                                                                    </Button>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
                                                     {permissions.canEditEmployees && (

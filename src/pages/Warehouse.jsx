@@ -31,11 +31,13 @@ export default function WarehousePage() {
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
                     <TabsList className="grid w-full grid-cols-5 bg-slate-800 border-slate-700 h-auto p-1">
-                        <TabsTrigger value="articles" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
-                            <Package className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span className="hidden sm:inline">Artikel</span>
-                            <span className="sm:hidden">Artikel</span>
-                        </TabsTrigger>
+                        {permissions.isManager && (
+                            <TabsTrigger value="articles" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                                <Package className="w-5 h-5 sm:w-4 sm:h-4" />
+                                <span className="hidden sm:inline">Artikel</span>
+                                <span className="sm:hidden">Artikel</span>
+                            </TabsTrigger>
+                        )}
                         <TabsTrigger value="shopping" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                             <ShoppingCart className="w-5 h-5 sm:w-4 sm:h-4" />
                             <span className="hidden sm:inline">Einkauf</span>
@@ -55,9 +57,11 @@ export default function WarehousePage() {
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="articles" className="space-y-0">
-                        <ArticlesPage />
-                    </TabsContent>
+                    {permissions.isManager && (
+                        <TabsContent value="articles" className="space-y-0">
+                            <ArticlesPage />
+                        </TabsContent>
+                    )}
 
                     <TabsContent value="shopping" className="space-y-0">
                         <ShoppingPage />

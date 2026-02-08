@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -8,17 +8,19 @@ import { de } from 'date-fns/locale';
 import { 
     Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, Users, ShoppingCart, 
     Sparkles, CheckSquare, Package, AlertTriangle, CalendarCheck, LogIn, LogOut,
-    Umbrella, FileText, TrendingUp, Wine, BookOpen
+    Umbrella, FileText, TrendingUp, Wine, BookOpen, GraduationCap, Zap
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import { usePermissions } from '@/components/auth/usePermissions';
+import FirstStepsTour from '@/components/onboarding/FirstStepsTour';
 
 export default function Dashboard() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
+    const [showOnboardingTour, setShowOnboardingTour] = useState(false);
 
     const { data: user } = useQuery({
         queryKey: ['user'],
@@ -83,6 +85,13 @@ export default function Dashboard() {
     const { data: shiftSwapRequests = [] } = useQuery({
         queryKey: ['shift-swap-requests'],
         queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date', 50)
+    });
+
+    const { data: onboardingItems = [] } = useQuery({
+        queryKey: ['onboarding-items', currentEmployee?.id],
+        queryFn: () => base44.entities.OnboardingChecklistItem.filter({ employee_id: currentEmployee.id }),
+        enabled: !!currentEmployee?.id,
+        initialData: []
     });
 
     const clockInMutation = useMutation({
@@ -191,6 +200,10 @@ export default function Dashboard() {
     ) : [];
 
     const myCleaningTasks = cleaningTasks.filter(t => !t.is_completed && t.is_active);
+
+    const onboardingProgress = onboardingItems.length > 0 
+        ? Math.round((onboardingItems.filter(i => i.is_completed).length / onboardingItems.length) * 100)
+        : 100;
     
     // BiWeekly Cleaning Tasks für heute
     const dayOfWeek = new Date().getDay();
@@ -521,10 +534,45 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-slate-900 p-3 sm:p-8 pb-24 md:pb-0">
             <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6">
-                <div>
-                    <h1 className="text-lg sm:text-2xl font-bold text-white">Willkommen, {currentEmployee.name}!</h1>
-                    <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h1 className="text-lg sm:text-2xl font-bold text-white">Willkommen, {currentEmployee.name}!</h1>
+                        <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
+                    </div>
+                    {onboardingProgress < 100 && (
+                        <Button
+                            onClick={() => setShowOnboardingTour(true)}
+                            size="sm"
+                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 gap-2"
+                        >
+                            <GraduationCap className="w-4 h-4" />
+                            Erste Schritte
+                        </Button>
+                    )}
                 </div>
+
+                {/* Onboarding Progress */}
+                {onboardingProgress < 100 && (
+                    <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                                <GraduationCap className="w-6 h-6 text-slate-900" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-semibold text-white">Einarbeitung läuft</p>
+                                <p className="text-sm text-amber-300">{onboardingProgress}% abgeschlossen</p>
+                            </div>
+                            <Button
+                                onClick={() => setShowOnboardingTour(true)}
+                                variant="outline"
+                                size="sm"
+                                className="border-amber-500 text-amber-400 hover:bg-amber-500/10"
+                            >
+                                Fortsetzen
+                            </Button>
+                        </div>
+                    </Card>
+                )}
 
                 <Card className="p-6 bg-slate-800 border-slate-700">
                     <div className="flex items-center justify-between mb-6">
@@ -849,7 +897,47 @@ export default function Dashboard() {
                         )}
                     </div>
                 </div>
+
+                {/* Schnellaktionen */}
+                <Card className="p-4 bg-slate-800 border-slate-700">
+                    <p className="text-xs font-semibold text-slate-400 uppercase mb-3">Schnellaktionen</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <Link to={createPageUrl('Todos')}>
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                                <CheckSquare className="w-5 h-5 text-orange-500" />
+                                <span className="text-xs font-medium text-slate-300">Neue Aufgabe</span>
+                            </button>
+                        </Link>
+                        <Link to={createPageUrl('Cleaning')}>
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                                <Sparkles className="w-5 h-5 text-teal-500" />
+                                <span className="text-xs font-medium text-slate-300">Putzen</span>
+                            </button>
+                        </Link>
+                        <Link to={createPageUrl('Recipes')}>
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                                <BookOpen className="w-5 h-5 text-pink-500" />
+                                <span className="text-xs font-medium text-slate-300">Rezept suchen</span>
+                            </button>
+                        </Link>
+                        <Link to={createPageUrl('Calendar')}>
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                                <Calendar className="w-5 h-5 text-blue-500" />
+                                <span className="text-xs font-medium text-slate-300">Schichtplan</span>
+                            </button>
+                        </Link>
+                    </div>
+                </Card>
             </div>
+
+            {/* First Steps Tour Modal */}
+            {showOnboardingTour && currentEmployee && (
+                <FirstStepsTour
+                    employee={currentEmployee}
+                    open={showOnboardingTour}
+                    onClose={() => setShowOnboardingTour(false)}
+                />
+            )}
         </div>
     );
 }

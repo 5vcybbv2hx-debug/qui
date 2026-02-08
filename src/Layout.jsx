@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/components/utils/haptics';
-import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft, Settings, QrCode } from 'lucide-react';
+import { Home, Calendar, Sparkles, CheckSquare, Users, Menu, X, CalendarCheck, Package, ShoppingCart, BookOpen, Clock, TrendingUp, LogOut, RepeatIcon, Bell, Shield, ClipboardCheck, GraduationCap, Wrench, Wine, ArrowLeft, Settings, QrCode, Search } from 'lucide-react';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -15,6 +15,7 @@ import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
 import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import GlobalSearch from '@/components/search/GlobalSearch';
 
 const navigationSections = [
     {
@@ -93,6 +94,7 @@ const navigation = navigationSections.flatMap(section => section.items);
 
 export default function Layout({ children, currentPageName }) {
      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+     const [searchOpen, setSearchOpen] = useState(false);
      const permissions = usePermissions();
      const [currentUser, setCurrentUser] = React.useState(null);
      const navigate = useNavigate();
@@ -107,6 +109,16 @@ export default function Layout({ children, currentPageName }) {
              sessionStorage.setItem('hasVisited', 'true');
              navigate(createPageUrl('Dashboard'), { replace: true });
          }
+
+         // Keyboard shortcut für Suche (Ctrl/Cmd + K)
+         const handleKeyDown = (e) => {
+             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                 e.preventDefault();
+                 setSearchOpen(true);
+             }
+         };
+         window.addEventListener('keydown', handleKeyDown);
+         return () => window.removeEventListener('keydown', handleKeyDown);
      }, []);
 
      // Theme beim App-Start laden und anwenden
@@ -195,19 +207,41 @@ export default function Layout({ children, currentPageName }) {
                     <h1 className="text-lg font-bold text-foreground flex-1">
                         {navigation.find(item => item.page === currentPageName)?.name || 'BarManager'}
                     </h1>
+                    <button
+                        onClick={() => setSearchOpen(true)}
+                        className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-foreground transition-all"
+                        title="Suche (Strg+K)"
+                    >
+                        <Search className="w-5 h-5" />
+                    </button>
                 </div>
             </header>
+
+            {/* Global Search */}
+            <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
 
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0">
                 <div className="flex flex-col flex-grow bg-card border-r border-border/50 pt-8 overflow-y-auto backdrop-blur-xl">
                     {/* Logo */}
-                    <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-10 group">
+                    <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-6 group">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-all">
                             <span className="text-slate-900 font-bold text-xl">B</span>
                         </div>
                         <span className="text-xl font-bold text-foreground tracking-tight">BarManager</span>
                     </Link>
+
+                    {/* Search Bar */}
+                    <div className="px-4 mb-6">
+                        <button
+                            onClick={() => setSearchOpen(true)}
+                            className="w-full flex items-center gap-3 px-4 py-2 rounded-xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all border border-border/50"
+                        >
+                            <Search className="w-4 h-4" />
+                            <span className="text-sm flex-1 text-left">Suche...</span>
+                            <kbd className="px-2 py-1 text-xs bg-background border border-border/50 rounded">⌘K</kbd>
+                        </button>
+                    </div>
 
                     {/* Navigation */}
                     <nav className="flex-1 px-4 space-y-8 overflow-y-auto">

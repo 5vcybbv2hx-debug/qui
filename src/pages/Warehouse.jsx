@@ -51,10 +51,12 @@ export default function WarehousePage() {
                             <TrendingDown className="w-5 h-5 sm:w-4 sm:h-4" />
                             <span>Schwund</span>
                         </TabsTrigger>
-                        <TabsTrigger value="inventory" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
-                            <ClipboardCheck className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Inventur</span>
-                        </TabsTrigger>
+                        {permissions.canViewInventory && (
+                            <TabsTrigger value="inventory" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                                <ClipboardCheck className="w-5 h-5 sm:w-4 sm:h-4" />
+                                <span>Inventur</span>
+                            </TabsTrigger>
+                        )}
                     </TabsList>
 
                     {permissions.isManager && (
@@ -75,9 +77,11 @@ export default function WarehousePage() {
                         <WastagePage />
                     </TabsContent>
 
-                    <TabsContent value="inventory" className="space-y-0">
-                        <InventoryPage />
-                    </TabsContent>
+                    {permissions.canViewInventory && (
+                        <TabsContent value="inventory" className="space-y-0">
+                            <InventoryPage />
+                        </TabsContent>
+                    )}
                 </Tabs>
             </div>
         </div>

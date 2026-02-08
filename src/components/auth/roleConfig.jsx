@@ -135,6 +135,12 @@ export const PERMISSIONS = {
     VIEW_PRICE_CALCULATOR: {
         roles: [ROLES.ADMIN],
         description: 'Preiskalkulation ansehen'
+    },
+    
+    // Inventur
+    VIEW_INVENTORY: {
+        roles: [ROLES.ADMIN, ROLES.MANAGER],
+        description: 'Inventur ansehen'
     }
 };
 

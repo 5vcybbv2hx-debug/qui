@@ -185,9 +185,9 @@ export default function TerminalClock() {
 
                 const pauseText = pauseMinuten > 0 ? `\n${pauseMinuten}min Pause (bezahlt)` : '';
 
-                // Zeige Verdienst für Aushilfen (Minijob)
-                if (employeeToProcess.contract_type === 'Minijob' && employeeToProcess.hourly_rate) {
-                    const earnings = Math.ceil((Math.round(hours * 100) / 100) * employeeToProcess.hourly_rate);
+                // Zeige Verdienst für alle Mitarbeiter mit Stundenlohn
+                if (employeeToProcess.hourly_rate) {
+                    const earnings = (Math.round(hours * 100) / 100) * employeeToProcess.hourly_rate;
                     setEarningsData({
                         name: employeeToProcess.name,
                         hours: Math.round(hours * 100) / 100,
@@ -438,7 +438,7 @@ export default function TerminalClock() {
 
                                 <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-2xl p-8 text-center">
                                     <div className="text-6xl font-bold text-white mb-2">
-                                        {earningsData.earnings} €
+                                        {earningsData.earnings.toFixed(2)} €
                                     </div>
                                     <div className="text-green-100 text-sm">
                                         {earningsData.hours.toFixed(2)}h × {earningsData.hourlyRate.toFixed(2)} €/h

@@ -39,6 +39,7 @@ export function usePermissions() {
         canClockOutOthers: false,
         canViewOnboarding: false,
         canViewInventory: false,
+        canViewWastage: false,
     });
 
     useEffect(() => {
@@ -98,6 +99,7 @@ export function usePermissions() {
                     canClockOutOthers: isTerminal ? false : (perms.canClockOutOthers ?? isManager),
                     canViewOnboarding: isTerminal ? false : (perms.canViewOnboarding ?? isManager),
                     canViewInventory: isTerminal ? false : (perms.canViewInventory ?? isManager),
+                    canViewWastage: isTerminal ? false : (perms.canViewWastage ?? isManager),
                 });
             } catch (error) {
                 console.error('Error loading permissions:', error);

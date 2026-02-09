@@ -141,6 +141,12 @@ export const PERMISSIONS = {
     VIEW_INVENTORY: {
         roles: [ROLES.ADMIN, ROLES.MANAGER],
         description: 'Inventur ansehen'
+    },
+    
+    // Schwund
+    VIEW_WASTAGE: {
+        roles: [ROLES.ADMIN, ROLES.MANAGER],
+        description: 'Schwund ansehen'
     }
 };
 

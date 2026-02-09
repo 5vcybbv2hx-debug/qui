@@ -47,10 +47,12 @@ export default function WarehousePage() {
                             <Scan className="w-5 h-5 sm:w-4 sm:h-4" />
                             <span>Auffüllen</span>
                         </TabsTrigger>
-                        <TabsTrigger value="wastage" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
-                            <TrendingDown className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Schwund</span>
-                        </TabsTrigger>
+                        {permissions.canViewWastage && (
+                            <TabsTrigger value="wastage" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                                <TrendingDown className="w-5 h-5 sm:w-4 sm:h-4" />
+                                <span>Schwund</span>
+                            </TabsTrigger>
+                        )}
                         {permissions.canViewInventory && (
                             <TabsTrigger value="inventory" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                                 <ClipboardCheck className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -73,9 +75,11 @@ export default function WarehousePage() {
                         <RestockPage />
                     </TabsContent>
 
-                    <TabsContent value="wastage" className="space-y-0">
-                        <WastagePage />
-                    </TabsContent>
+                    {permissions.canViewWastage && (
+                        <TabsContent value="wastage" className="space-y-0">
+                            <WastagePage />
+                        </TabsContent>
+                    )}
 
                     {permissions.canViewInventory && (
                         <TabsContent value="inventory" className="space-y-0">

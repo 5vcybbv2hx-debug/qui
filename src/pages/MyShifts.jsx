@@ -149,7 +149,7 @@ export default function MyShiftsPage() {
                     {/* Wochenansicht */}
                     <TabsContent value="week" className="space-y-4">
                         <div className="grid gap-4">
-                            {next14Days.map(({ date, shifts: dayShifts }) => (
+                            {next14Days.filter(({ shifts: dayShifts }) => dayShifts.length > 0).map(({ date, shifts: dayShifts }) => (
                                 <Card key={date.toISOString()} className="overflow-hidden">
                                     <CardHeader className="pb-3">
                                         <div className="flex items-center justify-between">
@@ -167,35 +167,31 @@ export default function MyShiftsPage() {
                                         </div>
                                     </CardHeader>
                                     <CardContent>
-                                        {dayShifts.length > 0 ? (
-                                            <div className="space-y-2">
-                                                {dayShifts.map(shift => {
-                                                    const start = new Date(`2000-01-01 ${shift.start_time}`);
-                                                    const end = new Date(`2000-01-01 ${shift.end_time}`);
-                                                    const duration = differenceInMinutes(end, start) / 60;
-                                                    
-                                                    return (
-                                                        <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
-                                                            <Clock className="w-5 h-5 text-amber-500" />
-                                                            <div className="flex-1">
-                                                                <p className="font-semibold text-foreground">
-                                                                    {shift.start_time} - {shift.end_time}
-                                                                </p>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    {duration.toFixed(1)} Stunden
-                                                                    {shift.shift_type && ` • ${shift.shift_type}`}
-                                                                </p>
-                                                                {shift.notes && (
-                                                                    <p className="text-sm text-muted-foreground mt-1">{shift.notes}</p>
-                                                                )}
-                                                            </div>
+                                        <div className="space-y-2">
+                                            {dayShifts.map(shift => {
+                                                const start = new Date(`2000-01-01 ${shift.start_time}`);
+                                                const end = new Date(`2000-01-01 ${shift.end_time}`);
+                                                const duration = differenceInMinutes(end, start) / 60;
+                                                
+                                                return (
+                                                    <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
+                                                        <Clock className="w-5 h-5 text-amber-500" />
+                                                        <div className="flex-1">
+                                                            <p className="font-semibold text-foreground">
+                                                                {shift.start_time} - {shift.end_time}
+                                                            </p>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {duration.toFixed(1)} Stunden
+                                                                {shift.shift_type && ` • ${shift.shift_type}`}
+                                                            </p>
+                                                            {shift.notes && (
+                                                                <p className="text-sm text-muted-foreground mt-1">{shift.notes}</p>
+                                                            )}
                                                         </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <p className="text-muted-foreground text-sm">Keine Schicht</p>
-                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))}

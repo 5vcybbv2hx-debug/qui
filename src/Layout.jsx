@@ -29,6 +29,7 @@ const navigationSections = [
         title: 'Team',
         items: [
             { name: 'Kalender', page: 'Calendar', icon: Calendar, permission: 'canViewShifts' },
+            { name: 'Meine Schichten', page: 'MyShifts', icon: Calendar, permission: 'canViewShifts' },
             { name: 'Zeit', page: 'TimeManagement', icon: Clock, permission: 'canViewDashboard' },
             { name: 'Mein Bereich', page: 'MyArea', icon: Users, permission: 'canViewDashboard' },
             { name: 'Einlernen', page: 'Onboarding', icon: GraduationCap, permission: 'canViewOnboarding' },

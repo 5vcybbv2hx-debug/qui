@@ -350,10 +350,9 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                     )}
                     <Link
-                        to={createPageUrl(localStorage.getItem('lastPage_More') || 'More')}
+                        to={createPageUrl('More')}
                         onClick={(e) => {
                             haptics.selection();
-                            navigateToTab('More', e);
                         }}
                         className={cn(
                             "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",

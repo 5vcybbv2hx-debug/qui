@@ -21,7 +21,7 @@ const navigationSections = [
             { name: 'Kalender', page: 'Calendar', icon: Calendar, permission: 'canViewShifts' },
             { name: 'Zeit', page: 'TimeManagement', icon: Clock, permission: 'canViewDashboard' },
             { name: 'Mein Bereich', page: 'MyArea', icon: Users, permission: 'canViewDashboard' },
-            { name: 'Einlernen', page: 'Onboarding', icon: GraduationCap, permission: 'canViewEmployees' },
+            { name: 'Einlernen', page: 'Onboarding', icon: GraduationCap, permission: 'canViewOnboarding' },
             { name: 'Mitarbeiter', page: 'Employees', icon: Users, permission: 'canViewEmployees' },
             { name: 'Berechtigungen', page: 'Permissions', icon: Shield, permission: 'isAdmin' },
         ]
@@ -47,8 +47,7 @@ const navigationSections = [
         items: [
             { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos' },
             { name: 'Putzen', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning' },
-            { name: 'Wartung', page: 'Maintenance', icon: Wrench, permission: 'canViewEmployees' },
-            { name: 'Wartungshistorie', page: 'MaintenanceHistory', icon: TrendingUp, permission: 'canViewEmployees' },
+            { name: 'Wartung', page: 'Maintenance', icon: Wrench, permission: 'isManager' },
             { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard' },
         ]
     },
@@ -65,7 +64,7 @@ const navigationSections = [
         title: 'Einstellungen',
         items: [
             { name: 'Einstellungen', page: 'Settings', icon: Settings, permission: 'canViewDashboard' },
-            { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'canViewEmployees' },
+            { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'isManager' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Shield, permission: 'isManager' },
         ]
     },

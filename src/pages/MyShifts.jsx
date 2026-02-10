@@ -8,6 +8,7 @@ import { Calendar, Clock, Users, TrendingUp, ChevronRight } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, startOfMonth, endOfMonth, isSameDay, parseISO, isAfter, isBefore, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import MyShiftsCalendarSync from '@/components/calendar/MyShiftsCalendarSync';
 
 export default function MyShiftsPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -139,11 +140,12 @@ export default function MyShiftsPage() {
                 </div>
 
                 <Tabs defaultValue="week" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="week">Woche</TabsTrigger>
                         <TabsTrigger value="month">Monat</TabsTrigger>
                         <TabsTrigger value="list">Liste</TabsTrigger>
                         <TabsTrigger value="team">Team</TabsTrigger>
+                        <TabsTrigger value="sync">Sync</TabsTrigger>
                     </TabsList>
 
                     {/* Wochenansicht */}
@@ -418,6 +420,11 @@ export default function MyShiftsPage() {
                                 )}
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    {/* Kalender-Sync */}
+                    <TabsContent value="sync">
+                        <MyShiftsCalendarSync employeeId={employee.id} />
                     </TabsContent>
                 </Tabs>
             </div>

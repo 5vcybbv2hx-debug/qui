@@ -21,6 +21,7 @@ export default function Dashboard() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+    const [viewAsEmployee, setViewAsEmployee] = useState(false);
 
     const { data: user } = useQuery({
         queryKey: ['user'],

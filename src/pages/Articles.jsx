@@ -385,6 +385,8 @@ export default function Articles() {
                 />
             </div>
         </div>
-        <AlertDialogComponent />
+        <>
+            <AlertDialogComponent />
+        </>
     );
 }

@@ -245,7 +245,7 @@ export default function Dashboard() {
     };
 
     // Manager View
-    if (permissions.isManager) {
+    if (permissions.isManager && !viewAsEmployee) {
         const stats = [
             { title: 'Aktive Mitarbeiter', value: employees.length, icon: Users, color: 'bg-blue-600', link: 'Employees' },
             { title: 'Schichten heute', value: todayShifts.length, icon: Calendar, color: 'bg-purple-600', link: 'Calendar' },

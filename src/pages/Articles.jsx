@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Pencil, Trash2, Package, Camera, CheckSquare } from 'lucide-react';
+import { Plus, Search, Camera, CheckSquare, Package, GripVertical } from 'lucide-react';
 import { useIsMobile } from '@/components/utils/useIsMobile';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import SavedFilters from '@/components/filters/SavedFilters';
@@ -22,21 +20,8 @@ import PDFExportButton from '@/components/export/PDFExportButton';
 import LabelPrinter from '@/components/articles/LabelPrinter';
 import BulkImporter from '@/components/articles/BulkImporter';
 import ArticleCard from '@/components/articles/ArticleCard';
-import { useMemo } from 'react';
 import { useAlertDialog } from '@/components/ui/use-alert-dialog';
-
-
-const categoryColors = {
-    'Spirituosen': 'bg-purple-100 text-purple-700',
-    'Bier': 'bg-amber-100 text-amber-700',
-    'Wein': 'bg-red-100 text-red-700',
-    'Softdrinks': 'bg-blue-100 text-blue-700',
-    'Saft': 'bg-orange-100 text-orange-700',
-    'Energy': 'bg-yellow-100 text-yellow-700',
-    'Wasser': 'bg-cyan-100 text-cyan-700',
-    'Snacks': 'bg-green-100 text-green-700',
-    'Sonstiges': 'bg-slate-100 text-slate-700'
-};
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 export default function Articles() {
     const navigate = useNavigate();
@@ -44,6 +29,8 @@ export default function Articles() {
     const permissions = usePermissions();
     const isMobile = useIsMobile();
     const { confirm, Dialog: AlertDialogComponent } = useAlertDialog();
+    const categoryRefs = useRef({});
+
     const [modalOpen, setModalOpen] = useState(false);
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
@@ -56,31 +43,27 @@ export default function Articles() {
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list('name'),
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000 // 10 minutes
+        queryFn: () => base44.entities.Article.list('order'),
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000
     });
 
     const { data: categories = [] } = useQuery({
         queryKey: ['article-categories'],
         queryFn: () => base44.entities.ArticleCategory.list('order'),
-        staleTime: 30 * 60 * 1000, // 30 minutes - categories change rarely
-        gcTime: 60 * 60 * 1000 // 1 hour
+        staleTime: 30 * 60 * 1000,
+        gcTime: 60 * 60 * 1000
     });
 
     const createMutation = useMutation({
         mutationFn: (data) => {
-            // Generate barcode if missing
             if (!data.barcode) {
                 data.barcode = `GEN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             }
             return base44.entities.Article.create(data);
         },
         onSuccess: (newArticle) => {
-            // Optimistic update
-            queryClient.setQueryData(['articles'], (old) => {
-                return old ? [...old, newArticle] : [newArticle];
-            });
+            queryClient.setQueryData(['articles'], (old) => old ? [...old, newArticle] : [newArticle]);
             queryClient.invalidateQueries(['articles']);
             setModalOpen(false);
             setSelectedArticle(null);
@@ -90,12 +73,9 @@ export default function Articles() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Article.update(id, data),
         onMutate: async ({ id, data }) => {
-            // Optimistic update
             await queryClient.cancelQueries(['articles']);
             const previous = queryClient.getQueryData(['articles']);
-            queryClient.setQueryData(['articles'], (old) => {
-                return old.map(article => article.id === id ? { ...article, ...data } : article);
-            });
+            queryClient.setQueryData(['articles'], (old) => old.map(a => a.id === id ? { ...a, ...data } : a));
             return { previous };
         },
         onError: (err, variables, context) => {
@@ -111,38 +91,25 @@ export default function Articles() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Article.delete(id),
         onMutate: async (id) => {
-            // Optimistic update
             await queryClient.cancelQueries(['articles']);
             const previous = queryClient.getQueryData(['articles']);
-            queryClient.setQueryData(['articles'], (old) => {
-                return old.filter(article => article.id !== id);
-            });
+            queryClient.setQueryData(['articles'], (old) => old.filter(a => a.id !== id));
             return { previous };
         },
         onError: (err, variables, context) => {
             queryClient.setQueryData(['articles'], context.previous);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['articles']);
-        }
+        onSuccess: () => queryClient.invalidateQueries(['articles'])
     });
 
     const handleSave = (data, id) => {
-        if (id) {
-            updateMutation.mutate({ id, data });
-        } else {
-            createMutation.mutate(data);
-        }
+        if (id) updateMutation.mutate({ id, data });
+        else createMutation.mutate(data);
     };
 
     const handleDelete = (id) => {
-        confirm(
-            'Artikel löschen',
-            'Möchtest du diesen Artikel wirklich löschen?',
-            () => deleteMutation.mutate(id),
-            undefined,
-            'destructive'
-        );
+        confirm('Artikel löschen', 'Möchtest du diesen Artikel wirklich löschen?',
+            () => deleteMutation.mutate(id), undefined, 'destructive');
     };
 
     const handleScan = (barcode) => {
@@ -150,70 +117,148 @@ export default function Articles() {
         if (isMobile) {
             navigate(createPageUrl('ArticleEdit'), { state: { article: existing || { barcode } } });
         } else {
-            if (existing) {
-                setSelectedArticle(existing);
-                setModalOpen(true);
-            } else {
-                setSelectedArticle({ barcode });
-                setModalOpen(true);
-            }
+            setSelectedArticle(existing || { barcode });
+            setModalOpen(true);
         }
     };
 
     const handleEdit = (article) => {
-        if (isMobile) {
-            navigate(createPageUrl('ArticleEdit'), { state: { article } });
-        } else {
-            setSelectedArticle(article);
-            setModalOpen(true);
-        }
+        if (isMobile) navigate(createPageUrl('ArticleEdit'), { state: { article } });
+        else { setSelectedArticle(article); setModalOpen(true); }
     };
 
     const handleAdd = () => {
-        if (isMobile) {
-            navigate(createPageUrl('ArticleEdit'));
-        } else {
-            setSelectedArticle(null);
-            setModalOpen(true);
-        }
+        if (isMobile) navigate(createPageUrl('ArticleEdit'));
+        else { setSelectedArticle(null); setModalOpen(true); }
     };
 
     const toggleSelectArticle = (article) => {
-        setSelectedArticles(prev => 
+        setSelectedArticles(prev =>
             prev.find(a => a.id === article.id)
                 ? prev.filter(a => a.id !== article.id)
                 : [...prev, article]
         );
     };
 
-    const clearSelection = () => {
-        setSelectedArticles([]);
-    };
+    const allSuppliers = useMemo(() =>
+        [...new Set(articles.flatMap(a => a.suppliers || []))].sort(), [articles]);
 
-    const allSuppliers = useMemo(() => 
-        [...new Set(articles.flatMap(a => a.suppliers || []))].sort(),
-        [articles]
-    );
-
-    const filteredArticles = useMemo(() => 
+    const baseFilteredArticles = useMemo(() =>
         articles.filter(a => {
-            const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                a.barcode?.includes(searchTerm);
-            const matchesCategory = filterCategory === 'all' || a.category === filterCategory;
+            const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) || a.barcode?.includes(searchTerm);
             const matchesSupplier = filterSupplier === 'all' || a.suppliers?.includes(filterSupplier);
             const matchesStock = filterStock === 'all' ||
                 (filterStock === 'niedrig' && a.current_stock <= (a.min_stock || 0)) ||
                 (filterStock === 'leer' && a.current_stock === 0);
-            return matchesSearch && matchesCategory && matchesSupplier && matchesStock;
+            return matchesSearch && matchesSupplier && matchesStock;
         }),
-        [articles, searchTerm, filterCategory, filterSupplier, filterStock]
+        [articles, searchTerm, filterSupplier, filterStock]
     );
 
-    if (!permissions.canEditShopping) {
-        return <PermissionDenied />;
-    }
+    // Grouped by category (respects category order)
+    const groupedArticles = useMemo(() => {
+        const catNames = categories.map(c => c.name);
+        const uncategorized = baseFilteredArticles.filter(a => !a.category || !catNames.includes(a.category));
+        const groups = categories
+            .filter(cat => filterCategory === 'all' || cat.name === filterCategory)
+            .map(cat => ({
+                category: cat,
+                articles: baseFilteredArticles.filter(a => a.category === cat.name)
+            }))
+            .filter(g => g.articles.length > 0);
 
-    const filterCategories = ['all', ...categories.map(c => c.name)];
+        if (uncategorized.length > 0 && (filterCategory === 'all')) {
+            groups.push({ category: { id: '__uncategorized', name: 'Sonstiges' }, articles: uncategorized });
+        }
+        return groups;
+    }, [baseFilteredArticles, categories, filterCategory]);
+
+    const handleDragEnd = useCallback(async (result) => {
+        const { source, destination, type } = result;
+        if (!destination) return;
+        if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+        if (type === 'CATEGORY') {
+            // Reorder categories
+            const reordered = Array.from(categories);
+            const [moved] = reordered.splice(source.index, 1);
+            reordered.splice(destination.index, 0, moved);
+
+            // Optimistic update
+            queryClient.setQueryData(['article-categories'], reordered);
+
+            // Persist
+            await Promise.all(reordered.map((cat, idx) =>
+                base44.entities.ArticleCategory.update(cat.id, { order: idx })
+            ));
+            queryClient.invalidateQueries(['article-categories']);
+
+        } else if (type === 'ARTICLE') {
+            const categoryName = source.droppableId;
+            const destCategoryName = destination.droppableId;
+            const currentArticles = Array.from(articles);
+
+            const categoryArticles = currentArticles
+                .filter(a => a.category === categoryName)
+                .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+
+            const [movedArticle] = categoryArticles.splice(source.index, 1);
+
+            if (categoryName === destCategoryName) {
+                // Same category reorder
+                categoryArticles.splice(destination.index, 0, movedArticle);
+                const updated = currentArticles.map(a => {
+                    const idx = categoryArticles.findIndex(ca => ca.id === a.id);
+                    if (idx !== -1) return { ...a, order: idx };
+                    return a;
+                });
+                queryClient.setQueryData(['articles'], updated);
+                await Promise.all(categoryArticles.map((a, idx) =>
+                    base44.entities.Article.update(a.id, { order: idx })
+                ));
+            } else {
+                // Move to different category
+                const destArticles = currentArticles
+                    .filter(a => a.category === destCategoryName)
+                    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+
+                destArticles.splice(destination.index, 0, { ...movedArticle, category: destCategoryName });
+
+                const updated = currentArticles.map(a => {
+                    if (a.id === movedArticle.id) return { ...a, category: destCategoryName, order: destination.index };
+                    const destIdx = destArticles.findIndex(da => da.id === a.id);
+                    if (destIdx !== -1) return { ...a, order: destIdx };
+                    const srcIdx = categoryArticles.findIndex(sa => sa.id === a.id);
+                    if (srcIdx !== -1) return { ...a, order: srcIdx };
+                    return a;
+                });
+                queryClient.setQueryData(['articles'], updated);
+
+                await base44.entities.Article.update(movedArticle.id, { category: destCategoryName, order: destination.index });
+                await Promise.all(destArticles.filter(a => a.id !== movedArticle.id).map((a, idx) =>
+                    base44.entities.Article.update(a.id, { order: idx >= destination.index ? idx + 1 : idx })
+                ));
+            }
+            queryClient.invalidateQueries(['articles']);
+        }
+    }, [articles, categories, queryClient]);
+
+    const scrollToCategory = (catName) => {
+        setFilterCategory('all');
+        setTimeout(() => {
+            categoryRefs.current[catName]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
+    };
+
+    const articleCountByCategory = useMemo(() => {
+        const counts = {};
+        baseFilteredArticles.forEach(a => {
+            counts[a.category || 'Sonstiges'] = (counts[a.category || 'Sonstiges'] || 0) + 1;
+        });
+        return counts;
+    }, [baseFilteredArticles]);
+
+    if (!permissions.canEditShopping) return <PermissionDenied />;
 
     return (
         <div>
@@ -224,13 +269,12 @@ export default function Articles() {
                         <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Artikeldatenbank</h1>
                         <p className="text-slate-400 text-sm mt-1">Verwalte alle Artikel für die Auffüllliste</p>
                     </div>
-                    
                     <div className="flex gap-1 sm:gap-2 flex-wrap">
                         <BulkImporter />
-                        <LabelPrinter articles={filteredArticles} />
+                        <LabelPrinter articles={baseFilteredArticles} />
                         {permissions.isManager && (
                             <PDFExportButton
-                                data={filteredArticles}
+                                data={baseFilteredArticles}
                                 filename="artikel"
                                 title="Artikeldatenbank"
                                 columns={[
@@ -247,27 +291,18 @@ export default function Articles() {
                         <LowStockAlert />
                         <CategoryManager />
                         {selectedArticles.length > 0 && (
-                            <Button 
-                                onClick={() => setBulkEditOpen(true)}
-                                variant="outline"
-                                className="border-amber-600 text-white bg-amber-600 hover:bg-amber-700"
-                            >
+                            <Button onClick={() => setBulkEditOpen(true)} variant="outline"
+                                className="border-amber-600 text-white bg-amber-600 hover:bg-amber-700">
                                 <CheckSquare className="w-4 h-4 mr-2" />
                                 Bearbeiten ({selectedArticles.length})
                             </Button>
                         )}
-                        <Button 
-                            onClick={() => setScannerOpen(true)}
-                            variant="outline"
-                            className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
-                        >
+                        <Button onClick={() => setScannerOpen(true)} variant="outline"
+                            className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700">
                             <Camera className="w-4 h-4 mr-2" />
                             Scannen
                         </Button>
-                        <Button 
-                            onClick={handleAdd}
-                            className="bg-amber-600 hover:bg-amber-700"
-                        >
+                        <Button onClick={handleAdd} className="bg-amber-600 hover:bg-amber-700">
                             <Plus className="w-4 h-4 mr-2" />
                             Neuer Artikel
                         </Button>
@@ -275,59 +310,62 @@ export default function Articles() {
                 </div>
 
                 {/* Search & Filter */}
-                 <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-5 sm:mb-6">
-                     <div className="space-y-2 sm:space-y-3">
-                         <div className="flex flex-col gap-3">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                <Input
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Nach Name oder Barcode..."
-                                    className="pl-10 bg-slate-900 border-slate-700 text-white"
-                                />
-                            </div>
-
-                            {/* Kategorie-Chips */}
-                            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-                                {['all', ...categories.map(c => c.name)].map(cat => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setFilterCategory(cat)}
-                                        className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                                            filterCategory === cat
-                                                ? 'bg-amber-500 text-slate-900'
-                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                        }`}
-                                    >
-                                        {cat === 'all' ? 'Alle' : cat}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Lieferant & Bestand Filter */}
-                            <div className="flex gap-2">
-                                <select
-                                    value={filterSupplier}
-                                    onChange={(e) => setFilterSupplier(e.target.value)}
-                                    className="flex-1 px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm"
-                                >
-                                    <option value="all">Alle Lieferanten</option>
-                                    {allSuppliers.map(sup => (
-                                        <option key={sup} value={sup}>{sup}</option>
-                                    ))}
-                                </select>
-                                <select
-                                    value={filterStock}
-                                    onChange={(e) => setFilterStock(e.target.value)}
-                                    className="flex-1 px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm"
-                                >
-                                    <option value="all">Alle Bestände</option>
-                                    <option value="niedrig">Niedrig</option>
-                                    <option value="leer">Leer</option>
-                                </select>
-                            </div>
+                <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-5 sm:mb-6">
+                    <div className="space-y-3">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                            <Input
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                placeholder="Nach Name oder Barcode..."
+                                className="pl-10 bg-slate-900 border-slate-700 text-white"
+                            />
                         </div>
+
+                        {/* Kategorie-Chips */}
+                        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                            <button
+                                onClick={() => setFilterCategory('all')}
+                                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                                    filterCategory === 'all' ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                }`}
+                            >
+                                Alle <span className="opacity-70">({baseFilteredArticles.length})</span>
+                            </button>
+                            {categories.map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => {
+                                        if (filterCategory === cat.name) scrollToCategory(cat.name);
+                                        else setFilterCategory(cat.name);
+                                    }}
+                                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                                        filterCategory === cat.name ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                    }`}
+                                >
+                                    {cat.name}
+                                    {articleCountByCategory[cat.name] ? (
+                                        <span className="ml-1 opacity-70">({articleCountByCategory[cat.name]})</span>
+                                    ) : null}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Lieferant & Bestand */}
+                        <div className="flex gap-2">
+                            <select value={filterSupplier} onChange={(e) => setFilterSupplier(e.target.value)}
+                                className="flex-1 px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm">
+                                <option value="all">Alle Lieferanten</option>
+                                {allSuppliers.map(sup => <option key={sup} value={sup}>{sup}</option>)}
+                            </select>
+                            <select value={filterStock} onChange={(e) => setFilterStock(e.target.value)}
+                                className="flex-1 px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm">
+                                <option value="all">Alle Bestände</option>
+                                <option value="niedrig">Niedrig</option>
+                                <option value="leer">Leer</option>
+                            </select>
+                        </div>
+
                         <SavedFilters
                             storageKey="articles_saved_filters"
                             currentFilters={{ searchTerm, filterCategory, filterSupplier, filterStock }}
@@ -341,59 +379,113 @@ export default function Articles() {
                     </div>
                 </Card>
 
-                {/* Articles Grid */}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredArticles.map(article => {
-                        const isSelected = !!selectedArticles.find(a => a.id === article.id);
-                        const isLowStock = article.min_stock && article.current_stock < article.min_stock;
-                        
-                        return (
-                            <ArticleCard
-                                key={article.id}
-                                article={article}
-                                isSelected={isSelected}
-                                isLowStock={isLowStock}
-                                categories={categories}
-                                onToggleSelect={toggleSelectArticle}
-                                onEdit={handleEdit}
-                                onDelete={handleDelete}
-                            />
-                        );
-                    })}
-                </div>
+                {/* Grouped Articles with Drag & Drop */}
+                <DragDropContext onDragEnd={handleDragEnd}>
+                    {/* Category reorder only when showing all & not filtering */}
+                    <Droppable droppableId="categories" type="CATEGORY">
+                        {(provided) => (
+                            <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-8">
+                                {groupedArticles.map((group, groupIdx) => (
+                                    <Draggable
+                                        key={group.category.id}
+                                        draggableId={`cat-${group.category.id}`}
+                                        index={groupIdx}
+                                        isDragDisabled={filterCategory !== 'all' || group.category.id === '__uncategorized'}
+                                    >
+                                        {(catProvided, catSnapshot) => (
+                                            <div
+                                                ref={catProvided.innerRef}
+                                                {...catProvided.draggableProps}
+                                                className={`${catSnapshot.isDragging ? 'opacity-80' : ''}`}
+                                            >
+                                                {/* Category Header */}
+                                                <div
+                                                    ref={el => categoryRefs.current[group.category.name] = el}
+                                                    className="flex items-center gap-2 mb-3"
+                                                >
+                                                    {filterCategory === 'all' && group.category.id !== '__uncategorized' && (
+                                                        <div {...catProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 touch-none">
+                                                            <GripVertical className="w-4 h-4" />
+                                                        </div>
+                                                    )}
+                                                    <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+                                                        {group.category.name}
+                                                    </h2>
+                                                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">
+                                                        {group.articles.length}
+                                                    </span>
+                                                    <div className="flex-1 h-px bg-slate-700" />
+                                                </div>
 
-                {filteredArticles.length === 0 && (
+                                                {/* Articles in category */}
+                                                <Droppable droppableId={group.category.name} type="ARTICLE" direction="horizontal">
+                                                    {(artProvided, artSnapshot) => (
+                                                        <div
+                                                            ref={artProvided.innerRef}
+                                                            {...artProvided.droppableProps}
+                                                            className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 min-h-[80px] rounded-lg transition-colors ${
+                                                                artSnapshot.isDraggingOver ? 'bg-slate-800/50 ring-1 ring-amber-500/30' : ''
+                                                            }`}
+                                                        >
+                                                            {group.articles.map((article, artIdx) => {
+                                                                const isSelected = !!selectedArticles.find(a => a.id === article.id);
+                                                                const isLowStock = article.min_stock && article.current_stock < article.min_stock;
+                                                                return (
+                                                                    <Draggable key={article.id} draggableId={article.id} index={artIdx}>
+                                                                        {(aDraggable, aSnapshot) => (
+                                                                            <div
+                                                                                ref={aDraggable.innerRef}
+                                                                                {...aDraggable.draggableProps}
+                                                                                className={aSnapshot.isDragging ? 'opacity-80 z-50' : ''}
+                                                                            >
+                                                                                <ArticleCard
+                                                                                    article={article}
+                                                                                    isSelected={isSelected}
+                                                                                    isLowStock={isLowStock}
+                                                                                    categories={categories}
+                                                                                    onToggleSelect={toggleSelectArticle}
+                                                                                    onEdit={handleEdit}
+                                                                                    onDelete={handleDelete}
+                                                                                    dragHandleProps={aDraggable.dragHandleProps}
+                                                                                />
+                                                                            </div>
+                                                                        )}
+                                                                    </Draggable>
+                                                                );
+                                                            })}
+                                                            {artProvided.placeholder}
+                                                        </div>
+                                                    )}
+                                                </Droppable>
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+                            </div>
+                        )}
+                    </Droppable>
+                </DragDropContext>
+
+                {groupedArticles.length === 0 && (
                     <div className="text-center py-12">
                         <Package className="w-12 h-12 mx-auto mb-3 text-slate-600" />
                         <p className="text-slate-400">Keine Artikel gefunden</p>
                     </div>
                 )}
 
-                {/* Modals - Desktop only */}
                 {!isMobile && (
                     <ArticleModal
                         open={modalOpen}
-                        onClose={() => {
-                            setModalOpen(false);
-                            setSelectedArticle(null);
-                        }}
+                        onClose={() => { setModalOpen(false); setSelectedArticle(null); }}
                         article={selectedArticle}
                         onSave={handleSave}
                     />
                 )}
 
-                <BarcodeScanner
-                    open={scannerOpen}
-                    onClose={() => setScannerOpen(false)}
-                    onScan={handleScan}
-                />
-
-                <BulkEditModal
-                    open={bulkEditOpen}
-                    onClose={() => setBulkEditOpen(false)}
-                    selectedArticles={selectedArticles}
-                    onClearSelection={clearSelection}
-                />
+                <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
+                <BulkEditModal open={bulkEditOpen} onClose={() => setBulkEditOpen(false)}
+                    selectedArticles={selectedArticles} onClearSelection={() => setSelectedArticles([])} />
                 <AlertDialogComponent />
             </div>
         </div>

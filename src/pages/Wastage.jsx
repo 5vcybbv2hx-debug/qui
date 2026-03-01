@@ -219,16 +219,40 @@ export default function Wastage() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-slate-300">Artikel scannen oder suchen</Label>
+                                <Label className="text-slate-300">Artikel suchen oder Barcode scannen</Label>
                                 <div className="flex gap-2">
-                                    <Input
-                                        ref={barcodeInputRef}
-                                        value={barcode}
-                                        onChange={(e) => handleBarcodeChange(e.target.value)}
-                                        placeholder="Barcode eingeben..."
-                                        className="bg-slate-900 border-slate-600 text-white"
-                                        autoFocus
-                                    />
+                                    <div className="relative flex-1">
+                                        <Input
+                                            ref={barcodeInputRef}
+                                            value={searchQuery}
+                                            onChange={(e) => handleSearchChange(e.target.value)}
+                                            onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                                            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                                            placeholder="Artikelname oder Barcode..."
+                                            className="bg-slate-900 border-slate-600 text-white"
+                                            autoFocus
+                                        />
+                                        {showSuggestions && articleSuggestions.length > 0 && (
+                                            <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+                                                {articleSuggestions.map(article => (
+                                                    <button
+                                                        key={article.id}
+                                                        type="button"
+                                                        onMouseDown={() => handleSelectArticle(article)}
+                                                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-700 text-left transition-colors"
+                                                    >
+                                                        {article.image_url && (
+                                                            <img src={article.image_url} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                                                        )}
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm text-white truncate">{article.name}</p>
+                                                            {article.barcode && <p className="text-xs text-slate-400">{article.barcode}</p>}
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                     <Button
                                         type="button"
                                         variant="outline"

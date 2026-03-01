@@ -262,6 +262,15 @@ export default function Dashboard() {
                             <p className="text-slate-400 text-sm mt-1">{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</p>
                         </div>
                         <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setViewAsEmployee(true)}
+                                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                            >
+                                <Users className="w-4 h-4 mr-2" />
+                                Mitarbeiter-Ansicht
+                            </Button>
                             <HolidayCreditManager />
                         </div>
                     </div>

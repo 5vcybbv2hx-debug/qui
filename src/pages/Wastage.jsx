@@ -75,6 +75,7 @@ export default function Wastage() {
         setQuantity('1');
         setWastageType('Bruch');
         setNotes('');
+        setEntryDate(format(new Date(), 'yyyy-MM-dd'));
         if (barcodeInputRef.current) {
             barcodeInputRef.current.focus();
         }

@@ -378,14 +378,33 @@ export default function Inventory() {
                                                 <p className="text-lg font-semibold text-slate-300">{systemStock}</p>
                                             </div>
 
-                                            <Input
-                                                type="number"
-                                                value={counted !== undefined ? counted : ''}
-                                                onChange={(e) => handleCountChange(article.id, e.target.value)}
-                                                placeholder="Ist"
-                                                className="w-20 text-center bg-slate-900 border-slate-700 text-white text-lg font-semibold"
-                                                min="0"
-                                            />
+                                            <div className="flex flex-col items-center gap-1">
+                                                <p className="text-sm text-slate-400">Ist</p>
+                                                <div className="flex items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCountChange(article.id, Math.max(0, (counted || 0) - 1))}
+                                                        className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors active:bg-slate-500"
+                                                    >
+                                                        <Minus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <Input
+                                                        type="number"
+                                                        value={counted !== undefined ? counted : ''}
+                                                        onChange={(e) => handleCountChange(article.id, e.target.value)}
+                                                        placeholder="—"
+                                                        className="w-16 text-center bg-slate-900 border-slate-700 text-white text-lg font-semibold px-1"
+                                                        min="0"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleCountChange(article.id, (counted || 0) + 1)}
+                                                        className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors active:bg-slate-500"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
 
                                             {counted !== undefined && (
                                                 <div className={cn(

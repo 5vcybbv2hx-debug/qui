@@ -129,7 +129,7 @@ export default function Wastage() {
             quantity: qty,
             unit: wastageType === 'Nachtwächter' ? 'Liter' : 'Stück',
             type: wastageType,
-            date: format(new Date(), 'yyyy-MM-dd'),
+            date: entryDate,
             time: format(new Date(), 'HH:mm'),
             noted_by: currentUser?.full_name || currentUser?.email || 'Unbekannt',
             notes: notes || null

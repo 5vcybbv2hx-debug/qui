@@ -180,6 +180,15 @@ export default function Settings() {
                     </Card>
                 </div>
 
+                {/* Farbanpassung */}
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Palette className="w-5 h-5" />
+                        Farben anpassen
+                    </h2>
+                    <ColorCustomizer />
+                </div>
+
                 {/* Zeit & Datum Section */}
                 <div className="mt-8">
                     <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">

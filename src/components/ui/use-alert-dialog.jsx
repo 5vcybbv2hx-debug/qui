@@ -30,7 +30,7 @@ export function useAlertDialog() {
     setOpen(true);
   };
 
-  const Dialog = () => (
+  const DialogComponent = (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -54,5 +54,5 @@ export function useAlertDialog() {
     </AlertDialog>
   );
 
-  return { confirm, Dialog };
+  return { confirm, Dialog: DialogComponent };
 }

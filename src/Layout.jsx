@@ -16,6 +16,7 @@ import OfflineIndicator from '@/components/pwa/OfflineIndicator';
 import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import GlobalSearch from '@/components/search/GlobalSearch';
+import { loadSavedColors } from '@/components/settings/ColorCustomizer';
 
 const navigationSections = [
     {

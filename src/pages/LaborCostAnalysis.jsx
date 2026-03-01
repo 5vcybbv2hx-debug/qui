@@ -107,8 +107,9 @@ export default function LaborCostAnalysis() {
                     days: 0
                 };
             }
-            employeeStats[te.employee_id].hours += te.hours_worked;
-            employeeStats[te.employee_id].cost += te.hours_worked * te.hourly_rate;
+            const rate = te.hourly_rate || employeeRateMap[te.employee_id] || 0;
+            employeeStats[te.employee_id].hours += te.total_hours || 0;
+            employeeStats[te.employee_id].cost += (te.total_hours || 0) * rate;
             employeeStats[te.employee_id].days += 1;
         });
 

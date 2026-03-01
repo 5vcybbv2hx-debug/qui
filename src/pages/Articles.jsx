@@ -28,7 +28,7 @@ export default function Articles() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
     const isMobile = useIsMobile();
-    const { confirm, Dialog: AlertDialogComponent } = useAlertDialog();
+    const { confirm, Dialog: alertDialog } = useAlertDialog();
     const categoryRefs = useRef({});
 
     const [modalOpen, setModalOpen] = useState(false);

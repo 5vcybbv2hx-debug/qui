@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ClipboardCheck, Camera, Save, RotateCcw, Search, AlertTriangle, Cloud, CloudOff } from 'lucide-react';
+import { ClipboardCheck, Camera, Save, RotateCcw, Search, AlertTriangle, Cloud, CloudOff, Plus, Minus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";

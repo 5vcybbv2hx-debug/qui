@@ -35,6 +35,7 @@ export default function Wastage() {
     const [quantity, setQuantity] = useState('1');
     const [wastageType, setWastageType] = useState('Bruch');
     const [notes, setNotes] = useState('');
+    const [entryDate, setEntryDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
 
     const { data: wastageItems = [] } = useQuery({

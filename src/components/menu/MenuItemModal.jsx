@@ -389,6 +389,9 @@ export default function MenuItemModal({ item, open, onClose }) {
                             {formData.linked_article_name && (
                                 <p className="text-xs text-green-700 mt-2">
                                     ✓ Verknüpft mit: {formData.linked_article_name}
+                                    {articles.find(a => a.id === formData.linked_article_id)?.allergens && (
+                                        <span className="block text-amber-700 mt-0.5">⚠️ Allergene übernommen: {articles.find(a => a.id === formData.linked_article_id)?.allergens}</span>
+                                    )}
                                 </p>
                             )}
                         </div>

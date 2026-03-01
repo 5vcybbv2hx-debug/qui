@@ -315,11 +315,11 @@ export default function Wastage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-slate-300">Notizen (optional)</Label>
+                                <Label className="text-slate-300">Datum</Label>
                                 <Input
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    placeholder="z.B. beim Aufräumen runtergefallen"
+                                    type="date"
+                                    value={entryDate}
+                                    onChange={(e) => setEntryDate(e.target.value)}
                                     className="bg-slate-900 border-slate-600 text-white"
                                 />
                             </div>

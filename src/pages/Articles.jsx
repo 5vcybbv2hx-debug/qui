@@ -439,14 +439,15 @@ export default function Articles() {
                                                                                 className={aSnapshot.isDragging ? 'opacity-80 z-50' : ''}
                                                                             >
                                                                                 <ArticleCard
-                                                                                    article={article}
-                                                                                    isSelected={isSelected}
-                                                                                    isLowStock={isLowStock}
-                                                                                    categories={categories}
-                                                                                    onToggleSelect={toggleSelectArticle}
-                                                                                    onEdit={handleEdit}
-                                                                                    onDelete={handleDelete}
-                                                                                    dragHandleProps={aDraggable.dragHandleProps}
+                                                                                   article={article}
+                                                                                   isSelected={isSelected}
+                                                                                   isLowStock={isLowStock}
+                                                                                   categories={categories}
+                                                                                   onToggleSelect={toggleSelectArticle}
+                                                                                   onEdit={handleEdit}
+                                                                                   onDelete={handleDelete}
+                                                                                   dragHandleProps={aDraggable.dragHandleProps}
+                                                                                   isManager={permissions.isManager}
                                                                                 />
                                                                             </div>
                                                                         )}

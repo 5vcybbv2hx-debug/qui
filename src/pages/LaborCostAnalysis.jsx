@@ -51,9 +51,16 @@ export default function LaborCostAnalysis() {
         // Gesamtumsatz
         const totalRevenue = monthSalesReports.reduce((sum, sr) => sum + (sr.total_revenue || 0), 0);
 
+        // Mitarbeiter-Stundensatz-Map
+        const employeeRateMap = {};
+        employees.forEach(emp => {
+            employeeRateMap[emp.id] = emp.hourly_rate || 0;
+        });
+
         // Personalkosten
         const totalLaborCost = monthTimeEntries.reduce((sum, te) => {
-            return sum + (te.hours_worked * te.hourly_rate);
+            const rate = te.hourly_rate || employeeRateMap[te.employee_id] || 0;
+            return sum + (te.total_hours * rate);
         }, 0);
 
         // Personalkosten-Quote

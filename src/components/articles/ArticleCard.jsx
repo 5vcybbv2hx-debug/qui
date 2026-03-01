@@ -97,7 +97,7 @@ const ArticleCard = memo(function ArticleCard({
                     {article.quantity && article.unit && (
                         <p>📦 {article.quantity} {article.unit}</p>
                     )}
-                    {permissions.isManager && article.purchase_price && (
+                    {isManager && article.purchase_price && (
                         <p className="font-semibold text-green-400">💰 {article.purchase_price.toFixed(2)} €</p>
                     )}
                     {article.min_stock && (

@@ -369,7 +369,8 @@ export default function MenuItemModal({ item, open, onClose }) {
                                     setFormData({ 
                                         ...formData, 
                                         linked_article_id: value,
-                                        linked_article_name: article?.name || ""
+                                        linked_article_name: article?.name || "",
+                                        allergens: article?.allergens ? article.allergens : formData.allergens
                                     });
                                 }}
                             >

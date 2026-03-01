@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import ImageEditor from '@/components/articles/ImageEditor';
+import AllergenEditor from '@/components/articles/AllergenEditor';
 import { haptics } from "@/components/utils/haptics";
 import { toast } from 'sonner';
 

@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, GripVertical } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 import { usePermissions } from '@/components/auth/usePermissions';
 
@@ -14,7 +14,8 @@ const ArticleCard = memo(function ArticleCard({
     categories,
     onToggleSelect,
     onEdit,
-    onDelete 
+    onDelete,
+    dragHandleProps
 }) {
     const permissions = usePermissions();
     let touchStartX = 0;

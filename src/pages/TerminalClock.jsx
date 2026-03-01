@@ -405,7 +405,7 @@ export default function TerminalClock() {
                             <p className="text-center text-slate-400 py-4">Noch keine Zeiterfassung heute</p>
                         )}
                     </div>
-                </Card>
+                </Card>}
 
                 <PinVerification
                     open={pinModalOpen}

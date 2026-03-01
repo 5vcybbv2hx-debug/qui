@@ -43,7 +43,7 @@ export default function Articles() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
     const isMobile = useIsMobile();
-    const { showAlert } = useAlertDialog();
+    const { confirm, Dialog: AlertDialogComponent } = useAlertDialog();
     const [modalOpen, setModalOpen] = useState(false);
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);

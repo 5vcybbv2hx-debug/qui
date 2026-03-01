@@ -28,7 +28,8 @@ export default function Wastage() {
     const permissions = usePermissions();
     const barcodeInputRef = useRef(null);
     
-    const [barcode, setBarcode] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState(null);
     const [quantity, setQuantity] = useState('1');

@@ -550,6 +550,15 @@ export default function Dashboard() {
                         <h1 className="text-lg sm:text-2xl font-bold text-white">Willkommen, {currentEmployee.name}!</h1>
                         <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
                     </div>
+                    {permissions.isManager && viewAsEmployee && (
+                        <Button
+                            size="sm"
+                            onClick={() => setViewAsEmployee(false)}
+                            className="bg-amber-500 hover:bg-amber-600 text-slate-900"
+                        >
+                            Manager-Ansicht
+                        </Button>
+                    )}
                     {onboardingProgress < 100 && (
                         <Button
                             onClick={() => setShowOnboardingTour(true)}

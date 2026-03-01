@@ -5,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2, GripVertical } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
-import { usePermissions } from '@/components/auth/usePermissions';
-
 const ArticleCard = memo(function ArticleCard({ 
     article, 
     isSelected, 
@@ -15,9 +13,9 @@ const ArticleCard = memo(function ArticleCard({
     onToggleSelect,
     onEdit,
     onDelete,
-    dragHandleProps
+    dragHandleProps,
+    isManager
 }) {
-    const permissions = usePermissions();
     let touchStartX = 0;
     let touchEndX = 0;
     

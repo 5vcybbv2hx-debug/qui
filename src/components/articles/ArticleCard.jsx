@@ -39,6 +39,11 @@ const ArticleCard = memo(function ArticleCard({
             onTouchEnd={handleTouchEnd}
         >
             <div className="flex items-start justify-between mb-3">
+                {dragHandleProps && (
+                    <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 mt-1 mr-1 touch-none">
+                        <GripVertical className="w-4 h-4" />
+                    </div>
+                )}
                 <div className="flex items-start gap-2 flex-1">
                     <Checkbox
                         checked={isSelected}

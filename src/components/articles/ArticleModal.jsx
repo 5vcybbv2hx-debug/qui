@@ -416,27 +416,11 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                         )}
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Allergene</Label>
-                        <div className="space-y-2">
-                            <Textarea
-                                value={formData.allergens}
-                                onChange={(e) => setFormData({ ...formData, allergens: e.target.value })}
-                                placeholder="z.B. Gluten, Sulfite, Milch"
-                                rows={2}
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={detectAllergens}
-                                disabled={detectingAllergens}
-                                className="w-full"
-                            >
-                                {detectingAllergens ? 'Erkenne Allergene...' : '🤖 Allergene automatisch erkennen'}
-                            </Button>
-                        </div>
-                    </div>
+                    <AllergenEditor
+                        value={formData.allergens}
+                        onChange={(val) => setFormData({ ...formData, allergens: val })}
+                        articleName={formData.name}
+                    />
 
                     <div className="space-y-2">
                         <Label>Notizen</Label>

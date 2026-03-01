@@ -1,66 +1,63 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AlertTriangle } from 'lucide-react';
 
 export default function MenuCard({ item }) {
     return (
-        <Card className="bg-slate-800 border-slate-700 overflow-hidden hover:scale-[1.02] transition-transform">
+        <div className="bg-card/80 backdrop-blur border border-border/50 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-black/20 transition-all">
             {item.image_url && (
-                <img 
-                    src={item.image_url} 
+                <img
+                    src={item.image_url}
                     alt={item.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-40 object-cover"
                 />
             )}
-            <CardContent className="p-6">
-                <h3 className="text-xl font-bold text-white mb-2">{item.name}</h3>
-                
-                {item.description && (
-                    <p className="text-slate-400 text-sm mb-4">{item.description}</p>
-                )}
-
-                <div className="flex items-center justify-between">
-                    <div className="text-2xl font-bold text-amber-500">
-                        €{item.price.toFixed(2)}
+            <div className="p-5 space-y-3">
+                <div className="flex justify-between items-start gap-2">
+                    <div>
+                        <h3 className="font-bold text-lg text-foreground">{item.name}</h3>
+                        {item.subcategory && (
+                            <p className="text-xs text-muted-foreground">{item.subcategory}</p>
+                        )}
                     </div>
-                    {item.category && (
-                        <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20">
-                            {item.category}
-                        </Badge>
-                    )}
+                    <div className="text-right shrink-0">
+                        <span className="text-xl font-bold text-amber-400">
+                            {Number(item.price).toFixed(2)} €
+                        </span>
+                        {item.size && (
+                            <p className="text-xs text-muted-foreground">{item.size}</p>
+                        )}
+                    </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-3">
-                    {item.size && (
-                        <Badge variant="outline" className="border-slate-600 text-slate-300">
-                            {item.size}
-                        </Badge>
-                    )}
-                    {item.alcohol_content && (
-                        <Badge variant="outline" className="border-slate-600 text-slate-300">
-                            {item.alcohol_content}% Vol.
-                        </Badge>
+                {item.description && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                    {item.is_special && (
+                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30">Special</Badge>
                     )}
                     {item.is_seasonal && (
-                        <Badge className="bg-green-900/50 text-green-300 border-green-800">
-                            Saisonal
-                        </Badge>
+                        <Badge className="bg-green-500/20 text-green-300 border-green-500/30">Saisonal</Badge>
                     )}
-                    {item.is_special && (
-                        <Badge className="bg-amber-900/50 text-amber-300 border-amber-800">
-                            Special
+                    {item.alcohol_content && (
+                        <Badge variant="outline" className="text-muted-foreground border-border/50">
+                            {item.alcohol_content}% Vol.
                         </Badge>
                     )}
                 </div>
 
                 {item.allergens && (
-                    <div className="mt-4 pt-4 border-t border-slate-700">
-                        <p className="text-xs text-slate-500">
-                            <span className="font-semibold">Allergene:</span> {item.allergens}
+                    <div className="flex items-start gap-2 pt-2 border-t border-border/30">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+                        <p className="text-xs text-muted-foreground">
+                            <span className="font-semibold text-amber-400/80">Allergene: </span>
+                            {item.allergens}
                         </p>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

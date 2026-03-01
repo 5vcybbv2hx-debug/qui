@@ -121,7 +121,8 @@ const ArticleCard = memo(function ArticleCard({
            prevProps.isSelected === nextProps.isSelected &&
            prevProps.isLowStock === nextProps.isLowStock &&
            prevProps.article.current_stock === nextProps.article.current_stock &&
-           prevProps.article.image_url === nextProps.article.image_url;
+           prevProps.article.image_url === nextProps.article.image_url &&
+           prevProps.dragHandleProps === nextProps.dragHandleProps;
 });
 
 export default ArticleCard;

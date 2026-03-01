@@ -135,18 +135,14 @@ export default function Articles() {
         }
     };
 
-    const handleDelete = async (id) => {
-        const confirmed = await showAlert({
-            title: 'Artikel löschen',
-            description: 'Möchtest du diesen Artikel wirklich löschen?',
-            confirmText: 'Löschen',
-            cancelText: 'Abbrechen',
-            variant: 'destructive'
-        });
-        
-        if (confirmed) {
-            deleteMutation.mutate(id);
-        }
+    const handleDelete = (id) => {
+        confirm(
+            'Artikel löschen',
+            'Möchtest du diesen Artikel wirklich löschen?',
+            () => deleteMutation.mutate(id),
+            undefined,
+            'destructive'
+        );
     };
 
     const handleScan = (barcode) => {

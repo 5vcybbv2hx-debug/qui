@@ -383,6 +383,7 @@ export default function Articles() {
                     selectedArticles={selectedArticles}
                     onClearSelection={clearSelection}
                 />
+                <AlertDialogComponent />
             </div>
         </div>
     );

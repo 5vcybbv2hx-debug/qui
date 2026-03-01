@@ -71,6 +71,7 @@ import Maintenance from './pages/Maintenance';
 import More from './pages/More';
 import MyArea from './pages/MyArea';
 import MyProfile from './pages/MyProfile';
+import MyShifts from './pages/MyShifts';
 import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
@@ -100,7 +101,6 @@ import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
-import MyShifts from './pages/MyShifts';
 import __Layout from './Layout.jsx';
 
 
@@ -129,6 +129,7 @@ export const PAGES = {
     "More": More,
     "MyArea": MyArea,
     "MyProfile": MyProfile,
+    "MyShifts": MyShifts,
     "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
     "Onboarding": Onboarding,
@@ -158,7 +159,6 @@ export const PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "WeeklyTasks": WeeklyTasks,
-    "MyShifts": MyShifts,
 }
 
 export const pagesConfig = {

@@ -14,6 +14,7 @@ import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import PDFExportButton from '@/components/export/PDFExportButton';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import WastageTemplates from '@/components/wastage/WastageTemplates';
 
 const wastageTypes = [
     { value: 'Bruch', label: 'Bruch (heruntergefallen)', icon: '💥', color: 'bg-red-100 text-red-700' },

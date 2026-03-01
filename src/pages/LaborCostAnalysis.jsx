@@ -76,11 +76,12 @@ export default function LaborCostAnalysis() {
                 .filter(sr => sr.report_date === dateStr)
                 .reduce((sum, sr) => sum + (sr.total_revenue || 0), 0);
             
-            const dayLaborCost = dayEntries.reduce((sum, te) => 
-                sum + (te.hours_worked * te.hourly_rate), 0
-            );
+            const dayLaborCost = dayEntries.reduce((sum, te) => {
+                const rate = te.hourly_rate || employeeRateMap[te.employee_id] || 0;
+                return sum + (te.total_hours * rate);
+            }, 0);
             
-            const dayHours = dayEntries.reduce((sum, te) => sum + te.hours_worked, 0);
+            const dayHours = dayEntries.reduce((sum, te) => sum + (te.total_hours || 0), 0);
             const dayStaff = new Set(dayEntries.map(te => te.employee_id)).size;
 
             return {

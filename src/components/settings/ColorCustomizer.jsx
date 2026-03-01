@@ -1,99 +1,99 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Palette, RotateCcw } from 'lucide-react';
+import { RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 
-const ACCENT_PRESETS = [
-    { name: 'Amber', primary: '38 92% 50%', label: '#f59e0b', hex: '#f59e0b' },
-    { name: 'Orange', primary: '24 95% 53%', label: '#f97316', hex: '#f97316' },
-    { name: 'Rose', primary: '346 87% 60%', label: '#f43f5e', hex: '#f43f5e' },
-    { name: 'Violet', primary: '262 83% 58%', label: '#7c3aed', hex: '#7c3aed' },
-    { name: 'Blau', primary: '217 91% 60%', label: '#3b82f6', hex: '#3b82f6' },
-    { name: 'Cyan', primary: '192 91% 36%', label: '#0891b2', hex: '#0891b2' },
-    { name: 'Grün', primary: '142 71% 45%', label: '#22c55e', hex: '#22c55e' },
-    { name: 'Smaragd', primary: '160 84% 39%', label: '#10b981', hex: '#10b981' },
-    { name: 'Pink', primary: '330 86% 60%', label: '#ec4899', hex: '#ec4899' },
+export const ACCENT_PRESETS = [
+    { name: 'Amber (Standard)', key: 'amber', from: '#f59e0b', via: '#f97316', ring: '38 92% 50%' },
+    { name: 'Orange', key: 'orange', from: '#f97316', via: '#ef4444', ring: '24 95% 53%' },
+    { name: 'Rose', key: 'rose', from: '#f43f5e', via: '#e11d48', ring: '346 87% 60%' },
+    { name: 'Violet', key: 'violet', from: '#7c3aed', via: '#6d28d9', ring: '262 83% 58%' },
+    { name: 'Blau', key: 'blue', from: '#3b82f6', via: '#2563eb', ring: '217 91% 60%' },
+    { name: 'Cyan', key: 'cyan', from: '#06b6d4', via: '#0891b2', ring: '192 91% 50%' },
+    { name: 'Grün', key: 'green', from: '#22c55e', via: '#16a34a', ring: '142 71% 45%' },
+    { name: 'Pink', key: 'pink', from: '#ec4899', via: '#db2777', ring: '330 86% 60%' },
 ];
 
 const BG_PRESETS = [
-    { name: 'Standard Dunkel', bg: '222.2 47.4% 11.2%', card: '217.2 32.6% 17.5%', label: '#1a2236' },
-    { name: 'Tief Dunkel', bg: '0 0% 7%', card: '0 0% 12%', label: '#111111' },
-    { name: 'Marine', bg: '230 50% 10%', card: '230 40% 15%', label: '#0d1a36' },
-    { name: 'Slate', bg: '215 28% 12%', card: '215 25% 18%', label: '#1a2130' },
+    { name: 'Standard', key: 'default', bg: '222.2 47.4% 11.2%', card: '217.2 32.6% 17.5%', hex: '#1a2236' },
+    { name: 'Tief Dunkel', key: 'deep', bg: '0 0% 7%', card: '0 0% 12%', hex: '#111111' },
+    { name: 'Marine', key: 'navy', bg: '230 50% 10%', card: '230 40% 15%', hex: '#0d1a36' },
+    { name: 'Slate', key: 'slate', bg: '215 28% 12%', card: '215 25% 18%', hex: '#1a2130' },
 ];
 
-function hslStringToHex(hsl) {
-    const [h, s, l] = hsl.split(' ').map((v, i) => i === 0 ? parseFloat(v) : parseFloat(v) / 100);
-    const a = s * Math.min(l, 1 - l);
-    const f = (n) => {
-        const k = (n + h / 30) % 12;
-        const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round(255 * color).toString(16).padStart(2, '0');
-    };
-    return `#${f(0)}${f(8)}${f(4)}`;
+export function applyAccentColor(preset) {
+    const root = document.documentElement;
+    // CSS Variablen setzen
+    root.style.setProperty('--primary', preset.ring);
+    root.style.setProperty('--ring', preset.ring);
+    // Gradient-Farben als custom properties für die Sidebar
+    root.style.setProperty('--accent-from', preset.from);
+    root.style.setProperty('--accent-via', preset.via || preset.from);
+    // data-accent für eventuelle CSS-Selektoren
+    root.setAttribute('data-accent', preset.key);
 }
 
-export function applyColorTheme(primaryHsl, bgHsl, cardHsl) {
+export function applyBgColor(preset) {
     const root = document.documentElement;
-    if (primaryHsl) {
-        root.style.setProperty('--primary', primaryHsl);
-        root.style.setProperty('--ring', primaryHsl);
-    }
-    if (bgHsl) root.style.setProperty('--background', bgHsl);
-    if (cardHsl) {
-        root.style.setProperty('--card', cardHsl);
-        root.style.setProperty('--popover', bgHsl || cardHsl);
-        root.style.setProperty('--secondary', cardHsl);
-        root.style.setProperty('--muted', cardHsl);
-        root.style.setProperty('--accent', cardHsl);
-        root.style.setProperty('--border', cardHsl);
-        root.style.setProperty('--input', cardHsl);
-    }
+    root.style.setProperty('--background', preset.bg);
+    root.style.setProperty('--card', preset.card);
+    root.style.setProperty('--popover', preset.bg);
+    root.style.setProperty('--secondary', preset.card);
+    root.style.setProperty('--muted', preset.card);
+    root.style.setProperty('--accent', preset.card);
+    root.style.setProperty('--border', preset.card);
+    root.style.setProperty('--input', preset.card);
+    root.setAttribute('data-bg', preset.key);
 }
 
 export function loadSavedColors() {
-    const primary = localStorage.getItem('accentColor');
-    const bg = localStorage.getItem('bgColor');
-    const card = localStorage.getItem('cardColor');
-    if (primary || bg) {
-        applyColorTheme(primary, bg, card);
+    const accentKey = localStorage.getItem('accentKey');
+    const bgKey = localStorage.getItem('bgKey');
+
+    if (accentKey) {
+        const preset = ACCENT_PRESETS.find(p => p.key === accentKey);
+        if (preset) applyAccentColor(preset);
+    }
+    if (bgKey) {
+        const preset = BG_PRESETS.find(p => p.key === bgKey);
+        if (preset) applyBgColor(preset);
     }
 }
 
 export default function ColorCustomizer() {
-    const [selectedAccent, setSelectedAccent] = useState(() => localStorage.getItem('accentColor') || ACCENT_PRESETS[0].primary);
-    const [selectedBg, setSelectedBg] = useState(() => localStorage.getItem('bgColor') || BG_PRESETS[0].bg);
-    const [selectedCard, setSelectedCard] = useState(() => localStorage.getItem('cardColor') || BG_PRESETS[0].card);
+    const [selectedAccent, setSelectedAccent] = useState(
+        () => localStorage.getItem('accentKey') || 'amber'
+    );
+    const [selectedBg, setSelectedBg] = useState(
+        () => localStorage.getItem('bgKey') || 'default'
+    );
 
     const handleAccentChange = (preset) => {
-        setSelectedAccent(preset.primary);
-        applyColorTheme(preset.primary, null, null);
-        localStorage.setItem('accentColor', preset.primary);
-        toast.success(`Akzentfarbe auf ${preset.name} geändert`);
+        setSelectedAccent(preset.key);
+        applyAccentColor(preset);
+        localStorage.setItem('accentKey', preset.key);
+        toast.success(`Akzentfarbe: ${preset.name}`);
     };
 
     const handleBgChange = (preset) => {
-        setSelectedBg(preset.bg);
-        setSelectedCard(preset.card);
-        applyColorTheme(null, preset.bg, preset.card);
-        localStorage.setItem('bgColor', preset.bg);
-        localStorage.setItem('cardColor', preset.card);
-        toast.success(`Hintergrund auf ${preset.name} geändert`);
+        setSelectedBg(preset.key);
+        applyBgColor(preset);
+        localStorage.setItem('bgKey', preset.key);
+        toast.success(`Hintergrund: ${preset.name}`);
     };
 
     const handleReset = () => {
-        const defaultAccent = ACCENT_PRESETS[0].primary;
-        const defaultBg = BG_PRESETS[0].bg;
-        const defaultCard = BG_PRESETS[0].card;
-        setSelectedAccent(defaultAccent);
-        setSelectedBg(defaultBg);
-        setSelectedCard(defaultCard);
-        applyColorTheme(defaultAccent, defaultBg, defaultCard);
-        localStorage.removeItem('accentColor');
-        localStorage.removeItem('bgColor');
-        localStorage.removeItem('cardColor');
+        setSelectedAccent('amber');
+        setSelectedBg('default');
+        applyAccentColor(ACCENT_PRESETS[0]);
+        applyBgColor(BG_PRESETS[0]);
+        localStorage.removeItem('accentKey');
+        localStorage.removeItem('bgKey');
+        const root = document.documentElement;
+        root.removeAttribute('data-accent');
+        root.removeAttribute('data-bg');
         toast.success('Farben zurückgesetzt');
     };
 
@@ -102,51 +102,55 @@ export default function ColorCustomizer() {
             {/* Akzentfarbe */}
             <div>
                 <Label className="text-sm font-medium text-foreground mb-1 block">Akzentfarbe</Label>
-                <p className="text-xs text-muted-foreground mb-3">Hauptfarbe für Buttons, aktive Elemente und Highlights</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-xs text-muted-foreground mb-3">
+                    Hauptfarbe für aktive Menüpunkte, Buttons und Highlights
+                </p>
+                <div className="flex flex-wrap gap-3">
                     {ACCENT_PRESETS.map((preset) => {
-                        const isActive = selectedAccent === preset.primary;
+                        const isActive = selectedAccent === preset.key;
                         return (
                             <button
-                                key={preset.name}
+                                key={preset.key}
                                 onClick={() => handleAccentChange(preset)}
                                 title={preset.name}
-                                className={`relative w-10 h-10 rounded-full border-2 transition-all ${isActive ? 'border-foreground scale-110 shadow-lg' : 'border-transparent hover:scale-105'}`}
-                                style={{ backgroundColor: preset.hex }}
+                                className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all ${
+                                    isActive ? 'border-foreground scale-105 shadow-lg' : 'border-transparent hover:border-muted-foreground'
+                                }`}
                             >
-                                {isActive && (
-                                    <span className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold">✓</span>
-                                )}
+                                <div
+                                    className="w-10 h-10 rounded-full shadow-md"
+                                    style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.via})` }}
+                                >
+                                    {isActive && (
+                                        <span className="flex items-center justify-center w-full h-full text-white text-sm font-bold">✓</span>
+                                    )}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{preset.name.split(' ')[0]}</span>
                             </button>
                         );
                     })}
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                    {ACCENT_PRESETS.map((preset) => (
-                        selectedAccent === preset.primary && (
-                            <span key={preset.name} className="text-xs text-muted-foreground">{preset.name} ausgewählt</span>
-                        )
-                    ))}
-                </div>
             </div>
 
-            {/* Hintergrund */}
+            {/* Hintergrundfarbe */}
             <div>
                 <Label className="text-sm font-medium text-foreground mb-1 block">Hintergrundfarbe</Label>
-                <p className="text-xs text-muted-foreground mb-3">Basis-Hintergrund der App (nur im Dunkelmodus)</p>
+                <p className="text-xs text-muted-foreground mb-3">Dunkler Basiston der App</p>
                 <div className="flex flex-wrap gap-3">
                     {BG_PRESETS.map((preset) => {
-                        const isActive = selectedBg === preset.bg;
+                        const isActive = selectedBg === preset.key;
                         return (
                             <button
-                                key={preset.name}
+                                key={preset.key}
                                 onClick={() => handleBgChange(preset)}
                                 title={preset.name}
-                                className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${isActive ? 'border-primary scale-105' : 'border-border hover:border-muted-foreground'}`}
+                                className={`flex flex-col items-center gap-1 p-2 rounded-xl border-2 transition-all ${
+                                    isActive ? 'border-foreground scale-105' : 'border-border hover:border-muted-foreground'
+                                }`}
                             >
                                 <div
                                     className="w-10 h-10 rounded-lg border border-white/10"
-                                    style={{ backgroundColor: preset.label }}
+                                    style={{ backgroundColor: preset.hex }}
                                 />
                                 <span className="text-[10px] text-muted-foreground">{preset.name}</span>
                             </button>
@@ -155,11 +159,27 @@ export default function ColorCustomizer() {
                 </div>
             </div>
 
+            {/* Vorschau */}
+            <div className="rounded-xl overflow-hidden border border-border">
+                <div className="px-4 py-3 text-xs font-semibold text-muted-foreground bg-secondary">Vorschau</div>
+                <div className="p-4 flex gap-3 items-center">
+                    <div
+                        className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-900"
+                        style={{ background: `linear-gradient(135deg, ${ACCENT_PRESETS.find(p => p.key === selectedAccent)?.from}, ${ACCENT_PRESETS.find(p => p.key === selectedAccent)?.via})` }}
+                    >
+                        Aktiver Button
+                    </div>
+                    <div className="px-4 py-2 rounded-lg text-sm border border-border text-muted-foreground">
+                        Inaktiv
+                    </div>
+                </div>
+            </div>
+
             {/* Reset */}
             <div className="pt-2 border-t border-border">
                 <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
                     <RotateCcw className="w-4 h-4" />
-                    Farben zurücksetzen
+                    Zurücksetzen
                 </Button>
             </div>
         </Card>

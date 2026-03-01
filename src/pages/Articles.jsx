@@ -486,7 +486,7 @@ export default function Articles() {
                 <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
                 <BulkEditModal open={bulkEditOpen} onClose={() => setBulkEditOpen(false)}
                     selectedArticles={selectedArticles} onClearSelection={() => setSelectedArticles([])} />
-                <AlertDialogComponent />
+                {alertDialog}
             </div>
         </div>
     );

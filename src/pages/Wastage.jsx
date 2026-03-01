@@ -68,7 +68,8 @@ export default function Wastage() {
     });
 
     const resetForm = () => {
-        setBarcode('');
+        setSearchQuery('');
+        setShowSuggestions(false);
         setSelectedArticle(null);
         setQuantity('1');
         setWastageType('Bruch');
@@ -78,28 +79,32 @@ export default function Wastage() {
         }
     };
 
-    const handleBarcodeChange = (value) => {
-        setBarcode(value);
-        if (value.trim()) {
-            const article = articles.find(a => a.barcode === value || a.barcode.includes(value));
-            if (article) {
-                setSelectedArticle(article);
-            }
-        } else {
-            setSelectedArticle(null);
-        }
+    const handleSearchChange = (value) => {
+        setSearchQuery(value);
+        setSelectedArticle(null);
+        setShowSuggestions(value.trim().length > 0);
+    };
+
+    const handleSelectArticle = (article) => {
+        setSelectedArticle(article);
+        setSearchQuery(article.name);
+        setShowSuggestions(false);
     };
 
     const handleScan = (scannedBarcode) => {
         const article = articles.find(a => a.barcode === scannedBarcode);
         if (article) {
-            setBarcode(scannedBarcode);
-            setSelectedArticle(article);
+            handleSelectArticle(article);
             setScannerOpen(false);
         } else {
             alert('Artikel nicht in der Datenbank gefunden');
         }
     };
+
+    const articleSuggestions = articles.filter(a =>
+        a.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.barcode?.includes(searchQuery)
+    ).slice(0, 8);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

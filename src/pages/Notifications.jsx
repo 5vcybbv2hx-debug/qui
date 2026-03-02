@@ -27,10 +27,11 @@ const typeColors = {
 };
 
 export default function Notifications() {
-    const queryClient = useQueryClient();
-    const permissions = usePermissions();
-    const [filter, setFilter] = useState('all');
-    const [currentUser, setCurrentUser] = useState(null);
+     const queryClient = useQueryClient();
+     const permissions = usePermissions();
+     const [filter, setFilter] = useState('all');
+     const [currentUser, setCurrentUser] = useState(null);
+     const [selectedIds, setSelectedIds] = useState(new Set());
 
     React.useEffect(() => {
         base44.auth.me().then(setCurrentUser).catch(() => {});
@@ -82,19 +83,50 @@ export default function Notifications() {
     });
 
     const deleteAllReadMutation = useMutation({
-        mutationFn: async () => {
-            const readNotifications = visibleNotifications.filter(n => 
-                n.read_by?.includes(currentUser.email)
-            );
-            const promises = readNotifications.map(n => 
-                base44.entities.Notification.delete(n.id)
-            );
-            return Promise.all(promises);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['notifications']);
-        }
-    });
+         mutationFn: async () => {
+             const readNotifications = visibleNotifications.filter(n => 
+                 n.read_by?.includes(currentUser.email)
+             );
+             const promises = readNotifications.map(n => 
+                 base44.entities.Notification.delete(n.id)
+             );
+             return Promise.all(promises);
+         },
+         onSuccess: () => {
+             queryClient.invalidateQueries(['notifications']);
+         }
+     });
+
+     const bulkDeleteMutation = useMutation({
+         mutationFn: async () => {
+             const promises = Array.from(selectedIds).map(id => 
+                 base44.entities.Notification.delete(id)
+             );
+             return Promise.all(promises);
+         },
+         onSuccess: () => {
+             setSelectedIds(new Set());
+             queryClient.invalidateQueries(['notifications']);
+         }
+     });
+
+     const toggleSelection = (notificationId) => {
+         const newSelected = new Set(selectedIds);
+         if (newSelected.has(notificationId)) {
+             newSelected.delete(notificationId);
+         } else {
+             newSelected.add(notificationId);
+         }
+         setSelectedIds(newSelected);
+     };
+
+     const toggleSelectAll = () => {
+         if (selectedIds.size === filteredNotifications.length) {
+             setSelectedIds(new Set());
+         } else {
+             setSelectedIds(new Set(filteredNotifications.map(n => n.id)));
+         }
+     };
 
     if (!currentUser) return null;
 

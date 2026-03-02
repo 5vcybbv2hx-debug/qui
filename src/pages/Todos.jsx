@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Filter, CheckSquare, Archive } from 'lucide-react';
+import { Plus, CheckSquare, Tag } from 'lucide-react';
+import TodoCategoryManager, { loadCategories } from '@/components/todos/TodoCategoryManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";

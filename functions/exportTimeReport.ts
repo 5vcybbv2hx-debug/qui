@@ -86,8 +86,8 @@ Deno.serve(async (req) => {
 
         if (format === 'pdf') {
             return generatePDF(employeeData, monthName, year);
-        } else if (format === 'excel') {
-            return generateExcel(employeeData, monthName, year);
+        } else if (format === 'csv') {
+            return generateCSV(employeeData, monthName, year);
         } else {
             return Response.json({ error: 'Invalid format' }, { status: 400 });
         }

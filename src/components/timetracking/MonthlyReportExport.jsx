@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Download, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { FileText, Download, Loader2 } from 'lucide-react';
 
 export default function MonthlyReportExport({ isVisible }) {
     const [open, setOpen] = useState(false);

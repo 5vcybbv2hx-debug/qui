@@ -17,22 +17,23 @@ export default function MonthlyReportExport({ isVisible }) {
     const handleExport = async (format) => {
         setLoading(true);
         try {
+            const isPdf = format === 'pdf';
+            const mimeType = isPdf
+                ? 'application/pdf'
+                : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            const ext = isPdf ? 'pdf' : 'xlsx';
+
             const response = await base44.functions.invoke('exportTimeReport', {
                 month: selectedMonth,
                 year: selectedYear,
                 format: format
-            });
+            }, { responseType: 'arraybuffer' });
 
-            const blob = new Blob([response.data], {
-                type: format === 'pdf' 
-                    ? 'application/pdf' 
-                    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            });
-            
+            const blob = new Blob([response.data], { type: mimeType });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Zeiterfassung_${selectedMonth}_${selectedYear}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+            a.download = `Zeiterfassung_${selectedMonth}_${selectedYear}.${ext}`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

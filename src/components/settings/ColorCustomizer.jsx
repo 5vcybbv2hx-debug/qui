@@ -8,14 +8,14 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const ACCENT_PRESETS = [
-    { name: 'Amber (Standard)', key: 'amber', from: '#f59e0b', via: '#f97316', ring: '38 92% 50%' },
-    { name: 'Orange', key: 'orange', from: '#f97316', via: '#ef4444', ring: '24 95% 53%' },
-    { name: 'Rose', key: 'rose', from: '#f43f5e', via: '#e11d48', ring: '346 87% 60%' },
-    { name: 'Violet', key: 'violet', from: '#7c3aed', via: '#6d28d9', ring: '262 83% 58%' },
-    { name: 'Blau', key: 'blue', from: '#3b82f6', via: '#2563eb', ring: '217 91% 60%' },
-    { name: 'Cyan', key: 'cyan', from: '#06b6d4', via: '#0891b2', ring: '192 91% 50%' },
-    { name: 'Grün', key: 'green', from: '#22c55e', via: '#16a34a', ring: '142 71% 45%' },
-    { name: 'Pink', key: 'pink', from: '#ec4899', via: '#db2777', ring: '330 86% 60%' },
+    { name: 'Amber (Standard)', key: 'amber', from: '#f59e0b', via: '#f97316', ring: '38 92% 50%', text: '#92400e' },
+    { name: 'Orange', key: 'orange', from: '#f97316', via: '#ef4444', ring: '24 95% 53%', text: '#7c2d12' },
+    { name: 'Rose', key: 'rose', from: '#f43f5e', via: '#e11d48', ring: '346 87% 60%', text: '#881337' },
+    { name: 'Violet', key: 'violet', from: '#7c3aed', via: '#6d28d9', ring: '262 83% 58%', text: '#ede9fe' },
+    { name: 'Blau', key: 'blue', from: '#3b82f6', via: '#2563eb', ring: '217 91% 60%', text: '#dbeafe' },
+    { name: 'Cyan', key: 'cyan', from: '#06b6d4', via: '#0891b2', ring: '192 91% 50%', text: '#cffafe' },
+    { name: 'Grün', key: 'green', from: '#22c55e', via: '#16a34a', ring: '142 71% 45%', text: '#dcfce7' },
+    { name: 'Pink', key: 'pink', from: '#ec4899', via: '#db2777', ring: '330 86% 60%', text: '#fce7f3' },
 ];
 
 const BG_PRESETS = [

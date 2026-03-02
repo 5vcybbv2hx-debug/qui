@@ -201,7 +201,7 @@ export default function Todos() {
                     
                     {!showArchived && (
                         <div className="flex gap-2 overflow-x-auto pb-1">
-                            {['alle', 'Einkauf', 'Reparatur', 'Event', 'Sonstiges'].map(cat => {
+                            {['alle', ...categories].map(cat => {
                                 const count = activeTodos.filter(t => cat === 'alle' || t.category === cat).length;
                                 return (
                                     <Button

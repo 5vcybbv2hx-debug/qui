@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, Edit2, Plus } from 'lucide-react';
+import { Trash2, Edit2, Plus, Wand2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import LayoutSuggestion from '@/components/seating/LayoutSuggestion';
 
 export default function RoomManager({ rooms, onRoomCreated }) {
     const queryClient = useQueryClient();
     const [showModal, setShowModal] = useState(false);
     const [editingRoom, setEditingRoom] = useState(null);
+    const [layoutRoom, setLayoutRoom] = useState(null);
     const [formData, setFormData] = useState({ name: '', description: '', capacity: '' });
+
+    const { data: tables = [] } = useQuery({
+        queryKey: ['tables'],
+        queryFn: () => base44.entities.Table.list()
+    });
 
     const saveMutation = useMutation({
         mutationFn: (data) =>
@@ -69,6 +76,14 @@ export default function RoomManager({ rooms, onRoomCreated }) {
                                     )}
                                 </div>
                                 <div className="flex gap-2">
+                                    <Button
+                                        onClick={() => setLayoutRoom(room)}
+                                        variant="outline"
+                                        size="sm"
+                                        title="Layout automatisch vorschlagen"
+                                    >
+                                        <Wand2 className="h-4 w-4" />
+                                    </Button>
                                     <Button
                                         onClick={() => handleEdit(room)}
                                         variant="outline"
@@ -155,6 +170,15 @@ export default function RoomManager({ rooms, onRoomCreated }) {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {layoutRoom && (
+                <LayoutSuggestion
+                    room={layoutRoom}
+                    tables={tables}
+                    open={!!layoutRoom}
+                    onClose={() => setLayoutRoom(null)}
+                />
+            )}
         </>
     );
 }

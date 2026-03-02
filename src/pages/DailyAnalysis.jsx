@@ -45,9 +45,21 @@ export default function DailyAnalysis() {
         staleTime: 5 * 60 * 1000,
     });
 
+    // Bestimme den "Betriebstag" einer Schicht (Schichten vor 09:00 Uhr gehören zum Vortag)
+    const getOperatingDate = (timeEntry) => {
+        const startHour = parseInt(timeEntry.start_time.split(':')[0]);
+        if (startHour < 9) {
+            // Schicht beginnt vor 09:00 Uhr, gehört zum Vortag
+            const prevDate = new Date(timeEntry.date);
+            prevDate.setDate(prevDate.getDate() - 1);
+            return prevDate.toISOString().split('T')[0];
+        }
+        return timeEntry.date;
+    };
+
     // Daten für aktuellen Tag
     const todayRevenue = dailyRevenues.find(dr => dr.date === selectedDate);
-    const todayTimeEntries = timeEntries.filter(te => te.date === selectedDate && te.status === 'approved');
+    const todayTimeEntries = timeEntries.filter(te => getOperatingDate(te) === selectedDate && te.status === 'approved');
     const todayTipDistribution = tipDistributions.find(td => td.date === selectedDate);
 
     // Employee-Map für schnelle Lookups

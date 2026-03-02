@@ -1,0 +1,180 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { createPageUrl } from '@/utils';
+import { useNavigate } from 'react-router-dom';
+import { Trash2, Plus, Calendar } from 'lucide-react';
+
+export default function TableModal({ table, open, onClose, reservation }) {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [isEditing, setIsEditing] = useState(!table);
+
+    const [formData, setFormData] = useState({
+        table_number: table?.table_number || '',
+        capacity: table?.capacity || '',
+        section: table?.section || '',
+        notes: table?.notes || ''
+    });
+
+    const saveMutation = useMutation({
+        mutationFn: (data) => 
+            table 
+                ? base44.entities.Table.update(table.id, data)
+                : base44.entities.Table.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tables'] });
+            onClose();
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: () => base44.entities.Table.delete(table.id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tables'] });
+            onClose();
+        }
+    });
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        saveMutation.mutate(formData);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>
+                        {table ? `Tisch ${table.table_number}` : 'Neuer Tisch'}
+                    </DialogTitle>
+                </DialogHeader>
+
+                {!isEditing && table ? (
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Tischnummer</p>
+                            <p className="text-lg font-semibold text-foreground">{table.table_number}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Kapazität</p>
+                            <p className="text-lg font-semibold text-foreground">{table.capacity} Plätze</p>
+                        </div>
+                        {table.section && (
+                            <div>
+                                <p className="text-sm text-muted-foreground">Bereich</p>
+                                <p className="text-lg text-foreground">{table.section}</p>
+                            </div>
+                        )}
+                        {table.notes && (
+                            <div>
+                                <p className="text-sm text-muted-foreground">Notizen</p>
+                                <p className="text-foreground">{table.notes}</p>
+                            </div>
+                        )}
+
+                        {reservation && (
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mt-4">
+                                <p className="text-sm font-semibold text-amber-700 mb-2">Heutige Reservierung</p>
+                                <p className="text-sm text-amber-600">
+                                    <strong>{reservation.customer_name}</strong> • {reservation.guests} Personen<br/>
+                                    {reservation.time} Uhr
+                                </p>
+                            </div>
+                        )}
+
+                        <div className="flex gap-2 pt-4">
+                            <Button
+                                onClick={() => setIsEditing(true)}
+                                variant="outline"
+                                className="flex-1"
+                            >
+                                Bearbeiten
+                            </Button>
+                            <Button
+                                onClick={() => deleteMutation.mutate()}
+                                variant="outline"
+                                className="border-destructive text-destructive hover:bg-destructive/10"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                            {reservation && (
+                                <Button
+                                    onClick={() => navigate(createPageUrl('Reservations'))}
+                                    className="flex-1 bg-primary hover:bg-primary/90"
+                                >
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    Reservierung
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                ) : (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-foreground">Tischnummer</label>
+                            <Input
+                                value={formData.table_number}
+                                onChange={(e) => setFormData({...formData, table_number: e.target.value})}
+                                placeholder="z.B. T1, T2, Terrasse 1"
+                                className="mt-1 bg-background border-border"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-foreground">Kapazität (Personen)</label>
+                            <Input
+                                type="number"
+                                value={formData.capacity}
+                                onChange={(e) => setFormData({...formData, capacity: parseInt(e.target.value)})}
+                                placeholder="z.B. 4"
+                                className="mt-1 bg-background border-border"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-foreground">Bereich (optional)</label>
+                            <Input
+                                value={formData.section}
+                                onChange={(e) => setFormData({...formData, section: e.target.value})}
+                                placeholder="z.B. Innen, Terrasse"
+                                className="mt-1 bg-background border-border"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-foreground">Notizen (optional)</label>
+                            <Textarea
+                                value={formData.notes}
+                                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                                placeholder="z.B. Fensterplatz, hohe Rücklehne"
+                                className="mt-1 bg-background border-border h-20"
+                            />
+                        </div>
+
+                        <div className="flex gap-2 pt-4">
+                            <Button
+                                type="button"
+                                onClick={onClose}
+                                variant="outline"
+                                className="flex-1"
+                            >
+                                Abbrechen
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="flex-1 bg-primary hover:bg-primary/90"
+                            >
+                                Speichern
+                            </Button>
+                        </div>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}

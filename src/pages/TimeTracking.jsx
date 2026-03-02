@@ -532,43 +532,79 @@ export default function TimeTracking() {
                 {/* Zeiterfassung Section */}
                 <div className="space-y-6">
 
-        
-
                 <h2 className="text-lg sm:text-xl font-bold text-white mb-4">Zeiterfassung</h2>
-                
-                {/* Stats Overview */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
-                    <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/40 to-slate-800 border-slate-700">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Heute</p>
-                                <p className="text-xl sm:text-2xl font-bold text-white">{todayHours.toFixed(1)}h</p>
-                            </div>
-                            <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 opacity-50" />
-                        </div>
-                    </Card>
 
-                    <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/40 to-slate-800 border-slate-700">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Diese Woche</p>
-                                <p className="text-xl sm:text-2xl font-bold text-white">{weekHours.toFixed(1)}h</p>
+                {/* MY Stats */}
+                <div className="mb-1">
+                    <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">Meine Stunden</p>
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/40 to-slate-800 border-slate-700">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Heute</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-white">{myTodayHours.toFixed(1)}h</p>
+                                </div>
+                                <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-blue-400 opacity-50" />
                             </div>
-                            <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 opacity-50" />
-                        </div>
-                    </Card>
-
-                    <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/40 to-slate-800 border-slate-700">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Dieser Monat</p>
-                                <p className="text-xl sm:text-2xl font-bold text-white">{totalHours.toFixed(1)}h</p>
-                                <p className="text-[10px] sm:text-xs text-green-400 mt-0.5">{approvedHours.toFixed(1)}h genehmigt</p>
+                        </Card>
+                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/40 to-slate-800 border-slate-700">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Woche</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-white">{myWeekHours.toFixed(1)}h</p>
+                                </div>
+                                <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-purple-400 opacity-50" />
                             </div>
-                            <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-amber-400 opacity-50" />
-                        </div>
-                    </Card>
+                        </Card>
+                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/40 to-slate-800 border-slate-700">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Monat</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-white">{myMonthHours.toFixed(1)}h</p>
+                                    <p className="text-[10px] sm:text-xs text-green-400 mt-0.5">{myApprovedHours.toFixed(1)}h ✓</p>
+                                </div>
+                                <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-amber-400 opacity-50" />
+                            </div>
+                        </Card>
+                    </div>
                 </div>
+
+                {/* TEAM Stats – nur für Manager */}
+                {permissions.isManager && (
+                    <div className="mb-1">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Gesamt Team</p>
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/20 to-slate-800 border-slate-700/50">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Heute</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-slate-300">{todayHours.toFixed(1)}h</p>
+                                    </div>
+                                    <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-blue-500 opacity-30" />
+                                </div>
+                            </Card>
+                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/20 to-slate-800 border-slate-700/50">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Woche</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-slate-300">{weekHours.toFixed(1)}h</p>
+                                    </div>
+                                    <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-purple-500 opacity-30" />
+                                </div>
+                            </Card>
+                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/20 to-slate-800 border-slate-700/50">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Monat</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-slate-300">{totalHours.toFixed(1)}h</p>
+                                        <p className="text-[10px] sm:text-xs text-green-500 mt-0.5">{approvedHours.toFixed(1)}h ✓</p>
+                                    </div>
+                                    <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-amber-500 opacity-30" />
+                                </div>
+                            </Card>
+                        </div>
+                    </div>
+                )}
 
                 {/* Month Selector */}
                 <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-4">

@@ -258,15 +258,15 @@ export default function Dashboard() {
                 <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
                     <div className="flex items-center justify-between gap-2 flex-col sm:flex-row">
                         <div>
-                            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Dashboard</h1>
-                            <p className="text-slate-400 text-sm mt-1">{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</p>
+                            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
+                            <p className="text-muted-foreground text-sm mt-1">{format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}</p>
                         </div>
                         <div className="flex gap-2">
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setViewAsEmployee(true)}
-                                className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                                className="border-border text-muted-foreground hover:bg-accent"
                             >
                                 <Users className="w-4 h-4 mr-2" />
                                 Mitarbeiter-Ansicht
@@ -278,8 +278,8 @@ export default function Dashboard() {
                     {/* Persönlicher Bereich für Manager */}
                     {currentEmployee && (
                         <>
-                            <Card className="p-6 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl shadow-xl">
-                                <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+                            <Card className="p-6 bg-card border-border shadow-xl">
+                                <h2 className="text-lg font-bold text-foreground mb-5 flex items-center gap-2">
                                     <Users className="w-5 h-5 text-amber-500" />
                                     Mein Bereich
                                 </h2>
@@ -335,7 +335,7 @@ export default function Dashboard() {
 
                     {/* Management Übersicht */}
                     <div>
-                        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                             <TrendingUp className="w-5 h-5 text-amber-500" />
                             Management Übersicht
                         </h2>
@@ -344,7 +344,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {stats.map((stat) => (
                             <Link to={createPageUrl(stat.link)} key={stat.title}>
-                                <Card className="bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl group hover:shadow-xl hover:shadow-amber-500/5">
+                                <Card className="bg-card border-border hover:border-primary/30 transition-all group hover:shadow-xl">
                                     <CardContent className="p-6">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className={`${stat.color} p-3 rounded-2xl shadow-lg group-hover:shadow-xl transition-shadow`}>
@@ -352,8 +352,8 @@ export default function Dashboard() {
                                             </div>
                                             {stat.badge && <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs">{stat.badge}</Badge>}
                                         </div>
-                                        <p className="text-sm text-slate-400 mb-2">{stat.title}</p>
-                                        <p className="text-3xl font-bold text-white">{stat.value}</p>
+                                        <p className="text-sm text-muted-foreground mb-2">{stat.title}</p>
+                                        <p className="text-3xl font-bold text-foreground">{stat.value}</p>
                                     </CardContent>
                                 </Card>
                             </Link>
@@ -368,7 +368,7 @@ export default function Dashboard() {
                                         <div className="flex items-center gap-3">
                                             <Clock className="w-8 h-8 text-amber-400" />
                                             <div className="flex-1">
-                                                <p className="text-sm font-medium text-white">Zeiterfassungen</p>
+                                                <p className="text-sm font-medium text-foreground">Zeiterfassungen</p>
                                                 <p className="text-xs text-amber-300">{pendingTimeEntries.length} zu genehmigen</p>
                                             </div>
                                             <ArrowRight className="w-5 h-5 text-amber-400" />
@@ -385,7 +385,7 @@ export default function Dashboard() {
                                         <div className="flex items-center gap-3">
                                             <Calendar className="w-8 h-8 text-blue-400" />
                                             <div className="flex-1">
-                                                <p className="text-sm font-medium text-white">Urlaubsanträge</p>
+                                                <p className="text-sm font-medium text-foreground">Urlaubsanträge</p>
                                                 <p className="text-xs text-blue-300">{pendingVacationRequests.length} ausstehend</p>
                                             </div>
                                             <ArrowRight className="w-5 h-5 text-blue-400" />
@@ -402,7 +402,7 @@ export default function Dashboard() {
                                         <div className="flex items-center gap-3">
                                             <AlertTriangle className="w-8 h-8 text-red-400" />
                                             <div className="flex-1">
-                                                <p className="text-sm font-medium text-white">Lager niedrig</p>
+                                                <p className="text-sm font-medium text-foreground">Lager niedrig</p>
                                                 <p className="text-xs text-red-300">{lowStockArticles.length} Artikel</p>
                                             </div>
                                             <ArrowRight className="w-5 h-5 text-red-400" />
@@ -415,25 +415,25 @@ export default function Dashboard() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <Link to={createPageUrl('Warehouse')}>
-                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <Card className="bg-card border-border hover:bg-accent/50 transition-colors">
                                 <CardContent className="p-4 text-center">
                                     <div className="w-12 h-12 rounded-lg bg-orange-600 mb-3 mx-auto flex items-center justify-center">
                                         <ShoppingCart className="w-6 h-6 text-white" />
                                     </div>
-                                    <p className="text-sm font-medium text-white mb-1">Einkauf</p>
-                                    <p className="text-xs text-slate-400">{openShoppingItems.length} offen</p>
+                                    <p className="text-sm font-medium text-foreground mb-1">Einkauf</p>
+                                    <p className="text-xs text-muted-foreground">{openShoppingItems.length} offen</p>
                                 </CardContent>
                             </Card>
                         </Link>
 
                         <Link to={createPageUrl('Cleaning')}>
-                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <Card className="bg-card border-border hover:bg-accent/50 transition-colors">
                                 <CardContent className="p-4 text-center">
                                     <div className="w-12 h-12 rounded-lg bg-pink-600 mb-3 mx-auto flex items-center justify-center">
                                         <Sparkles className="w-6 h-6 text-white" />
                                     </div>
-                                    <p className="text-sm font-medium text-white mb-1">Putzen</p>
-                                    <p className="text-xs text-slate-400">
+                                    <p className="text-sm font-medium text-foreground mb-1">Putzen</p>
+                                    <p className="text-xs text-muted-foreground">
                                         {biweeklyTasks.length > 0 
                                             ? `${biweeklyTasks.filter(t => !t.is_completed).length}/${biweeklyTasks.length} Spezial` 
                                             : `${cleaningProgress}% erledigt`
@@ -444,25 +444,25 @@ export default function Dashboard() {
                         </Link>
 
                         <Link to={createPageUrl('Events')}>
-                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <Card className="bg-card border-border hover:bg-accent/50 transition-colors">
                                 <CardContent className="p-4 text-center">
                                     <div className="w-12 h-12 rounded-lg bg-indigo-600 mb-3 mx-auto flex items-center justify-center">
                                         <Calendar className="w-6 h-6 text-white" />
                                     </div>
-                                    <p className="text-sm font-medium text-white mb-1">Events</p>
-                                    <p className="text-xs text-slate-400">{todayEvents.length} heute</p>
+                                    <p className="text-sm font-medium text-foreground mb-1">Events</p>
+                                    <p className="text-xs text-muted-foreground">{todayEvents.length} heute</p>
                                 </CardContent>
                             </Card>
                         </Link>
 
                         <Link to={createPageUrl('Warehouse')}>
-                            <Card className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                            <Card className="bg-card border-border hover:bg-accent/50 transition-colors">
                                 <CardContent className="p-4 text-center">
                                     <div className="w-12 h-12 rounded-lg bg-teal-600 mb-3 mx-auto flex items-center justify-center">
                                         <Package className="w-6 h-6 text-white" />
                                     </div>
-                                    <p className="text-sm font-medium text-white mb-1">Lager</p>
-                                    <p className="text-xs text-slate-400">{articles.length} Artikel</p>
+                                    <p className="text-sm font-medium text-foreground mb-1">Lager</p>
+                                    <p className="text-xs text-muted-foreground">{articles.length} Artikel</p>
                                 </CardContent>
                             </Card>
                         </Link>

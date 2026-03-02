@@ -387,6 +387,7 @@ export default function Employees() {
                                  <WorkTimeModelsManager />
                                  <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries(['employees'])} />
                                  <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />
+                                 <EmployeesCSVExport employees={filteredActiveEmployees} />
                                 <PDFExportButton
                                     data={filteredActiveEmployees}
                                     filename="mitarbeiter"

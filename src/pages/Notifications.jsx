@@ -196,38 +196,67 @@ export default function Notifications() {
                          </TabsList>
                      </Tabs>
                     
-                    {(unreadCount > 0 || filteredNotifications.some(n => n.read_by?.includes(currentUser.email))) && (
-                        <div className="flex flex-wrap gap-2">
-                            {unreadCount > 0 && (
-                                <Button
-                                    onClick={() => markAllAsReadMutation.mutate()}
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={markAllAsReadMutation.isPending}
-                                    className="border-slate-600 text-slate-300 hover:bg-slate-700"
-                                >
-                                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                                    Alle als gelesen markieren
-                                </Button>
-                            )}
-                            {filteredNotifications.some(n => n.read_by?.includes(currentUser.email)) && (
-                                <Button
-                                    onClick={() => {
-                                        if (confirm('Alle gelesenen Benachrichtigungen löschen?')) {
-                                            deleteAllReadMutation.mutate();
-                                        }
-                                    }}
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={deleteAllReadMutation.isPending}
-                                    className="border-red-600 text-red-400 hover:bg-red-950"
-                                >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Gelesene löschen
-                                </Button>
-                            )}
-                        </div>
-                    )}
+                    <div className="flex flex-wrap gap-2 items-center">
+                         {filteredNotifications.length > 0 && (
+                             <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 cursor-pointer text-sm text-slate-300">
+                                 <Checkbox 
+                                     checked={selectedIds.size === filteredNotifications.length && filteredNotifications.length > 0}
+                                     onCheckedChange={toggleSelectAll}
+                                 />
+                                 Alle auswählen
+                             </label>
+                         )}
+
+                         {selectedIds.size > 0 && (
+                             <Button
+                                 onClick={() => {
+                                     if (confirm(`${selectedIds.size} Benachrichtigung(en) löschen?`)) {
+                                         bulkDeleteMutation.mutate();
+                                     }
+                                 }}
+                                 variant="outline"
+                                 size="sm"
+                                 disabled={bulkDeleteMutation.isPending}
+                                 className="border-red-600 text-red-400 hover:bg-red-950"
+                             >
+                                 <Trash2 className="w-4 h-4 mr-2" />
+                                 {selectedIds.size} löschen
+                             </Button>
+                         )}
+
+                         {(unreadCount > 0 || filteredNotifications.some(n => n.read_by?.includes(currentUser.email))) && selectedIds.size === 0 && (
+                             <>
+                                 {unreadCount > 0 && (
+                                     <Button
+                                         onClick={() => markAllAsReadMutation.mutate()}
+                                         variant="outline"
+                                         size="sm"
+                                         disabled={markAllAsReadMutation.isPending}
+                                         className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                     >
+                                         <CheckCircle2 className="w-4 h-4 mr-2" />
+                                         Alle als gelesen markieren
+                                     </Button>
+                                 )}
+                                 {filteredNotifications.some(n => n.read_by?.includes(currentUser.email)) && (
+                                     <Button
+                                         onClick={() => {
+                                             if (confirm('Alle gelesenen Benachrichtigungen löschen?')) {
+                                                 deleteAllReadMutation.mutate();
+                                             }
+                                         }}
+                                         variant="outline"
+                                         size="sm"
+                                         disabled={deleteAllReadMutation.isPending}
+                                         className="border-red-600 text-red-400 hover:bg-red-950"
+                                     >
+                                         <Trash2 className="w-4 h-4 mr-2" />
+                                         Gelesene löschen
+                                     </Button>
+                                 )}
+                             </>
+                         )}
+                     </div>
                 </div>
 
                 {/* Notifications List */}

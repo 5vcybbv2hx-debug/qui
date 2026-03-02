@@ -253,11 +253,14 @@ export default function ColorCustomizer() {
 
             {/* Vorschau */}
             <div className="rounded-xl overflow-hidden border border-border">
-                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-secondary">Vorschau</div>
+                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-secondary">Vorschau (automatischer Text-Kontrast)</div>
                 <div className="p-4 flex gap-3 items-center">
                     <div
-                        className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-900"
-                        style={{ background: currentAccent ? `linear-gradient(135deg, ${currentAccent.from}, ${currentAccent.via})` : '' }}
+                        className="px-4 py-2 rounded-lg text-sm font-semibold"
+                        style={{ 
+                            background: currentAccent ? `linear-gradient(135deg, ${currentAccent.from}, ${currentAccent.via})` : '',
+                            color: currentAccent ? getContrastColor(currentAccent.from) : '#000000'
+                        }}
                     >
                         Aktiver Menüpunkt
                     </div>

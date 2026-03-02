@@ -369,7 +369,15 @@ export default function TimeTracking() {
     const todayStr = format(now, 'yyyy-MM-dd');
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-    
+
+    // MY OWN stats (always only for the current employee)
+    const myEntries = timeEntries.filter(e => e.employee_id === currentEmployee?.id);
+    const myTodayHours = myEntries.filter(e => e.date === todayStr).reduce((sum, e) => sum + (e.total_hours || 0), 0);
+    const myWeekHours = myEntries.filter(e => { const d = parseISO(e.date); return d >= weekStart && d <= weekEnd; }).reduce((sum, e) => sum + (e.total_hours || 0), 0);
+    const myMonthHours = myEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
+    const myApprovedHours = myEntries.filter(e => e.status === 'genehmigt').reduce((sum, e) => sum + (e.total_hours || 0), 0);
+
+    // TEAM stats (all employees, only relevant for managers)
     const todayHours = visibleEntries
         .filter(e => e.date === todayStr)
         .reduce((sum, e) => sum + (e.total_hours || 0), 0);

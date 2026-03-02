@@ -14,7 +14,6 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
 import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
-import { OfflineCacheManager } from '@/components/pwa/OfflineCacheManager';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import { loadSavedColors } from '@/components/settings/ColorCustomizer';
@@ -199,7 +198,6 @@ export default function Layout({ children, currentPageName }) {
     return (
         <div className="min-h-screen bg-background" onContextMenu={(e) => e.preventDefault()}>
             <ServiceWorkerRegistration />
-            <OfflineCacheManager />
             <PWAInstallPrompt />
             <OfflineIndicator />
             {/* Fixed Top Header */}

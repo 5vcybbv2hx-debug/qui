@@ -31,6 +31,67 @@ export function applyAccentColor(preset) {
     root.style.setProperty('--ring', preset.ring);
     root.style.setProperty('--accent-from', preset.from);
     root.style.setProperty('--accent-via', preset.via || preset.from);
+
+    // Injiziere dynamisches CSS für alle UI-Elemente
+    const styleId = 'accent-color-override';
+    let style = document.getElementById(styleId);
+    if (!style) {
+        style = document.createElement('style');
+        style.id = styleId;
+        document.head.appendChild(style);
+    }
+    style.textContent = `
+        /* Buttons */
+        .bg-primary, button.bg-primary { background: linear-gradient(135deg, ${preset.from}, ${preset.via}) !important; }
+        
+        /* Aktive Menüpunkte (Desktop Sidebar) */
+        a.bg-gradient-to-r.from-amber-500, 
+        a[class*="from-amber-500"],
+        a[class*="from-orange-500"] {
+            background: linear-gradient(to right, ${preset.from}, ${preset.via}) !important;
+        }
+
+        /* Mobile aktive Nav-Links */
+        .text-amber-500 { color: ${preset.from} !important; }
+        a.text-amber-500, button.text-amber-500 { color: ${preset.from} !important; }
+        
+        /* Hover-Zustände */
+        .hover\\:text-amber-500:hover { color: ${preset.from} !important; }
+
+        /* Logo/Icon in Sidebar */
+        .from-amber-500 { --tw-gradient-from: ${preset.from} !important; }
+        .via-amber-600 { --tw-gradient-via: ${preset.via} !important; }
+        .to-orange-600 { --tw-gradient-to: ${preset.via} !important; }
+
+        /* Gradient-Badges und Highlights */
+        .bg-gradient-to-br.from-amber-500\\/10 { background: linear-gradient(to bottom right, ${preset.from}1a, ${preset.via}1a) !important; }
+        .border-amber-500\\/20 { border-color: ${preset.from}33 !important; }
+        .text-amber-500 { color: ${preset.from} !important; }
+        .shadow-amber-500\\/20 { --tw-shadow-color: ${preset.from}33 !important; }
+
+        /* Focus-Ring */
+        :focus-visible { outline-color: ${preset.from} !important; }
+        input:focus, textarea:focus, select:focus { 
+            border-color: ${preset.from} !important; 
+            box-shadow: 0 0 0 2px ${preset.from}33 !important; 
+        }
+
+        /* Checkboxen & Switches */
+        [data-state="checked"] { background-color: ${preset.from} !important; border-color: ${preset.from} !important; }
+
+        /* Progress-Bars */
+        .bg-amber-500, [class*="bg-amber"] { background-color: ${preset.from} !important; }
+        
+        /* Tabs aktiv */
+        [data-state="active"][role="tab"] { color: ${preset.from} !important; border-color: ${preset.from} !important; }
+
+        /* Notification-Badge */
+        .bg-amber-400, .bg-amber-500, .bg-amber-600 { background-color: ${preset.from} !important; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar-thumb { background: ${preset.from}66 !important; }
+        ::-webkit-scrollbar-thumb:hover { background: ${preset.from} !important; }
+    `;
 }
 
 export function applyBgColor(preset) {

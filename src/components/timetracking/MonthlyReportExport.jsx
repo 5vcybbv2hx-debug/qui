@@ -123,16 +123,16 @@ export default function MonthlyReportExport({ isVisible }) {
                                 PDF
                             </Button>
                             <Button
-                                onClick={() => handleExport('excel')}
+                                onClick={() => handleExport('csv')}
                                 disabled={loading}
                                 className="flex-1 bg-green-600 hover:bg-green-700"
                             >
                                 {loading ? (
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                 ) : (
-                                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                    <Download className="w-4 h-4 mr-2" />
                                 )}
-                                Excel
+                                CSV
                             </Button>
                         </div>
                     </div>

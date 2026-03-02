@@ -82,7 +82,7 @@ export default function DrinkMenuPage() {
                             <>
                                 <Button 
                                     onClick={() => {
-                                        const url = `${window.location.origin}/api/functions/publicDrinkMenu`;
+                                        const url = `${window.location.origin}${createPageUrl('PublicMenu')}`;
                                         navigator.clipboard.writeText(url);
                                         alert('Link zur öffentlichen Getränkekarte wurde kopiert!\n\nLink: ' + url);
                                     }}

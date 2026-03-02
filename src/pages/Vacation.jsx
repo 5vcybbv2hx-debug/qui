@@ -199,7 +199,17 @@ export default function Vacation() {
                             {selectedYear} · {pendingRequests.length} offene Anträge
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                        {permissions.isManager && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowTaxReport(!showTaxReport)}
+                                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                            >
+                                <FileText className="w-4 h-4 mr-2" />
+                                Steuerberater-Auswertung
+                            </Button>
+                        )}
                         <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
                             <SelectTrigger className="w-32 bg-slate-800 border-slate-600 text-white">
                                 <SelectValue />

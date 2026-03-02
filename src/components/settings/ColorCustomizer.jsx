@@ -91,10 +91,10 @@ export function applyAccentColor(preset) {
         .bg-amber-500, [class*="bg-amber"] { background-color: ${preset.from} !important; }
         
         /* Tabs - aktiv */
-        [data-state="active"][role="tab"] { color: ${preset.from} !important; border-color: ${preset.from} !important; }
+        [data-state="active"][role="tab"] { color: #000000 !important; border-color: ${preset.from} !important; }
         
         /* Tabs - inaktiv (besserer Kontrast) */
-        [role="tab"] { color: inherit !important; }
+        [role="tab"] { color: #e2e8f0 !important; }
 
         /* Notification-Badge */
         .bg-amber-400, .bg-amber-500, .bg-amber-600 { background-color: ${preset.from} !important; }

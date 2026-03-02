@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export const ACCENT_PRESETS = [
     { name: 'Amber (Standard)', key: 'amber', from: '#f59e0b', via: '#f97316', ring: '38 92% 50%' },
@@ -25,14 +27,10 @@ const BG_PRESETS = [
 
 export function applyAccentColor(preset) {
     const root = document.documentElement;
-    // CSS Variablen setzen
     root.style.setProperty('--primary', preset.ring);
     root.style.setProperty('--ring', preset.ring);
-    // Gradient-Farben als custom properties für die Sidebar
     root.style.setProperty('--accent-from', preset.from);
     root.style.setProperty('--accent-via', preset.via || preset.from);
-    // data-accent für eventuelle CSS-Selektoren
-    root.setAttribute('data-accent', preset.key);
 }
 
 export function applyBgColor(preset) {
@@ -45,43 +43,71 @@ export function applyBgColor(preset) {
     root.style.setProperty('--accent', preset.card);
     root.style.setProperty('--border', preset.card);
     root.style.setProperty('--input', preset.card);
-    root.setAttribute('data-bg', preset.key);
 }
 
-export function loadSavedColors() {
-    const accentKey = localStorage.getItem('accentKey');
-    const bgKey = localStorage.getItem('bgKey');
-
-    if (accentKey) {
-        const preset = ACCENT_PRESETS.find(p => p.key === accentKey);
-        if (preset) applyAccentColor(preset);
-    }
-    if (bgKey) {
-        const preset = BG_PRESETS.find(p => p.key === bgKey);
-        if (preset) applyBgColor(preset);
+export async function loadSavedColors() {
+    try {
+        const companies = await base44.entities.CompanyInfo.list();
+        const info = companies[0];
+        if (info) {
+            const accentKey = info.accent_color_key || 'amber';
+            const bgKey = info.bg_color_key || 'default';
+            const accentPreset = ACCENT_PRESETS.find(p => p.key === accentKey);
+            const bgPreset = BG_PRESETS.find(p => p.key === bgKey);
+            if (accentPreset) applyAccentColor(accentPreset);
+            if (bgPreset) applyBgColor(bgPreset);
+        }
+    } catch (e) {
+        // Fallback: nichts tun
     }
 }
 
 export default function ColorCustomizer() {
-    const [selectedAccent, setSelectedAccent] = useState(
-        () => localStorage.getItem('accentKey') || 'amber'
-    );
-    const [selectedBg, setSelectedBg] = useState(
-        () => localStorage.getItem('bgKey') || 'default'
-    );
+    const queryClient = useQueryClient();
+    const [selectedAccent, setSelectedAccent] = useState('amber');
+    const [selectedBg, setSelectedBg] = useState('default');
+
+    const { data: companyList } = useQuery({
+        queryKey: ['company-info'],
+        queryFn: () => base44.entities.CompanyInfo.list(),
+    });
+
+    const company = companyList?.[0];
+
+    useEffect(() => {
+        if (company) {
+            setSelectedAccent(company.accent_color_key || 'amber');
+            setSelectedBg(company.bg_color_key || 'default');
+        }
+    }, [company]);
+
+    const saveMutation = useMutation({
+        mutationFn: async ({ accentKey, bgKey }) => {
+            if (company?.id) {
+                return base44.entities.CompanyInfo.update(company.id, {
+                    accent_color_key: accentKey,
+                    bg_color_key: bgKey,
+                });
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['company-info'] });
+            toast.success('Farben gespeichert – für alle Mitarbeiter übernommen');
+        },
+    });
 
     const handleAccentChange = (preset) => {
         setSelectedAccent(preset.key);
         applyAccentColor(preset);
-        localStorage.setItem('accentKey', preset.key);
-        toast.success(`Akzentfarbe: ${preset.name}`);
     };
 
     const handleBgChange = (preset) => {
         setSelectedBg(preset.key);
         applyBgColor(preset);
-        localStorage.setItem('bgKey', preset.key);
-        toast.success(`Hintergrund: ${preset.name}`);
+    };
+
+    const handleSave = () => {
+        saveMutation.mutate({ accentKey: selectedAccent, bgKey: selectedBg });
     };
 
     const handleReset = () => {
@@ -89,13 +115,10 @@ export default function ColorCustomizer() {
         setSelectedBg('default');
         applyAccentColor(ACCENT_PRESETS[0]);
         applyBgColor(BG_PRESETS[0]);
-        localStorage.removeItem('accentKey');
-        localStorage.removeItem('bgKey');
-        const root = document.documentElement;
-        root.removeAttribute('data-accent');
-        root.removeAttribute('data-bg');
-        toast.success('Farben zurückgesetzt');
+        saveMutation.mutate({ accentKey: 'amber', bgKey: 'default' });
     };
+
+    const currentAccent = ACCENT_PRESETS.find(p => p.key === selectedAccent);
 
     return (
         <Card className="p-6 bg-card border-border space-y-6">
@@ -161,13 +184,13 @@ export default function ColorCustomizer() {
 
             {/* Vorschau */}
             <div className="rounded-xl overflow-hidden border border-border">
-                <div className="px-4 py-3 text-xs font-semibold text-muted-foreground bg-secondary">Vorschau</div>
+                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground bg-secondary">Vorschau</div>
                 <div className="p-4 flex gap-3 items-center">
                     <div
                         className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-900"
-                        style={{ background: `linear-gradient(135deg, ${ACCENT_PRESETS.find(p => p.key === selectedAccent)?.from}, ${ACCENT_PRESETS.find(p => p.key === selectedAccent)?.via})` }}
+                        style={{ background: currentAccent ? `linear-gradient(135deg, ${currentAccent.from}, ${currentAccent.via})` : '' }}
                     >
-                        Aktiver Button
+                        Aktiver Menüpunkt
                     </div>
                     <div className="px-4 py-2 rounded-lg text-sm border border-border text-muted-foreground">
                         Inaktiv
@@ -175,8 +198,12 @@ export default function ColorCustomizer() {
                 </div>
             </div>
 
-            {/* Reset */}
-            <div className="pt-2 border-t border-border">
+            {/* Aktionen */}
+            <div className="pt-2 border-t border-border flex gap-3">
+                <Button onClick={handleSave} disabled={saveMutation.isPending} className="gap-2">
+                    <Save className="w-4 h-4" />
+                    {saveMutation.isPending ? 'Speichern...' : 'Für alle speichern'}
+                </Button>
                 <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
                     <RotateCcw className="w-4 h-4" />
                     Zurücksetzen

@@ -280,6 +280,15 @@ export default function Todos() {
                     </div>
                 )}
 
+                {/* Category Manager */}
+                <TodoCategoryManager
+                    open={categoryManagerOpen}
+                    onClose={() => {
+                        setCategoryManagerOpen(false);
+                        setCategories(loadCategories());
+                    }}
+                />
+
                 {/* Modal */}
                 <TodoModal
                     open={modalOpen}

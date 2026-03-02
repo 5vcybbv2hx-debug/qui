@@ -186,6 +186,7 @@ export default function Vacation() {
 
     const currentEmployeeStats = currentEmployee ? employeeStats[currentEmployee.id] : null;
     const pendingRequests = visibleRequests.filter(r => r.status === 'beantragt');
+    const [showTaxReport, setShowTaxReport] = React.useState(false);
 
     return (
         <div className="min-h-screen bg-slate-900">

@@ -160,6 +160,10 @@ function generatePDF(employeeData, monthName, year) {
         y += 5;
         doc.text(`Lohnkosten: ${emp.totalCost.toFixed(2)} EUR`, 25, y);
         y += 5;
+        if (emp.vacation_days_per_year > 0) {
+            doc.text(`Urlaub: ${emp.vacation_days_per_year} Tage/Jahr | Genommen: ${emp.used_vacation_days} | Verbleibend: ${emp.remaining_vacation_days}`, 25, y);
+            y += 5;
+        }
         if (emp.vacationOpenDays > 0) {
             doc.text(`Urlaubstage im Monat (Öffnungstage Mo-Sa): ${emp.vacationOpenDays}`, 25, y);
             y += 5;
@@ -241,7 +245,7 @@ function generateCSV(employeeData, monthName, year) {
 
     // Overview per employee
     rows.push(['=== Mitarbeiteruebersicht ===']);
-    rows.push(['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Stundensatz (EUR)', 'Stunden (gesamt)', 'Stunden (genehmigt)', 'Lohnkosten (EUR)', 'Urlaubstage (Oeffnungstage)']);
+    rows.push(['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Stundensatz (EUR)', 'Stunden (gesamt)', 'Stunden (genehmigt)', 'Lohnkosten (EUR)', 'Urlaubstage/Jahr', 'Urlaubstage genommen', 'Urlaubstage verbleibend', 'Urlaubstage Monat (Oeffnungstage)']);
     Object.values(employeeData).forEach(emp => {
         rows.push([
             emp.name,
@@ -251,6 +255,9 @@ function generateCSV(employeeData, monthName, year) {
             emp.totalHours.toFixed(2),
             emp.approvedHours.toFixed(2),
             emp.totalCost.toFixed(2),
+            emp.vacation_days_per_year,
+            emp.used_vacation_days,
+            emp.remaining_vacation_days,
             emp.vacationOpenDays
         ]);
     });

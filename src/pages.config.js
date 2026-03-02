@@ -54,6 +54,7 @@ import Calendar from './pages/Calendar';
 import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
 import CompanySettings from './pages/CompanySettings';
+import DailyAnalysis from './pages/DailyAnalysis';
 import DailySpecialsDisplay from './pages/DailySpecialsDisplay';
 import Dashboard from './pages/Dashboard';
 import Documents from './pages/Documents';
@@ -101,7 +102,6 @@ import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
-import DailyAnalysis from './pages/DailyAnalysis';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +113,7 @@ export const PAGES = {
     "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
     "CompanySettings": CompanySettings,
+    "DailyAnalysis": DailyAnalysis,
     "DailySpecialsDisplay": DailySpecialsDisplay,
     "Dashboard": Dashboard,
     "Documents": Documents,
@@ -160,7 +161,6 @@ export const PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "WeeklyTasks": WeeklyTasks,
-    "DailyAnalysis": DailyAnalysis,
 }
 
 export const pagesConfig = {

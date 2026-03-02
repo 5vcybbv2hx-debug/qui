@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { Upload, DollarSign, Users, Gift, AlertCircle } from 'lucide-react';
+import { Upload, DollarSign, Users, Gift, AlertCircle, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
 import TipCalculator from '@/components/dailyanalysis/TipCalculator.jsx';
@@ -19,6 +19,7 @@ export default function DailyAnalysis() {
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [tipCalculatorOpen, setTipCalculatorOpen] = useState(false);
+    const [laborCostLoading, setLaborCostLoading] = useState(false);
     const queryClient = useQueryClient();
 
     const { data: dailyRevenues = [] } = useQuery({
@@ -78,6 +79,16 @@ export default function DailyAnalysis() {
 
     const totalLaborCost = todayTimeEntriesWithRates.reduce((sum, te) => sum + te.cost, 0);
     const staffCount = new Set(todayTimeEntriesWithRates.map(te => te.employee_id)).size;
+
+    const handleFetchLaborCosts = async () => {
+        setLaborCostLoading(true);
+        try {
+            // Invalidiere TimeEntries Daten um sie neu zu laden
+            await queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+        } finally {
+            setLaborCostLoading(false);
+        }
+    };
 
     if (!permissions.canViewAnalytics && !permissions.isManager) {
         return <PermissionDenied />;
@@ -147,8 +158,22 @@ export default function DailyAnalysis() {
                                 </p>
                             </>
                         ) : (
-                            <div className="text-slate-500 text-sm">Keine Einträge</div>
+                            <div className="text-slate-500 text-sm">Nicht erfasst</div>
                         )}
+                        <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="mt-2 w-full"
+                            onClick={handleFetchLaborCosts}
+                            disabled={laborCostLoading}
+                        >
+                            {laborCostLoading ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                            ) : (
+                                <Users className="w-3 h-3 mr-1" />
+                            )}
+                            {laborCostLoading ? 'Wird geladen...' : 'Abrufen'}
+                        </Button>
                     </CardContent>
                 </Card>
 

@@ -10,9 +10,9 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Upload, DollarSign, Users, Gift, AlertCircle } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal';
-import TipCalculator from '@/components/dailyanalysis/TipCalculator';
-import DailyRevenueList from '@/components/dailyanalysis/DailyRevenueList';
+import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
+import TipCalculator from '@/components/dailyanalysis/TipCalculator.jsx';
+import DailyRevenueList from '@/components/dailyanalysis/DailyRevenueList.jsx';
 
 export default function DailyAnalysis() {
     const permissions = usePermissions();

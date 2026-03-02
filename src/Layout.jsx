@@ -51,6 +51,7 @@ const navigationSections = [
     {
         title: 'Gäste',
         items: [
+            { name: 'Tischplan', page: 'SeatingChart', icon: QrCode, permission: 'isManager' },
             { name: 'QR-Codes', page: 'QRCodes', icon: QrCode, permission: 'isManager' },
         ]
     },

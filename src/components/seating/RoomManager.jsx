@@ -56,7 +56,12 @@ export default function RoomManager({ rooms, onRoomCreated }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        saveMutation.mutate(formData);
+        const data = {
+            name: formData.name,
+            description: formData.description || undefined,
+            capacity: formData.capacity ? parseFloat(formData.capacity) : undefined
+        };
+        saveMutation.mutate(data);
     };
 
     return (

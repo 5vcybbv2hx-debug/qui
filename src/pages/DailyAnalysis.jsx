@@ -50,11 +50,22 @@ export default function DailyAnalysis() {
     const todayTimeEntries = timeEntries.filter(te => te.date === selectedDate && te.status === 'approved');
     const todayTipDistribution = tipDistributions.find(td => td.date === selectedDate);
 
-    const totalLaborCost = todayTimeEntries.reduce((sum, te) => {
-        return sum + (te.total_hours * (te.hourly_rate || 0));
-    }, 0);
+    // Employee-Map für schnelle Lookups
+    const employeeMap = new Map(employees.map(emp => [emp.id, emp]));
 
-    const staffCount = new Set(todayTimeEntries.map(te => te.employee_id)).size;
+    // Personalkosten mit Employee-Raten berechnen
+    const todayTimeEntriesWithRates = todayTimeEntries.map(te => {
+        const employee = employeeMap.get(te.employee_id);
+        const hourlyRate = employee?.hourly_rate || 0;
+        return {
+            ...te,
+            hourly_rate: hourlyRate,
+            cost: te.total_hours * hourlyRate
+        };
+    });
+
+    const totalLaborCost = todayTimeEntriesWithRates.reduce((sum, te) => sum + te.cost, 0);
+    const staffCount = new Set(todayTimeEntriesWithRates.map(te => te.employee_id)).size;
 
     if (!permissions.canViewAnalytics && !permissions.isManager) {
         return <PermissionDenied />;
@@ -120,7 +131,7 @@ export default function DailyAnalysis() {
                                     {totalLaborCost.toFixed(2)} €
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">
-                                    {staffCount} Mitarbeiter • {todayTimeEntries.reduce((sum, te) => sum + te.total_hours, 0).toFixed(1)}h
+                                    {staffCount} Mitarbeiter • {todayTimeEntriesWithRates.reduce((sum, te) => sum + te.total_hours, 0).toFixed(1)}h
                                 </p>
                             </>
                         ) : (
@@ -164,14 +175,14 @@ export default function DailyAnalysis() {
             </div>
 
             {/* Personalkosten Details */}
-            {todayTimeEntries.length > 0 && (
+            {todayTimeEntriesWithRates.length > 0 && (
                 <Card className="bg-slate-800 border-slate-700">
                     <CardHeader>
                         <CardTitle className="text-white">Personalkosten Details</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-2">
-                            {todayTimeEntries.map((te) => (
+                            {todayTimeEntriesWithRates.map((te) => (
                                 <div key={te.id} className="flex items-center justify-between p-3 bg-slate-900 rounded-lg">
                                     <div>
                                         <h4 className="font-semibold text-white">{te.employee_name}</h4>
@@ -179,10 +190,10 @@ export default function DailyAnalysis() {
                                     </div>
                                     <div className="text-right">
                                         <div className="font-semibold text-amber-400">
-                                            {(te.total_hours * (te.hourly_rate || 0)).toFixed(2)} €
+                                            {te.cost.toFixed(2)} €
                                         </div>
                                         <p className="text-xs text-slate-500">
-                                            {(te.hourly_rate || 0).toFixed(2)} €/h
+                                            {te.hourly_rate.toFixed(2)} €/h
                                         </p>
                                     </div>
                                 </div>
@@ -237,7 +248,7 @@ export default function DailyAnalysis() {
                 date={selectedDate}
                 revenue={todayRevenue?.revenue || 0}
                 staffCount={staffCount}
-                timeEntries={todayTimeEntries}
+                timeEntries={todayTimeEntriesWithRates}
                 onSuccess={() => queryClient.invalidateQueries({ queryKey: ['tip-distributions'] })}
             />
         </div>

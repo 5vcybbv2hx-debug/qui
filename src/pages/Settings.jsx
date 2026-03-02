@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import BackupManager from '@/components/backup/BackupManager';
+import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Settings() {
     const queryClient = useQueryClient();

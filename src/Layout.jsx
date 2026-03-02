@@ -122,10 +122,11 @@ export default function Layout({ children, currentPageName }) {
          return () => window.removeEventListener('keydown', handleKeyDown);
      }, []);
 
-     // Farben beim App-Start laden
+     // Farben beim App-Start aus DB laden
      React.useEffect(() => {
          loadSavedColors();
      }, []);
+
 
      // Theme beim App-Start laden und anwenden
      React.useEffect(() => {

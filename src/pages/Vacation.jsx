@@ -325,27 +325,45 @@ export default function Vacation() {
                                                     </p>
                                                 )}
                                             </div>
-                                            {permissions.isManager && request.status === 'beantragt' && (
-                                                <div className="flex gap-2">
+                                            <div className="flex flex-col gap-2 items-end">
+                                                {permissions.isManager && request.status === 'beantragt' && (
+                                                    <div className="flex gap-2">
+                                                        <Button
+                                                            onClick={() => handleApprove(request)}
+                                                            size="sm"
+                                                            className="bg-green-600 hover:bg-green-700"
+                                                        >
+                                                            <Check className="w-4 h-4 mr-1" />
+                                                            Genehmigen
+                                                        </Button>
+                                                        <Button
+                                                            onClick={() => handleReject(request)}
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                                                        >
+                                                            <X className="w-4 h-4 mr-1" />
+                                                            Ablehnen
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {request.employee_id === currentEmployee?.id && 
+                                                 (request.status === 'beantragt' || request.status === 'genehmigt') && (
                                                     <Button
-                                                        onClick={() => handleApprove(request)}
-                                                        size="sm"
-                                                        className="bg-green-600 hover:bg-green-700"
-                                                    >
-                                                        <Check className="w-4 h-4 mr-1" />
-                                                        Genehmigen
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => handleReject(request)}
+                                                        onClick={() => {
+                                                            if (confirm('Urlaubsantrag wirklich zurückziehen?')) {
+                                                                withdrawMutation.mutate(request.id);
+                                                            }
+                                                        }}
                                                         size="sm"
                                                         variant="outline"
-                                                        className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                                                        className="border-orange-600 text-orange-400 hover:bg-orange-600 hover:text-white"
                                                     >
                                                         <X className="w-4 h-4 mr-1" />
-                                                        Ablehnen
+                                                        Zurückziehen
                                                     </Button>
-                                                </div>
-                                            )}
+                                                )}
+                                            </div>
                                         </div>
                                     </Card>
                                 );

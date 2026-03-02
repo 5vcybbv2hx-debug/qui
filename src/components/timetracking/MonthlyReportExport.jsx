@@ -18,10 +18,8 @@ export default function MonthlyReportExport({ isVisible }) {
         setLoading(true);
         try {
             const isPdf = format === 'pdf';
-            const mimeType = isPdf
-                ? 'application/pdf'
-                : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            const ext = isPdf ? 'pdf' : 'xlsx';
+            const mimeType = isPdf ? 'application/pdf' : 'text/csv';
+            const ext = isPdf ? 'pdf' : 'csv';
 
             const response = await base44.functions.invoke('exportTimeReport', {
                 month: selectedMonth,

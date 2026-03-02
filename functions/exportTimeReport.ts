@@ -212,47 +212,45 @@ function generatePDF(employeeData, monthName, year) {
     });
 }
 
-function generateExcel(employeeData, monthName, year) {
-    const workbook = XLSX.utils.book_new();
+function generateCSV(employeeData, monthName, year) {
+    const rows = [];
 
-    // Summary Sheet
-    const summaryData = [
-        ['Zeiterfassungsbericht', `${monthName} ${year}`],
-        ['Erstellt am', new Date().toLocaleDateString('de-DE')],
-        [],
-        ['Zusammenfassung'],
-        ['Gesamtstunden (genehmigt)', Object.values(employeeData).reduce((sum, emp) => sum + emp.approvedHours, 0).toFixed(2)],
-        ['Gesamtkosten', Object.values(employeeData).reduce((sum, emp) => sum + emp.totalCost, 0).toFixed(2) + '€'],
-        ['Urlaubstage gesamt (Öffnungstage Mo-Sa)', Object.values(employeeData).reduce((sum, emp) => sum + emp.vacationOpenDays, 0)],
-        ['Anzahl Mitarbeiter', Object.keys(employeeData).length],
-        [],
-        ['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Stundensatz', 'Stunden (gesamt)', 'Stunden (genehmigt)', 'Lohnkosten', 'Urlaubstage (Öffnungstage)']
-    ];
+    // Header info
+    rows.push(['Zeiterfassungsbericht', `${monthName} ${year}`]);
+    rows.push(['Erstellt am', new Date().toLocaleDateString('de-DE')]);
+    rows.push([]);
 
+    // Summary
+    rows.push(['=== Zusammenfassung ===']);
+    rows.push(['Gesamtstunden (genehmigt)', Object.values(employeeData).reduce((sum, emp) => sum + emp.approvedHours, 0).toFixed(2)]);
+    rows.push(['Gesamtkosten (EUR)', Object.values(employeeData).reduce((sum, emp) => sum + emp.totalCost, 0).toFixed(2)]);
+    rows.push(['Urlaubstage gesamt (Oeffnungstage Mo-Sa)', Object.values(employeeData).reduce((sum, emp) => sum + emp.vacationOpenDays, 0)]);
+    rows.push(['Anzahl Mitarbeiter', Object.keys(employeeData).length]);
+    rows.push([]);
+
+    // Overview per employee
+    rows.push(['=== Mitarbeiteruebersicht ===']);
+    rows.push(['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Stundensatz (EUR)', 'Stunden (gesamt)', 'Stunden (genehmigt)', 'Lohnkosten (EUR)', 'Urlaubstage (Oeffnungstage)']);
     Object.values(employeeData).forEach(emp => {
-        summaryData.push([
+        rows.push([
             emp.name,
             emp.employee_number,
             emp.contract_type,
-            emp.hourly_rate.toFixed(2) + '€',
+            emp.hourly_rate.toFixed(2),
             emp.totalHours.toFixed(2),
             emp.approvedHours.toFixed(2),
-            emp.totalCost.toFixed(2) + '€',
+            emp.totalCost.toFixed(2),
             emp.vacationOpenDays
         ]);
     });
+    rows.push([]);
 
-    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Übersicht');
-
-    // Detailed Time Entries Sheet
-    const detailData = [
-        ['Mitarbeiter', 'MA-Nr.', 'Datum', 'Start', 'Ende', 'Pause (Min)', 'Stunden', 'Status', 'Notizen']
-    ];
-
+    // Detailed time entries
+    rows.push(['=== Zeiteintreage ===']);
+    rows.push(['Mitarbeiter', 'MA-Nr.', 'Datum', 'Start', 'Ende', 'Pause (Min)', 'Stunden', 'Status', 'Notizen']);
     Object.values(employeeData).forEach(emp => {
         emp.entries.forEach(entry => {
-            detailData.push([
+            rows.push([
                 emp.name,
                 emp.employee_number,
                 entry.date,
@@ -265,18 +263,14 @@ function generateExcel(employeeData, monthName, year) {
             ]);
         });
     });
+    rows.push([]);
 
-    const detailSheet = XLSX.utils.aoa_to_sheet(detailData);
-    XLSX.utils.book_append_sheet(workbook, detailSheet, 'Zeiteinträge');
-
-    // Vacation Sheet
-    const vacData = [
-        ['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Von', 'Bis', 'Art', 'Tage (gesamt)', 'Öffnungstage (Mo-Sa)', 'Genehmigt von']
-    ];
-
+    // Vacation entries
+    rows.push(['=== Urlaub / Abwesenheit ===']);
+    rows.push(['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Von', 'Bis', 'Art', 'Tage (gesamt)', 'Oeffnungstage (Mo-Sa)', 'Genehmigt von']);
     Object.values(employeeData).forEach(emp => {
         emp.vacations.forEach(v => {
-            vacData.push([
+            rows.push([
                 emp.name,
                 emp.employee_number,
                 emp.contract_type,
@@ -290,16 +284,24 @@ function generateExcel(employeeData, monthName, year) {
         });
     });
 
-    const vacSheet = XLSX.utils.aoa_to_sheet(vacData);
-    XLSX.utils.book_append_sheet(workbook, vacSheet, 'Urlaub');
+    // Convert to CSV string
+    const csvContent = rows.map(row =>
+        row.map(cell => {
+            const val = String(cell ?? '');
+            return val.includes(';') || val.includes('"') || val.includes('\n')
+                ? `"${val.replace(/"/g, '""')}"` : val;
+        }).join(';')
+    ).join('\r\n');
 
-    const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    // BOM for Excel UTF-8 compatibility
+    const bom = '\uFEFF';
+    const csvBytes = new TextEncoder().encode(bom + csvContent);
 
-    return new Response(excelBuffer, {
+    return new Response(csvBytes, {
         status: 200,
         headers: {
-            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition': `attachment; filename=Zeiterfassung_${monthName}_${year}.xlsx`
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': `attachment; filename=Zeiterfassung_${monthName}_${year}.csv`
         }
     });
 }

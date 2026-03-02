@@ -49,7 +49,6 @@
  */
 import ArticleEdit from './pages/ArticleEdit';
 import Articles from './pages/Articles';
-import Budget from './pages/Budget';
 import Calendar from './pages/Calendar';
 import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
@@ -65,7 +64,6 @@ import GuestReservationView from './pages/GuestReservationView';
 import Home from './pages/Home';
 import Inventory from './pages/Inventory';
 import LaborCostAnalysis from './pages/LaborCostAnalysis';
-import LazyBudget from './pages/LazyBudget';
 import LazyReports from './pages/LazyReports';
 import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import Maintenance from './pages/Maintenance';
@@ -108,7 +106,6 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "ArticleEdit": ArticleEdit,
     "Articles": Articles,
-    "Budget": Budget,
     "Calendar": Calendar,
     "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
@@ -124,7 +121,6 @@ export const PAGES = {
     "Home": Home,
     "Inventory": Inventory,
     "LaborCostAnalysis": LaborCostAnalysis,
-    "LazyBudget": LazyBudget,
     "LazyReports": LazyReports,
     "LazySalesAnalysis": LazySalesAnalysis,
     "Maintenance": Maintenance,

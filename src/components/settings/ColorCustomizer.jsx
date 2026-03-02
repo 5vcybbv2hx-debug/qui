@@ -90,8 +90,11 @@ export function applyAccentColor(preset) {
         /* Progress-Bars */
         .bg-amber-500, [class*="bg-amber"] { background-color: ${preset.from} !important; }
         
-        /* Tabs aktiv */
+        /* Tabs - aktiv */
         [data-state="active"][role="tab"] { color: ${preset.from} !important; border-color: ${preset.from} !important; }
+        
+        /* Tabs - inaktiv (besserer Kontrast) */
+        [role="tab"] { color: inherit !important; }
 
         /* Notification-Badge */
         .bg-amber-400, .bg-amber-500, .bg-amber-600 { background-color: ${preset.from} !important; }

@@ -89,6 +89,11 @@ export default function Vacation() {
         }
     });
 
+    const withdrawMutation = useMutation({
+        mutationFn: (id) => base44.entities.VacationRequest.delete(id),
+        onSuccess: () => queryClient.invalidateQueries(['vacation-requests'])
+    });
+
     const calculateBusinessDays = (start, end) => {
         let count = 0;
         let current = new Date(start);

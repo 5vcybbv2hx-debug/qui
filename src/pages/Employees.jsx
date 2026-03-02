@@ -971,7 +971,140 @@ export default function Employees() {
                                         />
                                     </div>
                                 </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Geburtsname</Label>
+                                        <Input
+                                            value={formData.birth_name}
+                                            onChange={(e) => setFormData({ ...formData, birth_name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Geburtsort</Label>
+                                        <Input
+                                            value={formData.birth_place}
+                                            onChange={(e) => setFormData({ ...formData, birth_place: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Nationalität</Label>
+                                    <Input
+                                        value={formData.nationality}
+                                        onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                                        placeholder="z.B. Deutsch"
+                                    />
+                                </div>
                             </div>
+
+                            {permissions.isManager && (
+                                <div className="pt-4 border-t space-y-4">
+                                    <h4 className="font-semibold text-foreground">Beschäftigung & Versicherung</h4>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-2">
+                                            <Label>Tätigkeit</Label>
+                                            <Input
+                                                value={formData.activity}
+                                                onChange={(e) => setFormData({ ...formData, activity: e.target.value })}
+                                                placeholder="z.B. Barkeeper"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Wöchentl. Arbeitszeit (h)</Label>
+                                            <Input
+                                                type="number"
+                                                value={formData.weekly_hours}
+                                                onChange={(e) => setFormData({ ...formData, weekly_hours: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Ausbildung</Label>
+                                        <Input
+                                            value={formData.education}
+                                            onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-2">
+                                            <Label>Steuer-ID</Label>
+                                            <Input
+                                                value={formData.tax_id}
+                                                onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Rentenversicherungsnr.</Label>
+                                            <Input
+                                                value={formData.pension_number}
+                                                onChange={(e) => setFormData({ ...formData, pension_number: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Krankenkasse</Label>
+                                        <Input
+                                            value={formData.health_insurance}
+                                            onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2 p-3 bg-secondary/50 rounded-lg">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <Checkbox checked={formData.pension_exemption} onCheckedChange={(c) => setFormData({...formData, pension_exemption: c})} />
+                                            <span className="text-sm">Befreiungsantrag Rentenversicherung</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <Checkbox checked={formData.has_main_job} onCheckedChange={(c) => setFormData({...formData, has_main_job: c})} />
+                                            <span className="text-sm">Versicherungspflichtige Hauptbeschäftigung</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <Checkbox checked={formData.has_other_minijob} onCheckedChange={(c) => setFormData({...formData, has_other_minijob: c})} />
+                                            <span className="text-sm">Weitere geringfügige Beschäftigung</span>
+                                        </label>
+                                        {formData.has_other_minijob && (
+                                            <Input
+                                                value={formData.other_minijob_details}
+                                                onChange={(e) => setFormData({...formData, other_minijob_details: e.target.value})}
+                                                placeholder="Seit wann und mit welchem Verdienst?"
+                                            />
+                                        )}
+                                    </div>
+
+                                    <h4 className="font-semibold text-foreground pt-2">Bankverbindung</h4>
+
+                                    <div className="space-y-2">
+                                        <Label>Kreditinstitut</Label>
+                                        <Input
+                                            value={formData.bank_name}
+                                            onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-2">
+                                            <Label>IBAN</Label>
+                                            <Input
+                                                value={formData.iban}
+                                                onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
+                                                placeholder="DE89 3704 ..."
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>BIC</Label>
+                                            <Input
+                                                value={formData.bic}
+                                                onChange={(e) => setFormData({ ...formData, bic: e.target.value })}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {selectedEmployee && permissions.isManager && (
                                 <div className="flex items-center justify-between py-2">

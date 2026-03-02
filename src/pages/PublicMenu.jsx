@@ -52,7 +52,7 @@ export default function PublicMenu() {
                 <div className="max-w-7xl mx-auto px-4 py-4">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg">
                                 <Wine className="w-6 h-6 text-slate-900" />
                             </div>
                             <div>
@@ -63,7 +63,7 @@ export default function PublicMenu() {
                             </div>
                         </div>
                         <Link to={createPageUrl('PublicReservation')}>
-                            <Button className="bg-amber-500 hover:bg-amber-600">
+                            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
                                 <Calendar className="w-4 h-4 mr-2" />
                                 Reservieren
                             </Button>

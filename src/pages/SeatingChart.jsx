@@ -15,6 +15,7 @@ export default function SeatingChartPage() {
     const [view, setView] = useState('grid');
     const [showModal, setShowModal] = useState(false);
     const [selectedTable, setSelectedTable] = useState(null);
+    const [selectedRoom, setSelectedRoom] = useState(null);
 
     const { data: tables = [] } = useQuery({
         queryKey: ['tables'],
@@ -27,6 +28,10 @@ export default function SeatingChartPage() {
     });
 
     if (!permissions.isManager) return <PermissionDenied />;
+
+    const rooms = [...new Set(tables.map(t => t.room).filter(Boolean))].sort();
+    const activeRoom = selectedRoom || (rooms.length > 0 ? rooms[0] : null);
+    const filteredTables = activeRoom ? tables.filter(t => t.room === activeRoom) : tables;
 
     const getTableReservation = (tableId) => {
         const today = new Date().toISOString().split('T')[0];
@@ -59,30 +64,47 @@ export default function SeatingChartPage() {
                     )}
                 </div>
 
-                <div className="flex gap-2">
-                    <Button
-                        variant={view === 'grid' ? 'default' : 'outline'}
-                        onClick={() => setView('grid')}
-                        size="sm"
-                        className={view === 'grid' ? 'bg-primary hover:bg-primary/90' : ''}
-                    >
-                        <Grid2x2 className="h-4 w-4 mr-2" />
-                        Grafisch
-                    </Button>
-                    <Button
-                        variant={view === 'list' ? 'default' : 'outline'}
-                        onClick={() => setView('list')}
-                        size="sm"
-                        className={view === 'list' ? 'bg-primary hover:bg-primary/90' : ''}
-                    >
-                        <List className="h-4 w-4 mr-2" />
-                        Liste
-                    </Button>
+                <div className="flex flex-col gap-4">
+                    {rooms.length > 1 && (
+                        <div className="flex gap-2 flex-wrap">
+                            {rooms.map(room => (
+                                <Button
+                                    key={room}
+                                    variant={activeRoom === room ? 'default' : 'outline'}
+                                    onClick={() => setSelectedRoom(room)}
+                                    size="sm"
+                                    className={activeRoom === room ? 'bg-primary hover:bg-primary/90' : ''}
+                                >
+                                    {room}
+                                </Button>
+                            ))}
+                        </div>
+                    )}
+                    <div className="flex gap-2">
+                        <Button
+                            variant={view === 'grid' ? 'default' : 'outline'}
+                            onClick={() => setView('grid')}
+                            size="sm"
+                            className={view === 'grid' ? 'bg-primary hover:bg-primary/90' : ''}
+                        >
+                            <Grid2x2 className="h-4 w-4 mr-2" />
+                            Grafisch
+                        </Button>
+                        <Button
+                            variant={view === 'list' ? 'default' : 'outline'}
+                            onClick={() => setView('list')}
+                            size="sm"
+                            className={view === 'list' ? 'bg-primary hover:bg-primary/90' : ''}
+                        >
+                            <List className="h-4 w-4 mr-2" />
+                            Liste
+                        </Button>
+                    </div>
                 </div>
 
                 {view === 'grid' ? (
                     <TableGrid 
-                        tables={tables} 
+                        tables={filteredTables} 
                         reservations={reservations}
                         getTableReservation={getTableReservation}
                         onTableClick={(table) => {
@@ -92,7 +114,7 @@ export default function SeatingChartPage() {
                     />
                 ) : (
                     <TableList 
-                        tables={tables} 
+                        tables={filteredTables} 
                         reservations={reservations}
                         getTableReservation={getTableReservation}
                         onTableClick={(table) => {

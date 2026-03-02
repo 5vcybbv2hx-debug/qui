@@ -17,6 +17,7 @@ export default function TableModal({ table, open, onClose, reservation }) {
     const [isEditing, setIsEditing] = useState(!table);
 
     const [formData, setFormData] = useState({
+        room: table?.room || '',
         table_number: table?.table_number || '',
         capacity: table?.capacity || '',
         section: table?.section || '',
@@ -59,6 +60,10 @@ export default function TableModal({ table, open, onClose, reservation }) {
 
                 {!isEditing && table ? (
                     <div className="space-y-4">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Raum</p>
+                            <p className="text-lg font-semibold text-foreground">{table.room}</p>
+                        </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Tischnummer</p>
                             <p className="text-lg font-semibold text-foreground">{table.table_number}</p>
@@ -128,11 +133,21 @@ export default function TableModal({ table, open, onClose, reservation }) {
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
+                            <label className="text-sm font-medium text-foreground">Raum</label>
+                            <Input
+                                value={formData.room}
+                                onChange={(e) => setFormData({...formData, room: e.target.value})}
+                                placeholder="z.B. Innenraum, Terrasse, VIP-Bereich"
+                                className="mt-1 bg-background border-border"
+                                required
+                            />
+                        </div>
+                        <div>
                             <label className="text-sm font-medium text-foreground">Tischnummer</label>
                             <Input
                                 value={formData.table_number}
                                 onChange={(e) => setFormData({...formData, table_number: e.target.value})}
-                                placeholder="z.B. T1, T2, Terrasse 1"
+                                placeholder="z.B. T1, T2, T3"
                                 className="mt-1 bg-background border-border"
                                 required
                             />

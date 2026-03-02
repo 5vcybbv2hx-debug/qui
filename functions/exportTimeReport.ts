@@ -122,7 +122,7 @@ function generatePDF(employeeData, monthName, year) {
     doc.setFontSize(10);
     doc.text(`Gesamtstunden (genehmigt): ${totalHours.toFixed(2)}h`, 25, y);
     y += 6;
-    doc.text(`Gesamtkosten: ${totalCost.toFixed(2)}€`, 25, y);
+    doc.text(`Gesamtkosten: ${totalCost.toFixed(2)} EUR`, 25, y);
     y += 6;
     doc.text(`Urlaubstage gesamt (Öffnungstage Mo-Sa): ${totalVacationDays}`, 25, y);
     y += 6;
@@ -143,11 +143,11 @@ function generatePDF(employeeData, monthName, year) {
         y += 7;
 
         doc.setFontSize(9);
-        doc.text(`Stundensatz: ${emp.hourly_rate.toFixed(2)}€ | Vertragsart: ${emp.contract_type}`, 25, y);
+        doc.text(`Stundensatz: ${emp.hourly_rate.toFixed(2)} EUR | Vertragsart: ${emp.contract_type}`, 25, y);
         y += 5;
         doc.text(`Stunden (gesamt): ${emp.totalHours.toFixed(2)}h | Stunden (genehmigt): ${emp.approvedHours.toFixed(2)}h`, 25, y);
         y += 5;
-        doc.text(`Lohnkosten: ${emp.totalCost.toFixed(2)}€`, 25, y);
+        doc.text(`Lohnkosten: ${emp.totalCost.toFixed(2)} EUR`, 25, y);
         y += 5;
         if (emp.vacationOpenDays > 0) {
             doc.text(`Urlaubstage im Monat (Öffnungstage Mo-Sa): ${emp.vacationOpenDays}`, 25, y);

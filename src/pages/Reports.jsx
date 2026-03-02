@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 export default function Reports() {
     const permissions = usePermissions();
     const [selectedMonth, setSelectedMonth] = useState(new Date());
+    const [selectedDay, setSelectedDay] = useState(null);
 
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries-all'],
@@ -38,8 +39,20 @@ export default function Reports() {
     const monthStart = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
     const monthEnd = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
 
-    const monthTimeEntries = timeEntries.filter(e => e.date >= monthStart && e.date <= monthEnd);
-    const monthShifts = shifts.filter(s => s.date >= monthStart && s.date <= monthEnd);
+    let monthTimeEntries = timeEntries.filter(e => e.date >= monthStart && e.date <= monthEnd);
+    let monthShifts = shifts.filter(s => s.date >= monthStart && s.date <= monthEnd);
+
+    // Apply day filter if selected
+    if (selectedDay) {
+        monthTimeEntries = monthTimeEntries.filter(e => e.date === selectedDay);
+        monthShifts = monthShifts.filter(s => s.date === selectedDay);
+    }
+
+    // Get unique days with entries for the day selector
+    const daysWithEntries = Array.from(new Set([
+        ...timeEntries.filter(e => e.date >= monthStart && e.date <= monthEnd).map(e => e.date),
+        ...shifts.filter(s => s.date >= monthStart && s.date <= monthEnd).map(s => s.date)
+    ])).sort();
 
     // Calculate hours by employee
     const hoursByEmployee = employees.map(emp => {
@@ -136,7 +149,7 @@ export default function Reports() {
                 </div>
 
                 {/* Month Selector */}
-                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                <Card className="p-4 bg-slate-800 border-slate-700 mb-6 space-y-4">
                     <div className="flex items-center justify-between">
                         <Button
                             variant="outline"
@@ -144,6 +157,7 @@ export default function Reports() {
                                 const newDate = new Date(selectedMonth);
                                 newDate.setMonth(newDate.getMonth() - 1);
                                 setSelectedMonth(newDate);
+                                setSelectedDay(null);
                             }}
                             className="border-slate-600 hover:bg-slate-700 text-slate-300"
                         >
@@ -159,12 +173,44 @@ export default function Reports() {
                                 const newDate = new Date(selectedMonth);
                                 newDate.setMonth(newDate.getMonth() + 1);
                                 setSelectedMonth(newDate);
+                                setSelectedDay(null);
                             }}
                             className="border-slate-600 hover:bg-slate-700 text-slate-300"
                         >
                             Nächster Monat →
                         </Button>
                     </div>
+
+                    {/* Day Filter */}
+                    {daysWithEntries.length > 0 && (
+                        <div className="border-t border-slate-700 pt-4">
+                            <p className="text-sm text-slate-400 mb-2">Nach Tag filtern:</p>
+                            <div className="flex flex-wrap gap-2">
+                                <Button
+                                    variant={selectedDay ? "outline" : "default"}
+                                    onClick={() => setSelectedDay(null)}
+                                    size="sm"
+                                    className={selectedDay ? "border-slate-600 text-slate-300" : "bg-amber-600 hover:bg-amber-700"}
+                                >
+                                    Alle Tage
+                                </Button>
+                                {daysWithEntries.map(day => (
+                                    <Button
+                                        key={day}
+                                        variant={selectedDay === day ? "default" : "outline"}
+                                        onClick={() => setSelectedDay(day)}
+                                        size="sm"
+                                        className={selectedDay === day 
+                                            ? "bg-amber-600 hover:bg-amber-700" 
+                                            : "border-slate-600 text-slate-300"
+                                        }
+                                    >
+                                        {format(new Date(day + 'T00:00'), 'd. MMM', { locale: de })}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </Card>
 
                 {/* Summary Cards */}

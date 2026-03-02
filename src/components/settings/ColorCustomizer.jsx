@@ -33,6 +33,9 @@ export function applyAccentColor(preset) {
     root.style.setProperty('--accent-from', preset.from);
     root.style.setProperty('--accent-via', preset.via || preset.from);
 
+    // Berechne Textfarbe für Akzent basierend auf Luminanz
+    const accentTextColor = getContrastColor(preset.from);
+
     // Injiziere dynamisches CSS für alle UI-Elemente
     const styleId = 'accent-color-override';
     let style = document.getElementById(styleId);
@@ -43,13 +46,17 @@ export function applyAccentColor(preset) {
     }
     style.textContent = `
         /* Buttons */
-        .bg-primary, button.bg-primary { background: linear-gradient(135deg, ${preset.from}, ${preset.via}) !important; }
+        .bg-primary, button.bg-primary { 
+            background: linear-gradient(135deg, ${preset.from}, ${preset.via}) !important; 
+            color: ${accentTextColor} !important;
+        }
         
         /* Aktive Menüpunkte (Desktop Sidebar) */
         a.bg-gradient-to-r.from-amber-500, 
         a[class*="from-amber-500"],
         a[class*="from-orange-500"] {
             background: linear-gradient(to right, ${preset.from}, ${preset.via}) !important;
+            color: ${accentTextColor} !important;
         }
 
         /* Mobile aktive Nav-Links */

@@ -311,7 +311,7 @@ export default function Cleaning() {
     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
     return (
-        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+        <div className="min-h-screen bg-background pb-24 md:pb-0">
             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-2 sm:gap-3 mb-5 sm:mb-6">

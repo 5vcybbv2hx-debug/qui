@@ -148,7 +148,7 @@ export default function Todos() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+        <div className="min-h-screen bg-background pb-24 md:pb-0">
             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-5 sm:mb-6">

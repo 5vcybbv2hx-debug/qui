@@ -254,7 +254,7 @@ export default function Dashboard() {
         ];
 
         return (
-            <div className="min-h-screen bg-slate-950 p-3 sm:p-8 pb-24 md:pb-0">
+            <div className="min-h-screen bg-background p-3 sm:p-8 pb-24 md:pb-0">
                 <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
                     <div className="flex items-center justify-between gap-2 flex-col sm:flex-row">
                         <div>

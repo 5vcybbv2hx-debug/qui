@@ -14,6 +14,7 @@ import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Settings() {
     const queryClient = useQueryClient();
+    const permissions = usePermissions();
     const [theme, setTheme] = useState('system');
     const [timeFormat, setTimeFormat] = useState('24h');
     const [dateFormat, setDateFormat] = useState('de');

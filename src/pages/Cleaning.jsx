@@ -317,8 +317,8 @@ export default function Cleaning() {
                 <div className="flex flex-col gap-2 sm:gap-3 mb-5 sm:mb-6">
                     <div className="flex items-center justify-between gap-2">
                         <div>
-                            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Putzliste</h1>
-                            <p className="text-slate-400 text-sm mt-1">
+                            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Putzliste</h1>
+                            <p className="text-muted-foreground text-sm mt-1">
                                 {format(new Date(), "EEEE, d. MMMM", { locale: de })}
                             </p>
                         </div>
@@ -378,13 +378,13 @@ export default function Cleaning() {
                 </div>
 
                 {/* Progress */}
-                <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-6">
+                <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 mb-6">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-emerald-500" />
-                            <span className="font-medium text-slate-800">Fortschritt</span>
+                            <span className="font-medium text-foreground">Fortschritt</span>
                         </div>
-                        <span className="text-sm text-slate-500">
+                        <span className="text-sm text-muted-foreground">
                             {completedCount} von {tasks.length} erledigt
                         </span>
                     </div>
@@ -393,11 +393,11 @@ export default function Cleaning() {
 
                 {/* Task List */}
                 <Tabs defaultValue="active" className="space-y-4">
-                    <TabsList className="bg-slate-800 border border-slate-700 grid w-full grid-cols-2">
-                        <TabsTrigger value="active" className="text-slate-300">
+                    <TabsList className="bg-card border border-border grid w-full grid-cols-2">
+                        <TabsTrigger value="active" className="text-muted-foreground">
                             Aktiv ({tasks.length})
                         </TabsTrigger>
-                        <TabsTrigger value="deactivated" className="text-slate-300">
+                        <TabsTrigger value="deactivated" className="text-muted-foreground">
                             <Archive className="w-4 h-4 mr-2" />
                             Deaktiviert ({deactivatedTasks.length})
                         </TabsTrigger>

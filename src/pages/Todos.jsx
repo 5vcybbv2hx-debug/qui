@@ -153,8 +153,8 @@ export default function Todos() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-5 sm:mb-6">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Aufgaben</h1>
-                        <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Aufgaben</h1>
+                        <p className="text-muted-foreground text-xs sm:text-sm mt-1">
                              <span className="hidden sm:inline">{openCount} offen · {inProgressCount} in Bearbeitung · {doneCount} erledigt</span>
                              <span className="sm:hidden">{openCount}|{inProgressCount}|{doneCount}</span>
                          </p>
@@ -178,7 +178,7 @@ export default function Todos() {
                 {/* Filters */}
                 <div className="flex flex-col gap-3 mb-6">
                     <Tabs value={showArchived ? 'archiv' : 'aktiv'} onValueChange={(v) => setShowArchived(v === 'archiv')}>
-                        <TabsList className="bg-slate-800 w-full grid grid-cols-2">
+                        <TabsList className="bg-card border border-border w-full grid grid-cols-2">
                             <TabsTrigger value="aktiv">Aktiv ({activeTodos.length})</TabsTrigger>
                             <TabsTrigger value="archiv">Archiv ({archivedTodos.length})</TabsTrigger>
                         </TabsList>
@@ -219,7 +219,7 @@ export default function Todos() {
                             
                             return (
                                 <div key={status}>
-                                    <h3 className="text-sm font-semibold text-slate-400 mb-3">
+                                    <h3 className="text-sm font-semibold text-muted-foreground mb-3">
                                         {statusLabels[status]} ({statusTodos.length})
                                     </h3>
                                     <div className="space-y-2">
@@ -256,7 +256,7 @@ export default function Todos() {
                 )}
                     
                 {filteredTodos.length === 0 && (
-                    <div className="text-center py-12 text-slate-400">
+                    <div className="text-center py-12 text-muted-foreground">
                         <CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
                         <p className="text-lg font-medium">Keine Aufgaben</p>
                         <p className="text-sm mt-1">

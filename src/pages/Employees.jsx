@@ -327,8 +327,8 @@ export default function Employees() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-5 sm:mb-6">
                     <div>
-                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Team</h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">Team</h1>
+                        <p className="text-muted-foreground text-sm mt-1">
                             {filteredActiveEmployees.length} aktive Mitarbeiter
                         </p>
                     </div>
@@ -377,10 +377,10 @@ export default function Employees() {
 
                     {/* Skills Filter - nur für Manager */}
                     {permissions.isManager && (
-                        <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                        <Card className="p-4 bg-card border-border mb-6">
                             <div className="flex items-center gap-3 mb-3">
                                 <Filter className="w-5 h-5 text-amber-400" />
-                                <h3 className="font-semibold text-white">Nach Fähigkeiten filtern</h3>
+                                <h3 className="font-semibold text-foreground">Nach Fähigkeiten filtern</h3>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 {['Barkeeper', 'Service', 'Sonderaufgaben'].map(skill => (
@@ -416,7 +416,7 @@ export default function Employees() {
                     {filteredActiveEmployees.map(employee => (
                         <Card 
                             key={employee.id}
-                            className="p-4 sm:p-5 bg-slate-800 border-slate-700 shadow-sm"
+                            className="p-4 sm:p-5 bg-card border-border shadow-sm"
                         >
                             <div className="flex items-center gap-3 mb-4">
                                 <div 
@@ -426,7 +426,7 @@ export default function Employees() {
                                     {employee.name?.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-white truncate">{employee.name}</h3>
+                                    <h3 className="font-semibold text-foreground truncate">{employee.name}</h3>
                                     {(canViewDetails(employee) || permissions.isManager) && (
                                         <div className="flex flex-wrap gap-1 mt-1">
                                             <Badge className={cn("text-xs", roleColors[employee.role] || 'bg-slate-100 text-slate-700')}>
@@ -607,14 +607,14 @@ export default function Employees() {
                 {/* Inactive Employees */}
                 {permissions.isManager && inactiveEmployees.length > 0 && (
                     <div className="mt-8">
-                        <h2 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-4">
+                        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
                             Inaktive Mitarbeiter
                         </h2>
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {inactiveEmployees.map(employee => (
                                 <Card 
                                     key={employee.id}
-                                    className="p-4 bg-slate-800/50 border-slate-700 opacity-60"
+                                    className="p-4 bg-card/50 border-border opacity-60"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div 

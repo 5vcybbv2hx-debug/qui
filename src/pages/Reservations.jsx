@@ -193,8 +193,8 @@ export default function Reservations() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Reservierungen</h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-foreground tracking-tight">Reservierungen</h1>
+                        <p className="text-muted-foreground text-sm mt-1">
                             {reservations.length} Reservierung{reservations.length !== 1 ? 'en' : ''}
                         </p>
                     </div>
@@ -225,7 +225,7 @@ export default function Reservations() {
                 </div>
 
                 {/* Filters */}
-                <Card className="p-4 bg-slate-800 border-slate-700 mb-4">
+                <Card className="p-4 bg-card border-border mb-4">
                     <div className="space-y-3">
                         <div className="flex flex-col sm:flex-row gap-3">
                             <div className="relative flex-1">
@@ -234,11 +234,11 @@ export default function Reservations() {
                                     placeholder="Name oder Telefon suchen..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-9 bg-slate-900 border-slate-700"
+                                    className="pl-9 bg-background border-border"
                                 />
                             </div>
                             <Select value={guestFilter} onValueChange={setGuestFilter}>
-                                <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                <SelectTrigger className="w-full sm:w-40 bg-background border-border">
                                     <SelectValue placeholder="Gästezahl" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -249,7 +249,7 @@ export default function Reservations() {
                                 </SelectContent>
                             </Select>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                <SelectTrigger className="w-full sm:w-40 bg-background border-border">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -290,13 +290,13 @@ export default function Reservations() {
                         {sortedReservations.map(res => (
                             <Card 
                                 key={res.id}
-                                className="p-5 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors"
+                                className="p-5 bg-card border-border hover:bg-accent/30 transition-colors"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
                                             <Calendar className="w-5 h-5 text-amber-400" />
-                                            <h3 className="font-semibold text-white text-lg">{res.customer_name}</h3>
+                                            <h3 className="font-semibold text-foreground text-lg">{res.customer_name}</h3>
                                             <Badge className={statusColors[res.status]}>
                                                 {res.status}
                                             </Badge>
@@ -392,8 +392,8 @@ export default function Reservations() {
                         ))}
                     </div>
                 ) : (
-                    <Card className="p-12 bg-slate-800 border-slate-700">
-                        <div className="text-center text-slate-400">
+                    <Card className="p-12 bg-card border-border">
+                        <div className="text-center text-muted-foreground">
                             <Calendar className="w-16 h-16 mx-auto mb-4 opacity-50" />
                             <p className="text-lg font-medium">Keine Reservierungen gefunden</p>
                             <p className="text-sm mt-1">

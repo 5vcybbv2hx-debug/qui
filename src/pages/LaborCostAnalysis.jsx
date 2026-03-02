@@ -161,8 +161,8 @@ export default function LaborCostAnalysis() {
             totalLaborCost,
             laborCostRatio,
             totalHours: monthTimeEntries.reduce((sum, te) => sum + (te.total_hours || 0), 0),
-            avgRevenuePerHour: monthTimeEntries.length > 0 ? 
-                totalRevenue / monthTimeEntries.reduce((sum, te) => sum + te.hours_worked, 0) : 0,
+            avgRevenuePerHour: monthTimeEntries.reduce((sum, te) => sum + (te.total_hours || 0), 0) > 0 ? 
+                totalRevenue / monthTimeEntries.reduce((sum, te) => sum + (te.total_hours || 0), 0) : 0,
             dailyData: dailyData.filter(d => d.revenue > 0 || d.laborCost > 0),
             employeeList,
             weekdayList

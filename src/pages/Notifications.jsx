@@ -99,16 +99,15 @@ export default function Notifications() {
     if (!currentUser) return null;
 
     // Filter notifications based on user role and permissions
-    const visibleNotifications = notifications.filter(notification => {
-        // If target_roles is empty or undefined, show to everyone
-        if (!notification.target_roles || notification.target_roles.length === 0) {
-            return true;
-        }
-        // Otherwise check if user's role matches
-        const userRole = permissions.isManager ? 'Manager' : 'user';
-        return notification.target_roles.includes(userRole) || 
-               notification.target_roles.includes(currentUser.role);
-    });
+     const visibleNotifications = notifications.filter(notification => {
+         // If target_roles is empty or undefined, show to everyone
+         if (!notification.target_roles || notification.target_roles.length === 0) {
+             return true;
+         }
+         // Otherwise check if user's role matches exactly
+         const userRole = permissions.isManager ? 'Manager' : 'user';
+         return notification.target_roles.includes(userRole);
+     });
 
     const filteredNotifications = visibleNotifications.filter(notification => {
         if (filter === 'unread') {

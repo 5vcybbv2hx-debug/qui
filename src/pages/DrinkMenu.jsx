@@ -67,15 +67,15 @@ export default function DrinkMenuPage() {
     }, {});
 
     return (
-        <div className="min-h-screen bg-slate-900 p-4 md:p-6">
+        <div className="min-h-screen bg-background p-4 md:p-6">
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex justify-between items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-                            <Wine className="h-8 w-8 text-amber-400" />
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                            <Wine className="h-8 w-8 text-primary" />
                             Getränkekarte
                         </h1>
-                        <p className="text-slate-400 mt-1">Verwaltung der Getränke und Preise</p>
+                        <p className="text-muted-foreground mt-1">Verwaltung der Getränke und Preise</p>
                     </div>
                     <div className="flex gap-2">
                         {permissions.canEditEmployees && (
@@ -87,14 +87,14 @@ export default function DrinkMenuPage() {
                                         alert('Link zur öffentlichen Getränkekarte wurde kopiert!\n\nLink: ' + url);
                                     }}
                                     variant="outline"
-                                    className="border-amber-600 text-amber-400 hover:bg-amber-900/20"
+                                    className="border-primary text-primary hover:bg-primary/10"
                                 >
                                     <Link2 className="h-4 w-4 mr-2" />
                                     Gäste-Link
                                 </Button>
                                 <Button 
                                     onClick={() => { setSelectedItem(null); setShowModal(true); }}
-                                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                 >
                                     <Plus className="h-4 w-4 mr-2" />
                                     Neues Getränk
@@ -104,16 +104,16 @@ export default function DrinkMenuPage() {
                     </div>
                 </div>
 
-                <Card className="bg-slate-800 border-slate-700">
+                <Card className="bg-card border-border">
                     <CardContent className="p-4">
                         <div className="flex flex-col md:flex-row gap-4">
                             <div className="flex-1 relative">
-                                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Getränk suchen..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 bg-slate-900 border-slate-600 text-white placeholder:text-slate-500"
+                                    className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground"
                                 />
                             </div>
                             <div className="flex gap-2 flex-wrap">
@@ -124,8 +124,8 @@ export default function DrinkMenuPage() {
                                         size="sm"
                                         onClick={() => setSelectedCategory(cat)}
                                         className={selectedCategory === cat 
-                                            ? "bg-amber-600 hover:bg-amber-700 text-white" 
-                                            : "border-slate-600 text-slate-300 hover:bg-slate-700"}
+                                            ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
+                                            : "border-border text-muted-foreground hover:bg-accent"}
                                     >
                                         {cat === "all" ? "Alle" : cat}
                                     </Button>
@@ -148,16 +148,16 @@ export default function DrinkMenuPage() {
                                     .sort((a, b) => (a.order_position || 999) - (b.order_position || 999))
                                     .map(item => (
                                         <Card 
-                                            key={item.id} 
-                                            className={`bg-slate-800 border-slate-700 ${!item.is_available ? 'opacity-60' : ''}`}
-                                        >
+                                                         key={item.id} 
+                                                         className={`bg-card border-border ${!item.is_available ? 'opacity-60' : ''}`}
+                                                     >
                                             <CardContent className="p-4">
                                                 <div className="flex justify-between items-start gap-4">
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 flex-wrap">
-                                                            <h3 className="font-semibold text-lg text-white">{item.name}</h3>
-                                                            {!item.is_available && (
-                                                                <Badge className="bg-slate-700 text-slate-300 border-slate-600">Nicht verfügbar</Badge>
+                                                            <h3 className="font-semibold text-lg text-foreground">{item.name}</h3>
+                                                             {!item.is_available && (
+                                                                 <Badge className="bg-muted text-muted-foreground border-border">Nicht verfügbar</Badge>
                                                             )}
                                                             {item.is_seasonal && (
                                                                 <Badge className="bg-green-900/50 text-green-300 border-green-800">Saisonal</Badge>
@@ -167,23 +167,23 @@ export default function DrinkMenuPage() {
                                                             )}
                                                         </div>
                                                         {item.description && (
-                                                            <p className="text-sm text-slate-400 mt-1">{item.description}</p>
+                                                         <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                                                         )}
                                                         <div className="flex gap-2 mt-2 flex-wrap items-center">
-                                                            <span className="text-xl font-bold text-amber-400">
-                                                                {item.price.toFixed(2)} €
-                                                            </span>
-                                                            {item.size && (
-                                                                <Badge variant="outline" className="border-slate-600 text-slate-300">{item.size}</Badge>
-                                                            )}
-                                                            {item.subcategory && (
-                                                                <Badge variant="outline" className="border-slate-600 text-slate-300">{item.subcategory}</Badge>
-                                                            )}
-                                                            {item.alcohol_content && (
-                                                                <Badge variant="outline" className="border-slate-600 text-slate-300">{item.alcohol_content}% Vol.</Badge>
+                                                            <span className="text-xl font-bold text-primary">
+                                                                 {item.price.toFixed(2)} €
+                                                             </span>
+                                                             {item.size && (
+                                                                 <Badge variant="outline" className="border-border text-muted-foreground">{item.size}</Badge>
+                                                             )}
+                                                             {item.subcategory && (
+                                                                 <Badge variant="outline" className="border-border text-muted-foreground">{item.subcategory}</Badge>
+                                                             )}
+                                                             {item.alcohol_content && (
+                                                                 <Badge variant="outline" className="border-border text-muted-foreground">{item.alcohol_content}% Vol.</Badge>
                                                             )}
                                                             {item.linked_article_name && (
-                                                               <Badge className="bg-blue-900/50 text-blue-300 border-blue-800">
+                                                                <Badge className="bg-accent/50 text-accent-foreground border-accent">
                                                                    <Link2 className="h-3 w-3 mr-1" />
                                                                    {item.linked_article_name}
                                                                </Badge>
@@ -192,10 +192,10 @@ export default function DrinkMenuPage() {
 
                                                             {/* Allergene anzeigen */}
                                                             {(() => {
-                                                            const allergens = item.allergens || 
-                                                               (item.linked_article_id && articles.find(a => a.id === item.linked_article_id)?.allergens);
-                                                            return allergens ? (
-                                                               <div className="mt-2 text-xs text-slate-400">
+                                                             const allergens = item.allergens || 
+                                                                (item.linked_article_id && articles.find(a => a.id === item.linked_article_id)?.allergens);
+                                                             return allergens ? (
+                                                                <div className="mt-2 text-xs text-muted-foreground">
                                                                    <span className="font-semibold">Allergene:</span> {allergens}
                                                                </div>
                                                             ) : null;
@@ -209,7 +209,7 @@ export default function DrinkMenuPage() {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         onClick={() => setExpandedItem(expandedItem === item.id ? null : item.id)}
-                                                                        className="text-xs h-7 text-slate-300 hover:text-white hover:bg-slate-700"
+                                                                        className="text-xs h-7 text-muted-foreground hover:text-foreground hover:bg-accent"
                                                                     >
                                                                         <TrendingUp className="h-3 w-3 mr-1" />
                                                                         Marge anzeigen
@@ -220,7 +220,7 @@ export default function DrinkMenuPage() {
                                                                         variant="ghost"
                                                                         size="sm"
                                                                         onClick={() => navigate(createPageUrl('PriceCalculator') + '?recipe=' + item.recipe_id)}
-                                                                        className="text-xs h-7 text-amber-400 hover:text-amber-300 hover:bg-amber-900/20"
+                                                                        className="text-xs h-7 text-primary hover:text-primary/90 hover:bg-primary/10"
                                                                     >
                                                                         <Calculator className="h-3 w-3 mr-1" />
                                                                         Preis kalkulieren
@@ -238,7 +238,7 @@ export default function DrinkMenuPage() {
                                                                     setQrCodeItem(item);
                                                                     setQrCodeOpen(true);
                                                                 }}
-                                                                className="border-blue-600 text-blue-300 hover:bg-blue-900/20"
+                                                                className="border-accent text-accent-foreground hover:bg-accent/10"
                                                                 title="QR-Code"
                                                             >
                                                                 QR
@@ -272,7 +272,7 @@ export default function DrinkMenuPage() {
 
                                                 {/* Expanded Margin Details - Admin Only */}
                                                 {permissions.isAdmin && expandedItem === item.id && (
-                                                    <div className="mt-4 pt-4 border-t border-slate-700">
+                                                    <div className="mt-4 pt-4 border-t border-border">
                                                         <MarginCalculator menuItem={item} />
                                                     </div>
                                                 )}
@@ -285,8 +285,8 @@ export default function DrinkMenuPage() {
             </div>
 
                 {filteredItems.length === 0 && (
-                    <Card className="bg-slate-800 border-slate-700">
-                        <CardContent className="p-8 text-center text-slate-400">
+                    <Card className="bg-card border-border">
+                        <CardContent className="p-8 text-center text-muted-foreground">
                             Keine Getränke gefunden
                         </CardContent>
                     </Card>

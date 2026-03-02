@@ -18,6 +18,8 @@ export default function Todos() {
     const [statusFilter, setStatusFilter] = useState('offen');
     const [categoryFilter, setCategoryFilter] = useState('alle');
     const [showArchived, setShowArchived] = useState(false);
+    const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
+    const [categories, setCategories] = useState(() => loadCategories());
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],

@@ -63,7 +63,6 @@ import Events from './pages/Events';
 import GuestReservationView from './pages/GuestReservationView';
 import Home from './pages/Home';
 import Inventory from './pages/Inventory';
-import LaborCostAnalysis from './pages/LaborCostAnalysis';
 import LazyReports from './pages/LazyReports';
 import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import Maintenance from './pages/Maintenance';
@@ -120,7 +119,6 @@ export const PAGES = {
     "GuestReservationView": GuestReservationView,
     "Home": Home,
     "Inventory": Inventory,
-    "LaborCostAnalysis": LaborCostAnalysis,
     "LazyReports": LazyReports,
     "LazySalesAnalysis": LazySalesAnalysis,
     "Maintenance": Maintenance,

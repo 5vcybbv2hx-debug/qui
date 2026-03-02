@@ -3,10 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid2x2, List } from 'lucide-react';
+import { Plus, Grid2x2, List, Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TableGrid from '@/components/seating/TableGrid';
 import TableList from '@/components/seating/TableList';
 import TableModal from '@/components/seating/TableModal';
+import RoomManager from '@/components/seating/RoomManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 
@@ -22,6 +24,11 @@ export default function SeatingChartPage() {
         queryFn: () => base44.entities.Table.list()
     });
 
+    const { data: rooms = [] } = useQuery({
+        queryKey: ['rooms'],
+        queryFn: () => base44.entities.Room.list()
+    });
+
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
         queryFn: () => base44.entities.Reservation.list()
@@ -29,8 +36,7 @@ export default function SeatingChartPage() {
 
     if (!permissions.isManager) return <PermissionDenied />;
 
-    const rooms = [...new Set(tables.map(t => t.room).filter(Boolean))].sort();
-    const activeRoom = selectedRoom || (rooms.length > 0 ? rooms[0] : null);
+    const activeRoom = selectedRoom || (rooms.length > 0 ? rooms[0].name : null);
     const filteredTables = activeRoom ? tables.filter(t => t.room === activeRoom) : tables;
 
     const getTableReservation = (tableId) => {
@@ -50,32 +56,48 @@ export default function SeatingChartPage() {
                         <h1 className="text-3xl font-bold text-foreground">Tischplan</h1>
                         <p className="text-muted-foreground mt-1">Verwaltung und Reservierungen</p>
                     </div>
-                    {permissions.isManager && (
-                        <Button 
-                            onClick={() => {
-                                setSelectedTable(null);
-                                setShowModal(true);
-                            }}
-                            className="bg-primary hover:bg-primary/90"
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Neuer Tisch
-                        </Button>
-                    )}
+                    <div className="flex gap-2">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                                    <Settings className="h-4 w-4 mr-2" />
+                                    Räume
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle>Räume verwalten</DialogTitle>
+                                </DialogHeader>
+                                <RoomManager rooms={rooms} />
+                            </DialogContent>
+                        </Dialog>
+                        {permissions.isManager && (
+                            <Button 
+                                onClick={() => {
+                                    setSelectedTable(null);
+                                    setShowModal(true);
+                                }}
+                                className="bg-primary hover:bg-primary/90"
+                            >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Neuer Tisch
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    {rooms.length > 1 && (
+                    {rooms.length > 0 && (
                         <div className="flex gap-2 flex-wrap">
                             {rooms.map(room => (
                                 <Button
-                                    key={room}
-                                    variant={activeRoom === room ? 'default' : 'outline'}
-                                    onClick={() => setSelectedRoom(room)}
+                                    key={room.id}
+                                    variant={activeRoom === room.name ? 'default' : 'outline'}
+                                    onClick={() => setSelectedRoom(room.name)}
                                     size="sm"
-                                    className={activeRoom === room ? 'bg-primary hover:bg-primary/90' : ''}
+                                    className={activeRoom === room.name ? 'bg-primary hover:bg-primary/90' : ''}
                                 >
-                                    {room}
+                                    {room.name}
                                 </Button>
                             ))}
                         </div>

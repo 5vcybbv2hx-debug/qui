@@ -151,18 +151,18 @@ export default function Notifications() {
                 {/* Filters & Actions */}
                 <div className="mb-6 space-y-4">
                     <Tabs value={filter} onValueChange={setFilter}>
-                        <TabsList className="grid grid-cols-3 w-full bg-slate-800 border-slate-700">
-                            <TabsTrigger value="all" className="data-[state=active]:bg-amber-600">
-                                Alle ({visibleNotifications.length})
-                            </TabsTrigger>
-                            <TabsTrigger value="unread" className="data-[state=active]:bg-amber-600">
-                                Ungelesen ({unreadCount})
-                            </TabsTrigger>
-                            <TabsTrigger value="read" className="data-[state=active]:bg-amber-600">
-                                Gelesen ({visibleNotifications.length - unreadCount})
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
+                         <TabsList className="grid grid-cols-3 w-full bg-slate-800 border-slate-700">
+                             <TabsTrigger value="all" className="data-[state=active]:bg-amber-600 text-slate-100 data-[state=inactive]:text-slate-200">
+                                 Alle ({visibleNotifications.length})
+                             </TabsTrigger>
+                             <TabsTrigger value="unread" className="data-[state=active]:bg-amber-600 text-slate-100 data-[state=inactive]:text-slate-200">
+                                 Ungelesen ({unreadCount})
+                             </TabsTrigger>
+                             <TabsTrigger value="read" className="data-[state=active]:bg-amber-600 text-slate-100 data-[state=inactive]:text-slate-200">
+                                 Gelesen ({visibleNotifications.length - unreadCount})
+                             </TabsTrigger>
+                         </TabsList>
+                     </Tabs>
                     
                     {(unreadCount > 0 || filteredNotifications.some(n => n.read_by?.includes(currentUser.email))) && (
                         <div className="flex flex-wrap gap-2">

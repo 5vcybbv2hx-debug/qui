@@ -270,19 +270,28 @@ export default function Notifications() {
                                 <Card 
                                     key={notification.id} 
                                     className={cn(
-                                        "p-4 border-slate-700 transition-all",
-                                        isRead ? "bg-slate-800/50" : "bg-slate-800 border-l-4 border-l-amber-500"
+                                        "p-4 border-slate-700 transition-all cursor-pointer",
+                                        selectedIds.has(notification.id) ? "bg-amber-900/30 border-amber-500 border-l-4" : (isRead ? "bg-slate-800/50" : "bg-slate-800 border-l-4 border-l-amber-500")
                                     )}
+                                    onClick={() => toggleSelection(notification.id)}
                                 >
                                     <div className="flex items-start gap-4">
-                                        <div className={cn(
-                                            "p-2 rounded-lg shrink-0",
-                                            isRead ? "bg-slate-700" : "bg-amber-900/30"
-                                        )}>
-                                            <TypeIcon className={cn(
-                                                "w-5 h-5",
-                                                isRead ? "text-slate-400" : "text-amber-400"
-                                            )} />
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox 
+                                                checked={selectedIds.has(notification.id)}
+                                                onCheckedChange={() => toggleSelection(notification.id)}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="mt-1"
+                                            />
+                                            <div className={cn(
+                                                "p-2 rounded-lg shrink-0",
+                                                isRead ? "bg-slate-700" : "bg-amber-900/30"
+                                            )}>
+                                                <TypeIcon className={cn(
+                                                    "w-5 h-5",
+                                                    isRead ? "text-slate-400" : "text-amber-400"
+                                                )} />
+                                            </div>
                                         </div>
                                         
                                         <div className="flex-1 min-w-0">

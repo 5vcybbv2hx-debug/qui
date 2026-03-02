@@ -261,6 +261,15 @@ export default function Vacation() {
                     </Card>
                 )}
 
+                {/* Tax Report for Steuerberater */}
+                {showTaxReport && permissions.isManager && (
+                    <VacationTaxReport
+                        vacationRequests={vacationRequests}
+                        employees={allEmployees}
+                        selectedYear={selectedYear}
+                    />
+                )}
+
                 {/* Manager: Employee Overview */}
                 {permissions.isManager && (
                     <Card className="p-6 bg-slate-800 border-slate-700 mb-6">

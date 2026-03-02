@@ -66,11 +66,22 @@ Deno.serve(async (req) => {
                 const totalHours = empEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
                 const approvedHours = empEntries.filter(e => e.status === 'genehmigt').reduce((sum, e) => sum + (e.total_hours || 0), 0);
 
+                // Remaining vacation days: total per year minus all approved vacation days this year
+                const vacationDaysPerYear = emp.vacation_days_per_year || 0;
+                const allYearVacations = await base44.entities.VacationRequest.filter({ employee_id: emp.id });
+                const usedVacationDays = allYearVacations
+                    .filter(v => v.status === 'genehmigt' && v.type === 'Urlaub' && v.start_date && v.start_date.startsWith(String(year)))
+                    .reduce((sum, v) => sum + (v.days_count || 0), 0);
+                const remainingVacationDays = vacationDaysPerYear - usedVacationDays;
+
                 employeeData[emp.id] = {
                     name: emp.name,
                     employee_number: emp.employee_number || '-',
                     hourly_rate: emp.hourly_rate || 0,
                     contract_type: emp.contract_type || '-',
+                    vacation_days_per_year: vacationDaysPerYear,
+                    used_vacation_days: usedVacationDays,
+                    remaining_vacation_days: remainingVacationDays,
                     entries: empEntries.sort((a, b) => a.date.localeCompare(b.date)),
                     vacations: empVacations,
                     vacationOpenDays,

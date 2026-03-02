@@ -10,6 +10,7 @@ import PersonalFormUploader from '@/components/employees/PersonalFormUploader';
 import PersonalFormDigital from '@/components/employees/PersonalFormDigital';
 import SalaryHistoryModal from '@/components/employees/SalaryHistoryModal';
 import WorkTimeModelsManager from '@/components/employees/WorkTimeModelsManager';
+import EmployeesCSVExport from '@/components/employees/EmployeesCSVExport';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

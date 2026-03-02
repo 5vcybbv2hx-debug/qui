@@ -88,11 +88,9 @@ export default function TodoModal({ open, onClose, todo, employees, onSave }) {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Einkauf">Einkauf</SelectItem>
-                                    <SelectItem value="Reparatur">Reparatur</SelectItem>
-                                    <SelectItem value="Inventur">Inventur</SelectItem>
-                                    <SelectItem value="Event">Event</SelectItem>
-                                    <SelectItem value="Sonstiges">Sonstiges</SelectItem>
+                                    {loadCategories().map(cat => (
+                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>

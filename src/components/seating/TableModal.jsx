@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { createPageUrl } from '@/utils';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Calendar } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function TableModal({ table, open, onClose, reservation }) {
         table_number: table?.table_number || '',
         capacity: table?.capacity || '',
         section: table?.section || '',
+        shape: table?.shape || 'square',
         notes: table?.notes || ''
     });
 
@@ -71,6 +73,15 @@ export default function TableModal({ table, open, onClose, reservation }) {
                                 <p className="text-lg text-foreground">{table.section}</p>
                             </div>
                         )}
+                        <div>
+                            <p className="text-sm text-muted-foreground">Form</p>
+                            <p className="text-lg text-foreground">
+                                {table.shape === 'square' ? 'Quadratisch' : 
+                                 table.shape === 'rectangle_horizontal' ? 'Rechteckig (Quer)' :
+                                 table.shape === 'rectangle_vertical' ? 'Rechteckig (Längs)' :
+                                 table.shape === 'round' ? 'Rund' : 'Standard'}
+                            </p>
+                        </div>
                         {table.notes && (
                             <div>
                                 <p className="text-sm text-muted-foreground">Notizen</p>
@@ -145,6 +156,20 @@ export default function TableModal({ table, open, onClose, reservation }) {
                                 placeholder="z.B. Innen, Terrasse"
                                 className="mt-1 bg-background border-border"
                             />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-foreground">Form</label>
+                            <Select value={formData.shape} onValueChange={(value) => setFormData({...formData, shape: value})}>
+                                <SelectTrigger className="mt-1 bg-background border-border">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="square">Quadratisch</SelectItem>
+                                    <SelectItem value="rectangle_horizontal">Rechteckig (Quer)</SelectItem>
+                                    <SelectItem value="rectangle_vertical">Rechteckig (Längs)</SelectItem>
+                                    <SelectItem value="round">Rund</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div>
                             <label className="text-sm font-medium text-foreground">Notizen (optional)</label>

@@ -14,15 +14,26 @@ export default function TableGrid({ tables, reservations, getTableReservation, o
                     <div className="flex flex-wrap gap-6 p-4">
                         {tables.map(table => {
                             const reservation = getTableReservation(table.id);
-                            const x = table.position_x || Math.random() * 80;
-                            const y = table.position_y || Math.random() * 80;
+                            const shape = table.shape || 'square';
+                            
+                            let shapeClasses = "relative border-2 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer";
+                            
+                            if (shape === 'square') {
+                                shapeClasses += " w-32 h-32 rounded-xl";
+                            } else if (shape === 'rectangle_horizontal') {
+                                shapeClasses += " w-40 h-28 rounded-lg";
+                            } else if (shape === 'rectangle_vertical') {
+                                shapeClasses += " w-28 h-40 rounded-lg";
+                            } else if (shape === 'round') {
+                                shapeClasses += " w-32 h-32 rounded-full";
+                            }
 
                             return (
                                 <button
                                     key={table.id}
                                     onClick={() => onTableClick(table)}
                                     className={cn(
-                                        "relative w-32 h-32 rounded-xl border-2 transition-all duration-300 flex flex-col items-center justify-center cursor-pointer",
+                                        shapeClasses,
                                         reservation
                                             ? "bg-amber-500/20 border-amber-500 hover:bg-amber-500/30"
                                             : "bg-green-500/20 border-green-500 hover:bg-green-500/30"

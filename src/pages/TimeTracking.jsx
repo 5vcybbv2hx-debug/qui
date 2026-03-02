@@ -399,19 +399,19 @@ export default function TimeTracking() {
     }, {});
 
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-background">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
-                    <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Zeit & Stempeluhr</h1>
-                    <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                    <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Zeit & Stempeluhr</h1>
+                    <p className="text-muted-foreground text-xs sm:text-sm mt-1">
                         Stempeln und Zeiterfassung in einer Übersicht
                     </p>
                 </div>
 
                 {/* Stempeluhr Section - für alle sichtbar */}
                 {currentEmployee && (
-                    <Card className="p-4 sm:p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 mb-6">
+                    <Card className="p-4 sm:p-6 bg-card border-border mb-6">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
                                 <div 
@@ -461,7 +461,7 @@ export default function TimeTracking() {
                 {todayClockEntries.length > 0 && (
                     <div className="mb-6">
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm sm:text-base font-semibold text-white">Heutige Stempelungen</h3>
+                            <h3 className="text-sm sm:text-base font-semibold text-foreground">Heutige Stempelungen</h3>
                             {permissions.isManager && clockEntries.some(e => e.status === 'clocked_in') && (
                                 <Button
                                     onClick={() => {
@@ -481,10 +481,10 @@ export default function TimeTracking() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {todayClockEntries.map(entry => (
-                                <Card key={entry.id} className="p-3 bg-slate-800 border-slate-700">
+                                <Card key={entry.id} className="p-3 bg-card border-border">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-white text-sm truncate">{entry.employee_name}</p>
+                                            <p className="font-semibold text-foreground text-sm truncate">{entry.employee_name}</p>
                                             <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
                                                 <span className="flex items-center gap-1">
                                                     <LogIn className="w-3 h-3 text-green-500" />
@@ -532,7 +532,7 @@ export default function TimeTracking() {
                 {/* Zeiterfassung Section */}
                 <div className="space-y-6">
 
-                <h2 className="text-lg sm:text-xl font-bold text-white mb-4">Zeiterfassung</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground mb-4">Zeiterfassung</h2>
 
                 {/* MY Stats */}
                 <div className="mb-1">
@@ -607,13 +607,13 @@ export default function TimeTracking() {
                 )}
 
                 {/* Month Selector */}
-                <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-4">
-                    <div className="flex items-center justify-between gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedMonth(new Date(selectedMonth.setMonth(selectedMonth.getMonth() - 1)))}
-                            className="border-slate-600 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-2 sm:px-4"
+                <Card className="p-3 sm:p-4 bg-card border-border mb-4">
+                <div className="flex items-center justify-between gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedMonth(new Date(selectedMonth.setMonth(selectedMonth.getMonth() - 1)))}
+                    className="border-border hover:bg-accent text-muted-foreground text-xs sm:text-sm px-2 sm:px-4"
                         >
                             <span className="hidden sm:inline">← Vorheriger</span>
                             <span className="sm:hidden">←</span>
@@ -626,7 +626,7 @@ export default function TimeTracking() {
                             variant="outline"
                             size="sm"
                             onClick={() => setSelectedMonth(new Date(selectedMonth.setMonth(selectedMonth.getMonth() + 1)))}
-                            className="border-slate-600 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm px-2 sm:px-4"
+                            className="border-border hover:bg-accent text-muted-foreground text-xs sm:text-sm px-2 sm:px-4"
                         >
                             <span className="hidden sm:inline">Nächster →</span>
                             <span className="sm:hidden">→</span>
@@ -658,7 +658,7 @@ export default function TimeTracking() {
                             <div key={employeeName}>
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3">
                                     <div className="flex items-center gap-2 sm:gap-3">
-                                        <h2 className="text-base sm:text-lg font-semibold text-white">{employeeName}</h2>
+                                        <h2 className="text-base sm:text-lg font-semibold text-foreground">{employeeName}</h2>
                                         <span className="text-xs sm:text-sm text-slate-400">{employeeTotal.toFixed(2)}h</span>
                                     </div>
                                     {permissions.isManager && pendingCount > 0 && (
@@ -678,11 +678,11 @@ export default function TimeTracking() {
                                         .map(entry => {
                                             const StatusIcon = statusConfig[entry.status].icon;
                                             return (
-                                                <Card key={entry.id} className="p-3 sm:p-4 bg-slate-800 border-slate-700">
+                                                <Card key={entry.id} className="p-3 sm:p-4 bg-card border-border">
                                                     <div className="flex items-start justify-between gap-2">
                                                        <div className="flex-1 min-w-0">
                                                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2">
-                                                               <span className="font-semibold text-white text-sm sm:text-base">
+                                                               <span className="font-semibold text-foreground text-sm sm:text-base">
                                                                    {format(parseISO(entry.date), 'dd.MM.yyyy', { locale: de })}
                                                                </span>
                                                                <Badge className={cn(statusConfig[entry.status].color, "text-[10px] sm:text-xs")}>
@@ -787,8 +787,8 @@ export default function TimeTracking() {
                 </div>
 
                 {visibleEntries.length === 0 && (
-                    <Card className="p-12 bg-slate-800 border-slate-700">
-                        <div className="text-center text-slate-500">
+                    <Card className="p-12 bg-card border-border">
+                        <div className="text-center text-muted-foreground">
                             <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
                             <p>Noch keine Zeiteinträge für diesen Monat</p>
                             <p className="text-xs mt-1">Stempelzeiten werden automatisch übertragen</p>

@@ -152,13 +152,13 @@ export default function Notifications() {
                 <div className="mb-6 space-y-4">
                     <Tabs value={filter} onValueChange={setFilter}>
                          <TabsList className="grid grid-cols-3 w-full bg-slate-800 border-slate-700">
-                             <TabsTrigger value="all" className="data-[state=active]:bg-amber-600 text-slate-100 data-[state=inactive]:text-slate-200">
+                             <TabsTrigger value="all" className="data-[state=active]:bg-amber-600 data-[state=active]:text-black text-slate-300">
                                  Alle ({visibleNotifications.length})
                              </TabsTrigger>
-                             <TabsTrigger value="unread" className="data-[state=active]:bg-amber-600 text-slate-100 data-[state=inactive]:text-slate-200">
+                             <TabsTrigger value="unread" className="data-[state=active]:bg-amber-600 data-[state=active]:text-black text-slate-300">
                                  Ungelesen ({unreadCount})
                              </TabsTrigger>
-                             <TabsTrigger value="read" className="data-[state=active]:bg-amber-600 text-slate-100 data-[state=inactive]:text-slate-200">
+                             <TabsTrigger value="read" className="data-[state=active]:bg-amber-600 data-[state=active]:text-black text-slate-300">
                                  Gelesen ({visibleNotifications.length - unreadCount})
                              </TabsTrigger>
                          </TabsList>

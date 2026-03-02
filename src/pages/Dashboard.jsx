@@ -469,8 +469,8 @@ export default function Dashboard() {
                     </div>
 
                     {(todayShifts.length > 0 || todayEvents.length > 0 || todayReservations.length > 0) && (
-                        <Card className="p-6 bg-slate-800 border-slate-700">
-                            <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                        <Card className="p-6 bg-card border-border">
+                            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                                 <Calendar className="w-5 h-5 text-green-500" />
                                 Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
                             </h3>
@@ -532,23 +532,23 @@ export default function Dashboard() {
     // Employee View
     if (!currentEmployee) {
         return (
-            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-                <Card className="max-w-md w-full p-8 text-center bg-slate-800 border-slate-700">
-                    <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-white mb-2">Kein Profil</h2>
-                    <p className="text-slate-400">Du musst als Mitarbeiter registriert sein.</p>
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <Card className="max-w-md w-full p-8 text-center bg-card border-border">
+            <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Kein Profil</h2>
+            <p className="text-muted-foreground">Du musst als Mitarbeiter registriert sein.</p>
                 </Card>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 p-3 sm:p-8 pb-24 md:pb-0">
+        <div className="min-h-screen bg-background p-3 sm:p-8 pb-24 md:pb-0">
             <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h1 className="text-lg sm:text-2xl font-bold text-white">Willkommen, {currentEmployee.name}!</h1>
-                        <p className="text-slate-400 text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
+                        <h1 className="text-lg sm:text-2xl font-bold text-foreground">Willkommen, {currentEmployee.name}!</h1>
+                        <p className="text-muted-foreground text-sm">{format(new Date(), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
                     </div>
                     {permissions.isManager && viewAsEmployee && (
                         <Button
@@ -594,7 +594,7 @@ export default function Dashboard() {
                     </Card>
                 )}
 
-                <Card className="p-6 bg-slate-800 border-slate-700">
+                <Card className="p-6 bg-card border-border">
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4 flex-1">
                             <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl"
@@ -649,42 +649,42 @@ export default function Dashboard() {
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <Link to={createPageUrl('Calendar')}>
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                        <Card className="p-4 bg-card border-border hover:bg-accent/50 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
                                     <Calendar className="w-6 h-6 text-blue-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Kalender</p>
-                                    <p className="font-semibold text-white">Schichten</p>
+                                    <p className="text-sm text-muted-foreground">Kalender</p>
+                                    <p className="font-semibold text-foreground">Schichten</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
                     <Link to={createPageUrl('Recipes')}>
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                        <Card className="p-4 bg-card border-border hover:bg-accent/50 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-pink-600/20 flex items-center justify-center">
                                     <Wine className="w-6 h-6 text-pink-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Rezepte</p>
-                                    <p className="font-semibold text-white">Nachschlagen</p>
+                                    <p className="text-sm text-muted-foreground">Rezepte</p>
+                                    <p className="font-semibold text-foreground">Nachschlagen</p>
                                 </div>
                             </div>
                         </Card>
                     </Link>
 
                     <Link to={createPageUrl('Cleaning')}>
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                        <Card className="p-4 bg-card border-border hover:bg-accent/50 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-teal-600/20 flex items-center justify-center">
                                     <Sparkles className="w-6 h-6 text-teal-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Putzen</p>
-                                    <p className="font-semibold text-white">
+                                    <p className="text-sm text-muted-foreground">Putzen</p>
+                                    <p className="font-semibold text-foreground">
                                         {myCleaningTasks.length} offen
                                     </p>
                                 </div>
@@ -693,14 +693,14 @@ export default function Dashboard() {
                     </Link>
 
                     <Link to={createPageUrl('DrinkMenu')}>
-                        <Card className="p-4 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors">
+                        <Card className="p-4 bg-card border-border hover:bg-accent/50 transition-colors">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-amber-600/20 flex items-center justify-center">
                                     <BookOpen className="w-6 h-6 text-amber-500" />
                                 </div>
                                 <div>
-                                    <p className="text-sm text-slate-400">Getränke</p>
-                                    <p className="font-semibold text-white">Karte</p>
+                                    <p className="text-sm text-muted-foreground">Getränke</p>
+                                    <p className="font-semibold text-foreground">Karte</p>
                                 </div>
                             </div>
                         </Card>
@@ -708,41 +708,41 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid sm:grid-cols-3 gap-6">
-                    <Card className="p-6 bg-slate-800 border-slate-700">
+                    <Card className="p-6 bg-card border-border">
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center">
                                 <Clock className="w-6 h-6 text-blue-500" />
                             </div>
                             <Badge className="bg-blue-600/20 text-blue-400">Woche</Badge>
                         </div>
-                        <p className="text-3xl font-bold text-white mb-1">{hoursThisWeek.toFixed(1)}h</p>
-                        <p className="text-sm text-slate-400">Gearbeitete Stunden</p>
-                        <p className="text-xs text-slate-500 mt-2">Monat: {hoursThisMonth.toFixed(1)}h</p>
+                        <p className="text-3xl font-bold text-foreground mb-1">{hoursThisWeek.toFixed(1)}h</p>
+                        <p className="text-sm text-muted-foreground">Gearbeitete Stunden</p>
+                        <p className="text-xs text-muted-foreground mt-2">Monat: {hoursThisMonth.toFixed(1)}h</p>
                     </Card>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
+                    <Card className="p-6 bg-card border-border">
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center">
                                 <Umbrella className="w-6 h-6 text-purple-500" />
                             </div>
                             <Badge className="bg-purple-600/20 text-purple-400">Urlaub</Badge>
                         </div>
-                        <p className="text-3xl font-bold text-white mb-1">{remainingVacationDays}</p>
-                        <p className="text-sm text-slate-400">Verbleibende Tage</p>
-                        <p className="text-xs text-slate-500 mt-2">Von {totalVacationDays} gesamt</p>
+                        <p className="text-3xl font-bold text-foreground mb-1">{remainingVacationDays}</p>
+                        <p className="text-sm text-muted-foreground">Verbleibende Tage</p>
+                        <p className="text-xs text-muted-foreground mt-2">Von {totalVacationDays} gesamt</p>
                     </Card>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
+                    <Card className="p-6 bg-card border-border">
                         <div className="flex items-center justify-between mb-4">
                             <div className="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center">
                                 <Calendar className="w-6 h-6 text-green-500" />
                             </div>
                             <Badge className="bg-green-600/20 text-green-400">Nächste</Badge>
                         </div>
-                        <p className="text-3xl font-bold text-white mb-1">{myUpcomingShifts.length}</p>
-                        <p className="text-sm text-slate-400">Kommende Schichten</p>
+                        <p className="text-3xl font-bold text-foreground mb-1">{myUpcomingShifts.length}</p>
+                        <p className="text-sm text-muted-foreground">Kommende Schichten</p>
                         {myUpcomingShifts[0] && (
-                            <p className="text-xs text-slate-500 mt-2">
+                            <p className="text-xs text-muted-foreground mt-2">
                                 Nächste: {format(parseISO(myUpcomingShifts[0].date), 'EEE, dd.MM', { locale: de })}
                             </p>
                         )}
@@ -750,15 +750,15 @@ export default function Dashboard() {
                 </div>
 
                 {biweeklyTasks.length > 0 && (
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                    <Card className="p-6 bg-card border-border">
+                        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-pink-500" />
                             Spezielle Putzaufgaben heute
                         </h3>
                         <div className="space-y-2">
                             {biweeklyTasks.map(task => (
                                 <Link key={task.id} to={createPageUrl('Cleaning')}>
-                                    <div className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-lg hover:bg-slate-900 transition-colors">
+                                    <div className="flex items-center gap-3 p-3 bg-background/50 rounded-lg hover:bg-accent/50 transition-colors">
                                         <input
                                             type="checkbox"
                                             checked={task.is_completed}
@@ -766,8 +766,8 @@ export default function Dashboard() {
                                             className="w-4 h-4 rounded"
                                         />
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-white font-medium text-sm truncate">{task.title}</p>
-                                            <p className="text-xs text-slate-400">{task.area}</p>
+                                            <p className="text-foreground font-medium text-sm truncate">{task.title}</p>
+                                            <p className="text-xs text-muted-foreground">{task.area}</p>
                                         </div>
                                         {task.is_completed && (
                                             <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
@@ -780,8 +780,8 @@ export default function Dashboard() {
                 )}
 
                 {(todayEvents.length > 0 || todayReservations.length > 0 || todayShifts.length > 0) && (
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                    <Card className="p-6 bg-card border-border">
+                        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                             <AlertCircle className="w-5 h-5 text-green-500" />
                             Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
                         </h3>
@@ -833,34 +833,34 @@ export default function Dashboard() {
                 <div className="grid md:grid-cols-2 gap-6">
                     <div>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                                 <Calendar className="w-5 h-5 text-blue-500" />
                                 Kommende Schichten
                             </h2>
                             <Link to={createPageUrl('Calendar')}>
-                                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">Alle</Button>
+                                <Button variant="outline" size="sm" className="border-border text-muted-foreground">Alle</Button>
                             </Link>
                         </div>
 
                         {myUpcomingShifts.length === 0 ? (
-                            <Card className="p-8 text-center bg-slate-800 border-slate-700">
+                            <Card className="p-8 text-center bg-card border-border">
                                 <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
                                 <p className="text-slate-400">Keine kommenden Schichten</p>
                             </Card>
                         ) : (
                             <div className="space-y-3">
                                 {myUpcomingShifts.slice(0, 3).map(shift => (
-                                    <Card key={shift.id} className="p-4 bg-slate-800 border-slate-700">
+                                    <Card key={shift.id} className="p-4 bg-card border-border">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex items-start gap-4 flex-1">
                                                 <div className="text-center">
-                                                    <p className="text-2xl font-bold text-white">{format(parseISO(shift.date), 'dd')}</p>
-                                                    <p className="text-xs text-slate-400 uppercase">{format(parseISO(shift.date), 'MMM', { locale: de })}</p>
+                                                    <p className="text-2xl font-bold text-foreground">{format(parseISO(shift.date), 'dd')}</p>
+                                                    <p className="text-xs text-muted-foreground uppercase">{format(parseISO(shift.date), 'MMM', { locale: de })}</p>
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-semibold text-white">{format(parseISO(shift.date), 'EEEE', { locale: de })}</p>
-                                                    <p className="text-sm text-slate-400">{shift.start_time} - {shift.end_time}</p>
-                                                    {shift.notes && <p className="text-xs text-slate-500 mt-1">{shift.notes}</p>}
+                                                    <p className="font-semibold text-foreground">{format(parseISO(shift.date), 'EEEE', { locale: de })}</p>
+                                                    <p className="text-sm text-muted-foreground">{shift.start_time} - {shift.end_time}</p>
+                                                    {shift.notes && <p className="text-xs text-muted-foreground mt-1">{shift.notes}</p>}
                                                 </div>
                                             </div>
                                             <Badge className="bg-amber-600/20 text-amber-400">{shift.shift_type || 'Schicht'}</Badge>
@@ -873,32 +873,32 @@ export default function Dashboard() {
 
                     <div>
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                                 <CheckSquare className="w-5 h-5 text-orange-500" />
                                 Meine Aufgaben
                             </h2>
                             <Link to={createPageUrl('Todos')}>
-                                <Button variant="outline" size="sm" className="border-slate-600 text-slate-300">Alle</Button>
+                                <Button variant="outline" size="sm" className="border-border text-muted-foreground">Alle</Button>
                             </Link>
                         </div>
 
                         {myOpenTodos.length === 0 ? (
-                            <Card className="p-8 text-center bg-slate-800 border-slate-700">
+                            <Card className="p-8 text-center bg-card border-border">
                                 <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-3" />
-                                <p className="text-slate-400">Keine offenen Aufgaben</p>
+                                <p className="text-muted-foreground">Keine offenen Aufgaben</p>
                             </Card>
                         ) : (
                             <div className="space-y-3">
                                 {myOpenTodos.slice(0, 3).map(todo => (
-                                    <Card key={todo.id} className="p-4 bg-slate-800 border-slate-700">
+                                    <Card key={todo.id} className="p-4 bg-card border-border">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1">
-                                                <p className="font-semibold text-white">{todo.title}</p>
+                                                <p className="font-semibold text-foreground">{todo.title}</p>
                                                 {todo.description && (
-                                                    <p className="text-sm text-slate-400 mt-1 line-clamp-1">{todo.description}</p>
+                                                    <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{todo.description}</p>
                                                 )}
                                                 {todo.due_date && (
-                                                    <p className="text-xs text-slate-500 mt-2">
+                                                    <p className="text-xs text-muted-foreground mt-2">
                                                         Fällig: {format(parseISO(todo.due_date), 'dd.MM.yyyy', { locale: de })}
                                                     </p>
                                                 )}
@@ -919,31 +919,31 @@ export default function Dashboard() {
                 </div>
 
                 {/* Schnellaktionen */}
-                <Card className="p-4 bg-slate-800 border-slate-700">
-                    <p className="text-xs font-semibold text-slate-400 uppercase mb-3">Schnellaktionen</p>
+                <Card className="p-4 bg-card border-border">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">Schnellaktionen</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <Link to={createPageUrl('Todos')}>
-                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-background/50 hover:bg-accent/50 transition-colors">
                                 <CheckSquare className="w-5 h-5 text-orange-500" />
-                                <span className="text-xs font-medium text-slate-300">Neue Aufgabe</span>
+                                <span className="text-xs font-medium text-foreground">Neue Aufgabe</span>
                             </button>
                         </Link>
                         <Link to={createPageUrl('Cleaning')}>
-                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-background/50 hover:bg-accent/50 transition-colors">
                                 <Sparkles className="w-5 h-5 text-teal-500" />
-                                <span className="text-xs font-medium text-slate-300">Putzen</span>
+                                <span className="text-xs font-medium text-foreground">Putzen</span>
                             </button>
                         </Link>
                         <Link to={createPageUrl('Recipes')}>
-                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-background/50 hover:bg-accent/50 transition-colors">
                                 <BookOpen className="w-5 h-5 text-pink-500" />
-                                <span className="text-xs font-medium text-slate-300">Rezept suchen</span>
+                                <span className="text-xs font-medium text-foreground">Rezept suchen</span>
                             </button>
                         </Link>
                         <Link to={createPageUrl('Calendar')}>
-                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-slate-900/50 hover:bg-slate-900 transition-colors">
+                            <button className="w-full flex flex-col items-center gap-2 p-3 rounded-lg bg-background/50 hover:bg-accent/50 transition-colors">
                                 <Calendar className="w-5 h-5 text-blue-500" />
-                                <span className="text-xs font-medium text-slate-300">Schichtplan</span>
+                                <span className="text-xs font-medium text-foreground">Schichtplan</span>
                             </button>
                         </Link>
                     </div>

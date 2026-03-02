@@ -1,131 +1,163 @@
 import React from 'react';
-import { Check, Calendar, Flag, MoreHorizontal, Pencil, Trash2, Archive, Clock, User, ExternalLink } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { Check, Calendar, Pencil, Trash2, Archive, User, MoreVertical, Circle, Loader, CheckCircle } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { format } from 'date-fns';
+import { format, isToday, isTomorrow, isPast } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-const priorityConfig = {
-    'niedrig': { color: 'text-slate-400', bg: 'bg-slate-100' },
-    'mittel': { color: 'text-blue-500', bg: 'bg-blue-50' },
-    'hoch': { color: 'text-orange-500', bg: 'bg-orange-50' },
-    'dringend': { color: 'text-red-500', bg: 'bg-red-50' }
+const priorityStripe = {
+    'niedrig': 'bg-slate-500',
+    'mittel': 'bg-blue-500',
+    'hoch': 'bg-orange-500',
+    'dringend': 'bg-red-500'
+};
+
+const priorityLabel = {
+    'niedrig': 'Niedrig',
+    'mittel': 'Mittel',
+    'hoch': 'Hoch',
+    'dringend': 'Dringend'
 };
 
 const categoryColors = {
-    'Einkauf': 'bg-emerald-100 text-emerald-700',
-    'Reparatur': 'bg-orange-100 text-orange-700',
-    'Inventur': 'bg-blue-100 text-blue-700',
-    'Event': 'bg-purple-100 text-purple-700',
-    'Sonstiges': 'bg-slate-100 text-slate-700'
+    'Einkauf': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+    'Reparatur': 'bg-orange-500/15 text-orange-400 border-orange-500/20',
+    'Inventur': 'bg-blue-500/15 text-blue-400 border-blue-500/20',
+    'Event': 'bg-purple-500/15 text-purple-400 border-purple-500/20',
+    'Sonstiges': 'bg-slate-500/15 text-slate-400 border-slate-500/20'
 };
 
+const statusCycle = {
+    'offen': 'in_bearbeitung',
+    'in_bearbeitung': 'erledigt',
+    'erledigt': 'offen'
+};
+
+const statusConfig = {
+    'offen': { icon: Circle, color: 'text-slate-400', label: 'Offen' },
+    'in_bearbeitung': { icon: Loader, color: 'text-blue-400', label: 'In Bearbeitung' },
+    'erledigt': { icon: CheckCircle, color: 'text-green-500', label: 'Erledigt' }
+};
+
+function formatDueDate(dateStr) {
+    const d = new Date(dateStr);
+    if (isToday(d)) return 'Heute';
+    if (isTomorrow(d)) return 'Morgen';
+    return format(d, 'd. MMM', { locale: de });
+}
+
 export default function TodoCard({ todo, onStatusChange, onEdit, onDelete, onArchive, showArchiveButton }) {
-    const priority = priorityConfig[todo.priority] || priorityConfig['mittel'];
     const isCompleted = todo.status === 'erledigt';
-    const isOverdue = todo.due_date && new Date(todo.due_date) < new Date() && !isCompleted;
+    const isInProgress = todo.status === 'in_bearbeitung';
+    const stripeColor = priorityStripe[todo.priority] || priorityStripe['mittel'];
+    const StatusIcon = statusConfig[todo.status]?.icon || Circle;
+    const statusColor = statusConfig[todo.status]?.color || 'text-slate-400';
+
+    const isOverdue = todo.due_date && isPast(new Date(todo.due_date)) && !isToday(new Date(todo.due_date)) && !isCompleted;
+    const isDueToday = todo.due_date && isToday(new Date(todo.due_date)) && !isCompleted;
 
     return (
         <Card className={cn(
-            "p-3 bg-slate-800 border-slate-700 transition-all hover:bg-slate-750",
-            isCompleted && "opacity-60"
+            "bg-card border-border/50 transition-all hover:border-border overflow-hidden",
+            isCompleted && "opacity-50"
         )}>
-            <div className="flex gap-3">
-                {/* Checkbox */}
-                <button
-                    onClick={() => onStatusChange(todo, isCompleted ? 'offen' : 'erledigt')}
-                    className={cn(
-                        "w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center transition-all shrink-0",
-                        isCompleted 
-                            ? "bg-green-600 border-green-600" 
-                            : "border-slate-600 hover:border-green-500"
-                    )}
-                >
-                    {isCompleted && <Check className="w-3 h-3 text-white" />}
-                </button>
-                
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
+            <div className="flex">
+                {/* Priority stripe */}
+                <div className={cn("w-1 shrink-0", stripeColor)} />
+
+                <div className="flex gap-3 px-3 py-3 flex-1 min-w-0">
+                    {/* Status toggle button */}
+                    <button
+                        onClick={() => onStatusChange(todo, statusCycle[todo.status])}
+                        title={`Status: ${statusConfig[todo.status]?.label} → klicken zum Wechseln`}
+                        className={cn("mt-0.5 shrink-0 transition-all", statusColor, "hover:opacity-70")}
+                    >
+                        <StatusIcon className={cn("w-5 h-5", isInProgress && "animate-spin")} />
+                    </button>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
                             <h4 className={cn(
-                                "font-medium text-sm",
-                                isCompleted ? "text-slate-500 line-through" : "text-white"
+                                "font-medium text-sm leading-snug",
+                                isCompleted ? "text-muted-foreground line-through" : "text-foreground"
                             )}>
                                 {todo.title}
                             </h4>
-                            {todo.description && (
-                                <p className="text-xs text-slate-400 mt-1 line-clamp-1">
-                                    {todo.description}
-                                </p>
+
+                            {/* Actions dropdown */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground -mt-0.5">
+                                        <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem onClick={() => onStatusChange(todo, 'offen')}>
+                                        <Circle className="w-4 h-4 mr-2 text-slate-400" /> Offen
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onStatusChange(todo, 'in_bearbeitung')}>
+                                        <Loader className="w-4 h-4 mr-2 text-blue-400" /> In Bearbeitung
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onStatusChange(todo, 'erledigt')}>
+                                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" /> Erledigt
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => onEdit(todo)}>
+                                        <Pencil className="w-4 h-4 mr-2" /> Bearbeiten
+                                    </DropdownMenuItem>
+                                    {showArchiveButton && (
+                                        <DropdownMenuItem onClick={() => onArchive(todo.id)}>
+                                            <Archive className="w-4 h-4 mr-2 text-amber-400" /> Archivieren
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => onDelete(todo.id)} className="text-red-400 focus:text-red-400">
+                                        <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+
+                        {!isCompleted && todo.description && (
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{todo.description}</p>
+                        )}
+
+                        {/* Meta row */}
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                            {todo.category && (
+                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded border font-medium", categoryColors[todo.category])}>
+                                    {todo.category}
+                                </span>
+                            )}
+
+                            {todo.due_date && (
+                                <span className={cn(
+                                    "flex items-center gap-1 text-[10px] font-medium",
+                                    isOverdue ? "text-red-400" : isDueToday ? "text-orange-400" : "text-muted-foreground"
+                                )}>
+                                    <Calendar className="w-3 h-3" />
+                                    {formatDueDate(todo.due_date)}
+                                    {isOverdue && ' ⚠️'}
+                                </span>
+                            )}
+
+                            {todo.assigned_to && (
+                                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <User className="w-3 h-3" />
+                                    {todo.assigned_to}
+                                </span>
+                            )}
+
+                            {todo.completed_by && isCompleted && (
+                                <span className="text-[10px] text-muted-foreground">
+                                    ✓ {todo.completed_by}
+                                </span>
                             )}
                         </div>
-                        
-                        <div className="flex gap-1 shrink-0">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => onEdit(todo)}
-                                className="h-11 w-11 text-slate-400 hover:text-slate-200"
-                            >
-                                <Pencil className="w-4 h-4" />
-                            </Button>
-                            {showArchiveButton && (
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => onArchive(todo.id)}
-                                    className="h-11 w-11 text-slate-400 hover:text-amber-400"
-                                >
-                                    <Archive className="w-4 h-4" />
-                                </Button>
-                            )}
-                            <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => onDelete(todo.id)}
-                                className="h-11 w-11 text-red-500 hover:text-red-400"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        </div>
-                    </div>
-                    
-                    {/* Meta */}
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                        {todo.category && (
-                            <Badge className={cn("text-[10px] px-1.5 h-5", categoryColors[todo.category])}>
-                                {todo.category}
-                            </Badge>
-                        )}
-                        
-                        {todo.due_date && (
-                            <div className={cn(
-                                "flex items-center gap-1 text-[10px]",
-                                isOverdue ? "text-red-400" : "text-slate-500"
-                            )}>
-                                <Calendar className="w-3 h-3" />
-                                {(() => {
-                                    try {
-                                        return format(new Date(todo.due_date), 'd. MMM', { locale: de });
-                                    } catch {
-                                        return todo.due_date;
-                                    }
-                                })()}
-                            </div>
-                        )}
-                        
-                        {todo.assigned_to && (
-                            <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                                <User className="w-3 h-3" />
-                                {todo.assigned_to}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

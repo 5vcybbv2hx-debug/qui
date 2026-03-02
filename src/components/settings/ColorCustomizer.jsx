@@ -6,6 +6,7 @@ import { RotateCcw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getContrastColor } from '@/components/utils/contrastUtils';
 
 export const ACCENT_PRESETS = [
     { name: 'Amber (Standard)', key: 'amber', from: '#f59e0b', via: '#f97316', ring: '38 92% 50%', text: '#92400e' },

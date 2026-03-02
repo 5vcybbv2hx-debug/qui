@@ -198,6 +198,7 @@ export default function Layout({ children, currentPageName }) {
     return (
         <div className="min-h-screen bg-background" onContextMenu={(e) => e.preventDefault()}>
             <ServiceWorkerRegistration />
+            <OfflineCacheManager />
             <PWAInstallPrompt />
             <OfflineIndicator />
             {/* Fixed Top Header */}

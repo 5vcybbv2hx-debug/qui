@@ -12,25 +12,19 @@ const TABLE_SIZES = {
     round: { w: 60, h: 60 }
 };
 
-// Spread tables that have no saved position across the canvas
-function getDefaultPosition(index, total, canvasW = 700, canvasH = 520) {
-    const cols = Math.ceil(Math.sqrt(total));
+function getDefaultPosition(index, total) {
+    const cols = Math.ceil(Math.sqrt(Math.max(total, 1)));
     const col = index % cols;
     const row = Math.floor(index / cols);
-    const spacingX = Math.min(110, (canvasW - 80) / Math.max(cols, 1));
-    const spacingY = Math.min(110, (canvasH - 80) / Math.max(Math.ceil(total / cols), 1));
     return {
-        x: 60 + col * spacingX,
-        y: 60 + row * spacingY
+        x: 70 + col * 110,
+        y: 70 + row * 110
     };
 }
 
-function TableShape({ table, defaultIndex, defaultTotal, isReserved, isSelected, onClick, onDragStart }) {
+function TableShape({ posX, posY, table, isReserved, isSelected, onMouseDown, onClick }) {
     const size = TABLE_SIZES[table.shape] || TABLE_SIZES.square;
     const isRound = table.shape === 'round';
-
-    const posX = table.position_x ?? getDefaultPosition(defaultIndex, defaultTotal).x;
-    const posY = table.position_y ?? getDefaultPosition(defaultIndex, defaultTotal).y;
 
     return (
         <div
@@ -43,21 +37,15 @@ function TableShape({ table, defaultIndex, defaultTotal, isReserved, isSelected,
                 transform: 'translate(-50%, -50%)',
                 cursor: 'grab',
                 zIndex: isSelected ? 20 : 10,
-                touchAction: 'none'
+                userSelect: 'none'
             }}
-            onMouseDown={(e) => {
-                e.stopPropagation();
-                onDragStart(e, table);
-            }}
-            onClick={(e) => {
-                e.stopPropagation();
-                onClick(table);
-            }}
+            onMouseDown={onMouseDown}
+            onClick={onClick}
         >
             <div className={cn(
-                'w-full h-full flex flex-col items-center justify-center border-2 select-none shadow-md transition-all hover:shadow-xl hover:scale-105',
+                'w-full h-full flex flex-col items-center justify-center border-2 select-none shadow-md transition-shadow hover:shadow-xl',
                 isRound ? 'rounded-full' : 'rounded-xl',
-                isSelected ? 'ring-2 ring-amber-400/70 ring-offset-1' : '',
+                isSelected ? 'ring-2 ring-amber-400/70' : '',
                 isReserved
                     ? 'bg-rose-500/30 border-rose-400 text-rose-200'
                     : 'bg-blue-500/20 border-blue-400/80 text-blue-100'
@@ -74,21 +62,28 @@ function TableShape({ table, defaultIndex, defaultTotal, isReserved, isSelected,
     );
 }
 
-export default function FloorPlanView({ tables, reservations, getTableReservation, onTableClick }) {
+export default function FloorPlanView({ tables, getTableReservation, onTableClick }) {
     const queryClient = useQueryClient();
     const canvasRef = useRef(null);
     const [selectedTableId, setSelectedTableId] = useState(null);
-    // Use a ref to always have the latest positions in event handlers
-    const localPositionsRef = useRef({});
-    const [localPositions, setLocalPositions] = useState({});
-    const draggingRef = useRef(null);
+    const [positions, setPositions] = useState({});
+    const positionsRef = useRef({});
 
-    // Reset local positions when the table list changes (e.g. room switch)
+    const tableIds = tables.map(t => t.id).join(',');
+
+    // Initialize positions from table data whenever the table list changes
     useEffect(() => {
-        localPositionsRef.current = {};
-        setLocalPositions({});
+        const init = {};
+        tables.forEach((t, i) => {
+            init[t.id] = {
+                x: t.position_x ?? getDefaultPosition(i, tables.length).x,
+                y: t.position_y ?? getDefaultPosition(i, tables.length).y
+            };
+        });
+        positionsRef.current = init;
+        setPositions({ ...init });
         setSelectedTableId(null);
-    }, [tables.map(t => t.id).join(',')]);
+    }, [tableIds]);
 
     const updateMutation = useMutation({
         mutationFn: ({ id, position_x, position_y }) =>
@@ -96,62 +91,50 @@ export default function FloorPlanView({ tables, reservations, getTableReservatio
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] })
     });
 
-    const handleDragStart = (e, table) => {
+    const handleMouseDown = (e, tableId) => {
         e.preventDefault();
+        e.stopPropagation();
+
         const canvas = canvasRef.current;
         if (!canvas) return;
 
         const startClientX = e.clientX;
         const startClientY = e.clientY;
+        const origPos = { ...positionsRef.current[tableId] };
+        let hasMoved = false;
 
-        const currentPos = localPositionsRef.current[table.id];
-        const origX = currentPos?.x ?? table.position_x ?? getDefaultPosition(tables.indexOf(table), tables.length).x;
-        const origY = currentPos?.y ?? table.position_y ?? getDefaultPosition(tables.indexOf(table), tables.length).y;
+        const onMouseMove = (mv) => {
+            const dx = mv.clientX - startClientX;
+            const dy = mv.clientY - startClientY;
 
-        draggingRef.current = { tableId: table.id, origX, origY, startClientX, startClientY };
-        let moved = false;
-
-        const handleMove = (mv) => {
-            if (!draggingRef.current) return;
-            const canvasRect = canvasRef.current?.getBoundingClientRect();
-            if (!canvasRect) return;
-            const dx = mv.clientX - draggingRef.current.startClientX;
-            const dy = mv.clientY - draggingRef.current.startClientY;
-            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) moved = true;
-            const newX = Math.max(30, Math.min(canvasRect.width - 30, draggingRef.current.origX + dx));
-            const newY = Math.max(30, Math.min(canvasRect.height - 30, draggingRef.current.origY + dy));
-            const updated = { ...localPositionsRef.current, [table.id]: { x: newX, y: newY } };
-            localPositionsRef.current = updated;
-            setLocalPositions({ ...updated });
-        };
-
-        const handleUp = () => {
-            if (draggingRef.current && moved) {
-                const pos = localPositionsRef.current[draggingRef.current.tableId];
-                if (pos) {
-                    updateMutation.mutate({
-                        id: draggingRef.current.tableId,
-                        position_x: Math.round(pos.x),
-                        position_y: Math.round(pos.y)
-                    });
-                }
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                hasMoved = true;
             }
-            draggingRef.current = null;
-            document.removeEventListener('mousemove', handleMove);
-            document.removeEventListener('mouseup', handleUp);
+
+            const canvasRect = canvas.getBoundingClientRect();
+            const newX = Math.max(30, Math.min(canvasRect.width - 30, origPos.x + dx));
+            const newY = Math.max(30, Math.min(canvasRect.height - 30, origPos.y + dy));
+
+            positionsRef.current = { ...positionsRef.current, [tableId]: { x: newX, y: newY } };
+            setPositions(prev => ({ ...prev, [tableId]: { x: newX, y: newY } }));
         };
 
-        document.addEventListener('mousemove', handleMove);
-        document.addEventListener('mouseup', handleUp);
-    };
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
 
-    const getTableWithPosition = (table, index) => {
-        const local = localPositions[table.id];
-        return {
-            ...table,
-            position_x: local ? local.x : (table.position_x ?? getDefaultPosition(index, tables.length).x),
-            position_y: local ? local.y : (table.position_y ?? getDefaultPosition(index, tables.length).y)
+            if (hasMoved) {
+                const pos = positionsRef.current[tableId];
+                updateMutation.mutate({
+                    id: tableId,
+                    position_x: Math.round(pos.x),
+                    position_y: Math.round(pos.y)
+                });
+            }
         };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
     };
 
     const today = format(new Date(), 'EEEE, d. MMMM', { locale: de });
@@ -161,7 +144,7 @@ export default function FloorPlanView({ tables, reservations, getTableReservatio
             <div className="flex items-center justify-between flex-wrap gap-2">
                 <p className="text-xs text-muted-foreground">Tische per Drag & Drop positionieren – wird automatisch gespeichert</p>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="text-foreground font-medium">Reservierungen: {today}</span>
+                    <span className="text-foreground font-medium">{today}</span>
                     <span className="flex items-center gap-1.5">
                         <span className="w-3 h-3 rounded-full bg-blue-400/60 border border-blue-400 inline-block" />
                         Frei
@@ -178,7 +161,6 @@ export default function FloorPlanView({ tables, reservations, getTableReservatio
                 style={{ height: '520px' }}
                 onClick={() => setSelectedTableId(null)}
             >
-                {/* Grid pattern */}
                 <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none">
                     <defs>
                         <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -194,22 +176,24 @@ export default function FloorPlanView({ tables, reservations, getTableReservatio
                     </div>
                 )}
 
-                {tables.map((table, index) => {
-                    const tWithPos = getTableWithPosition(table, index);
+                {tables.map((table) => {
+                    const pos = positions[table.id];
+                    if (!pos) return null;
                     const reservation = getTableReservation(table.id);
                     return (
                         <TableShape
                             key={table.id}
-                            table={tWithPos}
-                            defaultIndex={index}
-                            defaultTotal={tables.length}
+                            table={table}
+                            posX={pos.x}
+                            posY={pos.y}
                             isReserved={!!reservation}
                             isSelected={selectedTableId === table.id}
-                            onClick={(t) => {
-                                setSelectedTableId(t.id);
-                                onTableClick(t);
+                            onMouseDown={(e) => handleMouseDown(e, table.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTableId(table.id);
+                                onTableClick(table);
                             }}
-                            onDragStart={handleDragStart}
                         />
                     );
                 })}

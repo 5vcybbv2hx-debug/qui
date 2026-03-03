@@ -109,14 +109,22 @@ export default function TeamCalendar() {
                                 </p>
                             </div>
                         </div>
-                        <Button
-                            onClick={() => setShowFilters(!showFilters)}
-                            variant="outline"
-                            className="border-slate-600 text-slate-300 gap-2"
-                        >
-                            <Filter className="w-4 h-4" />
-                            Filter {activeFilters > 0 && `(${activeFilters})`}
-                        </Button>
+                        <div className="flex gap-2">
+                            <TeamCalendarExport
+                                shifts={shifts}
+                                vacations={vacations}
+                                holidays={holidays}
+                                employees={employees}
+                            />
+                            <Button
+                                onClick={() => setShowFilters(!showFilters)}
+                                variant="outline"
+                                className="border-slate-600 text-slate-300 gap-2"
+                            >
+                                <Filter className="w-4 h-4" />
+                                Filter {activeFilters > 0 && `(${activeFilters})`}
+                            </Button>
+                        </div>
                     </div>
 
                     {/* Stats - Hidden on mobile */}

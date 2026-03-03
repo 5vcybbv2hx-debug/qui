@@ -1,354 +1,138 @@
+// Onboarding Page - Welcome & Guided Setup
 import React, { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { GraduationCap, Users, CheckCircle2, Circle, ChevronDown, ChevronRight, Award } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { usePermissions } from '@/components/auth/usePermissions';
-import PermissionDenied from '@/components/auth/PermissionDenied';
-
-const ONBOARDING_TEMPLATE = [
-    {
-        category: "Kasse und EC Geräte",
-        items: [
-            "Tischbuchung in Kasse, Aufteilung erklären",
-            "Getränkebutton in Kasse erklären (wo ist was)",
-            "Wechsel von Restaurant auf Direktverkauf erklären",
-            "Plätze splitten (wie)",
-            "Deckel schreiben bis 23uhr dann wird kassiert ab dann nur noch Direktverkauf",
-            "Gutscheine (wie abkasieren und wie erstellen)",
-            "Storno",
-            "Rechnungen (wie splitten, Storno, Tische und Getränke umbuchen)",
-            "Erklärung EC Geräte (funktion, transaktion überprüfen ob möglich) Geräte sparkasse (schwarz) und volksbank (weiss) immer auf ladestation"
-        ]
-    },
-    {
-        category: "Spülmaschine",
-        items: [
-            "Wie Einschalten",
-            "Wie ausputzen",
-            "Wie den Korb richtig füllen und wenn voll dann rein",
-            "Wie abtrocknen, wie Gläser einräumen (warm/kalt)"
-        ]
-    },
-    {
-        category: "Kaffeemaschine",
-        items: [
-            "Funktion, knöpfe oben und unten (gross, klein, doppelt oder 2 getränke)",
-            "Getränke Auswahl (was gibt's alles)",
-            "Welche Tasse zu welchem getränk",
-            "Zubehör (Milch, Zucker, Honig, Löffel und kecks) wo Brauch man was",
-            "Wenn was leer wo ist das auffüllmaterial",
-            "Reinigung (siehe reinigungsliste für Kaffeemaschine)",
-            "Platz für angefangene milch usw"
-        ]
-    },
-    {
-        category: "Keller",
-        items: [
-            "Aufteilung wo ist was",
-            "Leergut wo kommt was hin",
-            "Nachschub wo ist was"
-        ]
-    },
-    {
-        category: "Nachschubschrank (Tunnel)",
-        items: [
-            "Erklärung wo ist was wenn hinten im regal was leer ist",
-            "Alles zum auffüllen ist da drin auch Strohhalme etc"
-        ]
-    },
-    {
-        category: "Mülltonnen & Wichtiges",
-        items: [
-            "Mülltonnen (zeigen wo und erklären was wohin muss)",
-            "Wichtig wenn was leer ist auf die tafel in der küche oder auf ein zettel schreiben als info für hugi"
-        ]
-    }
-];
+import { InteractiveTour } from '@/components/onboarding/InteractiveTour';
+import { OnboardingChecklist } from '@/components/onboarding/OnboardingChecklist';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckCircle2, Sparkles } from 'lucide-react';
 
 export default function Onboarding() {
-    const permissions = usePermissions();
-    const queryClient = useQueryClient();
-    const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
-    const [expandedCategories, setExpandedCategories] = useState({});
+  const [showTour, setShowTour] = useState(false);
 
-    const { data: employees = [] } = useQuery({
-        queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.list('name')
-    });
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 mb-6">
+            <Sparkles className="w-10 h-10 text-slate-900" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-3">
+            Willkommen bei BarManager!
+          </h1>
+          <p className="text-lg text-slate-300">
+            Du bist jetzt Teil des Teams. Lass dich einführen & lerne die App kennen.
+          </p>
+        </div>
 
-    const { data: currentUser } = useQuery({
-        queryKey: ['user'],
-        queryFn: () => base44.auth.me()
-    });
+        {/* Tabs */}
+        <Tabs defaultValue="checklist" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 bg-slate-800 border border-slate-700">
+            <TabsTrigger value="checklist" className="data-[state=active]:bg-amber-500">
+              <CheckCircle2 className="w-4 h-4 mr-2" />
+              Aufgaben
+            </TabsTrigger>
+            <TabsTrigger value="guide" className="data-[state=active]:bg-amber-500">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Anleitung
+            </TabsTrigger>
+          </TabsList>
 
-    const { data: checklistItems = [] } = useQuery({
-        queryKey: ['onboarding-checklist', selectedEmployeeId],
-        queryFn: () => selectedEmployeeId 
-            ? base44.entities.OnboardingChecklistItem.filter({ employee_id: selectedEmployeeId })
-            : Promise.resolve([]),
-        enabled: !!selectedEmployeeId
-    });
+          {/* Checklist Tab */}
+          <TabsContent value="checklist" className="mt-8">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 md:p-8">
+              <OnboardingChecklist />
+            </div>
+          </TabsContent>
 
-    const initializeMutation = useMutation({
-        mutationFn: async (employeeId) => {
-            const employee = employees.find(e => e.id === employeeId);
-            const items = [];
-            
-            ONBOARDING_TEMPLATE.forEach((category, catIndex) => {
-                category.items.forEach((item, itemIndex) => {
-                    items.push({
-                        employee_id: employeeId,
-                        employee_name: employee.name,
-                        category: category.category,
-                        item_title: item,
-                        item_order: itemIndex,
-                        is_completed: false
-                    });
-                });
-            });
-
-            await base44.entities.OnboardingChecklistItem.bulkCreate(items);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['onboarding-checklist']);
-        }
-    });
-
-    const toggleItemMutation = useMutation({
-        mutationFn: async ({ itemId, isCompleted }) => {
-            const updateData = {
-                is_completed: !isCompleted,
-                completed_by: !isCompleted ? currentUser?.email : null,
-                completed_at: !isCompleted ? new Date().toISOString() : null
-            };
-            await base44.entities.OnboardingChecklistItem.update(itemId, updateData);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['onboarding-checklist']);
-        }
-    });
-
-    const resetChecklistMutation = useMutation({
-        mutationFn: async (employeeId) => {
-            const items = await base44.entities.OnboardingChecklistItem.filter({ employee_id: employeeId });
-            await Promise.all(items.map(item => base44.entities.OnboardingChecklistItem.delete(item.id)));
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['onboarding-checklist']);
-            setSelectedEmployeeId(null);
-        }
-    });
-
-    if (!permissions.canViewOnboarding) {
-        return <PermissionDenied message="Du hast keine Berechtigung für die Einlernliste. Wende dich an einen Manager." />;
-    }
-
-    const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
-    const hasChecklist = checklistItems.length > 0;
-    
-    const groupedItems = ONBOARDING_TEMPLATE.map(template => ({
-        category: template.category,
-        items: checklistItems.filter(item => item.category === template.category)
-    }));
-
-    const totalItems = checklistItems.length;
-    const completedItems = checklistItems.filter(item => item.is_completed).length;
-    const progress = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
-
-    const toggleCategory = (category) => {
-        setExpandedCategories(prev => ({
-            ...prev,
-            [category]: !prev[category]
-        }));
-    };
-
-    return (
-        <div className="min-h-screen bg-slate-900 pb-20">
-            <div className="max-w-5xl mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-                            <GraduationCap className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-white tracking-tight">Einlernliste</h1>
-                            <p className="text-slate-400 text-sm">Onboarding für neue Mitarbeiter</p>
-                        </div>
-                    </div>
+          {/* Guide Tab */}
+          <TabsContent value="guide" className="mt-8">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 md:p-8">
+              <div className="space-y-8">
+                {/* Schnellstart */}
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-4">🚀 Schnellstart (2 Min)</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      {
+                        title: 'Zeit erfassen',
+                        desc: 'Stempel dich mit 1 Klick ein/aus',
+                        icon: '⏱️'
+                      },
+                      {
+                        title: 'Schichten ansehen',
+                        desc: 'Schau deinen Kalender & Schichten',
+                        icon: '📅'
+                      },
+                      {
+                        title: 'Aufgaben checken',
+                        desc: 'Deine TODOs & Putztätigkeiten',
+                        icon: '✅'
+                      },
+                      {
+                        title: 'Rezepte lernen',
+                        desc: 'Cocktail-Rezepte & Getränkekarte',
+                        icon: '🍹'
+                      }
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-4 rounded-lg bg-slate-700/50 border border-slate-600 hover:border-amber-500/50 transition-colors">
+                        <div className="text-3xl mb-2">{item.icon}</div>
+                        <h3 className="font-semibold text-white mb-1">{item.title}</h3>
+                        <p className="text-sm text-slate-300">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Mitarbeiter Auswahl */}
-                <Card className="p-6 bg-slate-800 border-slate-700 mb-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <Users className="w-5 h-5 text-purple-400" />
-                        <h2 className="text-lg font-semibold text-white">Mitarbeiter wählen</h2>
-                    </div>
-                    <Select value={selectedEmployeeId || ''} onValueChange={setSelectedEmployeeId}>
-                        <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
-                            <SelectValue placeholder="Mitarbeiter auswählen..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-slate-600">
-                            {employees.filter(e => e.is_active !== false).map(emp => (
-                                <SelectItem key={emp.id} value={emp.id} className="text-white focus:bg-slate-800 focus:text-white">
-                                    {emp.name} - {emp.role}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </Card>
+                {/* FAQ */}
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-4">❓ Häufige Fragen</h2>
+                  <div className="space-y-4">
+                    {[
+                      {
+                        q: 'Wie erfasse ich meine Arbeitszeit?',
+                        a: 'Klick auf "Zeit erfassen" im Dashboard & stempel dich ein. Die App trackt deine Stunden automatisch.'
+                      },
+                      {
+                        q: 'Kann ich meine Schicht tauschen?',
+                        a: 'Ja! Geh zum Kalender & nutze die "Schicht tauschen" Funktion. Der Manager muss bestätigen.'
+                      },
+                      {
+                        q: 'Wo finde ich die Cocktail-Rezepte?',
+                        a: 'Im Menü → "Rezepte". Alle Rezepte mit Zutaten & Zubereitungsanleitung.'
+                      },
+                      {
+                        q: 'Was ist meine PIN für?',
+                        a: 'Die PIN ist eine Sicherheits-Maßnahme für sensible Operationen am Terminal.'
+                      }
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-4 rounded-lg bg-slate-700/50 border border-slate-600">
+                        <h3 className="font-semibold text-white mb-2">{item.q}</h3>
+                        <p className="text-sm text-slate-300">{item.a}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                {selectedEmployee && (
-                    <>
-                        {!hasChecklist ? (
-                            <Card className="p-8 bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-700 text-center">
-                                <GraduationCap className="w-16 h-16 mx-auto mb-4 text-purple-400" />
-                                <h3 className="text-xl font-bold text-white mb-2">Einlernung starten</h3>
-                                <p className="text-slate-300 mb-6">
-                                    Erstelle eine persönliche Checkliste für {selectedEmployee.name}
-                                </p>
-                                <Button
-                                    onClick={() => initializeMutation.mutate(selectedEmployeeId)}
-                                    className="bg-purple-600 hover:bg-purple-700"
-                                >
-                                    <Award className="w-4 h-4 mr-2" />
-                                    Checkliste erstellen
-                                </Button>
-                            </Card>
-                        ) : (
-                            <>
-                                {/* Progress Card */}
-                                <Card className="p-6 bg-gradient-to-br from-purple-900/30 to-blue-900/30 border-purple-700 mb-6">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div>
-                                            <h3 className="text-xl font-bold text-white mb-1">
-                                                {selectedEmployee.name}
-                                            </h3>
-                                            <p className="text-purple-300 text-sm">{selectedEmployee.role}</p>
-                                        </div>
-                                        <Badge className="bg-purple-600 text-white text-lg px-4 py-1">
-                                            {completedItems} / {totalItems}
-                                        </Badge>
-                                    </div>
-                                    <Progress value={progress} className="h-3 mb-2" />
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="text-slate-300">{Math.round(progress)}% abgeschlossen</span>
-                                        {progress === 100 && (
-                                            <div className="flex items-center gap-1 text-green-400">
-                                                <Award className="w-4 h-4" />
-                                                <span className="font-semibold">Einlernung abgeschlossen!</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </Card>
-
-                                {/* Checklist Categories */}
-                                <div className="space-y-4">
-                                    {groupedItems.map((group, index) => {
-                                        const categoryCompleted = group.items.filter(item => item.is_completed).length;
-                                        const categoryTotal = group.items.length;
-                                        const categoryProgress = categoryTotal > 0 ? (categoryCompleted / categoryTotal) * 100 : 0;
-                                        const isExpanded = expandedCategories[group.category] !== false;
-
-                                        return (
-                                            <Card key={index} className="bg-slate-800 border-slate-700 overflow-hidden">
-                                                <button
-                                                    onClick={() => toggleCategory(group.category)}
-                                                    className="w-full p-4 flex items-center justify-between hover:bg-slate-750 transition-colors"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        {isExpanded ? (
-                                                            <ChevronDown className="w-5 h-5 text-slate-400" />
-                                                        ) : (
-                                                            <ChevronRight className="w-5 h-5 text-slate-400" />
-                                                        )}
-                                                        <h3 className="text-lg font-semibold text-white">{group.category}</h3>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="text-sm text-slate-400">
-                                                            {categoryCompleted} / {categoryTotal}
-                                                        </span>
-                                                        {categoryProgress === 100 && (
-                                                            <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                                        )}
-                                                    </div>
-                                                </button>
-
-                                                {isExpanded && (
-                                                    <div className="border-t border-slate-700 p-4 space-y-2">
-                                                        {group.items.map((item) => (
-                                                            <button
-                                                                key={item.id}
-                                                                onClick={() => toggleItemMutation.mutate({
-                                                                    itemId: item.id,
-                                                                    isCompleted: item.is_completed
-                                                                })}
-                                                                className={`w-full flex items-start gap-3 p-3 rounded-lg transition-colors ${
-                                                                    item.is_completed
-                                                                        ? 'bg-green-900/20 border border-green-700/30'
-                                                                        : 'bg-slate-900 border border-slate-700 hover:bg-slate-750'
-                                                                }`}
-                                                            >
-                                                                {item.is_completed ? (
-                                                                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                                                ) : (
-                                                                    <Circle className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
-                                                                )}
-                                                                <div className="flex-1 text-left">
-                                                                    <p className={`text-sm ${
-                                                                        item.is_completed ? 'text-green-300 line-through' : 'text-white'
-                                                                    }`}>
-                                                                        {item.item_title}
-                                                                    </p>
-                                                                    {item.completed_by && (
-                                                                        <p className="text-xs text-slate-500 mt-1">
-                                                                            Abgehakt von {item.completed_by}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </Card>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Reset Button */}
-                                {permissions.isManager && (
-                                    <div className="mt-6 text-center">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                                if (confirm('Checkliste wirklich zurücksetzen? Alle Fortschritte gehen verloren.')) {
-                                                    resetChecklistMutation.mutate(selectedEmployeeId);
-                                                }
-                                            }}
-                                            className="border-red-600 text-red-400 hover:bg-red-900/20"
-                                        >
-                                            Checkliste zurücksetzen
-                                        </Button>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </>
-                )}
-
-                {!selectedEmployee && (
-                    <Card className="p-12 bg-slate-800 border-slate-700 text-center">
-                        <Users className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-                        <p className="text-slate-400">Wähle einen Mitarbeiter aus, um die Einlernliste zu starten</p>
-                    </Card>
-                )}
+                {/* Tour starten */}
+                <button
+                  onClick={() => setShowTour(true)}
+                  className="w-full py-3 px-4 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 font-semibold hover:shadow-lg hover:shadow-amber-500/20 transition-all"
+                >
+                  🎯 Interaktive Tour starten
+                </button>
+              </div>
             </div>
-        </div>
-    );
+          </TabsContent>
+        </Tabs>
+
+        {/* Tour Modal */}
+        {showTour && (
+          <InteractiveTour
+            onComplete={() => setShowTour(false)}
+            onSkip={() => setShowTour(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
 }

@@ -132,6 +132,15 @@ export default function SeatingChartPage() {
                             <List className="h-4 w-4 mr-2" />
                             Liste
                         </Button>
+                        <Button
+                            variant={view === 'calendar' ? 'default' : 'outline'}
+                            onClick={() => setView('calendar')}
+                            size="sm"
+                            className={view === 'calendar' ? 'bg-primary hover:bg-primary/90' : ''}
+                        >
+                            <CalendarDays className="h-4 w-4 mr-2" />
+                            Kalender
+                        </Button>
                     </div>
                 </div>
 

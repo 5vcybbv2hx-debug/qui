@@ -14,11 +14,9 @@ import { getHolidaysBW } from '@/components/shifts/getHolidays';
 
 export default function TeamCalendar() {
     const permissions = usePermissions();
-    const isMobile = useIsMobile();
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [selectedRoles, setSelectedRoles] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [showFilters, setShowFilters] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [showEventModal, setShowEventModal] = useState(false);
     const [shiftSwapData, setShiftSwapData] = useState(null);

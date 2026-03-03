@@ -19,10 +19,11 @@ import FirstStepsTour from '@/components/onboarding/FirstStepsTour';
 import { InteractiveTour, useTour } from '@/components/onboarding/InteractiveTour';
 
 export default function Dashboard() {
-    const permissions = usePermissions();
-    const queryClient = useQueryClient();
-    const [showOnboardingTour, setShowOnboardingTour] = useState(false);
-    const [viewAsEmployee, setViewAsEmployee] = useState(false);
+     const permissions = usePermissions();
+     const queryClient = useQueryClient();
+     const [showOnboardingTour, setShowOnboardingTour] = useState(false);
+     const [viewAsEmployee, setViewAsEmployee] = useState(false);
+     const { showTour, completeTour, skipTour } = useTour();
 
     const { data: user } = useQuery({
         queryKey: ['user'],

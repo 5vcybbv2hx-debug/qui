@@ -96,7 +96,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] })
     });
 
-    const handleMouseDown = (e, tableId) => {
+    const handleDragStart = (e, tableId) => {
         if (!editMode) return;
         e.preventDefault();
         e.stopPropagation();
@@ -104,23 +104,25 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const canvasRect = canvas.getBoundingClientRect();
-        const startClientX = e.clientX;
-        const startClientY = e.clientY;
+        const isTouch = e.type === 'touchstart';
+        const getClientPos = (ev) => isTouch
+            ? { x: ev.touches[0].clientX, y: ev.touches[0].clientY }
+            : { x: ev.clientX, y: ev.clientY };
+
+        const startPos = getClientPos(e);
         const origPos = { ...positionsRef.current[tableId] };
         let hasMoved = false;
 
-        const onMouseMove = (mv) => {
+        const onMove = (mv) => {
             mv.preventDefault();
-            const dx = mv.clientX - startClientX;
-            const dy = mv.clientY - startClientY;
+            const cur = getClientPos(mv);
+            const dx = cur.x - startPos.x;
+            const dy = cur.y - startPos.y;
 
-            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                hasMoved = true;
-            }
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
 
-            // Recalculate canvas rect in case of scroll
-            const rect = canvasRef.current?.getBoundingClientRect() || canvasRect;
+            const rect = canvasRef.current?.getBoundingClientRect();
+            if (!rect) return;
             const newX = Math.max(30, Math.min(rect.width - 30, origPos.x + dx));
             const newY = Math.max(30, Math.min(rect.height - 30, origPos.y + dy));
 
@@ -128,9 +130,11 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
             setPositions(prev => ({ ...prev, [tableId]: { x: newX, y: newY } }));
         };
 
-        const onMouseUp = (mu) => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+        const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onUp);
 
             if (hasMoved) {
                 const pos = positionsRef.current[tableId];
@@ -142,8 +146,13 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
             }
         };
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        if (isTouch) {
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onUp);
+        } else {
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
     };
 
     const today = format(new Date(), 'EEEE, d. MMMM', { locale: de });

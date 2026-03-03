@@ -83,6 +83,7 @@ import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
 import SalesAnalysis from './pages/SalesAnalysis';
+import SeatingChart from './pages/SeatingChart';
 import Settings from './pages/Settings';
 import ShiftAnalytics from './pages/ShiftAnalytics';
 import ShiftSwaps from './pages/ShiftSwaps';
@@ -99,7 +100,6 @@ import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
-import SeatingChart from './pages/SeatingChart';
 import __Layout from './Layout.jsx';
 
 
@@ -140,6 +140,7 @@ export const PAGES = {
     "Reservations": Reservations,
     "Restock": Restock,
     "SalesAnalysis": SalesAnalysis,
+    "SeatingChart": SeatingChart,
     "Settings": Settings,
     "ShiftAnalytics": ShiftAnalytics,
     "ShiftSwaps": ShiftSwaps,
@@ -156,7 +157,6 @@ export const PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "WeeklyTasks": WeeklyTasks,
-    "SeatingChart": SeatingChart,
 }
 
 export const pagesConfig = {

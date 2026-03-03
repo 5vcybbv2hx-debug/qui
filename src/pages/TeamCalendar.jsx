@@ -10,12 +10,15 @@ import { Input } from "@/components/ui/input";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import TeamCalendarView from '@/components/calendar/TeamCalendarView';
+import MobileTeamCalendarView from '@/components/calendar/MobileTeamCalendarView';
 import EventDetailsModal from '@/components/calendar/EventDetailsModal';
 import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
+import { useIsMobile } from '@/components/utils/useIsMobile';
 
 export default function TeamCalendar() {
     const permissions = usePermissions();
+    const isMobile = useIsMobile();
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [selectedRoles, setSelectedRoles] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -136,8 +139,8 @@ export default function TeamCalendar() {
                     </div>
                 </div>
 
-                {/* Filter Panel */}
-                {showFilters && (
+                {/* Filter Panel - Only on Desktop */}
+                {showFilters && !isMobile && (
                     <Card className="p-6 bg-slate-800 border-slate-700 mb-6">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-white flex items-center gap-2">
@@ -256,14 +259,25 @@ export default function TeamCalendar() {
                 )}
 
                 {/* Calendar */}
-                <TeamCalendarView
-                    shifts={shifts}
-                    vacations={vacations}
-                    holidays={holidays}
-                    employees={employees}
-                    onEventClick={handleEventClick}
-                    selectedEmployees={selectedEmployees}
-                />
+                {isMobile ? (
+                    <MobileTeamCalendarView
+                        shifts={shifts}
+                        vacations={vacations}
+                        holidays={holidays}
+                        employees={employees}
+                        onEventClick={handleEventClick}
+                        selectedEmployees={selectedEmployees}
+                    />
+                ) : (
+                    <TeamCalendarView
+                        shifts={shifts}
+                        vacations={vacations}
+                        holidays={holidays}
+                        employees={employees}
+                        onEventClick={handleEventClick}
+                        selectedEmployees={selectedEmployees}
+                    />
+                )}
             </div>
 
             {/* Event Details Modal */}

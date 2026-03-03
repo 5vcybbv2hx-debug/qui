@@ -187,9 +187,17 @@ export default function Restock() {
     const todayItems = restockItems
         .filter(item => item.date === format(new Date(), 'yyyy-MM-dd'))
         .sort((a, b) => {
-            // Erst nach erledigt/nicht erledigt
+            // Erledigte immer nach unten
             if (a.is_completed !== b.is_completed) {
                 return a.is_completed ? 1 : -1;
+            }
+            // Kürzlich hinzugefügte oben (neuestes zuerst)
+            const aRecent = recentIds.indexOf(a.id);
+            const bRecent = recentIds.indexOf(b.id);
+            if (aRecent !== -1 || bRecent !== -1) {
+                if (aRecent === -1) return 1;
+                if (bRecent === -1) return -1;
+                return bRecent - aRecent; // neuere weiter oben
             }
             // Dann nach Kategorie
             const articleA = articles.find(art => art.barcode === a.barcode);
@@ -199,7 +207,6 @@ export default function Restock() {
             if (categoryA !== categoryB) {
                 return categoryA.localeCompare(categoryB);
             }
-            // Dann nach Name
             return a.article_name.localeCompare(b.article_name);
         });
 

@@ -164,7 +164,7 @@ export default function SeatingChartPage() {
                             setShowModal(true);
                         }}
                     />
-                ) : (
+                ) : view === 'list' ? (
                     <TableList 
                         tables={filteredTables} 
                         reservations={reservations}
@@ -173,6 +173,11 @@ export default function SeatingChartPage() {
                             setSelectedTable(table);
                             setShowModal(true);
                         }}
+                    />
+                ) : (
+                    <TableCalendarView
+                        tables={filteredTables}
+                        reservations={reservations}
                     />
                 )}
 

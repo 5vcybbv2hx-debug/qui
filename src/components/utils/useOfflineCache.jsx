@@ -1,92 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { cacheData, getCachedData, syncMutations } from './offlineSync';
+import { base44 } from '@/api/base44Client';
 
-const DB_NAME = 'BarManagerOfflineCache';
-const DB_VERSION = 1;
-
-// Initialize IndexedDB
-const initDB = () => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      
-      // Create object stores for each entity
-      const stores = [
-        'Employee',
-        'Shift',
-        'Article',
-        'ShoppingList',
-        'RestockItem',
-        'Recipe',
-        'Event',
-        'Reservation',
-        'CleaningTask',
-        'TimeEntry',
-        'ClockEntry'
-      ];
-      
-      stores.forEach(store => {
-        if (!db.objectStoreNames.contains(store)) {
-          db.createObjectStore(store, { keyPath: 'id' });
-        }
-      });
-    };
-  });
-};
-
-// Cache data in IndexedDB
-export const cacheData = async (storeName, data) => {
-  try {
-    const db = await initDB();
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    
-    // Clear existing data and add new
-    await store.clear();
-    
-    if (Array.isArray(data)) {
-      data.forEach(item => store.add(item));
-    } else {
-      store.add(data);
-    }
-    
-    return new Promise((resolve) => {
-      tx.oncomplete = () => resolve(true);
-    });
-  } catch (error) {
-    console.error('Cache error:', error);
-    return false;
-  }
-};
-
-// Get cached data from IndexedDB
-export const getCachedData = async (storeName) => {
-  try {
-    const db = await initDB();
-    const tx = db.transaction(storeName, 'readonly');
-    const store = tx.objectStore(storeName);
-    const request = store.getAll();
-    
-    return new Promise((resolve) => {
-      request.onsuccess = () => resolve(request.result || []);
-    });
-  } catch (error) {
-    console.error('Get cache error:', error);
-    return [];
-  }
-};
-
-// Hook for offline caching with query
+/**
+ * Hook for offline caching with automatic sync
+ * - Reads from cache when offline
+ * - Syncs mutations when back online
+ */
 export const useOfflineCache = (storeName, queryHook, options = {}) => {
   const [cachedData, setCachedData] = useState(null);
   const [isLoadingCache, setIsLoadingCache] = useState(true);
-  
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle', 'syncing', 'completed', 'error'
+
   const query = queryHook();
-  const isOnline = navigator.onLine;
+  
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = async () => {
+      setIsOnline(true);
+      setSyncStatus('syncing');
+      try {
+        const result = await syncMutations(base44);
+        setSyncStatus(result.failed > 0 ? 'error' : 'completed');
+        // Refetch data after sync
+        if (query.refetch) {
+          await query.refetch();
+        }
+      } catch (err) {
+        console.error('Sync failed:', err);
+        setSyncStatus('error');
+      }
+    };
+    
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [query]);
   
   // Load from cache on mount
   useEffect(() => {
@@ -103,11 +59,21 @@ export const useOfflineCache = (storeName, queryHook, options = {}) => {
     }
   }, [query.data, isOnline, storeName]);
   
-  // Return query data if online, otherwise cached data
+  // Clear sync status after completion
+  useEffect(() => {
+    if (syncStatus === 'completed') {
+      const timer = setTimeout(() => setSyncStatus('idle'), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [syncStatus]);
+  
   return {
     data: isOnline ? query.data : (cachedData || query.data),
     isLoading: isOnline ? query.isLoading : isLoadingCache,
     error: isOnline ? query.error : null,
-    isCached: !isOnline && cachedData !== null
+    isCached: !isOnline && cachedData !== null,
+    isOnline,
+    syncStatus,
+    refetch: query.refetch
   };
 };

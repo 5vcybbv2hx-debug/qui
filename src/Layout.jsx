@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PWAInstallPrompt from '@/components/pwa/PWAInstallPrompt';
 import OfflineIndicator from '@/components/pwa/OfflineIndicator';
+import OfflineSyncManager from '@/components/pwa/OfflineSyncManager';
 import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistration';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import GlobalSearch from '@/components/search/GlobalSearch';

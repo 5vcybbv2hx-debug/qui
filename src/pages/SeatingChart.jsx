@@ -3,10 +3,11 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid2x2, List, Settings } from 'lucide-react';
+import { Plus, Grid2x2, List, Settings, Move } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TableGrid from '@/components/seating/TableGrid';
 import TableList from '@/components/seating/TableList';
+import FloorPlanView from '@/components/seating/FloorPlanView';
 import TableModal from '@/components/seating/TableModal';
 import RoomManager from '@/components/seating/RoomManager';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -104,6 +105,15 @@ export default function SeatingChartPage() {
                     )}
                     <div className="flex gap-2">
                         <Button
+                            variant={view === 'floorplan' ? 'default' : 'outline'}
+                            onClick={() => setView('floorplan')}
+                            size="sm"
+                            className={view === 'floorplan' ? 'bg-primary hover:bg-primary/90' : ''}
+                        >
+                            <Move className="h-4 w-4 mr-2" />
+                            Draufsicht
+                        </Button>
+                        <Button
                             variant={view === 'grid' ? 'default' : 'outline'}
                             onClick={() => setView('grid')}
                             size="sm"
@@ -124,7 +134,17 @@ export default function SeatingChartPage() {
                     </div>
                 </div>
 
-                {view === 'grid' ? (
+                {view === 'floorplan' ? (
+                    <FloorPlanView
+                        tables={filteredTables}
+                        reservations={reservations}
+                        getTableReservation={getTableReservation}
+                        onTableClick={(table) => {
+                            setSelectedTable(table);
+                            setShowModal(true);
+                        }}
+                    />
+                ) : view === 'grid' ? (
                     <TableGrid 
                         tables={filteredTables} 
                         reservations={reservations}

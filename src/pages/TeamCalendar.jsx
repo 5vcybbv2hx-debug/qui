@@ -39,6 +39,15 @@ export default function TeamCalendar() {
         queryFn: () => base44.entities.VacationRequest.filter({ status: 'genehmigt' })
     });
 
+    const { data: absences = [] } = useQuery({
+        queryKey: ['absences'],
+        queryFn: async () => {
+            // Fetch TimeEntry records to identify sick days and other absences
+            const entries = await base44.entities.TimeEntry?.list?.('date', 200) || [];
+            return entries.filter(e => e.status === 'sick_leave' || e.status === 'absent');
+        }
+    });
+
     // Get holidays for current and next year
     const currentYear = new Date().getFullYear();
     const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
@@ -260,6 +269,7 @@ export default function TeamCalendar() {
                     shifts={shifts}
                     vacations={vacations}
                     holidays={holidays}
+                    absences={absences}
                     employees={employees}
                     onEventClick={handleEventClick}
                     selectedEmployees={selectedEmployees}

@@ -97,18 +97,21 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     });
 
     const handleMouseDown = (e, tableId) => {
+        if (!editMode) return;
         e.preventDefault();
         e.stopPropagation();
 
         const canvas = canvasRef.current;
         if (!canvas) return;
 
+        const canvasRect = canvas.getBoundingClientRect();
         const startClientX = e.clientX;
         const startClientY = e.clientY;
         const origPos = { ...positionsRef.current[tableId] };
         let hasMoved = false;
 
         const onMouseMove = (mv) => {
+            mv.preventDefault();
             const dx = mv.clientX - startClientX;
             const dy = mv.clientY - startClientY;
 
@@ -116,15 +119,16 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                 hasMoved = true;
             }
 
-            const canvasRect = canvas.getBoundingClientRect();
-            const newX = Math.max(30, Math.min(canvasRect.width - 30, origPos.x + dx));
-            const newY = Math.max(30, Math.min(canvasRect.height - 30, origPos.y + dy));
+            // Recalculate canvas rect in case of scroll
+            const rect = canvasRef.current?.getBoundingClientRect() || canvasRect;
+            const newX = Math.max(30, Math.min(rect.width - 30, origPos.x + dx));
+            const newY = Math.max(30, Math.min(rect.height - 30, origPos.y + dy));
 
-            positionsRef.current = { ...positionsRef.current, [tableId]: { x: newX, y: newY } };
+            positionsRef.current[tableId] = { x: newX, y: newY };
             setPositions(prev => ({ ...prev, [tableId]: { x: newX, y: newY } }));
         };
 
-        const onMouseUp = () => {
+        const onMouseUp = (mu) => {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
 

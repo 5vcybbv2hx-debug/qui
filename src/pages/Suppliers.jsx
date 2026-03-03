@@ -28,6 +28,7 @@ export default function Suppliers() {
         email: '',
         website: '',
         contacts: [],
+        branches: [],
         notes: '',
         order: 0,
         is_active: true

@@ -467,7 +467,7 @@ export default function Layout({ children, currentPageName }) {
                     </AnimatePresence>
                 </PullToRefresh>
             </main>
-        </div>
+            </div>
         </ErrorBoundary>
     );
 }

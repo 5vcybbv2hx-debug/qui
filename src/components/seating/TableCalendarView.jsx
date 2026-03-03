@@ -447,6 +447,7 @@ export default function TableCalendarView({ tables, reservations }) {
                 prefillDate={modalState.prefillDate}
                 prefillTable={modalState.prefillTable}
                 tables={tables}
+                reservations={reservations}
             />
         </div>
     );

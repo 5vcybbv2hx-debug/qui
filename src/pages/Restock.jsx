@@ -20,6 +20,9 @@ export default function Restock() {
     const [selectedArticle, setSelectedArticle] = useState('');
     const [editingItem, setEditingItem] = useState(null);
     const [editQuantity, setEditQuantity] = useState('');
+    // IDs der kürzlich hinzugefügten Items (werden oben angezeigt)
+    const [recentIds, setRecentIds] = useState([]);
+    const recentTimers = useRef({});
 
     const { data: restockItems = [] } = useQuery({
         queryKey: ['restock-items'],

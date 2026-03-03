@@ -42,6 +42,7 @@ function TableShape({ posX, posY, table, isReserved, isSelected, editMode, onMou
                 userSelect: 'none'
             }}
             onMouseDown={editMode ? onMouseDown : undefined}
+            onTouchStart={editMode ? onMouseDown : undefined}
             onClick={onClick}
         >
             <div className={cn(

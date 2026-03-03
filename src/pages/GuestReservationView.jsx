@@ -45,8 +45,8 @@ export default function GuestReservationView() {
     const { data: companyInfo } = useQuery({
         queryKey: ['companyInfo'],
         queryFn: async () => {
-            const response = await base44.functions.invoke('getCompanyInfo', {});
-            return response.data || {};
+            const list = await base44.entities.CompanyInfo.list();
+            return list[0] || {};
         }
     });
 

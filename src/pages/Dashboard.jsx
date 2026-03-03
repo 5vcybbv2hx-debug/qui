@@ -960,6 +960,14 @@ export default function Dashboard() {
                     onClose={() => setShowOnboardingTour(false)}
                 />
             )}
+
+            {/* Interactive Tour für Erstes Login */}
+            {showTour && (
+                <InteractiveTour
+                    onComplete={completeTour}
+                    onSkip={skipTour}
+                />
+            )}
         </div>
     );
 }

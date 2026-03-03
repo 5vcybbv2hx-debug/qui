@@ -21,7 +21,19 @@ const STATUS_COLORS = {
     storniert: 'bg-gray-400/50 border-gray-400 text-gray-300 line-through'
 };
 
-function QuickReservationForm({ open, onClose, onSave, onDelete, reservation, prefillDate, prefillTable, tables }) {
+// Checks if a table is booked at a given date (same-day = conflict, simple model)
+function getTableAvailability(tableId, date, time, reservations, excludeReservationId = null) {
+    if (!tableId || !date) return null;
+    const conflicts = reservations.filter(r =>
+        r.table === tableId &&
+        r.date === date &&
+        r.status !== 'storniert' &&
+        r.id !== excludeReservationId
+    );
+    return conflicts.length === 0 ? 'free' : 'occupied';
+}
+
+function QuickReservationForm({ open, onClose, onSave, onDelete, reservation, prefillDate, prefillTable, tables, reservations }) {
     const [form, setForm] = React.useState({
         customer_name: '',
         phone: '',
@@ -59,6 +71,22 @@ function QuickReservationForm({ open, onClose, onSave, onDelete, reservation, pr
         }
     }, [reservation, prefillDate, prefillTable, open]);
 
+    // Real-time availability
+    const selectedTableAvailability = useMemo(() =>
+        getTableAvailability(form.table, form.date, form.time, reservations, reservation?.id),
+        [form.table, form.date, form.time, reservations, reservation?.id]
+    );
+
+    // Alternative available tables (same day, enough capacity)
+    const alternativeTables = useMemo(() => {
+        if (!form.date || selectedTableAvailability !== 'occupied') return [];
+        return tables.filter(t => {
+            if (t.id === form.table) return false;
+            const avail = getTableAvailability(t.id, form.date, form.time, reservations, reservation?.id);
+            return avail === 'free' && t.capacity >= (form.guests || 1);
+        });
+    }, [form.date, form.time, form.guests, form.table, tables, reservations, selectedTableAvailability, reservation?.id]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
         onSave(form, reservation?.id);
@@ -66,7 +94,7 @@ function QuickReservationForm({ open, onClose, onSave, onDelete, reservation, pr
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{reservation ? 'Reservierung bearbeiten' : 'Neue Reservierung'}</DialogTitle>
                 </DialogHeader>
@@ -120,19 +148,78 @@ function QuickReservationForm({ open, onClose, onSave, onDelete, reservation, pr
                             />
                         </div>
                     </div>
+
+                    {/* Table selector with live availability */}
                     <div className="space-y-2">
                         <Label>Tisch</Label>
                         <Select value={form.table} onValueChange={v => setForm({ ...form, table: v })}>
-                            <SelectTrigger>
+                            <SelectTrigger className={cn(
+                                selectedTableAvailability === 'occupied' && 'border-red-400 focus:ring-red-400',
+                                selectedTableAvailability === 'free' && 'border-emerald-400 focus:ring-emerald-400'
+                            )}>
                                 <SelectValue placeholder="Tisch wählen..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {tables.map(t => (
-                                    <SelectItem key={t.id} value={t.id}>{t.table_number} ({t.capacity} Plätze)</SelectItem>
-                                ))}
+                                {tables.map(t => {
+                                    const avail = form.date ? getTableAvailability(t.id, form.date, form.time, reservations, reservation?.id) : null;
+                                    return (
+                                        <SelectItem key={t.id} value={t.id}>
+                                            <span className="flex items-center gap-2">
+                                                {t.table_number} ({t.capacity} Plätze)
+                                                {avail === 'free' && <span className="text-emerald-400 text-xs">● frei</span>}
+                                                {avail === 'occupied' && <span className="text-red-400 text-xs">● belegt</span>}
+                                            </span>
+                                        </SelectItem>
+                                    );
+                                })}
                             </SelectContent>
                         </Select>
+
+                        {/* Availability status */}
+                        {form.table && form.date && (
+                            <div className={cn(
+                                "flex items-center gap-2 text-xs px-3 py-2 rounded-lg border",
+                                selectedTableAvailability === 'free'
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                    : 'bg-red-500/10 border-red-500/30 text-red-400'
+                            )}>
+                                {selectedTableAvailability === 'free'
+                                    ? <><CheckCircle2 className="w-3.5 h-3.5" /> Tisch ist an diesem Tag verfügbar</>
+                                    : <><AlertTriangle className="w-3.5 h-3.5" /> Tisch ist an diesem Tag bereits belegt</>
+                                }
+                            </div>
+                        )}
                     </div>
+
+                    {/* Alternative tables */}
+                    {alternativeTables.length > 0 && (
+                        <div className="space-y-2">
+                            <Label className="text-amber-400 flex items-center gap-1.5">
+                                <ArrowRight className="w-3.5 h-3.5" />
+                                Alternative verfügbare Tische
+                            </Label>
+                            <div className="flex flex-wrap gap-2">
+                                {alternativeTables.map(t => (
+                                    <button
+                                        key={t.id}
+                                        type="button"
+                                        onClick={() => setForm({ ...form, table: t.id })}
+                                        className="px-3 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-xs font-medium hover:bg-emerald-500/20 transition-colors"
+                                    >
+                                        {t.table_number} · {t.capacity} Plätze
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* No alternatives available */}
+                    {selectedTableAvailability === 'occupied' && alternativeTables.length === 0 && form.date && (
+                        <div className="text-xs px-3 py-2 rounded-lg border bg-red-500/10 border-red-500/30 text-red-400">
+                            Keine alternativen Tische mit ausreichender Kapazität verfügbar.
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <Label>Status</Label>
                         <Select value={form.status} onValueChange={v => setForm({ ...form, status: v })}>

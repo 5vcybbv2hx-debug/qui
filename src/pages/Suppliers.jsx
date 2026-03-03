@@ -74,6 +74,7 @@ export default function Suppliers() {
                 email: supplier.email || '',
                 website: supplier.website || '',
                 contacts: supplier.contacts || [],
+                branches: supplier.branches || [],
                 notes: supplier.notes || '',
                 order: supplier.order || 0,
                 is_active: supplier.is_active

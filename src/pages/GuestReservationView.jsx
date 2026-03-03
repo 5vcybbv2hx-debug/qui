@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,12 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Wine, Calendar, Clock, Users, CheckCircle, XCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { loadSavedColors } from '@/components/settings/ColorCustomizer';
 
 export default function GuestReservationView() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
     const queryClient = useQueryClient();
     const [cancelSuccess, setCancelSuccess] = useState(false);
+
+    useEffect(() => {
+        loadSavedColors();
+    }, []);
 
     const { data: reservation, isLoading, error } = useQuery({
         queryKey: ['guestReservation', token],

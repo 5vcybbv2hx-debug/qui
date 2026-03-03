@@ -86,33 +86,26 @@ export default function TeamCalendarExport({ shifts = [], vacations = [], holida
             doc.setFontSize(9);
             doc.setTextColor(0, 0, 0);
             
-            const shiftRows = shifts.slice(0, 10).map(shift => [
-                shift.date,
-                shift.employee_name,
-                `${shift.start_time} - ${shift.end_time}`,
-                shift.shift_type || ''
-            ]);
-            
-            doc.autoTable({
-                startY: yPosition,
-                head: [['Datum', 'Mitarbeiter', 'Zeit', 'Typ']],
-                body: shiftRows,
-                margin: { left: 14, right: 14 },
-                theme: 'grid',
-                columnStyles: { 0: { cellWidth: 30 }, 1: { cellWidth: 50 } }
+            shifts.slice(0, 15).forEach(shift => {
+                if (yPosition > 280) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.text(`${shift.date} | ${shift.employee_name} | ${shift.start_time} - ${shift.end_time}`, 14, yPosition);
+                yPosition += 6;
             });
             
-            yPosition = doc.lastAutoTable.finalY + 8;
-            
-            if (shifts.length > 10) {
-                doc.setFontSize(9);
-                doc.text(`... und ${shifts.length - 10} weitere Schichten`, 14, yPosition);
-                yPosition += 8;
+            if (shifts.length > 15) {
+                yPosition += 4;
+                doc.setFontSize(8);
+                doc.text(`... und ${shifts.length - 15} weitere Schichten`, 14, yPosition);
+                yPosition += 6;
             }
         }
         
         // Urlaube
-        if (vacations.length > 0 && yPosition < 250) {
+        if (vacations.length > 0) {
+            yPosition += 4;
             doc.setFontSize(12);
             doc.setTextColor(200, 100, 0);
             doc.text('URLAUBE', 14, yPosition);
@@ -121,19 +114,13 @@ export default function TeamCalendarExport({ shifts = [], vacations = [], holida
             doc.setFontSize(9);
             doc.setTextColor(0, 0, 0);
             
-            const vacationRows = vacations.slice(0, 5).map(vacation => [
-                vacation.start_date,
-                vacation.end_date,
-                vacation.employee_name,
-                vacation.reason || ''
-            ]);
-            
-            doc.autoTable({
-                startY: yPosition,
-                head: [['Von', 'Bis', 'Mitarbeiter', 'Grund']],
-                body: vacationRows,
-                margin: { left: 14, right: 14 },
-                theme: 'grid'
+            vacations.slice(0, 10).forEach(vacation => {
+                if (yPosition > 280) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.text(`${vacation.start_date} bis ${vacation.end_date} | ${vacation.employee_name}`, 14, yPosition);
+                yPosition += 6;
             });
         }
         

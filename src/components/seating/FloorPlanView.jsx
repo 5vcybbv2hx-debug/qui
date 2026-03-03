@@ -147,24 +147,46 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between flex-wrap gap-2">
-                <p className="text-xs text-muted-foreground">Tische per Drag & Drop positionieren – wird automatisch gespeichert</p>
+                <div className="flex items-center gap-3">
+                    {editMode ? (
+                        <p className="text-xs text-amber-400 flex items-center gap-1.5">
+                            <Move className="w-3.5 h-3.5" />
+                            Bearbeitungsmodus: Tische per Drag &amp; Drop verschieben
+                        </p>
+                    ) : (
+                        <p className="text-xs text-muted-foreground">Auf Tisch klicken für Details. Manager-Modus zum Verschieben.</p>
+                    )}
+                    <Button
+                        size="sm"
+                        variant={editMode ? 'default' : 'outline'}
+                        className={cn("gap-1.5 text-xs h-7", editMode && "bg-amber-500 hover:bg-amber-600 text-black")}
+                        onClick={() => setEditMode(v => !v)}
+                    >
+                        {editMode ? <><Check className="w-3.5 h-3.5" /> Fertig</> : <><Pencil className="w-3.5 h-3.5" /> Layout bearbeiten</>}
+                    </Button>
+                </div>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="text-foreground font-medium">{today}</span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-blue-400/60 border border-blue-400 inline-block" />
-                        Frei
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="w-3 h-3 rounded-full bg-rose-400/60 border border-rose-400 inline-block" />
-                        Reserviert
-                    </span>
+                    {!editMode && <>
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-full bg-blue-400/60 border border-blue-400 inline-block" />
+                            Frei
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-full bg-rose-400/60 border border-rose-400 inline-block" />
+                            Reserviert
+                        </span>
+                    </>}
                 </div>
             </div>
             <div
                 ref={canvasRef}
-                className="relative w-full bg-card border border-border rounded-xl overflow-hidden"
+                className={cn(
+                    "relative w-full bg-card border rounded-xl overflow-hidden",
+                    editMode ? "border-amber-500/50 border-2" : "border-border"
+                )}
                 style={{ height: '520px' }}
-                onClick={() => setSelectedTableId(null)}
+                onClick={() => !editMode && setSelectedTableId(null)}
             >
                 <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none">
                     <defs>

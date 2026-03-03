@@ -229,7 +229,8 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                             isReserved={!!reservation}
                             isSelected={selectedTableId === table.id}
                             editMode={editMode}
-                            onMouseDown={(e) => handleMouseDown(e, table.id)}
+                            onMouseDown={(e) => handleDragStart(e, table.id)}
+                            onTouchStart={(e) => handleDragStart(e, table.id)}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 if (!editMode) {

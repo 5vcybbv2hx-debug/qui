@@ -203,6 +203,7 @@ export default function Layout({ children, currentPageName }) {
      };
 
     return (
+        <ErrorBoundary>
         <div className="min-h-screen bg-background" onContextMenu={(e) => e.preventDefault()}>
             <ServiceWorkerRegistration />
             <PWAInstallPrompt />

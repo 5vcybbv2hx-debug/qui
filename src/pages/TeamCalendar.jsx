@@ -56,198 +56,66 @@ export default function TeamCalendar() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900">
-            <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="min-h-screen bg-background">
+            <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
                 {/* Header */}
                 <div className="mb-8">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-3">
-                            <Calendar className="w-8 h-8 text-amber-400" />
-                            <div>
-                                <h1 className="text-2xl font-bold text-white tracking-tight">Team-Kalender</h1>
-                                <p className="text-slate-400 text-sm">
-                                    Übersicht aller Schichten, Urlaube und Feiertage
-                                </p>
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <TeamCalendarExport
-                                shifts={shifts}
-                                vacations={vacations}
-                                holidays={holidays}
-                                employees={employees}
-                            />
-                            <Button
-                                onClick={() => setShowFilters(!showFilters)}
-                                variant="outline"
-                                className="border-slate-600 text-slate-300 gap-2"
-                            >
-                                <Filter className="w-4 h-4" />
-                                Filter {activeFilters > 0 && `(${activeFilters})`}
-                            </Button>
+                    <div className="flex items-center gap-3 mb-6">
+                        <Calendar className="w-6 md:w-8 h-6 md:h-8 text-primary" />
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Team-Kalender</h1>
+                            <p className="text-muted-foreground text-sm">
+                                Übersicht aller Schichten, Urlaube und Feiertage
+                            </p>
                         </div>
                     </div>
 
-                    {/* Stats - Hidden on mobile */}
-                    <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card className="p-4 bg-slate-800 border-slate-700">
-                            <div className="text-2xl font-bold text-white">{shifts.length}</div>
-                            <div className="text-sm text-slate-400">Schichten</div>
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <Card className="p-4">
+                            <div className="text-2xl font-bold">{shifts.length}</div>
+                            <div className="text-sm text-muted-foreground">Schichten</div>
                         </Card>
-                        <Card className="p-4 bg-slate-800 border-slate-700">
-                            <div className="text-2xl font-bold text-white">{vacations.length}</div>
-                            <div className="text-sm text-slate-400">Urlaube</div>
+                        <Card className="p-4">
+                            <div className="text-2xl font-bold">{vacations.length}</div>
+                            <div className="text-sm text-muted-foreground">Urlaube</div>
                         </Card>
-                        <Card className="p-4 bg-slate-800 border-slate-700">
-                            <div className="text-2xl font-bold text-white">{holidays.length}</div>
-                            <div className="text-sm text-slate-400">Feiertage</div>
+                        <Card className="p-4">
+                            <div className="text-2xl font-bold">{holidays.length}</div>
+                            <div className="text-sm text-muted-foreground">Feiertage</div>
                         </Card>
-                        <Card className="p-4 bg-slate-800 border-slate-700">
-                            <div className="text-2xl font-bold text-white">{employees.length}</div>
-                            <div className="text-sm text-slate-400">Mitarbeiter</div>
+                        <Card className="p-4">
+                            <div className="text-2xl font-bold">{employees.length}</div>
+                            <div className="text-sm text-muted-foreground">Mitarbeiter</div>
                         </Card>
                     </div>
                 </div>
 
-                {/* Filter Panel - Only on Desktop */}
-                {showFilters && !isMobile && (
-                    <Card className="p-6 bg-slate-800 border-slate-700 mb-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                                <Filter className="w-5 h-5 text-amber-400" />
-                                Filter
-                            </h3>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                    setSelectedEmployees([]);
-                                    setSelectedRoles([]);
-                                    setSearchQuery('');
-                                }}
-                                className="text-slate-400"
-                            >
-                                <X className="w-4 h-4 mr-1" />
-                                Zurücksetzen
-                            </Button>
-                        </div>
+                {/* Calendar & Export */}
+                <div className="space-y-4">
+                    <div className="flex justify-end">
+                        <TeamCalendarExport
+                            shifts={shifts}
+                            vacations={vacations}
+                            holidays={holidays}
+                            employees={employees}
+                        />
+                    </div>
 
-                        <div className="grid md:grid-cols-2 gap-6">
-                            {/* Role Filter */}
-                            <div>
-                                <h4 className="text-sm font-medium text-slate-300 mb-3">Nach Rolle filtern</h4>
-                                <div className="space-y-2">
-                                    {availableRoles.map(role => (
-                                        <div key={role} className="flex items-center gap-2">
-                                            <Checkbox
-                                                id={`role-${role}`}
-                                                checked={selectedRoles.includes(role)}
-                                                onCheckedChange={() => toggleRole(role)}
-                                            />
-                                            <label
-                                                htmlFor={`role-${role}`}
-                                                className="text-sm text-slate-300 cursor-pointer"
-                                            >
-                                                {role}
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Employee Filter */}
-                            <div>
-                                <h4 className="text-sm font-medium text-slate-300 mb-3">Nach Mitarbeiter filtern</h4>
-                                <Input
-                                    placeholder="Mitarbeiter suchen..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="mb-3 bg-slate-900 border-slate-600 text-white"
-                                />
-                                <div className="max-h-[200px] overflow-y-auto space-y-2">
-                                    {filteredEmployees.length > 0 ? (
-                                        filteredEmployees.map(emp => (
-                                            <div key={emp.id} className="flex items-center gap-2">
-                                                <Checkbox
-                                                    id={`emp-${emp.id}`}
-                                                    checked={selectedEmployees.includes(emp.id)}
-                                                    onCheckedChange={() => toggleEmployee(emp.id)}
-                                                />
-                                                <label
-                                                    htmlFor={`emp-${emp.id}`}
-                                                    className="text-sm text-slate-300 cursor-pointer flex items-center gap-2 flex-1"
-                                                >
-                                                    <div
-                                                        className="w-3 h-3 rounded-full"
-                                                        style={{ backgroundColor: emp.color || '#64748b' }}
-                                                    />
-                                                    {emp.name}
-                                                    <Badge variant="outline" className="text-xs ml-auto">
-                                                        {emp.role}
-                                                    </Badge>
-                                                </label>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-sm text-slate-500 text-center py-4">
-                                            Keine Mitarbeiter gefunden
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Active Filters */}
-                        {activeFilters > 0 && (
-                            <div className="mt-4 pt-4 border-t border-slate-700">
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedRoles.map(role => (
-                                        <Badge key={role} className="bg-amber-600 gap-1">
-                                            {role}
-                                            <X
-                                                className="w-3 h-3 cursor-pointer hover:opacity-70"
-                                                onClick={() => toggleRole(role)}
-                                            />
-                                        </Badge>
-                                    ))}
-                                    {selectedEmployees.map(empId => {
-                                        const emp = employees.find(e => e.id === empId);
-                                        return emp ? (
-                                            <Badge key={empId} className="bg-blue-600 gap-1">
-                                                {emp.name}
-                                                <X
-                                                    className="w-3 h-3 cursor-pointer hover:opacity-70"
-                                                    onClick={() => toggleEmployee(empId)}
-                                                />
-                                            </Badge>
-                                        ) : null;
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                    </Card>
-                )}
-
-                {/* Calendar */}
-                {isMobile ? (
-                    <MobileTeamCalendarView
+                    <UnifiedCalendarView
                         shifts={shifts}
                         vacations={vacations}
                         holidays={holidays}
                         employees={employees}
                         onEventClick={handleEventClick}
                         selectedEmployees={selectedEmployees}
+                        onEmployeeToggle={setSelectedEmployees}
+                        onRoleToggle={setSelectedRoles}
+                        selectedRoles={selectedRoles}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
                     />
-                ) : (
-                    <TeamCalendarView
-                        shifts={shifts}
-                        vacations={vacations}
-                        holidays={holidays}
-                        employees={employees}
-                        onEventClick={handleEventClick}
-                        selectedEmployees={selectedEmployees}
-                    />
-                )}
+                </div>
             </div>
 
             {/* Event Details Modal */}

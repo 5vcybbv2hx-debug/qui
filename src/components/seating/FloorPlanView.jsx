@@ -215,11 +215,14 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                             posY={pos.y}
                             isReserved={!!reservation}
                             isSelected={selectedTableId === table.id}
+                            editMode={editMode}
                             onMouseDown={(e) => handleMouseDown(e, table.id)}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedTableId(table.id);
-                                onTableClick(table);
+                                if (!editMode) {
+                                    setSelectedTableId(table.id);
+                                    onTableClick(table);
+                                }
                             }}
                         />
                     );

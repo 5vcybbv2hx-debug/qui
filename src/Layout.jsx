@@ -18,6 +18,8 @@ import ServiceWorkerRegistration from '@/components/pwa/ServiceWorkerRegistratio
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import GlobalSearch from '@/components/search/GlobalSearch';
 import { loadSavedColors } from '@/components/settings/ColorCustomizer';
+import ErrorBoundary from '@/components/error/ErrorBoundary';
+import { useAnalytics } from '@/components/analytics/useAnalytics';
 
 const navigationSections = [
     {

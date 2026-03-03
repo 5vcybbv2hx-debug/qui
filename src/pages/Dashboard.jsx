@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
+import TodayOverview from '@/components/dashboard/TodayOverview';
 import { usePermissions } from '@/components/auth/usePermissions';
 import FirstStepsTour from '@/components/onboarding/FirstStepsTour';
 import { InteractiveTour, useTour } from '@/components/onboarding/InteractiveTour';
@@ -470,62 +471,13 @@ export default function Dashboard() {
                         </Link>
                     </div>
 
-                    {(todayShifts.length > 0 || todayEvents.length > 0 || todayReservations.length > 0) && (
-                        <Card className="p-6 bg-card border-border">
-                            <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-green-500" />
-                                Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
-                            </h3>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <p className="text-xs text-slate-400 mb-2">SCHICHTEN ({todayShifts.length})</p>
-                                    <div className="space-y-2">
-                                        {todayShifts.slice(0, 4).map(shift => (
-                                            <div key={shift.id} className="flex items-center gap-2 text-sm">
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: shift.color || '#64748b' }} />
-                                                <span className="text-slate-300 truncate">{shift.employee_name}</span>
-                                                <span className="text-slate-500 text-xs ml-auto">{shift.start_time?.substring(0, 5)}</span>
-                                            </div>
-                                        ))}
-                                        {todayShifts.length === 0 && <p className="text-sm text-slate-600 italic">Keine Schichten</p>}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs text-slate-400 mb-2">EVENTS ({todayEvents.length})</p>
-                                    <div className="space-y-2">
-                                        {todayEvents.map(event => (
-                                            <div key={event.id} className="flex items-start gap-2 text-sm">
-                                                <AlertCircle className="w-4 h-4 text-pink-500 mt-0.5" />
-                                                <div className="flex-1">
-                                                    <p className="text-slate-300 font-medium truncate">{event.title}</p>
-                                                    {event.expected_guests && <p className="text-xs text-slate-500">{event.expected_guests} Gäste</p>}
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {todayEvents.length === 0 && <p className="text-sm text-slate-600 italic">Keine Events</p>}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <p className="text-xs text-slate-400 mb-2">RESERVIERUNGEN ({todayReservations.length})</p>
-                                    <div className="space-y-2">
-                                        {todayReservations.slice(0, 4).map(res => (
-                                            <div key={res.id} className="flex items-start gap-2 text-sm">
-                                                <CalendarCheck className="w-4 h-4 text-blue-500 mt-0.5" />
-                                                <div className="flex-1">
-                                                    <p className="text-slate-300 truncate">{res.customer_name}</p>
-                                                    <p className="text-xs text-slate-500">{res.time} • {res.guests} Gäste</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {todayReservations.length === 0 && <p className="text-sm text-slate-600 italic">Keine Reservierungen</p>}
-                                    </div>
-                                </div>
-                            </div>
-                        </Card>
-                    )}
+                    <TodayOverview
+                        shifts={todayShifts}
+                        events={todayEvents}
+                        reservations={todayReservations}
+                        employees={employees}
+                        maxItems={4}
+                    />
                 </div>
             </div>
         );
@@ -781,56 +733,13 @@ export default function Dashboard() {
                     </Card>
                 )}
 
-                {(todayEvents.length > 0 || todayReservations.length > 0 || todayShifts.length > 0) && (
-                    <Card className="p-6 bg-card border-border">
-                        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-green-500" />
-                            Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
-                        </h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <p className="text-xs text-slate-400 mb-2 uppercase">Schichten ({todayShifts.length})</p>
-                                <div className="space-y-2">
-                                    {todayShifts.slice(0, 3).map(shift => (
-                                        <div key={shift.id} className="flex items-center gap-2 text-sm">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: shift.color || '#64748b' }} />
-                                            <span className="text-slate-300 truncate">{shift.employee_name}</span>
-                                            <span className="text-slate-500 text-xs ml-auto">{shift.start_time?.substring(0, 5)}</span>
-                                        </div>
-                                    ))}
-                                    {todayShifts.length === 0 && <p className="text-sm text-slate-500 italic">Keine Schichten</p>}
-                                </div>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-slate-400 mb-2 uppercase">Events ({todayEvents.length})</p>
-                                <div className="space-y-2">
-                                    {todayEvents.map(event => (
-                                        <div key={event.id} className="text-sm">
-                                            <p className="text-slate-300 font-medium truncate">{event.title}</p>
-                                            {event.expected_guests && <p className="text-xs text-slate-500">{event.expected_guests} Gäste</p>}
-                                        </div>
-                                    ))}
-                                    {todayEvents.length === 0 && <p className="text-sm text-slate-500 italic">Keine Events</p>}
-                                </div>
-                            </div>
-
-                            <div>
-                                <p className="text-xs text-slate-400 mb-2 uppercase">Reservierungen ({todayReservations.length})</p>
-                                <div className="space-y-2">
-                                    {todayReservations.slice(0, 3).map(res => (
-                                        <div key={res.id} className="text-sm">
-                                            <p className="text-slate-300 truncate">{res.customer_name}</p>
-                                            <p className="text-xs text-slate-500">{res.time} • {res.guests} Gäste</p>
-                                        </div>
-                                    ))}
-                                    {todayReservations.length === 0 && <p className="text-sm text-slate-500 italic">Keine Reservierungen</p>}
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
-                )}
+                <TodayOverview
+                    shifts={todayShifts}
+                    events={todayEvents}
+                    reservations={todayReservations}
+                    employees={employees}
+                    maxItems={3}
+                />
 
                 <div className="grid md:grid-cols-2 gap-6">
                     <div>

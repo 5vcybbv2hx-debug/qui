@@ -336,6 +336,64 @@ export default function Suppliers() {
                                 </div>
                             </div>
 
+                            {/* Niederlassungen */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Niederlassungen</h3>
+                                    <Button type="button" size="sm" variant="outline" onClick={addBranch}>
+                                        <Building2 className="w-4 h-4 mr-2" />
+                                        Hinzufügen
+                                    </Button>
+                                </div>
+
+                                {formData.branches.map((branch, index) => (
+                                    <Card key={index} className="p-4 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-sm font-medium">Niederlassung {index + 1}</h4>
+                                            <Button type="button" size="icon" variant="ghost" onClick={() => removeBranch(index)} className="text-red-500 hover:text-red-600">
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-2 col-span-2">
+                                                <Label className="text-xs">Name / Bezeichnung</Label>
+                                                <Input value={branch.name} onChange={(e) => updateBranch(index, 'name', e.target.value)} placeholder="z.B. Filiale Nord" className="text-sm" />
+                                            </div>
+                                            <div className="space-y-2 col-span-2">
+                                                <Label className="text-xs">Straße & Hausnummer</Label>
+                                                <Input value={branch.street} onChange={(e) => updateBranch(index, 'street', e.target.value)} placeholder="Hauptstraße 1" className="text-sm" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs">PLZ</Label>
+                                                <Input value={branch.postal_code} onChange={(e) => updateBranch(index, 'postal_code', e.target.value)} placeholder="12345" className="text-sm" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs">Stadt</Label>
+                                                <Input value={branch.city} onChange={(e) => updateBranch(index, 'city', e.target.value)} placeholder="Berlin" className="text-sm" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs">Telefon</Label>
+                                                <Input value={branch.phone} onChange={(e) => updateBranch(index, 'phone', e.target.value)} placeholder="030 123456" className="text-sm" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-xs">E-Mail</Label>
+                                                <Input type="email" value={branch.email} onChange={(e) => updateBranch(index, 'email', e.target.value)} placeholder="filiale@beispiel.de" className="text-sm" />
+                                            </div>
+                                            <div className="space-y-2 col-span-2">
+                                                <Label className="text-xs">Notizen</Label>
+                                                <Textarea value={branch.notes} onChange={(e) => updateBranch(index, 'notes', e.target.value)} placeholder="Weitere Infos..." rows={2} className="text-sm" />
+                                            </div>
+                                        </div>
+                                    </Card>
+                                ))}
+
+                                {formData.branches.length === 0 && (
+                                    <div className="text-center p-6 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                                        <p className="text-sm text-slate-500">Keine Niederlassungen eingetragen</p>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Kontaktdaten */}
                             <div className="space-y-4">
                                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Kontaktdaten</h3>

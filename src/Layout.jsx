@@ -107,6 +107,7 @@ export default function Layout({ children, currentPageName }) {
      const [currentUser, setCurrentUser] = React.useState(null);
      const navigate = useNavigate();
      const queryClient = useQueryClient();
+     const { track } = useAnalytics();
 
      React.useEffect(() => {
          base44.auth.me().then(setCurrentUser).catch(() => {});

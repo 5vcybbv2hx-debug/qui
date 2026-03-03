@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { RepeatIcon, Check, X, Clock, Calendar, AlertCircle, User, Search } from 'lucide-react';
+import { RepeatIcon, Check, X, Clock, Calendar, AlertCircle, User, Search, Users } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { de } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
+import ShiftMarketplaceModal from '@/components/shifts/ShiftMarketplaceModal';
 
 export default function ShiftSwaps() {
     const permissions = usePermissions();
@@ -21,10 +22,16 @@ export default function ShiftSwaps() {
     const [searchQuery, setSearchQuery] = useState('');
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
+    const [marketplaceOpen, setMarketplaceOpen] = useState(false);
 
     const { data: swapRequests = [], isLoading: loadingRequests } = useQuery({
         queryKey: ['shift-swap-requests'],
         queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date')
+    });
+
+    const { data: bids = [] } = useQuery({
+        queryKey: ['shift-swap-bids'],
+        queryFn: () => base44.entities.ShiftSwapBid.list('-created_at')
     });
 
     const { data: currentUser } = useQuery({
@@ -226,6 +233,16 @@ export default function ShiftSwaps() {
                             <p className="text-slate-400">Schichten anbieten, anfragen und genehmigen</p>
                         </div>
                     </div>
+                </div>
+
+                <div className="flex gap-2 mb-6">
+                    <Button
+                        onClick={() => setMarketplaceOpen(true)}
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white gap-2"
+                    >
+                        <Users className="w-4 h-4" />
+                        Marketplace
+                    </Button>
                 </div>
 
                 <Tabs defaultValue={permissions.isManager ? "pending" : "my-requests"} className="space-y-6">
@@ -465,18 +482,24 @@ export default function ShiftSwaps() {
             </div>
 
             {/* Shift Swap Request Modal */}
-            {selectedShift && (
-                <ShiftSwapRequestModal
-                    shift={selectedShift}
-                    open={createModalOpen}
-                    onOpenChange={setCreateModalOpen}
-                    onSuccess={() => {
-                        setCreateModalOpen(false);
-                        setSelectedShift(null);
-                        queryClient.invalidateQueries(['shift-swap-requests']);
-                    }}
-                />
-            )}
-        </div>
-    );
-}
+             {selectedShift && (
+                 <ShiftSwapRequestModal
+                     shift={selectedShift}
+                     open={createModalOpen}
+                     onOpenChange={setCreateModalOpen}
+                     onSuccess={() => {
+                         setCreateModalOpen(false);
+                         setSelectedShift(null);
+                         queryClient.invalidateQueries(['shift-swap-requests']);
+                     }}
+                 />
+             )}
+
+             {/* Shift Marketplace Modal */}
+             <ShiftMarketplaceModal
+                 open={marketplaceOpen}
+                 onOpenChange={setMarketplaceOpen}
+             />
+            </div>
+            );
+            }

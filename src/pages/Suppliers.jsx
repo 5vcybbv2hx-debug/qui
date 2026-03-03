@@ -90,6 +90,7 @@ export default function Suppliers() {
                 email: '',
                 website: '',
                 contacts: [],
+                branches: [],
                 notes: '',
                 order: suppliers.length,
                 is_active: true

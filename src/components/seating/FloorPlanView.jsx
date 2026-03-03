@@ -72,6 +72,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     const [selectedTableId, setSelectedTableId] = useState(null);
     const [positions, setPositions] = useState({});
     const positionsRef = useRef({});
+    const [editMode, setEditMode] = useState(false);
 
     const tableIds = tables.map(t => t.id).join(',');
 

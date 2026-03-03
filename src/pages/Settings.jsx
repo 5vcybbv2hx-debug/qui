@@ -1,25 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info, Palette } from 'lucide-react';
+import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info, Palette, Calendar } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ColorCustomizer from '@/components/settings/ColorCustomizer';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import BackupManager from '@/components/backup/BackupManager';
 import { usePermissions } from '@/components/auth/usePermissions';
+import CalendarExport from '@/components/calendar/CalendarExport';
+import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 
 export default function Settings() {
-    const queryClient = useQueryClient();
-    const permissions = usePermissions();
-    const [theme, setTheme] = useState('system');
-    const [timeFormat, setTimeFormat] = useState('24h');
-    const [dateFormat, setDateFormat] = useState('de');
-    const [language, setLanguage] = useState('de');
-    const [appVersion] = useState('1.0.0');
+     const queryClient = useQueryClient();
+     const permissions = usePermissions();
+     const [activeTab, setActiveTab] = useState('appearance');
+     const [theme, setTheme] = useState('system');
+     const [timeFormat, setTimeFormat] = useState('24h');
+     const [dateFormat, setDateFormat] = useState('de');
+     const [language, setLanguage] = useState('de');
+     const [appVersion] = useState('1.0.0');
+
+     // Fetch calendar data
+     const { data: shifts = [] } = useQuery({
+         queryKey: ['shifts'],
+         queryFn: () => base44.entities.Shift.list('-date', 200)
+     });
+
+     const { data: reservations = [] } = useQuery({
+         queryKey: ['reservations'],
+         queryFn: () => base44.entities.Reservation.list('-date', 200)
+     });
+
+     const { data: employees = [] } = useQuery({
+         queryKey: ['employees'],
+         queryFn: () => base44.entities.Employee.filter({ is_active: true })
+     });
+
+     const birthdaysCount = employees.filter(e => e.birthday).length;
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') || 'system';
@@ -88,23 +111,39 @@ export default function Settings() {
     ];
 
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-0">
-            <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
-                {/* Header */}
-                <div className="mb-6 sm:mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <SettingsIcon className="w-8 h-8 text-amber-400" />
-                        <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">
-                            Einstellungen
-                        </h1>
-                    </div>
-                    <p className="text-muted-foreground text-sm">
-                        Passe die App nach deinen Wünschen an
-                    </p>
-                </div>
+         <div className="min-h-screen bg-background pb-24 md:pb-0">
+             <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
+                 {/* Header */}
+                 <div className="mb-6 sm:mb-8">
+                     <div className="flex items-center gap-3 mb-2">
+                         <SettingsIcon className="w-8 h-8 text-amber-400" />
+                         <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">
+                             Einstellungen
+                         </h1>
+                     </div>
+                     <p className="text-muted-foreground text-sm">
+                         Passe die App nach deinen Wünschen an
+                     </p>
+                 </div>
 
-                {/* Appearance Section */}
-                <div className="space-y-6">
+                 {/* Tabs */}
+                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+                     <TabsList className="grid w-full grid-cols-2 bg-card border border-border h-auto p-1">
+                         <TabsTrigger value="appearance" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                             <SettingsIcon className="w-5 h-5 sm:w-4 sm:h-4" />
+                             <span>Allgemein</span>
+                         </TabsTrigger>
+                         <TabsTrigger value="calendar" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                             <Calendar className="w-5 h-5 sm:w-4 sm:h-4" />
+                             <span>Kalender</span>
+                         </TabsTrigger>
+                     </TabsList>
+
+                     {/* Appearance Tab */}
+                     <TabsContent value="appearance" className="space-y-6">
+
+                 {/* Appearance Section */}
+                 <div className="space-y-6">
                     <div>
                         <h2 className="text-lg font-semibold text-foreground mb-4">Darstellung</h2>
                         
@@ -309,8 +348,102 @@ export default function Settings() {
                             </div>
                         </div>
                     </Card>
-                </div>
-            </div>
-        </div>
-    );
-}
+                     </div>
+                     </TabsContent>
+
+                     {/* Calendar Tab */}
+                     <TabsContent value="calendar" className="space-y-6">
+                         {/* Calendar Export */}
+                         <div>
+                             <h2 className="text-lg font-semibold text-foreground mb-4">Kalenderexport</h2>
+                             <Card className="p-6 bg-card border-border">
+                                 <div className="flex items-start gap-4">
+                                     <div className="w-12 h-12 rounded-xl bg-emerald-600/20 flex items-center justify-center shrink-0">
+                                         <Download className="w-6 h-6 text-emerald-500" />
+                                     </div>
+                                     <div className="flex-1">
+                                         <h3 className="font-semibold text-foreground mb-2">Kalender exportieren</h3>
+                                         <p className="text-sm text-muted-foreground mb-4">
+                                             Exportiere deine Schichten, Reservierungen und Geburtstage als .ics Datei für alle gängigen Kalender-Apps.
+                                         </p>
+                                         <div className="flex flex-col sm:flex-row gap-3">
+                                             <CalendarExport shifts={shifts} reservations={reservations} />
+                                             <div className="text-xs text-muted-foreground sm:ml-4 sm:self-center">
+                                                 Kompatibel mit: Google Calendar, Outlook, Apple Calendar, etc.
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </Card>
+
+                             <Alert className="bg-blue-900/20 border-blue-700 mt-4">
+                                 <Info className="h-4 w-4 text-blue-400" />
+                                 <AlertDescription className="text-blue-300 text-sm">
+                                     Der Export erstellt eine Momentaufnahme deiner aktuellen Termine. Für automatische Updates nutze die Live-Sync Funktion.
+                                 </AlertDescription>
+                             </Alert>
+                         </div>
+
+                         {/* Live Sync */}
+                         <div>
+                             <h2 className="text-lg font-semibold text-foreground mb-4">Live-Synchronisation</h2>
+                             <Card className="p-6 bg-card border-border">
+                                 <div className="flex items-start gap-4">
+                                     <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center shrink-0">
+                                         <Calendar className="w-6 h-6 text-blue-500" />
+                                     </div>
+                                     <div className="flex-1">
+                                         <h3 className="font-semibold text-foreground mb-2">Live-Synchronisation</h3>
+                                         <p className="text-sm text-muted-foreground mb-4">
+                                             Verbinde deinen Kalender mit einem Live-Feed, der automatisch aktualisiert wird, wenn sich Termine ändern.
+                                         </p>
+                                         <LiveSyncInstructions />
+                                     </div>
+                                 </div>
+                             </Card>
+                         </div>
+
+                         {/* Calendar Overview Stats */}
+                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                             <Card className="p-4 bg-card border-border">
+                                 <div className="flex items-center gap-3">
+                                     <div className="w-10 h-10 rounded-lg bg-amber-600/20 flex items-center justify-center">
+                                         <Calendar className="w-5 h-5 text-amber-500" />
+                                     </div>
+                                     <div>
+                                         <p className="text-2xl font-bold text-foreground">{shifts.length}</p>
+                                         <p className="text-xs text-muted-foreground">Schichten</p>
+                                     </div>
+                                 </div>
+                             </Card>
+
+                             <Card className="p-4 bg-card border-border">
+                                 <div className="flex items-center gap-3">
+                                     <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center">
+                                         <Calendar className="w-5 h-5 text-blue-500" />
+                                     </div>
+                                     <div>
+                                         <p className="text-2xl font-bold text-foreground">{reservations.length}</p>
+                                         <p className="text-xs text-muted-foreground">Reservierungen</p>
+                                     </div>
+                                 </div>
+                             </Card>
+
+                             <Card className="p-4 bg-card border-border">
+                                 <div className="flex items-center gap-3">
+                                     <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center">
+                                         <Calendar className="w-5 h-5 text-purple-500" />
+                                     </div>
+                                     <div>
+                                         <p className="text-2xl font-bold text-foreground">{birthdaysCount}</p>
+                                         <p className="text-xs text-muted-foreground">Geburtstage</p>
+                                     </div>
+                                 </div>
+                             </Card>
+                         </div>
+                     </TabsContent>
+                    </Tabs>
+                    </div>
+                    </div>
+                    );
+                    }

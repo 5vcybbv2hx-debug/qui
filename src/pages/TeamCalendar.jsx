@@ -46,27 +46,6 @@ export default function TeamCalendar() {
         return <PermissionDenied />;
     }
 
-    // Filter employees by search and role
-    const filteredEmployees = employees.filter(emp => {
-        const matchesSearch = emp.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesRole = selectedRoles.length === 0 || selectedRoles.includes(emp.role);
-        return matchesSearch && matchesRole;
-    });
-
-    const availableRoles = [...new Set(employees.map(e => e.role))].filter(Boolean);
-
-    const toggleEmployee = (empId) => {
-        setSelectedEmployees(prev =>
-            prev.includes(empId) ? prev.filter(id => id !== empId) : [...prev, empId]
-        );
-    };
-
-    const toggleRole = (role) => {
-        setSelectedRoles(prev =>
-            prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
-        );
-    };
-
     const handleEventClick = (event) => {
         setSelectedEvent(event);
         setShowEventModal(true);
@@ -75,9 +54,6 @@ export default function TeamCalendar() {
     const handleShiftSwap = (shift) => {
         setShiftSwapData(shift);
     };
-
-    const totalEvents = shifts.length + vacations.length + holidays.length;
-    const activeFilters = selectedEmployees.length + selectedRoles.length;
 
     return (
         <div className="min-h-screen bg-slate-900">

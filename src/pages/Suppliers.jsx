@@ -208,6 +208,12 @@ export default function Suppliers() {
                                                     </a>
                                                 </div>
                                             )}
+                                            {supplier.branches && supplier.branches.length > 0 && (
+                                                <div className="flex items-center gap-2">
+                                                    <Building2 className="w-3 h-3" />
+                                                    <span>{supplier.branches.length} Niederlassung{supplier.branches.length > 1 ? 'en' : ''}</span>
+                                                </div>
+                                            )}
                                             {supplier.contacts && supplier.contacts.length > 0 && (
                                                 <div className="flex items-center gap-2 mt-2">
                                                     <Phone className="w-3 h-3" />

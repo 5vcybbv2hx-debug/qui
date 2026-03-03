@@ -4,6 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { Pencil, Check, Move } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const TABLE_SIZES = {
     square: { w: 60, h: 60 },

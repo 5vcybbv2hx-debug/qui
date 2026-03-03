@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import FirstStepsTour from '@/components/onboarding/FirstStepsTour';
+import { InteractiveTour, useTour } from '@/components/onboarding/InteractiveTour';
 
 export default function Dashboard() {
     const permissions = usePermissions();

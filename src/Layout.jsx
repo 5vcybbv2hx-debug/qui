@@ -42,6 +42,8 @@ const navigationSections = [
         title: 'Bar',
         items: [
             { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewShopping' },
+            { name: 'Einkaufen', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping' },
+            { name: 'Auffüllen', page: 'Restock', icon: Package, permission: 'canViewShopping' },
             { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees' },
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard' },
             { name: 'Preisrechner', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator' },

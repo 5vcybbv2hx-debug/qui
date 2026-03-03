@@ -204,6 +204,7 @@ export default function Layout({ children, currentPageName }) {
             <ServiceWorkerRegistration />
             <PWAInstallPrompt />
             <OfflineIndicator />
+            <OfflineSyncManager />
             {/* Fixed Top Header */}
             <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-card/95 border-b border-border/50 backdrop-blur-xl pt-safe">
                 <div className="flex items-center gap-3 px-3 py-3">

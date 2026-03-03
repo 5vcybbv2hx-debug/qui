@@ -158,6 +158,23 @@ export default function Shifts() {
         });
     };
 
+    const handleBackup = async () => {
+        try {
+            const { data } = await base44.functions.invoke('backupShifts');
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `schichten-backup-${format(new Date(), 'yyyy-MM-dd-HHmmss')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (error) {
+            console.error('Backup fehlgeschlagen:', error);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">

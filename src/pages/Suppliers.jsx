@@ -99,6 +99,20 @@ export default function Suppliers() {
         setModalOpen(true);
     };
 
+    const addBranch = () => {
+        setFormData({ ...formData, branches: [...formData.branches, { name: '', street: '', postal_code: '', city: '', phone: '', email: '', notes: '' }] });
+    };
+
+    const updateBranch = (index, field, value) => {
+        const newBranches = [...formData.branches];
+        newBranches[index][field] = value;
+        setFormData({ ...formData, branches: newBranches });
+    };
+
+    const removeBranch = (index) => {
+        setFormData({ ...formData, branches: formData.branches.filter((_, i) => i !== index) });
+    };
+
     const addContact = () => {
         setFormData({
             ...formData,

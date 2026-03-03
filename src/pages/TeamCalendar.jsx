@@ -4,18 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Calendar, Users, Filter, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import TeamCalendarView from '@/components/calendar/TeamCalendarView';
-import MobileTeamCalendarView from '@/components/calendar/MobileTeamCalendarView';
+import UnifiedCalendarView from '@/components/calendar/UnifiedCalendarView';
 import EventDetailsModal from '@/components/calendar/EventDetailsModal';
 import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import TeamCalendarExport from '@/components/calendar/TeamCalendarExport';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
-import { useIsMobile } from '@/components/utils/useIsMobile';
 
 export default function TeamCalendar() {
     const permissions = usePermissions();

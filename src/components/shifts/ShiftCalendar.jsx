@@ -43,8 +43,9 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
         })();
     
     const getShiftsForDay = (date) => {
+        const dateStr = format(date, 'yyyy-MM-dd');
         return shifts
-            .filter(shift => isSameDay(new Date(shift.date), date))
+            .filter(shift => shift.date === dateStr)
             .sort((a, b) => a.start_time.localeCompare(b.start_time));
     };
     

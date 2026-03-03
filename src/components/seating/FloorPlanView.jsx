@@ -24,7 +24,7 @@ function getDefaultPosition(index, total) {
     };
 }
 
-function TableShape({ posX, posY, table, isReserved, isSelected, onMouseDown, onClick }) {
+function TableShape({ posX, posY, table, isReserved, isSelected, editMode, onMouseDown, onClick }) {
     const size = TABLE_SIZES[table.shape] || TABLE_SIZES.square;
     const isRound = table.shape === 'round';
 
@@ -37,16 +37,17 @@ function TableShape({ posX, posY, table, isReserved, isSelected, onMouseDown, on
                 width: size.w,
                 height: size.h,
                 transform: 'translate(-50%, -50%)',
-                cursor: 'grab',
+                cursor: editMode ? 'grab' : 'pointer',
                 zIndex: isSelected ? 20 : 10,
                 userSelect: 'none'
             }}
-            onMouseDown={onMouseDown}
+            onMouseDown={editMode ? onMouseDown : undefined}
             onClick={onClick}
         >
             <div className={cn(
                 'w-full h-full flex flex-col items-center justify-center border-2 select-none shadow-md transition-shadow hover:shadow-xl',
                 isRound ? 'rounded-full' : 'rounded-xl',
+                editMode && 'ring-2 ring-amber-400/30 border-dashed',
                 isSelected ? 'ring-2 ring-amber-400/70' : '',
                 isReserved
                     ? 'bg-rose-500/30 border-rose-400 text-rose-200'
@@ -56,8 +57,9 @@ function TableShape({ posX, posY, table, isReserved, isSelected, onMouseDown, on
                     {table.table_number}
                 </span>
                 <span className="text-[10px] opacity-60">{table.capacity}P</span>
+                {editMode && <Move className="w-3 h-3 opacity-50 mt-0.5" />}
             </div>
-            {isReserved && (
+            {isReserved && !editMode && (
                 <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-background" />
             )}
         </div>

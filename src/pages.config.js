@@ -50,7 +50,6 @@
 import ArticleEdit from './pages/ArticleEdit';
 import Articles from './pages/Articles';
 import Calendar from './pages/Calendar';
-import CalendarIntegration from './pages/CalendarIntegration';
 import Cleaning from './pages/Cleaning';
 import CompanySettings from './pages/CompanySettings';
 import DailyAnalysis from './pages/DailyAnalysis';
@@ -107,7 +106,6 @@ export const PAGES = {
     "ArticleEdit": ArticleEdit,
     "Articles": Articles,
     "Calendar": Calendar,
-    "CalendarIntegration": CalendarIntegration,
     "Cleaning": Cleaning,
     "CompanySettings": CompanySettings,
     "DailyAnalysis": DailyAnalysis,

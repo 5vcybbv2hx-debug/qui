@@ -12,83 +12,105 @@ import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuccess }) {
-    const queryClient = useQueryClient();
-    const [formData, setFormData] = useState({
-        target_employee_id: '',
-        reason: ''
-    });
+     const queryClient = useQueryClient();
+     const [formData, setFormData] = useState({
+         reason: ''
+     });
+     const [mode, setMode] = useState('marketplace'); // 'marketplace' oder 'direct'
+     const [targetEmployeeId, setTargetEmployeeId] = useState('');
 
-    const { data: employees = [] } = useQuery({
-        queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
-    });
+     const { data: employees = [] } = useQuery({
+         queryKey: ['employees'],
+         queryFn: () => base44.entities.Employee.filter({ is_active: true })
+     });
 
-    const { data: existingRequests = [] } = useQuery({
-        queryKey: ['shift-swap-requests', shift?.id],
-        queryFn: () => shift ? base44.entities.ShiftSwapRequest.filter({ 
-            shift_id: shift.id,
-            status: 'ausstehend' 
-        }) : [],
-        enabled: !!shift
-    });
+     const { data: existingRequests = [] } = useQuery({
+         queryKey: ['shift-swap-requests', shift?.id],
+         queryFn: () => shift ? base44.entities.ShiftSwapRequest.filter({ 
+             shift_id: shift.id,
+             status: 'ausstehend' 
+         }) : [],
+         enabled: !!shift
+     });
 
-    const createMutation = useMutation({
-        mutationFn: async (data) => {
-            await base44.entities.ShiftSwapRequest.create(data);
-            await base44.entities.Notification.create({
-                type: 'shift_swap',
-                title: 'Neue Schichttausch-Anfrage',
-                message: `${data.requesting_employee_name} möchte die Schicht am ${format(parseISO(data.shift_date), 'dd.MM.yyyy', { locale: de })} mit ${data.target_employee_name} tauschen.`,
-                related_id: shift.id,
-                target_roles: ['admin', 'Manager'],
-                read_by: []
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['shift-swap-requests']);
-            toast.success('Tauschanfrage wurde versendet');
-            setFormData({ target_employee_id: '', reason: '' });
-            onSuccess?.();
-        },
-        onError: (error) => {
-            toast.error('Fehler beim Erstellen der Anfrage: ' + error.message);
-        }
-    });
+     const createMutation = useMutation({
+         mutationFn: async (data) => {
+             await base44.entities.ShiftSwapRequest.create(data);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        
-        if (!formData.target_employee_id || !formData.reason.trim()) {
-            toast.error('Bitte alle Felder ausfüllen');
-            return;
-        }
+             if (data.marketplace) {
+                 // Marketplace-Anfrage: Benachrichtigung an alle Mitarbeiter
+                 await base44.entities.Notification.create({
+                     type: 'shift_swap_marketplace',
+                     title: 'Neue Schichttausch-Anfrage im Marketplace',
+                     message: `${data.requesting_employee_name} bietet die Schicht am ${format(parseISO(data.shift_date), 'dd.MM.yyyy', { locale: de })} zum Tauschen an.`,
+                     related_id: shift.id,
+                     read_by: []
+                 });
+             } else {
+                 // Direkte Anfrage
+                 await base44.entities.Notification.create({
+                     type: 'shift_swap',
+                     title: 'Neue Schichttausch-Anfrage',
+                     message: `${data.requesting_employee_name} möchte die Schicht am ${format(parseISO(data.shift_date), 'dd.MM.yyyy', { locale: de })} mit ${data.target_employee_name} tauschen.`,
+                     related_id: shift.id,
+                     target_roles: ['admin', 'Manager'],
+                     read_by: []
+                 });
+             }
+         },
+         onSuccess: () => {
+             queryClient.invalidateQueries(['shift-swap-requests']);
+             queryClient.invalidateQueries(['available-shift-swaps']);
+             toast.success('Tauschanfrage wurde versendet');
+             setFormData({ reason: '' });
+             setTargetEmployeeId('');
+             onSuccess?.();
+         },
+         onError: (error) => {
+             toast.error('Fehler beim Erstellen der Anfrage: ' + error.message);
+         }
+     });
 
-        if (existingRequests.length > 0) {
-            toast.error('Für diese Schicht existiert bereits eine ausstehende Tauschanfrage');
-            return;
-        }
-        
-        const targetEmployee = employees.find(e => e.id === formData.target_employee_id);
-        
-        if (!targetEmployee) {
-            toast.error('Mitarbeiter nicht gefunden');
-            return;
-        }
-        
-        createMutation.mutate({
-            shift_id: shift.id,
-            requesting_employee_id: shift.employee_id,
-            requesting_employee_name: shift.employee_name,
-            target_employee_id: formData.target_employee_id,
-            target_employee_name: targetEmployee.name,
-            shift_date: shift.date,
-            shift_time: `${shift.start_time} - ${shift.end_time}`,
-            reason: formData.reason,
-            status: 'ausstehend'
-        });
-    };
+     const handleSubmit = (e) => {
+         e.preventDefault();
 
-    const availableEmployees = employees.filter(e => e.id !== shift?.employee_id);
+         if (!formData.reason.trim()) {
+             toast.error('Bitte einen Grund eingeben');
+             return;
+         }
+
+         if (mode === 'direct' && !targetEmployeeId) {
+             toast.error('Bitte einen Mitarbeiter wählen');
+             return;
+         }
+
+         if (existingRequests.length > 0) {
+             toast.error('Für diese Schicht existiert bereits eine ausstehende Tauschanfrage');
+             return;
+         }
+
+         const targetEmployee = targetEmployeeId ? employees.find(e => e.id === targetEmployeeId) : null;
+
+         if (mode === 'direct' && !targetEmployee) {
+             toast.error('Mitarbeiter nicht gefunden');
+             return;
+         }
+
+         createMutation.mutate({
+             shift_id: shift.id,
+             requesting_employee_id: shift.employee_id,
+             requesting_employee_name: shift.employee_name,
+             target_employee_id: targetEmployee?.id || null,
+             target_employee_name: targetEmployee?.name || null,
+             shift_date: shift.date,
+             shift_time: `${shift.start_time} - ${shift.end_time}`,
+             reason: formData.reason,
+             status: 'ausstehend',
+             marketplace: mode === 'marketplace'
+         });
+     };
+
+     const availableEmployees = employees.filter(e => e.id !== shift?.employee_id);
 
     if (!shift) return null;
 
@@ -117,37 +139,73 @@ export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuc
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>Tauschen mit *</Label>
-                            <Select 
-                                value={formData.target_employee_id} 
-                                onValueChange={(v) => setFormData({ ...formData, target_employee_id: v })}
-                                required
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Mitarbeiter wählen" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableEmployees.map(emp => (
-                                        <SelectItem key={emp.id} value={emp.id}>
-                                            {emp.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                         {/* Mode Selection */}
+                         <div className="space-y-2">
+                             <Label>Wie möchtest du die Schicht anbieten? *</Label>
+                             <div className="flex gap-2">
+                                 <button
+                                     type="button"
+                                     onClick={() => setMode('marketplace')}
+                                     className={`flex-1 px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
+                                         mode === 'marketplace'
+                                             ? 'bg-blue-50 border-blue-500 text-blue-700'
+                                             : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                     }`}
+                                 >
+                                     Marketplace
+                                 </button>
+                                 <button
+                                     type="button"
+                                     onClick={() => setMode('direct')}
+                                     className={`flex-1 px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium ${
+                                         mode === 'direct'
+                                             ? 'bg-blue-50 border-blue-500 text-blue-700'
+                                             : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                     }`}
+                                 >
+                                     Direkt anfragen
+                                 </button>
+                             </div>
+                             <p className="text-xs text-slate-500">
+                                 {mode === 'marketplace'
+                                     ? 'Andere Mitarbeiter können sich bewerben'
+                                     : 'Direkt an einen Mitarbeiter fragen'}
+                             </p>
+                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Grund *</Label>
-                            <Textarea
-                                value={formData.reason}
-                                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                                placeholder="Warum möchtest du diese Schicht tauschen?"
-                                required
-                                rows={4}
-                                className="resize-none"
-                            />
-                        </div>
+                         {/* Direct Mode: Select Employee */}
+                         {mode === 'direct' && (
+                             <div className="space-y-2">
+                                 <Label>Tauschen mit *</Label>
+                                 <Select 
+                                     value={targetEmployeeId} 
+                                     onValueChange={setTargetEmployeeId}
+                                 >
+                                     <SelectTrigger>
+                                         <SelectValue placeholder="Mitarbeiter wählen" />
+                                     </SelectTrigger>
+                                     <SelectContent>
+                                         {availableEmployees.map(emp => (
+                                             <SelectItem key={emp.id} value={emp.id}>
+                                                 {emp.name}
+                                             </SelectItem>
+                                         ))}
+                                     </SelectContent>
+                                 </Select>
+                             </div>
+                         )}
+
+                         <div className="space-y-2">
+                             <Label>Grund *</Label>
+                             <Textarea
+                                 value={formData.reason}
+                                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                                 placeholder="Warum möchtest du diese Schicht tauschen?"
+                                 required
+                                 rows={4}
+                                 className="resize-none"
+                             />
+                         </div>
 
                         <div className="flex gap-3 pt-2">
                             <Button 

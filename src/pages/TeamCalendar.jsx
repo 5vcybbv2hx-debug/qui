@@ -40,15 +40,7 @@ export default function TeamCalendar() {
     const currentYear = new Date().getFullYear();
     const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
 
-    // Listen for calendar event clicks
-    useEffect(() => {
-        const handleEventClick = (e) => {
-            setSelectedEvent(e.detail);
-            setShowEventModal(true);
-        };
-        window.addEventListener('calendar-event-click', handleEventClick);
-        return () => window.removeEventListener('calendar-event-click', handleEventClick);
-    }, []);
+
 
     if (!permissions.canViewShifts) {
         return <PermissionDenied />;

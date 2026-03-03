@@ -185,8 +185,8 @@ export default function Suppliers() {
                                             )}
                                             {supplier.website && (
                                                 <div className="flex items-center gap-2">
-                                                    <Globe className="w-3 h-3" />
-                                                    <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="hover:text-amber-500">
+                                                    <Globe className="w-3 h-3 shrink-0" />
+                                                    <a href={supplier.website} target="_blank" rel="noopener noreferrer" className="hover:text-amber-500 truncate max-w-[220px]">
                                                         {supplier.website}
                                                     </a>
                                                 </div>

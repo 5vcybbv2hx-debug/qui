@@ -34,17 +34,29 @@ export default function Restock() {
         queryFn: () => base44.entities.Article.list()
     });
 
+    const markRecent = (id) => {
+        setRecentIds(prev => [...prev.filter(x => x !== id), id]);
+        // Nach 8 Sekunden wieder in Kategorie einsortieren
+        if (recentTimers.current[id]) clearTimeout(recentTimers.current[id]);
+        recentTimers.current[id] = setTimeout(() => {
+            setRecentIds(prev => prev.filter(x => x !== id));
+        }, 8000);
+    };
+
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.RestockItem.create(data),
-        onSuccess: () => {
+        onSuccess: (newItem) => {
             queryClient.invalidateQueries(['restock-items']);
+            if (newItem?.id) markRecent(newItem.id);
         }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.RestockItem.update(id, data),
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries(['restock-items']);
+            // Auch bei Mengenerhöhung (Scan eines vorhandenen Artikels) nach oben
+            markRecent(variables.id);
         }
     });
 

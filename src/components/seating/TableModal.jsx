@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,11 @@ export default function TableModal({ table, open, onClose, reservation }) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [isEditing, setIsEditing] = useState(!table);
+
+    const { data: rooms = [] } = useQuery({
+        queryKey: ['rooms'],
+        queryFn: () => base44.entities.Room.filter({ is_active: true })
+    });
 
     const [formData, setFormData] = useState({
         room: table?.room || '',
@@ -134,13 +139,22 @@ export default function TableModal({ table, open, onClose, reservation }) {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="text-sm font-medium text-foreground">Raum</label>
-                            <Input
+                            <Select
                                 value={formData.room}
-                                onChange={(e) => setFormData({...formData, room: e.target.value})}
-                                placeholder="z.B. Innenraum, Terrasse, VIP-Bereich"
-                                className="mt-1 bg-background border-border"
+                                onValueChange={(value) => setFormData({...formData, room: value})}
                                 required
-                            />
+                            >
+                                <SelectTrigger className="mt-1 bg-background border-border">
+                                    <SelectValue placeholder="Raum auswählen..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {rooms.map(room => (
+                                        <SelectItem key={room.id} value={room.name}>
+                                            {room.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div>
                             <label className="text-sm font-medium text-foreground">Tischnummer</label>

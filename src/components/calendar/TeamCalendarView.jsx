@@ -9,11 +9,38 @@ export default function TeamCalendarView({
     shifts = [], 
     vacations = [], 
     holidays = [],
+    absences = [],
     employees = [],
     onEventClick,
     selectedEmployees = []
 }) {
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    // Detect shift overlaps
+    const getShiftOverlaps = (day) => {
+        const dayStr = format(day, 'yyyy-MM-dd');
+        const dayShifts = shifts.filter(shift => shift.date === dayStr);
+        
+        if (dayShifts.length <= 1) return new Map();
+        
+        const overlaps = new Map();
+        for (let i = 0; i < dayShifts.length; i++) {
+            for (let j = i + 1; j < dayShifts.length; j++) {
+                const shift1 = dayShifts[i];
+                const shift2 = dayShifts[j];
+                
+                const [s1Start, s1End] = [shift1.start_time, shift1.end_time];
+                const [s2Start, s2End] = [shift2.start_time, shift2.end_time];
+                
+                // Check if shifts overlap
+                if (s1Start < s2End && s2Start < s1End) {
+                    overlaps.set(shift1.id, true);
+                    overlaps.set(shift2.id, true);
+                }
+            }
+        }
+        return overlaps;
+    };
 
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -24,6 +51,7 @@ export default function TeamCalendarView({
     const getEventsForDay = (day) => {
         const dayStr = format(day, 'yyyy-MM-dd');
         const events = [];
+        const overlaps = getShiftOverlaps(day);
 
         // Schichten
         shifts
@@ -31,12 +59,14 @@ export default function TeamCalendarView({
             .filter(shift => selectedEmployees.length === 0 || selectedEmployees.includes(shift.employee_id))
             .forEach(shift => {
                 const employee = employees.find(e => e.id === shift.employee_id);
+                const hasOverlap = overlaps.has(shift.id);
                 events.push({
                     type: 'shift',
                     data: shift,
                     employee: employee,
                     color: employee?.color || '#64748b',
-                    label: `${shift.employee_name} (${shift.start_time}-${shift.end_time})`
+                    label: `${shift.employee_name} (${shift.start_time}-${shift.end_time})`,
+                    hasOverlap: hasOverlap
                 });
             });
 
@@ -54,6 +84,19 @@ export default function TeamCalendarView({
                     data: vacation,
                     color: '#8b5cf6',
                     label: `🏖️ ${vacation.employee_name}`
+                });
+            });
+
+        // Krankheit & Abwesenheiten
+        absences
+            .filter(absence => absence.date === dayStr)
+            .filter(absence => selectedEmployees.length === 0 || selectedEmployees.includes(absence.employee_id))
+            .forEach(absence => {
+                events.push({
+                    type: 'absence',
+                    data: absence,
+                    color: '#f97316',
+                    label: `🤒 ${absence.employee_name || 'Abwesenheit'}`
                 });
             });
 
@@ -176,12 +219,14 @@ export default function TeamCalendarView({
                                                 onClick={() => onEventClick?.(event)}
                                                 className={cn(
                                                     "w-full text-left px-2 py-1 rounded text-xs truncate transition-all hover:scale-105",
-                                                    "text-white font-medium cursor-pointer"
+                                                    "text-white font-medium cursor-pointer",
+                                                    event.hasOverlap && "ring-2 ring-yellow-400 ring-offset-1 ring-offset-slate-900"
                                                 )}
                                                 style={{ backgroundColor: event.color }}
-                                                title={event.label}
+                                                title={event.label + (event.hasOverlap ? ' ⚠️ Überschneidung!' : '')}
                                             >
                                                 {event.label}
+                                                {event.hasOverlap && ' ⚠️'}
                                             </button>
                                         ))}
                                         {events.length > 3 && (
@@ -211,8 +256,16 @@ export default function TeamCalendarView({
                     <span className="text-slate-400">Urlaub</span>
                 </div>
                 <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2 h-2 md:w-3 md:h-3 rounded bg-orange-500"></div>
+                    <span className="text-slate-400">Abwesenheit</span>
+                </div>
+                <div className="flex items-center gap-1.5 md:gap-2">
                     <div className="w-2 h-2 md:w-3 md:h-3 rounded bg-red-600"></div>
                     <span className="text-slate-400">Feiertag</span>
+                </div>
+                <div className="flex items-center gap-1.5 md:gap-2">
+                    <div className="w-2 h-2 md:w-3 md:h-3 rounded-sm ring-2 ring-yellow-400"></div>
+                    <span className="text-slate-400">Überschneidung</span>
                 </div>
             </div>
         </div>

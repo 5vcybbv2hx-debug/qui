@@ -468,5 +468,6 @@ export default function Layout({ children, currentPageName }) {
                 </PullToRefresh>
             </main>
         </div>
+        </ErrorBoundary>
     );
 }

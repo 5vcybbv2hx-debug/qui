@@ -13,6 +13,7 @@ import TeamCalendarView from '@/components/calendar/TeamCalendarView';
 import MobileTeamCalendarView from '@/components/calendar/MobileTeamCalendarView';
 import EventDetailsModal from '@/components/calendar/EventDetailsModal';
 import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
+import TeamCalendarExport from '@/components/calendar/TeamCalendarExport';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
 import { useIsMobile } from '@/components/utils/useIsMobile';
 

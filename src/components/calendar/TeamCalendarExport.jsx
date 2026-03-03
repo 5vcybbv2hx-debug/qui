@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 export default function TeamCalendarExport({ shifts = [], vacations = [], holidays = [], employees = [] }) {
     const [exporting, setExporting] = useState(false);

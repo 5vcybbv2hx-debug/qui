@@ -197,6 +197,15 @@ export default function Shifts() {
                         {permissions.isAdmin && <MonthlyStaffingCheck />}
                         {permissions.canEditShifts && <ShiftRequirementsManager />}
                         {permissions.canEditShifts && <OpeningHoursManager />}
+                        <Button
+                            variant="outline"
+                            onClick={handleBackup}
+                            className="border-slate-600 text-slate-300"
+                            title="Alle Schichten als JSON sichern"
+                        >
+                            <Download className="w-4 h-4 mr-2" />
+                            Sicherung
+                        </Button>
                         <LiveSyncInstructions />
                         <CalendarExport shifts={shifts} reservations={reservations} />
                         {permissions.canEditShifts && (

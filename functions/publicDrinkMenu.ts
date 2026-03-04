@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
         }
         .filters::-webkit-scrollbar { height: 4px; }
         .filters::-webkit-scrollbar-track { background: rgba(148, 163, 184, 0.1); }
-        .filters::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.5); border-radius: 2px; }
+        .filters::-webkit-scrollbar-thumb { background: ${accent.from}80; border-radius: 2px; }
         .filter-btn {
             padding: 0.625rem 1.25rem;
             border-radius: 9999px;

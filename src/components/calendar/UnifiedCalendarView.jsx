@@ -175,7 +175,7 @@ export default function UnifiedCalendarView({
                         <div
                             key={day}
                             className={cn(
-                                'py-3 text-center text-xs font-semibold uppercase tracking-wider border-r border-border/50 last:border-r-0',
+                                'py-3 md:py-3 text-center text-[11px] md:text-xs font-semibold uppercase tracking-wider border-r border-border/50 last:border-r-0',
                                 i >= 5 ? 'text-muted-foreground/60' : 'text-muted-foreground'
                             )}
                         >

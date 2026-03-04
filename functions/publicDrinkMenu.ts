@@ -277,6 +277,39 @@ Deno.serve(async (req) => {
             color: #94a3b8;
         }
         .footer p { margin: 0.5rem 0; }
+        .search-wrapper {
+            margin-bottom: 0.75rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border-radius: 9999px;
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            background: rgba(30, 41, 59, 0.5);
+            color: #f1f5f9;
+            font-size: 0.9375rem;
+            outline: none;
+            transition: all 0.3s;
+            backdrop-filter: blur(8px);
+        }
+        .search-input::placeholder { color: #64748b; }
+        .search-input:focus {
+            border-color: ${accent.from}80;
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 0 3px ${accent.from}22;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            pointer-events: none;
+            font-size: 1rem;
+        }
         .empty-state {
             text-align: center;
             padding: 5rem 1rem;

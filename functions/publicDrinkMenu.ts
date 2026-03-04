@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
         .card:hover {
             transform: translateY(-8px) scale(1.02);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border-color: rgba(245, 158, 11, 0.3);
+            border-color: ${accent.from}4d;
         }
         .card:hover::before { opacity: 1; }
         .card:nth-child(1) { animation-delay: 0.1s; }

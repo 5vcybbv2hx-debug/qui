@@ -928,7 +928,7 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                     )}
                                     <div className="flex gap-2">
                                        <label className="flex-1">
-                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-slate-300 bg-white text-sm cursor-pointer hover:bg-slate-50 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-slate-600 bg-slate-700 text-slate-100 text-sm cursor-pointer hover:bg-slate-600 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
                                                📁 Datei wählen
                                            </div>
                                            <Input

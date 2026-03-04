@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/components/utils/haptics';
-import { Menu, ArrowLeft, LogOut, Bell, Search } from 'lucide-react';
+import { Menu, ArrowLeft, LogOut, Bell, Search, Home, Calendar } from 'lucide-react';
 import { navigationSections, navigationFlat } from '@/components/navigation/navigationConfig';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";

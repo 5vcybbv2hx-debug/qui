@@ -389,6 +389,11 @@ Deno.serve(async (req) => {
         var activeCategory = 'Alle';
         var searchQuery = '';
 
+        function searchMenu(value) {
+            searchQuery = value.toLowerCase().trim();
+            applyFilters();
+        }
+
         function applyFilters() {
             var cards = document.querySelectorAll('.card');
             var visibleCount = 0;

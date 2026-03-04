@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
             to { opacity: 1; transform: translateX(0); }
         }
         .header {
-            background: rgba(30, 41, 59, 0.98);
+            background: ${bgTheme.header};
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(148, 163, 184, 0.1);
             padding: 1.5rem;

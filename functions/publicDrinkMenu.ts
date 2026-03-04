@@ -336,9 +336,7 @@ Deno.serve(async (req) => {
             </div>
             <div class="filters">
                 ${categories.map((cat, idx) => `
-                    <button class="filter-btn ${idx === 0 ? 'active' : ''}" onclick="filterCategory('${cat}')">
-                        ${cat}
-                    </button>
+                    <button class="filter-btn ${idx === 0 ? 'active' : ''}" data-cat="${cat}" onclick="filterCategory('${cat}')">${cat}</button>
                 `).join('')}
             </div>
         </div>

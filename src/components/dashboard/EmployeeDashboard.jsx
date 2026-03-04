@@ -7,7 +7,7 @@ import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isF
 import { de } from 'date-fns/locale';
 import {
     Calendar, Clock, CheckSquare, CheckCircle2, Users, Sparkles, BookOpen, Wine,
-    LogIn, LogOut, Umbrella, GraduationCap, AlertCircle
+    LogIn, LogOut, Umbrella, GraduationCap, AlertCircle, Pause
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,21 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
             clock_in: new Date().toISOString(),
             status: 'clocked_in'
         }),
+        onSuccess: () => queryClient.invalidateQueries(['clock-entries'])
+    });
+
+    const pauseMutation = useMutation({
+        mutationFn: async (entryId) => {
+            const entry = clockEntries.find(e => e.id === entryId);
+            const newStatus = entry.status === 'clocked_in' ? 'on_break' : 'clocked_in';
+            const timestamp = new Date().toISOString();
+            const field = newStatus === 'on_break' ? 'pause_start' : 'pause_end';
+            
+            await base44.entities.ClockEntry.update(entryId, {
+                status: newStatus,
+                [field]: timestamp
+            });
+        },
         onSuccess: () => queryClient.invalidateQueries(['clock-entries'])
     });
 
@@ -226,11 +241,16 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                             )}
                         </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-wrap">
                         {activeClockEntry ? (
-                            <Button onClick={() => clockOutMutation.mutate(activeClockEntry.id)} disabled={clockOutMutation.isPending} className="flex-1 bg-red-600 hover:bg-red-700 text-white gap-2">
-                                <LogOut className="w-4 h-4" /> Ausstempeln
-                            </Button>
+                            <>
+                                <Button onClick={() => pauseMutation.mutate(activeClockEntry.id)} disabled={pauseMutation.isPending} className="bg-amber-600 hover:bg-amber-700 text-white gap-2">
+                                    <Pause className="w-4 h-4" /> Pause
+                                </Button>
+                                <Button onClick={() => clockOutMutation.mutate(activeClockEntry.id)} disabled={clockOutMutation.isPending} className="flex-1 bg-red-600 hover:bg-red-700 text-white gap-2">
+                                    <LogOut className="w-4 h-4" /> Ausstempeln
+                                </Button>
+                            </>
                         ) : (
                             <Button onClick={() => clockInMutation.mutate()} disabled={clockInMutation.isPending} className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2">
                                 <LogIn className="w-4 h-4" /> Einstempeln

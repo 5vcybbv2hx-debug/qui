@@ -113,20 +113,49 @@ export default function Vacation() {
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        const daysCount = calculateBusinessDays(formData.start_date, formData.end_date);
-        
-        const newRequest = {
-            employee_id: currentEmployee.id,
-            employee_name: currentEmployee.name,
-            start_date: formData.start_date,
-            end_date: formData.end_date,
-            days_count: daysCount,
-            type: formData.type,
-            notes: formData.notes,
-            status: 'beantragt'
-        };
+        const validPeriods = formData.periods.filter(p => p.start_date && p.end_date);
+        if (validPeriods.length === 0) return;
 
-        createMutation.mutate(newRequest);
+        // Create one request per period
+        const promises = validPeriods.map(period => {
+            const daysCount = calculateBusinessDays(period.start_date, period.end_date);
+            return createMutation.mutateAsync({
+                employee_id: currentEmployee.id,
+                employee_name: currentEmployee.name,
+                start_date: period.start_date,
+                end_date: period.end_date,
+                days_count: daysCount,
+                type: formData.type,
+                notes: formData.notes,
+                status: 'beantragt'
+            });
+        });
+
+        Promise.all(promises).then(() => {
+            setModalOpen(false);
+            resetForm();
+        });
+    };
+
+    const addPeriod = () => {
+        setFormData(prev => ({
+            ...prev,
+            periods: [...prev.periods, { start_date: '', end_date: '' }]
+        }));
+    };
+
+    const removePeriod = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            periods: prev.periods.filter((_, i) => i !== index)
+        }));
+    };
+
+    const updatePeriod = (index, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            periods: prev.periods.map((p, i) => i === index ? { ...p, [field]: value } : p)
+        }));
     };
 
     const handleApprove = async (request) => {

@@ -40,9 +40,13 @@ export default function PublicMenu() {
         }
     });
 
-    const filteredItems = selectedCategory === 'all' 
+    const filteredItems = (selectedCategory === 'all' 
         ? menuItems 
-        : menuItems.filter(item => item.category === selectedCategory);
+        : menuItems.filter(item => item.category === selectedCategory)
+    ).slice().sort((a, b) => {
+        if (sortBy === 'price') return (a.price || 0) - (b.price || 0);
+        return (a.name || '').localeCompare(b.name || '', 'de');
+    });
 
     const barName = companyInfo?.company_name || 'BarManager';
 

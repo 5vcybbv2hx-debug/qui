@@ -28,6 +28,8 @@ export default function DrinkMenuPage() {
     const [expandedItem, setExpandedItem] = useState(null);
     const [qrCodeOpen, setQrCodeOpen] = useState(false);
     const [qrCodeItem, setQrCodeItem] = useState(null);
+    const [guestLinkCopied, setGuestLinkCopied] = useState(false);
+    const [guestLinkOpen, setGuestLinkOpen] = useState(false);
 
     const { data: items = [], isLoading } = useQuery({
         queryKey: ['menu-items'],

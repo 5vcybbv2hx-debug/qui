@@ -207,7 +207,7 @@ Deno.serve(async (req) => {
             line-height: 1.3;
             transition: color 0.3s;
         }
-        .card:hover .card-title { color: #fbbf24; }
+        .card:hover .card-title { color: ${accent.from}; }
         .card-description {
             color: #94a3b8;
             font-size: 0.9375rem;

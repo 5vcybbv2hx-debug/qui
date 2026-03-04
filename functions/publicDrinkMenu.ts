@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
             .grid { grid-template-columns: 1fr; }
         }
         .card {
-            background: rgba(30, 41, 59, 0.8);
+            background: ${bgTheme.card};
             backdrop-filter: blur(12px);
             border: 1px solid rgba(148, 163, 184, 0.1);
             border-radius: 1.25rem;

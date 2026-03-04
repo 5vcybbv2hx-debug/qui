@@ -92,13 +92,17 @@ export default function DrinkMenuPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-52">
                                         <DropdownMenuItem onClick={() => {
-                                             window.open(guestMenuUrl, '_blank');
+                                             const appId = window.location.hostname.split('--')[1]?.split('.')[0] || window.location.hostname.split('.')[0];
+                                             const url = `https://api.base44.app/api/apps/${appId}/functions/publicDrinkMenu`;
+                                             window.open(url, '_blank');
                                          }}>
                                              <ExternalLink className="h-4 w-4 mr-2" />
                                              Im Browser öffnen
                                          </DropdownMenuItem>
                                          <DropdownMenuItem onClick={() => {
-                                             navigator.clipboard.writeText(guestMenuUrl);
+                                             const appId = window.location.hostname.split('--')[1]?.split('.')[0] || window.location.hostname.split('.')[0];
+                                             const url = `https://api.base44.app/api/apps/${appId}/functions/publicDrinkMenu`;
+                                             navigator.clipboard.writeText(url);
                                              setGuestLinkCopied(true);
                                              setTimeout(() => setGuestLinkCopied(false), 2000);
                                          }}>

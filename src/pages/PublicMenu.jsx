@@ -3,13 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import MenuCard from '@/components/public/MenuCard';
 import MenuFilters from '@/components/public/MenuFilters';
-import { Wine, Calendar, ArrowLeft } from 'lucide-react';
+import { Wine, Calendar, ArrowDownAZ, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 
 export default function PublicMenu() {
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const [sortBy, setSortBy] = useState('alpha'); // 'alpha' | 'price'
     const urlParams = new URLSearchParams(window.location.search);
     const tableNumber = urlParams.get('table');
 

@@ -1,8 +1,5 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
 Deno.serve(async (req) => {
     try {
-        const base44 = createClientFromRequest(req);
         const url = new URL(req.url);
         const tableNumber = url.searchParams.get('table');
 

@@ -243,10 +243,10 @@ Deno.serve(async (req) => {
         }
         .badge:hover { transform: translateY(-2px); }
         .badge-category {
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.3);
-            color: #fbbf24;
-            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+            background: ${accent.from}26;
+            border: 1px solid ${accent.from}4d;
+            color: ${accent.from};
+            box-shadow: 0 2px 8px ${accent.from}1a;
         }
         .badge-outline {
             background: transparent;

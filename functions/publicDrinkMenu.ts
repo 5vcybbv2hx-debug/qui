@@ -386,57 +386,62 @@ Deno.serve(async (req) => {
     </footer>
 
     <script>
-        let activeCategory = 'Alle';
-        let searchQuery = '';
+        var activeCategory = 'Alle';
+        var searchQuery = '';
 
         function applyFilters() {
-            const cards = document.querySelectorAll('.card');
-            let visibleCount = 0;
-            cards.forEach(card => {
-                const matchCat = activeCategory === 'Alle' || card.dataset.category === activeCategory;
-                const matchSearch = !searchQuery || card.dataset.name.includes(searchQuery) || card.dataset.description.includes(searchQuery);
+            var cards = document.querySelectorAll('.card');
+            var visibleCount = 0;
+            for (var i = 0; i < cards.length; i++) {
+                var card = cards[i];
+                var matchCat = activeCategory === 'Alle' || card.getAttribute('data-category') === activeCategory;
+                var name = card.getAttribute('data-name') || '';
+                var desc = card.getAttribute('data-description') || '';
+                var matchSearch = searchQuery === '' || name.indexOf(searchQuery) !== -1 || desc.indexOf(searchQuery) !== -1;
                 if (matchCat && matchSearch) {
                     card.style.display = 'block';
                     visibleCount++;
                 } else {
                     card.style.display = 'none';
                 }
-            });
-
-            let empty = document.getElementById('no-results');
+            }
+            var empty = document.getElementById('no-results');
             if (visibleCount === 0) {
                 if (!empty) {
                     empty = document.createElement('div');
                     empty.id = 'no-results';
-                    empty.className = 'empty-state';
                     empty.style.gridColumn = '1 / -1';
-                    empty.innerHTML = '<div class="empty-icon">🔍</div><h2>Keine Treffer</h2><p style="margin-top:0.5rem;">Versuche einen anderen Suchbegriff.</p>';
+                    empty.style.textAlign = 'center';
+                    empty.style.padding = '5rem 1rem';
+                    empty.style.color = '#64748b';
+                    empty.innerHTML = '<div style="font-size:4rem;opacity:0.5">🔍</div><h2>Keine Treffer</h2><p style="margin-top:0.5rem">Versuche einen anderen Suchbegriff.</p>';
                     document.getElementById('menu-grid').appendChild(empty);
                 }
             } else {
-                if (empty) empty.remove();
+                if (empty) empty.parentNode.removeChild(empty);
             }
         }
 
-        function filterCategory(category) {
-            activeCategory = category;
-            const buttons = document.querySelectorAll('.filter-btn');
-            buttons.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.cat === category) btn.classList.add('active');
-            });
+        document.getElementById('filter-bar').addEventListener('click', function(e) {
+            var btn = e.target.closest('.filter-btn');
+            if (!btn) return;
+            activeCategory = btn.getAttribute('data-cat');
+            var buttons = document.querySelectorAll('.filter-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('active');
+            }
+            btn.classList.add('active');
             applyFilters();
-        }
+        });
 
-        function searchMenu(value) {
-            searchQuery = value.toLowerCase().trim();
+        document.getElementById('search-input').addEventListener('input', function() {
+            searchQuery = this.value.toLowerCase().trim();
             applyFilters();
-        }
+        });
 
-        // Smooth scroll bei Page Load
-        window.addEventListener('load', () => {
+        window.addEventListener('load', function() {
             document.body.style.opacity = '0';
-            setTimeout(() => {
+            setTimeout(function() {
                 document.body.style.transition = 'opacity 0.5s';
                 document.body.style.opacity = '1';
             }, 100);

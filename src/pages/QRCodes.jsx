@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPageUrl } from '@/utils';
 import TableQRGenerator from '@/components/qr/TableQRGenerator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ExternalLink, QrCode } from 'lucide-react';

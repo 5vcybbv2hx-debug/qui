@@ -13,7 +13,8 @@ export default function TableQRGenerator() {
     const [isGenerating, setIsGenerating] = useState(false);
 
     const generateQRCode = async (tableNumber) => {
-        const url = `${window.location.origin}/api/functions/public-menu?table=${tableNumber}`;
+        const appId = window.location.hostname.split('--')[1]?.split('.')[0] || window.location.hostname.split('.')[0];
+        const url = `https://api.base44.app/api/apps/${appId}/functions/publicDrinkMenu?table=${tableNumber}`;
         const qrCodeDataUrl = await QRCode.toDataURL(url, {
             width: 800,
             margin: 2,

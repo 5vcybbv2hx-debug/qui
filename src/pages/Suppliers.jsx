@@ -29,6 +29,7 @@ export default function Suppliers() {
         website: '',
         contacts: [],
         branches: [],
+        opening_hours: '',
         notes: '',
         order: 0,
         is_active: true

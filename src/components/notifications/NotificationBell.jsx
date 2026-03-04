@@ -14,14 +14,21 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function NotificationBell({ userEmail }) {
+export default function NotificationBell({ userEmail, userRole = 'user' }) {
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
 
-    const { data: notifications = [] } = useQuery({
+    const { data: allNotifications = [] } = useQuery({
         queryKey: ['notifications'],
         queryFn: () => base44.entities.Notification.list('-created_date', 50),
         refetchInterval: 30000 // Alle 30 Sekunden aktualisieren
+    });
+
+    // Nur Benachrichtigungen anzeigen, die für diese Rolle bestimmt sind
+    // Wenn target_roles leer/nicht gesetzt ist, ist die Benachrichtigung für alle
+    const notifications = allNotifications.filter(n => {
+        if (!n.target_roles || n.target_roles.length === 0) return true;
+        return n.target_roles.includes(userRole);
     });
 
     const markAsReadMutation = useMutation({

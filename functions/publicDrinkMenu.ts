@@ -353,7 +353,7 @@ Deno.serve(async (req) => {
                     <p style="margin-top: 0.5rem;">Die Getränkekarte wird gerade aktualisiert.</p>
                 </div>
             ` : sortedItems.map(item => `
-                <div class="card" data-category="${item.category || 'Sonstiges'}">
+                <div class="card" data-category="${item.category || 'Sonstiges'}" data-name="${(item.name || '').toLowerCase()}" data-description="${(item.description || '').toLowerCase()}">
                     ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" class="card-image" loading="lazy">` : ''}
                     <div class="card-content">
                         <h3 class="card-title">${item.name}</h3>

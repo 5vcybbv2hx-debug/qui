@@ -448,37 +448,66 @@ export default function Vacation() {
                                 </Select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-2">
-                                    <Label>Von *</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.start_date}
-                                        onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                                        required
-                                    />
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label>Zeiträume</Label>
+                                    <Button type="button" variant="outline" size="sm" onClick={addPeriod} className="text-xs h-7">
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Zeitraum hinzufügen
+                                    </Button>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Bis *</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.end_date}
-                                        onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                            </div>
 
-                            {formData.start_date && formData.end_date && (
-                                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                    <p className="text-sm text-blue-800">
-                                        <span className="font-semibold">
-                                            {calculateBusinessDays(formData.start_date, formData.end_date)} Arbeitstage
-                                        </span>
-                                        {' '}(Mo-Sa sind Werktage)
-                                    </p>
-                                </div>
-                            )}
+                                {formData.periods.map((period, index) => (
+                                    <div key={index} className="p-3 border border-slate-600 rounded-lg space-y-2 bg-slate-900/50">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-slate-400 font-medium">
+                                                Zeitraum {index + 1}
+                                                {period.start_date && period.end_date && (
+                                                    <span className="ml-2 text-amber-400">
+                                                        · {calculateBusinessDays(period.start_date, period.end_date)} Tage
+                                                    </span>
+                                                )}
+                                            </span>
+                                            {formData.periods.length > 1 && (
+                                                <button type="button" onClick={() => removePeriod(index)} className="text-red-400 hover:text-red-300">
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <Label className="text-xs text-slate-400">Von *</Label>
+                                                <Input
+                                                    type="date"
+                                                    value={period.start_date}
+                                                    onChange={(e) => updatePeriod(index, 'start_date', e.target.value)}
+                                                    required
+                                                    className="mt-1"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label className="text-xs text-slate-400">Bis *</Label>
+                                                <Input
+                                                    type="date"
+                                                    value={period.end_date}
+                                                    onChange={(e) => updatePeriod(index, 'end_date', e.target.value)}
+                                                    required
+                                                    className="mt-1"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {formData.periods.filter(p => p.start_date && p.end_date).length > 1 && (
+                                    <div className="p-2 bg-amber-900/20 border border-amber-700/50 rounded text-xs text-amber-300 text-center">
+                                        Gesamt: {formData.periods
+                                            .filter(p => p.start_date && p.end_date)
+                                            .reduce((sum, p) => sum + calculateBusinessDays(p.start_date, p.end_date), 0)
+                                        } Arbeitstage · {formData.periods.filter(p => p.start_date && p.end_date).length} separate Anträge
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="space-y-2">
                                 <Label>Notizen</Label>
@@ -486,7 +515,7 @@ export default function Vacation() {
                                     value={formData.notes}
                                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                     placeholder="Optional: Grund oder Hinweise..."
-                                    rows={3}
+                                    rows={2}
                                 />
                             </div>
 
@@ -495,7 +524,10 @@ export default function Vacation() {
                                     Abbrechen
                                 </Button>
                                 <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
-                                    Beantragen
+                                    {formData.periods.filter(p => p.start_date && p.end_date).length > 1
+                                        ? `${formData.periods.filter(p => p.start_date && p.end_date).length} Anträge einreichen`
+                                        : 'Beantragen'
+                                    }
                                 </Button>
                             </div>
                         </form>

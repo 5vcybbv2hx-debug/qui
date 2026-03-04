@@ -6,7 +6,6 @@ import { ExternalLink, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function QRCodes() {
-    const { createPageUrl } = require('@/utils');
     const menuUrl = `${window.location.origin}${createPageUrl('PublicDrinkMenu')}`;
     const reservationUrl = `${window.location.origin}${createPageUrl('PublicReservation')}`;
 

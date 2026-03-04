@@ -5,8 +5,9 @@ import { ExternalLink, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function QRCodes() {
-    const menuUrl = `${window.location.origin}/api/functions/publicDrinkMenu`;
-    const reservationUrl = `${window.location.origin}/api/functions/public-reservation`;
+    const appId = window.location.hostname.split('--')[1]?.split('.')[0] || window.location.hostname.split('.')[0];
+    const menuUrl = `https://api.base44.app/api/apps/${appId}/functions/publicDrinkMenu`;
+    const reservationUrl = `https://api.base44.app/api/apps/${appId}/functions/public-reservation`;
 
     return (
         <div className="min-h-screen bg-background p-6">

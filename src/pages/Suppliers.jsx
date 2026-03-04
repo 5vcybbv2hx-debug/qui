@@ -389,6 +389,10 @@ export default function Suppliers() {
                                                 <Input type="email" value={branch.email} onChange={(e) => updateBranch(index, 'email', e.target.value)} placeholder="filiale@beispiel.de" className="text-sm" />
                                             </div>
                                             <div className="space-y-2 col-span-2">
+                                                <Label className="text-xs">Öffnungszeiten</Label>
+                                                <Textarea value={branch.opening_hours || ''} onChange={(e) => updateBranch(index, 'opening_hours', e.target.value)} placeholder={"Mo–Fr: 07:00–18:00\nSa: 08:00–14:00"} rows={2} className="text-sm" />
+                                            </div>
+                                            <div className="space-y-2 col-span-2">
                                                 <Label className="text-xs">Notizen</Label>
                                                 <Textarea value={branch.notes} onChange={(e) => updateBranch(index, 'notes', e.target.value)} placeholder="Weitere Infos..." rows={2} className="text-sm" />
                                             </div>

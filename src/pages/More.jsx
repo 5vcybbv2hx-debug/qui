@@ -35,6 +35,8 @@ const navigationSections = [
         title: 'Bar',
         items: [
             { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewShopping', color: 'from-orange-500 to-amber-600' },
+            { name: 'Einkaufsliste', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping', color: 'from-yellow-500 to-orange-500' },
+            { name: 'Auffüllen', page: 'Restock', icon: RefreshCw, permission: 'canViewShopping', color: 'from-lime-500 to-green-600' },
             { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees', color: 'from-rose-500 to-pink-600' },
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard', color: 'from-pink-500 to-fuchsia-600' },
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager', color: 'from-yellow-500 to-orange-500' },

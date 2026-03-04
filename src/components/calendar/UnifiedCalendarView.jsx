@@ -199,7 +199,7 @@ export default function UnifiedCalendarView({
                                 onClick={() => isCurrentMonth && onDayClick(day)}
                                 className={cn(
                                     'relative border-r border-b border-border/50 last:border-r-0 transition-colors group',
-                                    'min-h-[100px] md:min-h-[130px] p-2',
+                                    'min-h-[120px] md:min-h-[130px] p-2',
                                     !isCurrentMonth && 'bg-muted/10 opacity-40',
                                     isWeekendDay && isCurrentMonth && 'bg-secondary/30',
                                     isToday && 'bg-amber-500/5',

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Clock, LogIn, LogOut, Coffee, FileText, Download, Calendar } from 'lucide-react';
+import { Clock, LogIn, LogOut, Coffee, FileText, Download, Calendar, Pause, Play } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ export default function TerminalClock() {
     const [earningsData, setEarningsData] = useState(null);
     const [nightWatchModalOpen, setNightWatchModalOpen] = useState(false);
     const [targetEmployee, setTargetEmployee] = useState(null);
+    const [pauseTime, setPauseTime] = useState(0);
 
     const { data: currentUser } = useQuery({
         queryKey: ['currentUser'],
@@ -135,7 +136,7 @@ export default function TerminalClock() {
         // Verwende targetEmployee für die eigentliche Aktion
         const employeeToProcess = targetEmployee || selectedEmployee;
         const activeEntry = clockEntries.find(
-            e => e.employee_id === employeeToProcess.id && e.status === 'clocked_in'
+            e => e.employee_id === employeeToProcess.id && (e.status === 'clocked_in' || e.status === 'on_break')
         );
 
         if (selectedAction === 'in') {
@@ -157,13 +158,47 @@ export default function TerminalClock() {
                     alert(`✓ ${employeeToProcess.name} eingestempelt`);
                 }
             }
+        } else if (selectedAction === 'pause') {
+            if (!activeEntry) {
+                alert(`${employeeToProcess.name} ist nicht eingestempelt!`);
+            } else {
+                // Toggle between clocked_in and on_break
+                const newStatus = activeEntry.status === 'clocked_in' ? 'on_break' : 'clocked_in';
+                const timestamp = new Date().toISOString();
+                const field = newStatus === 'on_break' ? 'pause_start' : 'pause_end';
+                
+                await updateMutation.mutateAsync({
+                    id: activeEntry.id,
+                    data: {
+                        status: newStatus,
+                        [field]: timestamp
+                    }
+                });
+                
+                const message = newStatus === 'on_break' 
+                    ? `☕ ${employeeToProcess.name} - Pause gestartet`
+                    : `✓ ${employeeToProcess.name} - Pause beendet`;
+                alert(message);
+            }
         } else if (selectedAction === 'out') {
             if (!activeEntry) {
                 alert(`${employeeToProcess.name} ist nicht eingestempelt!`);
             } else {
                 const clockIn = new Date(activeEntry.clock_in);
                 const clockOut = new Date();
-                const hours = (clockOut - clockIn) / (1000 * 60 * 60);
+                
+                // Berechne Arbeitszeit ohne Pausen
+                let workingMinutes = (clockOut - clockIn) / (1000 * 60);
+                if (activeEntry.pause_start && activeEntry.pause_end) {
+                    const pauseDuration = (new Date(activeEntry.pause_end) - new Date(activeEntry.pause_start)) / (1000 * 60);
+                    workingMinutes -= pauseDuration;
+                } else if (activeEntry.pause_start && !activeEntry.pause_end) {
+                    // Pause läuft noch - ziehe sie ab
+                    const currentPauseDuration = (clockOut - new Date(activeEntry.pause_start)) / (1000 * 60);
+                    workingMinutes -= currentPauseDuration;
+                }
+                
+                const hours = Math.round((workingMinutes / 60) * 100) / 100;
 
                 // Automatische Pausen nach ArbZG (bezahlt)
                 let pauseMinuten = 0;
@@ -342,29 +377,42 @@ export default function TerminalClock() {
                                             </Badge>
                                         )}
                                         {status && (
-                                            <p className="text-xs text-slate-400 mt-2">
-                                                seit {format(new Date(status.clock_in), 'HH:mm', { locale: de })} Uhr
-                                            </p>
+                                           <div className="text-xs text-slate-400 mt-2">
+                                               <p>
+                                                   seit {format(new Date(status.clock_in), 'HH:mm', { locale: de })} Uhr
+                                               </p>
+                                               {status.status === 'on_break' && (
+                                                   <p className="text-amber-400 font-semibold">☕ In Pause</p>
+                                               )}
+                                           </div>
                                         )}
                                     </div>
 
                                     <div className="flex gap-2">
-                                        <Button
-                                            onClick={() => handleClockAction(employee, 'in')}
-                                            className="flex-1 bg-green-600 hover:bg-green-700"
-                                            disabled={isActive}
-                                        >
-                                            <LogIn className="w-4 h-4 mr-2" />
-                                            Einstempeln
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleClockAction(employee, 'out')}
-                                            className="flex-1 bg-red-600 hover:bg-red-700"
-                                            disabled={!isActive}
-                                        >
-                                            <LogOut className="w-4 h-4 mr-2" />
-                                            Ausstempeln
-                                        </Button>
+                                    <Button
+                                    onClick={() => handleClockAction(employee, 'in')}
+                                    className="flex-1 bg-green-600 hover:bg-green-700"
+                                    disabled={isActive}
+                                    >
+                                    <LogIn className="w-4 h-4 mr-2" />
+                                    Einstempeln
+                                    </Button>
+                                    <Button
+                                    onClick={() => handleClockAction(employee, 'pause')}
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                    disabled={!isActive}
+                                    >
+                                    <Pause className="w-4 h-4 mr-2" />
+                                    Pause
+                                    </Button>
+                                    <Button
+                                    onClick={() => handleClockAction(employee, 'out')}
+                                    className="flex-1 bg-red-600 hover:bg-red-700"
+                                    disabled={!isActive}
+                                    >
+                                    <LogOut className="w-4 h-4 mr-2" />
+                                    Ausstempeln
+                                    </Button>
                                     </div>
                                 </div>
                             </Card>

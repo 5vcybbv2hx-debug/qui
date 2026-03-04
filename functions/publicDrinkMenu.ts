@@ -87,12 +87,12 @@ Deno.serve(async (req) => {
             width: 56px;
             height: 56px;
             border-radius: 18px;
-            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            background: linear-gradient(135deg, ${accent.from} 0%, ${accent.via} 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.75rem;
-            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 10px 25px ${accent.from}66;
             transition: transform 0.3s ease;
         }
         .logo:hover { transform: scale(1.05) rotate(5deg); }

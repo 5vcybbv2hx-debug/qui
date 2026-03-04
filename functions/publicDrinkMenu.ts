@@ -268,7 +268,7 @@ Deno.serve(async (req) => {
         }
         .allergens strong { color: #94a3b8; }
         .footer {
-            background: rgba(30, 41, 59, 0.95);
+            background: ${bgTheme.header}f2;
             backdrop-filter: blur(12px);
             border-top: 1px solid rgba(148, 163, 184, 0.1);
             padding: 2rem 1rem;

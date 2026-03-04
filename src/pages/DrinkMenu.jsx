@@ -83,18 +83,36 @@ export default function DrinkMenuPage() {
                     <div className="flex gap-2">
                         {permissions.canEditEmployees && (
                             <>
-                                <Button 
-                                    onClick={() => {
-                                        const url = `${window.location.origin}${createPageUrl('PublicMenu')}`;
-                                        navigator.clipboard.writeText(url);
-                                        alert('Link zur öffentlichen Getränkekarte wurde kopiert!\n\nLink: ' + url);
-                                    }}
-                                    variant="outline"
-                                    className="border-primary text-primary hover:bg-primary/10"
-                                >
-                                    <Link2 className="h-4 w-4 mr-2" />
-                                    Gäste-Link
-                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                                            <Link2 className="h-4 w-4 mr-2" />
+                                            Gäste-Link
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-52">
+                                        <DropdownMenuItem onClick={() => {
+                                            const url = `${window.location.origin}${createPageUrl('PublicMenu')}`;
+                                            window.open(url, '_blank');
+                                        }}>
+                                            <ExternalLink className="h-4 w-4 mr-2" />
+                                            Im Browser öffnen
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => {
+                                            const url = `${window.location.origin}${createPageUrl('PublicMenu')}`;
+                                            navigator.clipboard.writeText(url);
+                                            setGuestLinkCopied(true);
+                                            setTimeout(() => setGuestLinkCopied(false), 2000);
+                                        }}>
+                                            <Copy className="h-4 w-4 mr-2" />
+                                            {guestLinkCopied ? 'Kopiert!' : 'Link kopieren'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => navigate(createPageUrl('QRCodes'))}>
+                                            <QrCode className="h-4 w-4 mr-2" />
+                                            QR-Code generieren
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                                 <Button 
                                     onClick={() => { setSelectedItem(null); setShowModal(true); }}
                                     className="bg-primary hover:bg-primary/90 text-primary-foreground"

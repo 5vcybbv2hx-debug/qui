@@ -343,81 +343,52 @@ export default function MyShiftsPage() {
                         </Card>
                     </TabsContent>
 
-                    {/* Team heute/morgen */}
+                    {/* Team nächste 7 Tage */}
                     <TabsContent value="team" className="space-y-4">
-                        {/* Heute */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users className="w-5 h-5" />
-                                    Heute im Dienst ({todayTeam.length})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {todayTeam.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {todayTeam.map(shift => (
-                                            <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                                                    <span className="text-slate-900 font-bold">
-                                                        {shift.employee_name?.charAt(0) || '?'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="font-semibold text-foreground">{shift.employee_name}</p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {shift.start_time} - {shift.end_time}
-                                                        {shift.shift_type && ` • ${shift.shift_type}`}
-                                                    </p>
-                                                </div>
-                                                {shift.employee_id === employee.id && (
-                                                    <Badge className="bg-amber-500 text-slate-900">Du</Badge>
-                                                )}
+                        {weekDates.map(date => {
+                            const dateStr = format(date, 'yyyy-MM-dd');
+                            const dayShifts = weekTeam.filter(s => s.date === dateStr);
+                            const isToday = isSameDay(date, new Date());
+                            return (
+                                <Card key={dateStr}>
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center gap-2 text-base">
+                                            <Users className="w-4 h-4" />
+                                            <span>{format(date, 'EEEE, dd.MM.', { locale: de })}</span>
+                                            {isToday && <Badge className="bg-amber-500 text-slate-900 text-xs">Heute</Badge>}
+                                            <span className="ml-auto text-sm font-normal text-muted-foreground">{dayShifts.length} Schichten</span>
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {dayShifts.length > 0 ? (
+                                            <div className="space-y-2">
+                                                {dayShifts.map(shift => (
+                                                    <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
+                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
+                                                            <span className="text-slate-900 font-bold text-sm">
+                                                                {shift.employee_name?.charAt(0) || '?'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-semibold text-foreground truncate">{shift.employee_name}</p>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {shift.start_time} - {shift.end_time}
+                                                                {shift.shift_type && ` • ${shift.shift_type}`}
+                                                            </p>
+                                                        </div>
+                                                        {shift.employee_id === employee.id && (
+                                                            <Badge className="bg-amber-500 text-slate-900 shrink-0">Du</Badge>
+                                                        )}
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-center text-muted-foreground py-8">Keine Schichten heute</p>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Morgen */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Users className="w-5 h-5" />
-                                    Morgen im Dienst ({tomorrowTeam.length})
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                {tomorrowTeam.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {tomorrowTeam.map(shift => (
-                                            <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                                                    <span className="text-slate-900 font-bold">
-                                                        {shift.employee_name?.charAt(0) || '?'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <p className="font-semibold text-foreground">{shift.employee_name}</p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {shift.start_time} - {shift.end_time}
-                                                        {shift.shift_type && ` • ${shift.shift_type}`}
-                                                    </p>
-                                                </div>
-                                                {shift.employee_id === employee.id && (
-                                                    <Badge className="bg-amber-500 text-slate-900">Du</Badge>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-center text-muted-foreground py-8">Keine Schichten morgen</p>
-                                )}
-                            </CardContent>
-                        </Card>
+                                        ) : (
+                                            <p className="text-center text-muted-foreground py-4 text-sm">Keine Schichten</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
                     </TabsContent>
 
                     {/* Kalender-Sync */}

@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, ${bgTheme.bg} 0%, ${bgTheme.bg}cc 100%);
             color: #f1f5f9;
             min-height: 100vh;
             padding-bottom: 2rem;

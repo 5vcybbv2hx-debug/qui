@@ -425,6 +425,16 @@ export default function Suppliers() {
                                         placeholder="https://www.beispiel.de"
                                     />
                                 </div>
+
+                                <div className="space-y-2">
+                                    <Label>Öffnungszeiten</Label>
+                                    <Textarea
+                                        value={formData.opening_hours}
+                                        onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
+                                        placeholder={"Mo–Fr: 07:00–18:00\nSa: 08:00–14:00\nSo: geschlossen"}
+                                        rows={3}
+                                    />
+                                </div>
                             </div>
 
                             {/* Ansprechpartner */}

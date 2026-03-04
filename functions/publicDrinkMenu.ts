@@ -439,10 +439,7 @@ Deno.serve(async (req) => {
             applyFilters();
         });
 
-        document.getElementById('search-input').addEventListener('input', function() {
-            searchQuery = this.value.toLowerCase().trim();
-            applyFilters();
-        });
+
 
         window.addEventListener('load', function() {
             document.body.style.opacity = '0';

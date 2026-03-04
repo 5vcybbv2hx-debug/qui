@@ -35,10 +35,9 @@ export default function Vacation() {
     const [currentEmployee, setCurrentEmployee] = useState(null);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [formData, setFormData] = useState({
-        start_date: '',
-        end_date: '',
         type: 'Urlaub',
-        notes: ''
+        notes: '',
+        periods: [{ start_date: '', end_date: '' }]
     });
 
     useEffect(() => {

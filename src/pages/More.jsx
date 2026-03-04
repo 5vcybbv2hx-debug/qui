@@ -6,7 +6,7 @@ import {
     LogOut, Home, Calendar, Users, Package, Wine, BookOpen,
     CalendarCheck, CheckSquare, Sparkles, Wrench, TrendingUp,
     Bell, Shield, GraduationCap, Clock, Settings, QrCode,
-    RepeatIcon, BarChart2, FileText, Building2, BellRing
+    RepeatIcon, BarChart2, FileText, Building2, BellRing, ShoppingCart, RefreshCw
 } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { haptics } from '@/components/utils/haptics';

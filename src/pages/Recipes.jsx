@@ -940,7 +940,7 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
+                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
                                     {selectedRecipe ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>

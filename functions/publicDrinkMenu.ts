@@ -15,6 +15,26 @@ Deno.serve(async (req) => {
         const companyInfo = companyData[0] || {};
         const barName = companyInfo.company_name || 'BarManager';
 
+        // Farbschema aus gespeicherten Keys
+        const ACCENT_PRESETS = {
+            amber:  { from: '#f59e0b', via: '#f97316' },
+            orange: { from: '#f97316', via: '#ef4444' },
+            rose:   { from: '#f43f5e', via: '#e11d48' },
+            violet: { from: '#7c3aed', via: '#6d28d9' },
+            blue:   { from: '#3b82f6', via: '#2563eb' },
+            cyan:   { from: '#06b6d4', via: '#0891b2' },
+            green:  { from: '#22c55e', via: '#16a34a' },
+            pink:   { from: '#ec4899', via: '#db2777' },
+        };
+        const BG_PRESETS = {
+            default: { bg: '#1a2236', card: 'rgba(30, 41, 59, 0.8)', header: 'rgba(30, 41, 59, 0.98)' },
+            deep:    { bg: '#111111', card: 'rgba(28, 28, 28, 0.8)', header: 'rgba(20, 20, 20, 0.98)' },
+            navy:    { bg: '#0d1a36', card: 'rgba(20, 35, 70, 0.8)', header: 'rgba(15, 25, 55, 0.98)' },
+            slate:   { bg: '#1a2130', card: 'rgba(30, 38, 55, 0.8)', header: 'rgba(25, 33, 48, 0.98)' },
+        };
+        const accent = ACCENT_PRESETS[companyInfo.accent_color_key] || ACCENT_PRESETS.amber;
+        const bgTheme = BG_PRESETS[companyInfo.bg_color_key] || BG_PRESETS.default;
+
         // Gruppiere nach Kategorie
         const categories = ['Alle', ...new Set(sortedItems.map(item => item.category).filter(Boolean))];
 

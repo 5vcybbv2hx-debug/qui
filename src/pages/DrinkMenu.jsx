@@ -21,8 +21,6 @@ export default function DrinkMenuPage() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const appId = window.location.hostname.split('--')[1]?.split('.')[0] || window.location.hostname.split('.')[0];
-    const guestMenuUrl = `https://api.base44.app/api/apps/${appId}/functions/publicDrinkMenu`;
     const [selectedItem, setSelectedItem] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");

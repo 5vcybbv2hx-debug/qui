@@ -396,13 +396,30 @@ export default function CalendarPage() {
                             vacations={approvedVacations}
                             holidays={holidays}
                             employees={employees}
+                            reservations={reservations}
+                            events={events}
                             onEventClick={handleEventClick}
+                            onDayClick={(day) => setSelectedDayDetail(day)}
                             selectedEmployees={selectedEmployees}
                             onEmployeeToggle={setSelectedEmployees}
                             onRoleToggle={setSelectedRoles}
                             selectedRoles={selectedRoles}
                             searchQuery={searchQuery}
                             onSearchChange={setSearchQuery}
+                        />
+
+                        {/* Day Detail Modal */}
+                        <DayDetailModal
+                            open={!!selectedDayDetail}
+                            onClose={() => setSelectedDayDetail(null)}
+                            day={selectedDayDetail}
+                            shifts={shifts}
+                            vacations={approvedVacations}
+                            holidays={holidays}
+                            reservations={reservations}
+                            events={events}
+                            employees={employees}
+                            onShiftSwap={(shift) => { setShiftSwapData(shift); setSelectedDayDetail(null); }}
                         />
 
                         {/* Event Modal */}

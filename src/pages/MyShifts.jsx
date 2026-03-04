@@ -105,20 +105,18 @@ export default function MyShiftsPage() {
         return days;
     }, [shifts, selectedDate]);
 
-    // Team heute/morgen
-    const { data: todayTeam = [] } = useQuery({
-        queryKey: ['team-today'],
+    // Team nächste 7 Tage
+    const weekDates = useMemo(() => {
+        return Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
+    }, []);
+
+    const { data: weekTeam = [] } = useQuery({
+        queryKey: ['team-week'],
         queryFn: async () => {
             const today = format(new Date(), 'yyyy-MM-dd');
-            return await base44.entities.Shift.filter({ date: today });
-        }
-    });
-
-    const { data: tomorrowTeam = [] } = useQuery({
-        queryKey: ['team-tomorrow'],
-        queryFn: async () => {
-            const tomorrow = format(addDays(new Date(), 1), 'yyyy-MM-dd');
-            return await base44.entities.Shift.filter({ date: tomorrow });
+            const in7days = format(addDays(new Date(), 6), 'yyyy-MM-dd');
+            const all = await base44.entities.Shift.list('-date');
+            return all.filter(s => s.date >= today && s.date <= in7days);
         }
     });
 

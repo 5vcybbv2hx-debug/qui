@@ -70,7 +70,8 @@ export default function PublicMenu() {
         queryKey: ['publicMenu'],
         queryFn: async () => {
             try {
-                return await base44.entities.MenuItem.filter({ is_available: true });
+                const all = await base44.entities.MenuItem.list('-category', 500);
+                return all.filter(item => item.is_available !== false);
             } catch {
                 return [];
             }

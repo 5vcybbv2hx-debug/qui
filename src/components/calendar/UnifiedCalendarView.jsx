@@ -208,7 +208,7 @@ export default function UnifiedCalendarView({
                             >
                                 {/* Day Number */}
                                 <div className={cn(
-                                    'flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold mb-1.5 transition-all',
+                                    'flex items-center justify-center w-8 h-8 md:w-7 md:h-7 rounded-full text-sm font-bold mb-2 transition-all',
                                     isToday
                                         ? 'bg-amber-500 text-slate-900'
                                         : 'text-foreground group-hover:bg-accent/50'

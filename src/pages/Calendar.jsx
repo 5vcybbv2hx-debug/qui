@@ -79,6 +79,11 @@ export default function CalendarPage() {
         queryFn: () => base44.entities.VacationRequest.list()
     });
 
+    const { data: events = [] } = useQuery({
+        queryKey: ['events'],
+        queryFn: () => base44.entities.Event.list('-date', 200)
+    });
+
     const approvedVacations = vacationRequests.filter(v => v.status === 'genehmigt');
 
     const currentYear = new Date().getFullYear();

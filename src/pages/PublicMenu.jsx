@@ -74,10 +74,32 @@ export default function PublicMenu() {
                             </Button>
                         </Link>
                     </div>
-                    <MenuFilters 
-                        selectedCategory={selectedCategory}
-                        onCategoryChange={setSelectedCategory}
-                    />
+                    <div className="flex items-center justify-between gap-3">
+                        <MenuFilters 
+                            selectedCategory={selectedCategory}
+                            onCategoryChange={setSelectedCategory}
+                        />
+                        <div className="flex gap-1 flex-shrink-0">
+                            <Button
+                                size="sm"
+                                variant={sortBy === 'alpha' ? 'default' : 'outline'}
+                                onClick={() => setSortBy('alpha')}
+                                className="gap-1 text-xs"
+                            >
+                                <ArrowDownAZ className="w-4 h-4" />
+                                A–Z
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant={sortBy === 'price' ? 'default' : 'outline'}
+                                onClick={() => setSortBy('price')}
+                                className="gap-1 text-xs"
+                            >
+                                <ArrowUpDown className="w-4 h-4" />
+                                Preis
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </header>
 

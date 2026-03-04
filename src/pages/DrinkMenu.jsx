@@ -94,15 +94,13 @@ export default function DrinkMenuPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-52">
                                         <DropdownMenuItem onClick={() => {
-                                             const url = `${window.location.origin}/PublicMenu`;
-                                             window.open(url, '_blank');
+                                             window.open(guestMenuUrl, '_blank');
                                          }}>
                                              <ExternalLink className="h-4 w-4 mr-2" />
                                              Im Browser öffnen
                                          </DropdownMenuItem>
                                          <DropdownMenuItem onClick={() => {
-                                             const url = `${window.location.origin}/PublicMenu`;
-                                             navigator.clipboard.writeText(url);
+                                             navigator.clipboard.writeText(guestMenuUrl);
                                              setGuestLinkCopied(true);
                                              setTimeout(() => setGuestLinkCopied(false), 2000);
                                          }}>

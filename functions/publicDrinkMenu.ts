@@ -328,6 +328,12 @@ Deno.serve(async (req) => {
                     ${tableNumber ? `<div class="table-info">Tisch ${tableNumber}</div>` : ''}
                 </div>
             </div>
+            <div class="search-wrapper">
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="search" class="search-input" placeholder="Getränk suchen..." oninput="searchMenu(this.value)" id="search-input">
+                </div>
+            </div>
             <div class="filters">
                 ${categories.map((cat, idx) => `
                     <button class="filter-btn ${idx === 0 ? 'active' : ''}" onclick="filterCategory('${cat}')">

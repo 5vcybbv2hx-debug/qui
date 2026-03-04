@@ -211,6 +211,12 @@ export default function Suppliers() {
                                                     </a>
                                                 </div>
                                             )}
+                                            {supplier.opening_hours && (
+                                                <div className="flex items-start gap-2">
+                                                    <Clock className="w-3 h-3 mt-0.5 shrink-0" />
+                                                    <span className="whitespace-pre-line text-xs">{supplier.opening_hours}</span>
+                                                </div>
+                                            )}
                                             {supplier.branches && supplier.branches.length > 0 && (
                                                 <div className="flex items-center gap-2">
                                                     <Building2 className="w-3 h-3" />

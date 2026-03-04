@@ -184,10 +184,9 @@ export default function Vacation() {
 
     const resetForm = () => {
         setFormData({
-            start_date: '',
-            end_date: '',
             type: 'Urlaub',
-            notes: ''
+            notes: '',
+            periods: [{ start_date: '', end_date: '' }]
         });
     };
 

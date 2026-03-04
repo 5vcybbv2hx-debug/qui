@@ -196,12 +196,14 @@ export default function UnifiedCalendarView({
                         return (
                             <div
                                 key={day.toISOString()}
+                                onClick={() => isCurrentMonth && onDayClick(day)}
                                 className={cn(
                                     'relative border-r border-b border-border/50 last:border-r-0 transition-colors group',
                                     'min-h-[100px] md:min-h-[130px] p-2',
                                     !isCurrentMonth && 'bg-muted/10 opacity-40',
                                     isWeekendDay && isCurrentMonth && 'bg-secondary/30',
                                     isToday && 'bg-amber-500/5',
+                                    isCurrentMonth && 'cursor-pointer hover:bg-accent/30',
                                 )}
                             >
                                 {/* Day Number */}

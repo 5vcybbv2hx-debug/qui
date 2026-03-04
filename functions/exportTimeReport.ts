@@ -142,7 +142,21 @@ function generatePDF(employeeData, monthName, year) {
 
     // Employee Details
     Object.values(employeeData).forEach(emp => {
-        if (y > 250) {
+        // Calculate space needed for this employee's header block
+        let headerHeight = 7; // name
+        headerHeight += 5; // stundensatz line
+        headerHeight += 5; // stunden line
+        headerHeight += 5; // lohnkosten line
+        if (emp.vacation_days_per_year > 0) headerHeight += 5;
+        if (emp.vacationOpenDays > 0) headerHeight += 5;
+        headerHeight += 3; // padding
+        if (emp.entries.length > 0) headerHeight += 5; // table header row
+        // Add a few entry rows to ensure the first entries fit on the same page
+        const minEntriesToShow = Math.min(emp.entries.length, 3);
+        headerHeight += minEntriesToShow * 5;
+
+        // If the header block doesn't fit, start a new page
+        if (y + headerHeight > 270) {
             doc.addPage();
             y = 20;
         }

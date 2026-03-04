@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit, Trash2, GripVertical, UserPlus, Mail, Phone, MapPin, Globe, FileText, X, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, GripVertical, UserPlus, Mail, Phone, MapPin, Globe, FileText, X, Building2, Clock } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";

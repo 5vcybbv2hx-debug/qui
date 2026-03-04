@@ -153,7 +153,7 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
                                     value={ing.amount}
                                     onChange={(e) => updateIngredient(index, 'amount', parseFloat(e.target.value) || 0)}
                                     placeholder="Menge"
-                                    className="w-20 h-9"
+                                    className="w-20 h-9 bg-slate-700 border-slate-600 text-white"
                                     step="0.1"
                                 />
                                 <select

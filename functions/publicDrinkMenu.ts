@@ -390,29 +390,55 @@ Deno.serve(async (req) => {
     </footer>
 
     <script>
-        function filterCategory(category) {
+        let activeCategory = 'Alle';
+        let searchQuery = '';
+
+        function applyFilters() {
             const cards = document.querySelectorAll('.card');
-            const buttons = document.querySelectorAll('.filter-btn');
-            
-            buttons.forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.trim() === category) {
-                    btn.classList.add('active');
-                }
-            });
-            
             let delay = 0;
             cards.forEach(card => {
-                if (category === 'Alle' || card.dataset.category === category) {
+                const matchCat = activeCategory === 'Alle' || card.dataset.category === activeCategory;
+                const matchSearch = !searchQuery || card.dataset.name.includes(searchQuery) || card.dataset.description.includes(searchQuery);
+                if (matchCat && matchSearch) {
                     setTimeout(() => {
                         card.style.display = 'block';
-                        card.style.animation = 'fadeIn 0.5s ease-out backwards';
+                        card.style.animation = 'fadeIn 0.4s ease-out backwards';
                     }, delay);
-                    delay += 50;
+                    delay += 40;
                 } else {
                     card.style.display = 'none';
                 }
             });
+
+            // Leerer-Zustand
+            const visible = [...cards].filter(c => c.style.display !== 'none').length;
+            let empty = document.getElementById('no-results');
+            if (visible === 0) {
+                if (!empty) {
+                    empty = document.createElement('div');
+                    empty.id = 'no-results';
+                    empty.className = 'empty-state';
+                    empty.innerHTML = '<div class="empty-icon">🔍</div><h2>Keine Treffer</h2><p style="margin-top:0.5rem;">Versuche einen anderen Suchbegriff.</p>';
+                    document.getElementById('menu-grid').appendChild(empty);
+                }
+            } else {
+                if (empty) empty.remove();
+            }
+        }
+
+        function filterCategory(category) {
+            activeCategory = category;
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.trim() === category) btn.classList.add('active');
+            });
+            applyFilters();
+        }
+
+        function searchMenu(value) {
+            searchQuery = value.toLowerCase().trim();
+            applyFilters();
         }
 
         // Smooth scroll bei Page Load

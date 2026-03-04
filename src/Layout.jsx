@@ -231,7 +231,7 @@ export default function Layout({ children, currentPageName }) {
                     <div className="p-4 border-t border-border/50 space-y-3">
                         {permissions.isManager && currentUser && (
                             <div className="flex justify-center">
-                                <NotificationBell userEmail={currentUser.email} />
+                                <NotificationBell userEmail={currentUser.email} userRole={currentUser.role} />
                             </div>
                         )}
                         <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur">

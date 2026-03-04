@@ -288,7 +288,7 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                     {permissions.isManager && currentUser && (
                         <div className="flex flex-col items-center gap-1 px-3 py-2">
-                            <NotificationBell userEmail={currentUser.email} />
+                            <NotificationBell userEmail={currentUser.email} userRole={currentUser.role} />
                         </div>
                     )}
                     <Link

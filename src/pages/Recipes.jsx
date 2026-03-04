@@ -926,12 +926,33 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                             </Button>
                                         </div>
                                     )}
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        disabled={uploadingImage}
-                                    />
+                                    <div className="flex gap-2">
+                                       <label className="flex-1">
+                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-slate-300 bg-white text-sm cursor-pointer hover:bg-slate-50 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                                               📁 Datei wählen
+                                           </div>
+                                           <Input
+                                               type="file"
+                                               accept="image/*"
+                                               onChange={handleImageUpload}
+                                               disabled={uploadingImage}
+                                               className="hidden"
+                                           />
+                                       </label>
+                                       <label className="flex-1">
+                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-amber-400 bg-amber-50 text-amber-700 text-sm cursor-pointer hover:bg-amber-100 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                                               📷 Foto aufnehmen
+                                           </div>
+                                           <Input
+                                               type="file"
+                                               accept="image/*"
+                                               capture="environment"
+                                               onChange={handleImageUpload}
+                                               disabled={uploadingImage}
+                                               className="hidden"
+                                           />
+                                       </label>
+                                    </div>
                                     {uploadingImage && <p className="text-xs text-slate-500">Wird hochgeladen...</p>}
                                 </div>
                             </div>

@@ -395,29 +395,25 @@ Deno.serve(async (req) => {
 
         function applyFilters() {
             const cards = document.querySelectorAll('.card');
-            let delay = 0;
+            let visibleCount = 0;
             cards.forEach(card => {
                 const matchCat = activeCategory === 'Alle' || card.dataset.category === activeCategory;
                 const matchSearch = !searchQuery || card.dataset.name.includes(searchQuery) || card.dataset.description.includes(searchQuery);
                 if (matchCat && matchSearch) {
-                    setTimeout(() => {
-                        card.style.display = 'block';
-                        card.style.animation = 'fadeIn 0.4s ease-out backwards';
-                    }, delay);
-                    delay += 40;
+                    card.style.display = 'block';
+                    visibleCount++;
                 } else {
                     card.style.display = 'none';
                 }
             });
 
-            // Leerer-Zustand
-            const visible = [...cards].filter(c => c.style.display !== 'none').length;
             let empty = document.getElementById('no-results');
-            if (visible === 0) {
+            if (visibleCount === 0) {
                 if (!empty) {
                     empty = document.createElement('div');
                     empty.id = 'no-results';
                     empty.className = 'empty-state';
+                    empty.style.gridColumn = '1 / -1';
                     empty.innerHTML = '<div class="empty-icon">🔍</div><h2>Keine Treffer</h2><p style="margin-top:0.5rem;">Versuche einen anderen Suchbegriff.</p>';
                     document.getElementById('menu-grid').appendChild(empty);
                 }
@@ -431,7 +427,7 @@ Deno.serve(async (req) => {
             const buttons = document.querySelectorAll('.filter-btn');
             buttons.forEach(btn => {
                 btn.classList.remove('active');
-                if (btn.textContent.trim() === category) btn.classList.add('active');
+                if (btn.dataset.cat === category) btn.classList.add('active');
             });
             applyFilters();
         }

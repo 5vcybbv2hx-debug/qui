@@ -137,10 +137,10 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
                         const cost = calculateIngredientCost(ing);
                         
                         return (
-                            <div key={index} className="flex gap-2 items-start p-3 bg-slate-50 rounded-lg border border-slate-200">
+                            <div key={index} className="flex gap-2 items-start p-3 bg-slate-800 rounded-lg border border-slate-700">
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2 mb-1">
-                                        <p className="text-sm font-medium text-slate-900 truncate">{ing.article_name}</p>
+                                        <p className="text-sm font-medium text-slate-100 truncate">{ing.article_name}</p>
                                         {cost > 0 && (
                                             <p className="text-xs font-semibold text-green-600 whitespace-nowrap">
                                                 {cost.toFixed(2)} €

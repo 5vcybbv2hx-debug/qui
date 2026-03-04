@@ -159,7 +159,7 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
                                 <select
                                     value={ing.unit || 'ml'}
                                     onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
-                                    className="h-9 px-2 rounded-md border border-slate-300 bg-white text-sm w-16"
+                                    className="h-9 px-2 rounded-md border border-slate-600 bg-slate-700 text-white text-sm w-16"
                                 >
                                     <option value="ml">ml</option>
                                     <option value="cl">cl</option>

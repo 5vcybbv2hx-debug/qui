@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, parseISO, startOfWeek, endOfWeek, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, TrendingUp, LogIn, LogOut, Coffee } from 'lucide-react';
+import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, TrendingUp, LogIn, LogOut, Coffee, Pause, Play } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -431,16 +431,36 @@ export default function TimeTracking() {
                                     )}
                                 </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                                 {activeClockEntry ? (
-                                    <Button 
-                                        onClick={() => handleClockOut(activeClockEntry)}
-                                        size="lg"
-                                        className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
-                                    >
-                                        <LogOut className="w-5 h-5 mr-2" />
-                                        Ausstempeln
-                                    </Button>
+                                    <>
+                                        <Button 
+                                            onClick={() => {
+                                                if (confirm('Pause starten?')) {
+                                                    updateMutation.mutate({
+                                                        id: activeClockEntry.id,
+                                                        data: {
+                                                            status: 'on_break',
+                                                            pause_start: new Date().toISOString()
+                                                        }
+                                                    });
+                                                }
+                                            }}
+                                            size="lg"
+                                            className="bg-amber-600 hover:bg-amber-700"
+                                        >
+                                            <Pause className="w-5 h-5 mr-2" />
+                                            Pause
+                                        </Button>
+                                        <Button 
+                                            onClick={() => handleClockOut(activeClockEntry)}
+                                            size="lg"
+                                            className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                                        >
+                                            <LogOut className="w-5 h-5 mr-2" />
+                                            Ausstempeln
+                                        </Button>
+                                    </>
                                 ) : (
                                     <Button 
                                         onClick={handleClockIn}

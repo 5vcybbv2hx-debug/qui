@@ -51,6 +51,7 @@ export default function CalendarPage() {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [showEventModal, setShowEventModal] = useState(false);
     const [shiftSwapData, setShiftSwapData] = useState(null);
+    const [selectedDayDetail, setSelectedDayDetail] = useState(null);
 
     // --- Shared data ---
     const { data: employees = [] } = useQuery({

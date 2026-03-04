@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
         .price {
             font-size: 2.25rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ea580c 100%);
+            background: linear-gradient(135deg, ${accent.from} 0%, ${accent.via} 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;

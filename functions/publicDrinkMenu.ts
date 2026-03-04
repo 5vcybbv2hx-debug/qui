@@ -131,18 +131,18 @@ Deno.serve(async (req) => {
             transition: opacity 0.3s;
         }
         .filter-btn:hover {
-            background: rgba(30, 41, 59, 0.9);
-            border-color: rgba(245, 158, 11, 0.3);
+            background: ${bgTheme.header};
+            border-color: ${accent.from}4d;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         .filter-btn:hover::before { opacity: 1; }
         .filter-btn.active {
-            background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%);
+            background: linear-gradient(90deg, ${accent.from} 0%, ${accent.via} 100%);
             color: #0f172a;
             border-color: transparent;
             font-weight: 700;
-            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 4px 16px ${accent.from}66;
             transform: translateY(-2px);
         }
         .content {

@@ -327,7 +327,7 @@ export default function Articles() {
                             <button
                                 onClick={() => setFilterCategory('all')}
                                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                                    filterCategory === 'all' ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                    filterCategory === 'all' ? 'bg-amber-500 text-slate-900' : 'bg-secondary text-muted-foreground hover:bg-accent'
                                 }`}
                             >
                                 Alle <span className="opacity-70">({baseFilteredArticles.length})</span>
@@ -340,7 +340,7 @@ export default function Articles() {
                                         else setFilterCategory(cat.name);
                                     }}
                                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                                        filterCategory === cat.name ? 'bg-amber-500 text-slate-900' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                        filterCategory === cat.name ? 'bg-amber-500 text-slate-900' : 'bg-secondary text-muted-foreground hover:bg-accent'
                                     }`}
                                 >
                                     {cat.name}
@@ -354,12 +354,12 @@ export default function Articles() {
                         {/* Lieferant & Bestand */}
                         <div className="flex gap-2">
                             <select value={filterSupplier} onChange={(e) => setFilterSupplier(e.target.value)}
-                                className="flex-1 px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm">
+                                className="flex-1 px-2 py-2 rounded-md bg-background border border-border text-foreground text-xs sm:text-sm">
                                 <option value="all">Alle Lieferanten</option>
                                 {allSuppliers.map(sup => <option key={sup} value={sup}>{sup}</option>)}
                             </select>
                             <select value={filterStock} onChange={(e) => setFilterStock(e.target.value)}
-                                className="flex-1 px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-xs sm:text-sm">
+                                className="flex-1 px-2 py-2 rounded-md bg-background border border-border text-foreground text-xs sm:text-sm">
                                 <option value="all">Alle Bestände</option>
                                 <option value="niedrig">Niedrig</option>
                                 <option value="leer">Leer</option>
@@ -404,17 +404,17 @@ export default function Articles() {
                                                     className="flex items-center gap-2 mb-3"
                                                 >
                                                     {filterCategory === 'all' && group.category.id !== '__uncategorized' && (
-                                                        <div {...catProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 touch-none">
+                                                        <div {...catProvided.dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none">
                                                             <GripVertical className="w-4 h-4" />
                                                         </div>
                                                     )}
-                                                    <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+                                                    <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
                                                         {group.category.name}
                                                     </h2>
-                                                    <span className="text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">
+                                                    <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
                                                         {group.articles.length}
                                                     </span>
-                                                    <div className="flex-1 h-px bg-slate-700" />
+                                                    <div className="flex-1 h-px bg-border" />
                                                 </div>
 
                                                 {/* Articles in category */}
@@ -424,7 +424,7 @@ export default function Articles() {
                                                             ref={artProvided.innerRef}
                                                             {...artProvided.droppableProps}
                                                             className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 min-h-[80px] rounded-lg transition-colors ${
-                                                                artSnapshot.isDraggingOver ? 'bg-slate-800/50 ring-1 ring-amber-500/30' : ''
+                                                                artSnapshot.isDraggingOver ? 'bg-secondary/50 ring-1 ring-amber-500/30' : ''
                                                             }`}
                                                         >
                                                             {group.articles.map((article, artIdx) => {
@@ -470,8 +470,8 @@ export default function Articles() {
 
                 {groupedArticles.length === 0 && (
                     <div className="text-center py-12">
-                        <Package className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-                        <p className="text-slate-400">Keine Artikel gefunden</p>
+                        <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-muted-foreground">Keine Artikel gefunden</p>
                     </div>
                 )}
 

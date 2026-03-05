@@ -231,13 +231,13 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                         <div>
                             {activeClockEntry ? (
                                 <>
-                                    <p className="text-white font-semibold">Eingestempelt</p>
+                                    <p className="text-foreground font-semibold">Eingestempelt</p>
                                     <p className="text-green-400 text-sm">Seit {format(new Date(activeClockEntry.clock_in), 'HH:mm')} • {getWorkingDuration(activeClockEntry.clock_in)}</p>
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-white font-semibold">Nicht eingestempelt</p>
-                                    <p className="text-slate-400 text-sm">Bereit zum Einstempeln</p>
+                                    <p className="text-foreground font-semibold">Nicht eingestempelt</p>
+                                    <p className="text-muted-foreground text-sm">Bereit zum Einstempeln</p>
                                 </>
                             )}
                         </div>

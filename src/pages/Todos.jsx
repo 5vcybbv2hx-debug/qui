@@ -207,7 +207,7 @@ export default function Todos() {
                                         variant={categoryFilter === cat ? "default" : "outline"}
                                         size="sm"
                                         onClick={() => setCategoryFilter(cat)}
-                                        className={categoryFilter === cat ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 border-0 shadow-lg shadow-amber-500/20" : "border-slate-700/50 text-slate-300 hover:bg-slate-800/50"}
+                                        className={categoryFilter === cat ? "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 border-0 shadow-lg shadow-amber-500/20" : "border-border/50 text-muted-foreground hover:bg-accent/50"}
                                     >
                                         {cat === 'alle' ? 'Alle' : cat} ({count})
                                     </Button>

@@ -266,8 +266,8 @@ export default function Articles() {
                 {/* Header */}
                 <div className="flex flex-col gap-2 sm:gap-3 mb-5 sm:mb-6">
                     <div>
-                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Artikeldatenbank</h1>
-                        <p className="text-slate-400 text-sm mt-1">Verwalte alle Artikel für die Auffüllliste</p>
+                        <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">Artikeldatenbank</h1>
+                        <p className="text-muted-foreground text-sm mt-1">Verwalte alle Artikel für die Auffüllliste</p>
                     </div>
                     <div className="flex gap-1 sm:gap-2 flex-wrap">
                         <BulkImporter />

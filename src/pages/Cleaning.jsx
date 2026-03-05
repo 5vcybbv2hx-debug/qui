@@ -328,7 +328,7 @@ export default function Cleaning() {
                             ) : (
                                 <CloudOff className="w-5 h-5 text-amber-500" />
                             )}
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-muted-foreground">
                                 {isOnline ? 'Online' : `Offline (${pendingUpdates.length})`}
                             </span>
                         </div>

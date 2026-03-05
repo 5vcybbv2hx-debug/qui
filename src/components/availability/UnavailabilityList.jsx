@@ -13,16 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const statusConfig = {
-    ausstehend: { label: 'Ausstehend – wird an der Teamsitzung besprochen', color: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30', icon: Clock },
-    genehmigt: { label: 'Genehmigt', color: 'bg-green-600/20 text-green-400 border-green-600/30', icon: CheckCircle2 },
-    abgelehnt: { label: 'Abgelehnt', color: 'bg-red-600/20 text-red-400 border-red-600/30', icon: XCircle },
+    ausstehend: { label: 'Ausstehend – wird eingeplant wenn möglich', color: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30', icon: Clock },
+    genehmigt: { label: 'Eingeplant ✓', color: 'bg-green-600/20 text-green-400 border-green-600/30', icon: CheckCircle2 },
+    abgelehnt: { label: 'Leider nicht möglich', color: 'bg-red-600/20 text-red-400 border-red-600/30', icon: XCircle },
 };
 
 export default function UnavailabilityList() {
     const queryClient = useQueryClient();
     const [currentEmployee, setCurrentEmployee] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ date: '', end_date: '', reason: '' });
+    const [formData, setFormData] = useState({ date: '', end_date: '', start_time: '', end_time: '', notes: '' });
 
     useEffect(() => {
         base44.auth.me().then(async (user) => {
@@ -42,7 +42,7 @@ export default function UnavailabilityList() {
         onSuccess: () => {
             queryClient.invalidateQueries(['unavailability-requests']);
             setModalOpen(false);
-            setFormData({ date: '', end_date: '', reason: '' });
+            setFormData({ date: '', end_date: '', start_time: '', end_time: '', notes: '' });
         }
     });
 
@@ -59,7 +59,7 @@ export default function UnavailabilityList() {
             employee_name: currentEmployee.name,
             date: formData.date,
             end_date: formData.end_date || formData.date,
-            reason: formData.reason,
+            reason: [formData.start_time && formData.end_time ? `${formData.start_time}–${formData.end_time} Uhr` : '', formData.notes].filter(Boolean).join(' | ') || 'Keine weiteren Angaben',
             status: 'ausstehend'
         });
     };
@@ -70,17 +70,17 @@ export default function UnavailabilityList() {
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <p className="text-sm text-slate-400">
-                    Melde Termine, an denen du nicht kannst. Der Manager genehmigt oder lehnt sie an der nächsten Teamsitzung ab.
+                    Trage Tage ein, an denen du gerne arbeiten würdest. Der Manager berücksichtigt deine Wünsche bei der Schichtplanung.
                 </p>
                 <Button onClick={() => setModalOpen(true)} size="sm" className="bg-amber-600 hover:bg-amber-700 gap-2 shrink-0">
-                    <Plus className="w-4 h-4" /> Termin melden
+                    <Plus className="w-4 h-4" /> Wunschtag eintragen
                 </Button>
             </div>
 
             {sorted.length === 0 ? (
                 <Card className="p-8 text-center bg-slate-900 border-slate-800">
                     <Clock className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400 text-sm">Noch keine Termine gemeldet</p>
+                    <p className="text-slate-400 text-sm">Noch keine Wunschtage eingetragen</p>
                 </Card>
             ) : (
                 <div className="space-y-3">
@@ -124,12 +124,12 @@ export default function UnavailabilityList() {
             <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Termin melden</DialogTitle>
+                        <DialogTitle>Wunschtag eintragen</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
-                                <Label>Von *</Label>
+                                <Label>Datum *</Label>
                                 <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
                             </div>
                             <div className="space-y-2">
@@ -137,19 +137,29 @@ export default function UnavailabilityList() {
                                 <Input type="date" value={formData.end_date} min={formData.date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} />
                             </div>
                         </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <Label>Wunsch-Beginn</Label>
+                                <Input type="time" value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Wunsch-Ende</Label>
+                                <Input type="time" value={formData.end_time} onChange={e => setFormData({ ...formData, end_time: e.target.value })} />
+                            </div>
+                        </div>
                         <div className="space-y-2">
-                            <Label>Grund *</Label>
+                            <Label>Anmerkung (optional)</Label>
                             <Textarea
-                                value={formData.reason}
-                                onChange={e => setFormData({ ...formData, reason: e.target.value })}
-                                placeholder="z.B. Arzttermin, Urlaub geplant, Prüfung, Geburtstag..."
-                                required rows={3}
+                                value={formData.notes}
+                                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                placeholder="z.B. lieber Abendschicht, kann auch länger bleiben..."
+                                rows={2}
                             />
                         </div>
                         <div className="flex gap-2 pt-1">
                             <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
                             <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700" disabled={createMutation.isPending}>
-                                Melden
+                                Eintragen
                             </Button>
                         </div>
                     </form>

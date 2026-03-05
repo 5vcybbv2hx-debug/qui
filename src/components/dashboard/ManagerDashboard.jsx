@@ -240,6 +240,7 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                     ))}
                 </div>
 
+                <ShiftSwapApprovalCard />
                 <TodayOverview shifts={todayShifts} events={todayEvents} reservations={todayReservations} employees={employees} maxItems={4} />
             </div>
         </div>

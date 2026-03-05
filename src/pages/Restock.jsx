@@ -15,6 +15,12 @@ import BarcodeScanner from '../components/restock/BarcodeScanner';
 
 export default function Restock() {
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        const handleOnline = () => syncMutations(base44).catch(console.error);
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+    }, []);
     const barcodeInputRef = useRef(null);
     const [barcode, setBarcode] = useState('');
     const [scannerOpen, setScannerOpen] = useState(false);
@@ -45,26 +51,47 @@ export default function Restock() {
     };
 
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.RestockItem.create(data),
+        mutationFn: async (data) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'RestockItem', type: 'create', data });
+                const fakeId = `offline-${Date.now()}`;
+                queryClient.setQueryData(['restock-items'], (old) => [{ ...data, id: fakeId, _offline: true }, ...(old || [])]);
+                return { id: fakeId, ...data, _offline: true };
+            }
+            return base44.entities.RestockItem.create(data);
+        },
         onSuccess: (newItem) => {
-            queryClient.invalidateQueries(['restock-items']);
+            if (!newItem?._offline) queryClient.invalidateQueries(['restock-items']);
             if (newItem?.id) markRecent(newItem.id);
         }
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.RestockItem.update(id, data),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries(['restock-items']);
-            // Auch bei Mengenerhöhung (Scan eines vorhandenen Artikels) nach oben
-            markRecent(variables.id);
+        mutationFn: async ({ id, data }) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'RestockItem', type: 'update', id, data });
+                queryClient.setQueryData(['restock-items'], (old) => old?.map(item => item.id === id ? { ...item, ...data } : item) || old);
+                return { queued: true, id };
+            }
+            return base44.entities.RestockItem.update(id, data);
+        },
+        onSuccess: (result, variables) => {
+            if (!result?.queued) queryClient.invalidateQueries(['restock-items']);
+            markRecent(result?.id || variables.id);
         }
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.RestockItem.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['restock-items']);
+        mutationFn: async (id) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'RestockItem', type: 'delete', id });
+                queryClient.setQueryData(['restock-items'], (old) => old?.filter(item => item.id !== id) || old);
+                return { queued: true };
+            }
+            return base44.entities.RestockItem.delete(id);
+        },
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['restock-items']);
         }
     });
 

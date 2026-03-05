@@ -14,6 +14,13 @@ import TodoModal from '@/components/todos/TodoModal';
 export default function Todos() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
+
+    // Auto-sync when back online
+    useEffect(() => {
+        const handleOnline = () => syncMutations(base44).catch(console.error);
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+    }, []);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedTodo, setSelectedTodo] = useState(null);
     const [statusFilter, setStatusFilter] = useState('offen');
@@ -38,19 +45,31 @@ export default function Todos() {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.TodoItem.create(data),
+        mutationFn: async (data) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'TodoItem', type: 'create', data });
+                return { ...data, id: `offline-${Date.now()}`, _offline: true };
+            }
+            return base44.entities.TodoItem.create(data);
+        },
         onSuccess: (newTodo) => {
             queryClient.setQueryData(['todos'], (old) => 
                 old ? [newTodo, ...old] : [newTodo]
             );
-            queryClient.invalidateQueries(['todos']);
+            if (!newTodo._offline) queryClient.invalidateQueries(['todos']);
             setModalOpen(false);
             setSelectedTodo(null);
         }
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.TodoItem.update(id, data),
+        mutationFn: async ({ id, data }) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'TodoItem', type: 'update', id, data });
+                return { queued: true };
+            }
+            return base44.entities.TodoItem.update(id, data);
+        },
         onMutate: async ({ id, data }) => {
             await queryClient.cancelQueries(['todos']);
             const previous = queryClient.getQueryData(['todos']);
@@ -62,15 +81,21 @@ export default function Todos() {
         onError: (err, variables, context) => {
             queryClient.setQueryData(['todos'], context.previous);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['todos']);
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['todos']);
             setModalOpen(false);
             setSelectedTodo(null);
         }
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.TodoItem.delete(id),
+        mutationFn: async (id) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'TodoItem', type: 'delete', id });
+                return { queued: true };
+            }
+            return base44.entities.TodoItem.delete(id);
+        },
         onMutate: async (id) => {
             await queryClient.cancelQueries(['todos']);
             const previous = queryClient.getQueryData(['todos']);
@@ -82,8 +107,8 @@ export default function Todos() {
         onError: (err, variables, context) => {
             queryClient.setQueryData(['todos'], context.previous);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['todos']);
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['todos']);
         }
     });
 

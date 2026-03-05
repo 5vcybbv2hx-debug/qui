@@ -38,6 +38,12 @@ const statusConfig = {
 export default function Shopping() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
+
+    useEffect(() => {
+        const handleOnline = () => syncMutations(base44).catch(console.error);
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+    }, []);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [activeTab, setActiveTab] = useState('alle');
@@ -59,25 +65,47 @@ export default function Shopping() {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.ShoppingList.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['shopping-list']);
+        mutationFn: async (data) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'ShoppingList', type: 'create', data });
+                return { queued: true };
+            }
+            return base44.entities.ShoppingList.create(data);
+        },
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['shopping-list']);
             closeModal();
         }
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.ShoppingList.update(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['shopping-list']);
+        mutationFn: async ({ id, data }) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'ShoppingList', type: 'update', id, data });
+                queryClient.setQueryData(['shopping-list'], (old) => 
+                    old?.map(item => item.id === id ? { ...item, ...data } : item) || old
+                );
+                return { queued: true };
+            }
+            return base44.entities.ShoppingList.update(id, data);
+        },
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['shopping-list']);
             closeModal();
         }
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.ShoppingList.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['shopping-list']);
+        mutationFn: async (id) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'ShoppingList', type: 'delete', id });
+                queryClient.setQueryData(['shopping-list'], (old) => old?.filter(item => item.id !== id) || old);
+                return { queued: true };
+            }
+            return base44.entities.ShoppingList.delete(id);
+        },
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['shopping-list']);
         }
     });
 

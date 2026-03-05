@@ -48,12 +48,19 @@ export default function TeamMeeting() {
         notes: ''
     });
 
+    const { data: employees = [] } = useQuery({
+        queryKey: ['employees'],
+        queryFn: async () => {
+            return base44.entities.Employee.filter({ is_active: true });
+        }
+    });
+
     const { data: currentEmployee } = useQuery({
         queryKey: ['current-employee'],
         queryFn: async () => {
             const user = await base44.auth.me();
-            const employees = await base44.entities.Employee.filter({ email: user.email });
-            return employees[0] || null;
+            const emps = await base44.entities.Employee.filter({ email: user.email });
+            return emps[0] || null;
         }
     });
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Download, Trash2, Archive, ExternalLink, Calendar, Link as LinkIcon, Tag } from 'lucide-react';
+import { FileText, Download, Trash2, Archive, ExternalLink, Calendar, Link as LinkIcon, Tag, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,7 @@ const fileTypeColors = {
     'JPEG': 'bg-purple-100 text-purple-700',
 };
 
-export default function DocumentCard({ document, onDelete, onArchive, canEdit }) {
+export default function DocumentCard({ document, onDelete, onArchive, canEdit, onView }) {
     const isExpired = document.expiry_date && new Date(document.expiry_date) < new Date();
 
     return (
@@ -98,11 +98,11 @@ export default function DocumentCard({ document, onDelete, onArchive, canEdit })
                             <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => window.open(document.file_url, '_blank')}
+                                onClick={() => onView?.(document)}
                                 className="h-7 text-xs border-slate-600 text-slate-300 hover:bg-slate-700"
                             >
-                                <ExternalLink className="w-3 h-3 mr-1" />
-                                Öffnen
+                                <Eye className="w-3 h-3 mr-1" />
+                                Ansicht
                             </Button>
                             <a
                                 href={document.file_url}

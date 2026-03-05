@@ -471,21 +471,24 @@ export default function ShiftSwaps() {
                                                 </div>
 
                                                 <div className="flex lg:flex-col gap-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => handleReject(request)}
-                                                        className="flex-1 lg:flex-none border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                                    >
-                                                        <X className="w-4 h-4 mr-2" />
-                                                        Ablehnen
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => handleApprove(request)}
-                                                        className="flex-1 lg:flex-none bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-                                                    >
-                                                        <Check className="w-4 h-4 mr-2" />
-                                                        Genehmigen
-                                                    </Button>
+                                                   <Button
+                                                       variant="outline"
+                                                       onClick={() => handleReject(request)}
+                                                       className="flex-1 lg:flex-none border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                                   >
+                                                       <X className="w-4 h-4 mr-2" />
+                                                       Ablehnen
+                                                   </Button>
+                                                   {/* For non-marketplace requests with a target employee */}
+                                                   {!request.marketplace && request.target_employee_id && (
+                                                       <Button
+                                                           onClick={() => handleApprove(request)}
+                                                           className="flex-1 lg:flex-none bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                                                       >
+                                                           <Check className="w-4 h-4 mr-2" />
+                                                           Genehmigen
+                                                       </Button>
+                                                   )}
                                                 </div>
                                             </div>
                                         </Card>

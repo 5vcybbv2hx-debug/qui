@@ -14,6 +14,7 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import PDFExportButton from '@/components/export/PDFExportButton';
+import UnavailabilityManager from '@/components/availability/UnavailabilityManager';
 
 const priorityColors = {
     'niedrig': 'bg-blue-100 text-blue-700',
@@ -261,6 +262,14 @@ export default function TeamMeeting() {
                     <div className="text-center py-12">
                         <MessageSquare className="w-12 h-12 mx-auto mb-3 text-slate-600" />
                         <p className="text-slate-400">Noch keine Besprechungspunkte</p>
+                    </div>
+                )}
+
+                {/* Terminwünsche – nur für Manager sichtbar */}
+                {permissions.isManager && (
+                    <div className="mt-8 border-t border-slate-700 pt-6">
+                        <h2 className="text-lg font-bold text-white mb-4">Terminwünsche der Mitarbeiter</h2>
+                        <UnavailabilityManager />
                     </div>
                 )}
 

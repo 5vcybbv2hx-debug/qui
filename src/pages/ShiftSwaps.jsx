@@ -270,7 +270,7 @@ export default function ShiftSwaps() {
                 </div>
 
                 <Tabs defaultValue={permissions.isManager ? "pending" : "my-requests"} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid bg-slate-900/50 border border-slate-800/50">
+                    <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid bg-card border border-border/50">
                         <TabsTrigger value="my-requests" className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">
                             <User className="w-4 h-4" />
                             Meine Anfragen

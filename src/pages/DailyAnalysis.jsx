@@ -20,6 +20,7 @@ export default function DailyAnalysis() {
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [tipCalculatorOpen, setTipCalculatorOpen] = useState(false);
     const [laborCostLoading, setLaborCostLoading] = useState(false);
+    const [selectedEmployees, setSelectedEmployees] = useState([]);
     const queryClient = useQueryClient();
 
     const { data: dailyRevenues = [] } = useQuery({
@@ -77,8 +78,13 @@ export default function DailyAnalysis() {
         };
     });
 
-    const totalLaborCost = todayTimeEntriesWithRates.reduce((sum, te) => sum + te.cost, 0);
-    const staffCount = new Set(todayTimeEntriesWithRates.map(te => te.employee_id)).size;
+    // Filtere nach ausgewählten Mitarbeitern
+    const filteredTimeEntries = selectedEmployees.length > 0 
+        ? todayTimeEntriesWithRates.filter(te => selectedEmployees.includes(te.employee_id))
+        : todayTimeEntriesWithRates;
+
+    const totalLaborCost = filteredTimeEntries.reduce((sum, te) => sum + te.cost, 0);
+    const staffCount = new Set(filteredTimeEntries.map(te => te.employee_id)).size;
 
     const handleFetchLaborCosts = async () => {
         setLaborCostLoading(true);
@@ -217,9 +223,31 @@ export default function DailyAnalysis() {
                     <CardHeader>
                         <CardTitle className="text-white">Personalkosten Details</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <div className="space-y-2">
+                    <CardContent className="space-y-4">
+                        {/* Filter */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pb-4 border-b border-slate-700">
                             {todayTimeEntriesWithRates.map((te) => (
+                                <label key={te.employee_id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-700 p-2 rounded">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedEmployees.includes(te.employee_id)}
+                                        onChange={(e) => {
+                                            if (e.target.checked) {
+                                                setSelectedEmployees([...selectedEmployees, te.employee_id]);
+                                            } else {
+                                                setSelectedEmployees(selectedEmployees.filter(id => id !== te.employee_id));
+                                            }
+                                        }}
+                                        className="rounded"
+                                    />
+                                    <span className="text-sm text-slate-300">{te.employee_name}</span>
+                                </label>
+                            ))}
+                        </div>
+
+                        {/* Gefilterte Liste */}
+                        <div className="space-y-2">
+                            {filteredTimeEntries.map((te) => (
                                 <div key={te.id} className="flex items-center justify-between p-3 bg-slate-900 rounded-lg">
                                     <div>
                                         <h4 className="font-semibold text-white">{te.employee_name}</h4>
@@ -235,6 +263,9 @@ export default function DailyAnalysis() {
                                     </div>
                                 </div>
                             ))}
+                            {filteredTimeEntries.length === 0 && selectedEmployees.length > 0 && (
+                                <p className="text-center text-slate-400 py-4">Keine Daten für ausgewählte Mitarbeiter</p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

@@ -36,6 +36,7 @@ const defaultPermissions = {
     canViewOnboarding: false,
     canViewInventory: false,
     canViewWastage: false,
+    canViewWarehouse: false,
 };
 
 export function usePermissions() {

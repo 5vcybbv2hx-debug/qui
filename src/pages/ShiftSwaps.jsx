@@ -525,10 +525,10 @@ export default function ShiftSwaps() {
                                     ))}
                                 </div>
                             ) : (
-                                <Card className="p-12 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl">
-                                    <div className="text-center text-slate-400">
+                                <Card className="p-12 bg-card border-border">
+                                    <div className="text-center text-muted-foreground">
                                         <Check className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                        <p className="text-lg font-medium mb-1 text-white">Keine ausstehenden Anfragen</p>
+                                        <p className="text-lg font-medium mb-1 text-foreground">Keine ausstehenden Anfragen</p>
                                         <p className="text-sm">Alle Tauschanfragen wurden bearbeitet</p>
                                     </div>
                                 </Card>

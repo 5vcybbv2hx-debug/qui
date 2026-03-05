@@ -284,16 +284,38 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
                         </div>
 
                         {revenue && (
+                            <div className="bg-slate-700 rounded-lg p-4 space-y-3 border border-green-600/30">
+                                <h3 className="font-semibold text-green-400 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Vorschau
+                                </h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400">Datum:</span>
+                                        <span className="text-white font-medium">{selectedDate}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-slate-400">Tagesumsatz:</span>
+                                        <span className="text-green-400 font-bold text-lg">{parseFloat(revenue).toFixed(2)} €</span>
+                                    </div>
+                                    {notes && (
+                                        <div className="flex justify-between pt-2 border-t border-slate-600">
+                                            <span className="text-slate-400">Notizen:</span>
+                                            <span className="text-slate-300 text-right">{notes}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {revenue && (
                             <Button 
                                 type="button"
-                                onClick={() => {
-                                    if (revenue && parseFloat(revenue) > 0) {
-                                        setActiveTab('manual');
-                                    }
-                                }}
+                                onClick={handleSubmit}
+                                disabled={mutation.isPending}
                                 className="w-full bg-amber-600 hover:bg-amber-700"
                             >
-                                Weiter zu Überprüfung
+                                {mutation.isPending ? 'Wird gespeichert...' : 'Speichern'}
                             </Button>
                         )}
                     </TabsContent>

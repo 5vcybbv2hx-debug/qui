@@ -585,7 +585,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         />
                     </div>
 
-                    {shift && (
+                    {shift?.id && (
                         <div className="pt-2 border-t">
                             <ShiftSwapRequest shift={shift} onSuccess={onClose} />
                         </div>

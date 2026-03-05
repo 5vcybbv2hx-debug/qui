@@ -258,7 +258,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                             </Button>
                         )}
                         <Link to={createPageUrl('TerminalClock')} className="flex-1">
-                            <Button variant="outline" className="w-full border-slate-600 text-slate-300">Details</Button>
+                            <Button variant="outline" className="w-full">Details</Button>
                         </Link>
                     </div>
                 </Card>

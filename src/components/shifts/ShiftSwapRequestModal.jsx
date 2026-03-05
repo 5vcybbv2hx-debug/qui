@@ -67,7 +67,7 @@ export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuc
              setFormData({ reason: '' });
              setTargetEmployeeId('');
              // Fenster schließen
-             onOpenChange(false);
+             onOpenChange?.(false);
              onSuccess?.();
              // WhatsApp-Gruppe öffnen mit vorbereiteter Nachricht
              const dateStr = format(parseISO(shift.date), 'dd.MM.yyyy', { locale: de });

@@ -503,11 +503,11 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                 return (
                                     <div className="space-y-1">
                                         {dayRequirements.map((req, idx) => (
-                                            <div key={idx} className="flex items-start gap-2 p-2 bg-slate-50 rounded text-xs">
-                                                <span className="text-slate-700 flex-1 break-words">
+                                            <div key={idx} className="flex items-start gap-2 p-2 bg-secondary rounded text-xs">
+                                                <span className="text-foreground flex-1 break-words">
                                                     {req.shift_type || 'Allgemein'}
                                                 </span>
-                                                <Badge variant="outline" className="text-xs shrink-0">
+                                                <Badge variant="outline" className="text-xs shrink-0 text-foreground border-border">
                                                     {req.required_employees} MA
                                                 </Badge>
                                             </div>

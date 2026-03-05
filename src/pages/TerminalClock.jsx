@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Clock, LogIn, LogOut, Coffee, FileText, Download, Calendar, Pause, Play } from 'lucide-react';
+import TerminalReservation from '@/components/terminal/TerminalReservation';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

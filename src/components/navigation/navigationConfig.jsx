@@ -28,7 +28,7 @@ export const navigationSections = [
     {
         title: 'Bar',
         items: [
-            { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewShopping', color: 'from-orange-500 to-amber-600' },
+            { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewWarehouse', color: 'from-orange-500 to-amber-600' },
             { name: 'Einkaufen', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping', color: 'from-yellow-500 to-orange-500' },
             { name: 'Auffüllen', page: 'Restock', icon: RefreshCw, permission: 'canViewRestock', color: 'from-lime-500 to-green-600' },
             { name: 'Getränkekarte', page: 'DrinkMenu', icon: Wine, permission: 'canViewEmployees', color: 'from-rose-500 to-pink-600' },

@@ -279,8 +279,8 @@ export default function TeamMeeting() {
                             </Button>
                         )}
                         
-                        {/* RSVP für Teamsitzung – nur für nicht-Manager */}
-                        {!permissions.isManager && currentEmployee && currentSchedule && (
+                        {/* RSVP für Teamsitzung */}
+                        {currentEmployee && currentSchedule && (
                             <div className="flex gap-2 bg-slate-800 rounded-lg p-2">
                                 <Button
                                     onClick={() => handleRsvp('zusage')}

@@ -47,6 +47,12 @@ export default function DailyAnalysis() {
         staleTime: 5 * 60 * 1000,
     });
 
+    const { data: salesReports = [] } = useQuery({
+        queryKey: ['sales-reports'],
+        queryFn: () => base44.entities.SalesReport.list('-report_date'),
+        staleTime: 2 * 60 * 1000,
+    });
+
     // Bestimme den "Betriebstag" einer Schicht (Schichten vor 09:00 Uhr gehören zum Vortag)
     const getOperatingDate = (timeEntry) => {
         const startHour = parseInt(timeEntry.start_time.split(':')[0]);
@@ -63,6 +69,9 @@ export default function DailyAnalysis() {
     const todayRevenue = dailyRevenues.find(dr => dr.date === selectedDate);
     const todayTimeEntries = timeEntries.filter(te => getOperatingDate(te) === selectedDate && te.status === 'approved');
     const todayTipDistribution = tipDistributions.find(td => td.date === selectedDate);
+    
+    // Verkaufsbericht für aktuellen Tag
+    const todaySalesReport = salesReports.find(sr => sr.report_date === selectedDate && sr.processing_status === 'completed');
 
     // Employee-Map für schnelle Lookups
     const employeeMap = new Map(employees.map(emp => [emp.id, emp]));
@@ -154,7 +163,7 @@ export default function DailyAnalysis() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {todayTimeEntries.length > 0 ? (
+                        {todayTimeEntriesWithRates.length > 0 ? (
                             <>
                                 <div className="text-2xl font-bold text-amber-400">
                                     {totalLaborCost.toFixed(2)} €
@@ -164,7 +173,9 @@ export default function DailyAnalysis() {
                                 </p>
                             </>
                         ) : (
-                            <div className="text-slate-500 text-sm">Nicht erfasst</div>
+                            <div className="text-slate-500 text-sm">
+                                {todaySalesReport ? 'Bericht verarbeitet aber keine Details vorhanden' : 'Noch kein Bericht vorhanden'}
+                            </div>
                         )}
                         <Button 
                             size="sm" 

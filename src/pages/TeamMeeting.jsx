@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,10 +35,17 @@ export default function TeamMeeting() {
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [showArchive, setShowArchive] = useState(false);
+    const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         topic: '',
         description: '',
         priority: 'normal'
+    });
+    const [scheduleData, setScheduleData] = useState({
+        date: '',
+        time: '',
+        location: '',
+        notes: ''
     });
 
     const { data: currentEmployee } = useQuery({
@@ -63,13 +70,25 @@ export default function TeamMeeting() {
         enabled: !!currentEmployee || permissions.isManager
     });
 
+    // Get meeting schedule
+    const { data: scheduleList = [] } = useQuery({
+        queryKey: ['team-meeting-schedule'],
+        queryFn: async () => {
+            const items = await base44.entities.TeamMeetingSchedule.list('-created_date');
+            return items;
+        }
+    });
+
+    const currentSchedule = scheduleList[0] || null;
+
     // Get today's meeting RSVP
     const { data: rsvpData = [] } = useQuery({
-        queryKey: ['team-meeting-rsvp-today'],
+        queryKey: ['team-meeting-rsvp-today', currentSchedule?.date],
         queryFn: async () => {
-            const today = format(new Date(), 'yyyy-MM-dd');
-            return base44.entities.TeamMeetingRSVP.filter({ meeting_date: today });
-        }
+            if (!currentSchedule) return [];
+            return base44.entities.TeamMeetingRSVP.filter({ meeting_date: currentSchedule.date });
+        },
+        enabled: !!currentSchedule
     });
 
     const createRsvpMutation = useMutation({
@@ -86,10 +105,23 @@ export default function TeamMeeting() {
         }
     });
 
+    const createScheduleMutation = useMutation({
+        mutationFn: (data) => {
+            if (currentSchedule) {
+                return base44.entities.TeamMeetingSchedule.update(currentSchedule.id, data);
+            }
+            return base44.entities.TeamMeetingSchedule.create(data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['team-meeting-schedule']);
+            queryClient.invalidateQueries(['team-meeting-rsvp-today']);
+            setScheduleModalOpen(false);
+        }
+    });
+
     const handleRsvp = (status) => {
-        if (!currentEmployee) return;
+        if (!currentEmployee || !currentSchedule) return;
         
-        const today = format(new Date(), 'yyyy-MM-dd');
         const existingRsvp = rsvpData.find(r => r.employee_id === currentEmployee.id);
         
         if (existingRsvp) {
@@ -99,12 +131,21 @@ export default function TeamMeeting() {
             });
         } else {
             createRsvpMutation.mutate({
-                meeting_date: today,
+                meeting_date: currentSchedule.date,
                 employee_id: currentEmployee.id,
                 employee_name: currentEmployee.name,
                 status
             });
         }
+    };
+
+    const handleScheduleSubmit = (e) => {
+        e.preventDefault();
+        if (!scheduleData.date || !scheduleData.time) {
+            alert('Bitte Datum und Uhrzeit eintragen');
+            return;
+        }
+        createScheduleMutation.mutate(scheduleData);
     };
 
     const topics = showArchive 
@@ -209,19 +250,37 @@ export default function TeamMeeting() {
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold text-white">Teamsitzung</h1>
                         <p className="text-slate-400 text-sm mt-1">
-                            {permissions.isManager ? 'Besprechungspunkte vom Team' : 'Reiche Themen für die nächste Teamsitzung ein'}
+                            {currentSchedule ? `${format(new Date(currentSchedule.date), 'EEEE, dd.MM.yyyy', { locale: de })} um ${currentSchedule.time} Uhr` : 'Noch kein Termin festgelegt'}
                         </p>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2">
-                        {/* RSVP für heutige Teamsitzung – nur für nicht-Manager */}
-                        {!permissions.isManager && currentEmployee && (
+                        {/* Manager: Termin konfigurieren */}
+                        {permissions.isManager && (
+                            <Button
+                                onClick={() => {
+                                    if (currentSchedule) {
+                                        setScheduleData(currentSchedule);
+                                    }
+                                    setScheduleModalOpen(true);
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                            >
+                                <Settings className="w-4 h-4 mr-2" />
+                                Termin
+                            </Button>
+                        )}
+                        
+                        {/* RSVP für Teamsitzung – nur für nicht-Manager */}
+                        {!permissions.isManager && currentEmployee && currentSchedule && (
                             <div className="flex gap-2 bg-slate-800 rounded-lg p-2">
                                 <Button
                                     onClick={() => handleRsvp('zusage')}
                                     variant={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'default' : 'outline'}
                                     size="sm"
                                     className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'bg-green-600 hover:bg-green-700' : ''}
-                                    title="Zusage zur Teamsitzung heute"
+                                    title={`Zusage zur Teamsitzung am ${currentSchedule.date}`}
                                 >
                                     <ThumbsUp className="w-4 h-4" />
                                 </Button>
@@ -230,7 +289,7 @@ export default function TeamMeeting() {
                                     variant={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'absage' ? 'default' : 'outline'}
                                     size="sm"
                                     className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'absage' ? 'bg-red-600 hover:bg-red-700' : ''}
-                                    title="Absage zur Teamsitzung heute"
+                                    title={`Absage zur Teamsitzung am ${currentSchedule.date}`}
                                 >
                                     <ThumbsDown className="w-4 h-4" />
                                 </Button>
@@ -309,10 +368,10 @@ export default function TeamMeeting() {
                 )}
 
                 {/* Manager RSVP Übersicht */}
-                {permissions.isManager && (
+                {permissions.isManager && currentSchedule && (
                     <Card className="bg-slate-800 border-slate-700 p-4 mb-6">
                         <div className="space-y-3">
-                            <h3 className="font-semibold text-white">Zusagen für heute</h3>
+                            <h3 className="font-semibold text-white">Zusagen für {format(new Date(currentSchedule.date), 'dd.MM.yyyy', { locale: de })}</h3>
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 text-center">
                                     <p className="text-2xl font-bold text-green-400">{rsvpData.filter(r => r.status === 'zusage').length}</p>
@@ -486,6 +545,66 @@ export default function TeamMeeting() {
                         <h2 className="text-lg font-bold text-white mb-4">Wunschtage der Aushilfen</h2>
                         <UnavailabilityManager />
                     </div>
+                )}
+
+                {/* Schedule Modal – Manager nur */}
+                {permissions.isManager && (
+                    <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Teamsitzung planen</DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handleScheduleSubmit} className="space-y-4 mt-4">
+                                <div className="space-y-2">
+                                    <Label>Datum *</Label>
+                                    <Input
+                                        type="date"
+                                        value={scheduleData.date}
+                                        onChange={(e) => setScheduleData({ ...scheduleData, date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Uhrzeit *</Label>
+                                    <Input
+                                        type="time"
+                                        value={scheduleData.time}
+                                        onChange={(e) => setScheduleData({ ...scheduleData, time: e.target.value })}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Ort</Label>
+                                    <Input
+                                        value={scheduleData.location}
+                                        onChange={(e) => setScheduleData({ ...scheduleData, location: e.target.value })}
+                                        placeholder="z.B. Konferenzraum"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Notizen</Label>
+                                    <Textarea
+                                        value={scheduleData.notes}
+                                        onChange={(e) => setScheduleData({ ...scheduleData, notes: e.target.value })}
+                                        placeholder="Besondere Hinweise..."
+                                        rows={2}
+                                    />
+                                </div>
+
+                                <div className="flex gap-2 pt-4">
+                                    <Button type="button" variant="outline" onClick={() => setScheduleModalOpen(false)} className="flex-1">
+                                        Abbrechen
+                                    </Button>
+                                    <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                                        Speichern
+                                    </Button>
+                                </div>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 )}
 
                 {/* Create Modal */}

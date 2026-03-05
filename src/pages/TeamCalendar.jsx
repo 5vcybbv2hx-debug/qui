@@ -36,6 +36,11 @@ export default function TeamCalendar() {
         queryFn: () => base44.entities.VacationRequest.filter({ status: 'genehmigt' })
     });
 
+    const { data: maintenanceTasks = [] } = useQuery({
+        queryKey: ['maintenance-tasks'],
+        queryFn: () => base44.entities.MaintenanceTask.filter({ is_active: true })
+    });
+
     // Get holidays for current and next year
     const currentYear = new Date().getFullYear();
     const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
@@ -107,6 +112,7 @@ export default function TeamCalendar() {
                         vacations={vacations}
                         holidays={holidays}
                         employees={employees}
+                        maintenanceTasks={maintenanceTasks}
                         onEventClick={handleEventClick}
                         selectedEmployees={selectedEmployees}
                         onEmployeeToggle={setSelectedEmployees}

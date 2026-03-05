@@ -60,13 +60,23 @@ export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuc
                  });
              }
          },
-         onSuccess: () => {
+         onSuccess: (_, variables) => {
              queryClient.invalidateQueries(['shift-swap-requests']);
              queryClient.invalidateQueries(['available-shift-swaps']);
              toast.success('Tauschanfrage wurde versendet');
              setFormData({ reason: '' });
              setTargetEmployeeId('');
+             // Fenster schließen
+             onOpenChange(false);
              onSuccess?.();
+             // WhatsApp-Gruppe öffnen mit vorbereiteter Nachricht
+             const dateStr = format(parseISO(shift.date), 'dd.MM.yyyy', { locale: de });
+             const timeStr = `${shift.start_time} - ${shift.end_time}`;
+             const msg = variables.marketplace
+                 ? `🔄 Schichttausch-Anfrage\n\n${variables.requesting_employee_name} sucht jemanden für die Schicht am ${dateStr} (${timeStr}).\n\nGrund: ${variables.reason}\n\nBitte melden, falls jemand tauschen möchte! 🙏`
+                 : `🔄 Schichttausch-Anfrage\n\n${variables.requesting_employee_name} möchte die Schicht am ${dateStr} (${timeStr}) mit ${variables.target_employee_name} tauschen.\n\nGrund: ${variables.reason}`;
+             const waUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+             window.open(waUrl, '_blank');
          },
          onError: (error) => {
              toast.error('Fehler beim Erstellen der Anfrage: ' + error.message);

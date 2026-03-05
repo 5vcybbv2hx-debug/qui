@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const statusConfig = {
     ausstehend: { label: 'Ausstehend – wird eingeplant wenn möglich', color: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30', icon: Clock },

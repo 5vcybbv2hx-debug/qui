@@ -18,6 +18,17 @@ import CalendarExport from '@/components/calendar/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import PushNotificationManager from '@/components/notifications/PushNotificationManager';
 
+const notificationTypes = [
+    { key: 'tasks_assigned', icon: CheckSquare, title: 'Aufgaben zugewiesen', description: 'Benachrichtigung wenn dir eine neue Aufgabe zugewiesen wurde', color: 'text-blue-400' },
+    { key: 'tasks_deadline', icon: AlertTriangle, title: 'Fällige Aufgaben', description: 'Erinnerung an Aufgaben die bald fällig sind (1 Tag vorher)', color: 'text-red-400' },
+    { key: 'shifts_reminder', icon: Calendar, title: 'Schicht-Erinnerung', description: 'Erinnerung an deine nächste Schicht (4 Stunden vorher)', color: 'text-amber-400' },
+    { key: 'shifts_swap', icon: Users, title: 'Schichttausch', description: 'Benachrichtigung bei neuen Schichttausch-Anfragen', color: 'text-purple-400' },
+    { key: 'cleaning_overdue', icon: Sparkles, title: 'Überfällige Reinigung', description: 'Hinweis wenn Reinigungsaufgaben überfällig sind', color: 'text-green-400' },
+    { key: 'inventory_low', icon: Package, title: 'Niedriger Bestand', description: 'Warnung bei Artikeln unter Mindestbestand', color: 'text-orange-400' },
+    { key: 'maintenance_due', icon: AlertTriangle, title: 'Wartung fällig', description: 'Erinnerung an fällige Wartungsaufgaben (7 Tage vorher)', color: 'text-yellow-400' },
+    { key: 'general_updates', icon: Bell, title: 'Allgemeine Updates', description: 'Wichtige Ankündigungen und Systemnachrichten', color: 'text-slate-400' }
+];
+
 export default function Settings() {
      const queryClient = useQueryClient();
      const permissions = usePermissions();
@@ -27,6 +38,16 @@ export default function Settings() {
      const [dateFormat, setDateFormat] = useState('de');
      const [language, setLanguage] = useState('de');
      const [appVersion] = useState('1.0.0');
+
+     // Notification state
+     const [currentUser, setCurrentUser] = useState(null);
+     const [soundEnabled, setSoundEnabled] = useState(true);
+     const [vibrationEnabled, setVibrationEnabled] = useState(true);
+     const [barcodeSoundEnabled, setBarcodeSoundEnabled] = useState(true);
+     const [notifPreferences, setNotifPreferences] = useState({
+         tasks_assigned: true, tasks_deadline: true, shifts_reminder: true, shifts_swap: true,
+         cleaning_overdue: true, inventory_low: true, maintenance_due: true, general_updates: true
+     });
 
      // Fetch calendar data
      const { data: shifts = [] } = useQuery({

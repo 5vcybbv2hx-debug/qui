@@ -174,9 +174,9 @@ export default function ShiftMarketplaceModal({ open, onOpenChange }) {
                             );
                         })
                     ) : (
-                        <div className="text-center py-12 text-slate-500">
+                        <div className="text-center py-12 text-muted-foreground">
                             <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                            <p className="text-lg font-medium text-slate-700">Keine verfügbaren Angebote</p>
+                            <p className="text-lg font-medium text-foreground">Keine verfügbaren Angebote</p>
                             <p className="text-sm mt-1">Aktuell gibt es keine Schichten zum Tauschen</p>
                         </div>
                     )}

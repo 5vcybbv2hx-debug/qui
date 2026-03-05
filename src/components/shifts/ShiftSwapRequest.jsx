@@ -19,6 +19,10 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
         reason: ''
     });
 
+    if (!shift || !shift.id) {
+        return null;
+    }
+
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
@@ -29,7 +33,8 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
         queryFn: () => base44.entities.ShiftSwapRequest.filter({ 
             shift_id: shift.id,
             status: 'ausstehend' 
-        })
+        }),
+        enabled: !!shift?.id
     });
 
     const createMutation = useMutation({

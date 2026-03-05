@@ -310,15 +310,15 @@ export default function Articles() {
                 </div>
 
                 {/* Search & Filter */}
-                <Card className="p-3 sm:p-4 bg-slate-800 border-slate-700 mb-5 sm:mb-6">
+                <Card className="p-3 sm:p-4 bg-card border-border mb-5 sm:mb-6">
                     <div className="space-y-3">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                             <Input
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Nach Name oder Barcode..."
-                                className="pl-10 bg-slate-900 border-slate-700 text-white"
+                                className="pl-10"
                             />
                         </div>
 

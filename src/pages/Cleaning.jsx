@@ -338,7 +338,7 @@ export default function Cleaning() {
                              size="sm"
                              variant="outline"
                              onClick={() => setReportsModalOpen(true)}
-                             className="text-slate-300 border-slate-600 hover:bg-slate-700 text-xs h-9"
+                             className="text-muted-foreground border-border text-xs h-9"
                          >
                              <FileText className="w-3 h-3 mr-1" />
                              <span className="hidden sm:inline">Berichte</span>

@@ -92,8 +92,11 @@ export default function Onboarding() {
 
   const toggleMutation = useMutation({
     mutationFn: async ({ sectionId, itemIndex, employeeId, employeeName, currentItems }) => {
-      const key = `${sectionId}_${itemIndex}`;
-      const existing = currentItems.find(i => i.key === key && i.employee_id === employeeId);
+      const existing = currentItems.find(i =>
+        i.employee_id === employeeId &&
+        i.section_id === sectionId &&
+        i.item_index === itemIndex
+      );
       if (existing) {
         await base44.entities.OnboardingChecklistItem.delete(existing.id);
       } else {

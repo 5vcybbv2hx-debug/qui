@@ -25,12 +25,18 @@ const EVENT_STYLES = {
         dot: 'bg-rose-400',
         text: 'text-rose-200',
     },
+    maintenance: {
+        bg: 'bg-blue-500/20 border-l-2 border-blue-500 hover:bg-blue-500/30',
+        dot: 'bg-blue-400',
+        text: 'text-blue-200',
+    },
 };
 
 export default function UnifiedCalendarView({
     shifts = [],
     vacations = [],
     holidays = [],
+    maintenanceTasks = [],
     employees = [],
     reservations = [],
     events = [],
@@ -77,6 +83,12 @@ export default function UnifiedCalendarView({
         holidays.forEach(holiday => {
             if (holiday.date === dayStr) {
                 dayEvents.push({ type: 'holiday', id: holiday.id, data: holiday });
+            }
+        });
+
+        maintenanceTasks.forEach(task => {
+            if (task.next_maintenance === dayStr) {
+                dayEvents.push({ type: 'maintenance', id: task.id, data: task });
             }
         });
 
@@ -224,6 +236,8 @@ export default function UnifiedCalendarView({
                                             ? event.data.employee_name
                                             : event.type === 'vacation'
                                             ? `🏖 ${event.data.employee_name}`
+                                            : event.type === 'maintenance'
+                                            ? `🔧 ${event.data.equipment_name}`
                                             : `🎉 ${event.data.name}`;
 
                                         return (
@@ -265,6 +279,10 @@ export default function UnifiedCalendarView({
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-3 h-3 rounded-sm bg-rose-500/30 border-l-2 border-rose-500" />
                     Feiertag
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-3 h-3 rounded-sm bg-blue-500/30 border-l-2 border-blue-500" />
+                    Wartung
                 </div>
             </div>
 

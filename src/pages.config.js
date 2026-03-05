@@ -71,7 +71,6 @@ import MyProfile from './pages/MyProfile';
 import MyShifts from './pages/MyShifts';
 import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
-import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
@@ -128,7 +127,6 @@ export const PAGES = {
     "MyShifts": MyShifts,
     "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
-    "Onboarding": Onboarding,
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
     "PublicDrinkMenu": PublicDrinkMenu,

@@ -27,6 +27,7 @@ const PERMISSION_GROUPS = [
     {
         title: 'Einkauf & Lager',
         permissions: [
+            { key: 'canViewWarehouse', label: 'Lager (Artikelverwaltung) ansehen' },
             { key: 'canViewShopping', label: 'Einkaufsliste ansehen' },
             { key: 'canEditShopping', label: 'Einkaufsliste bearbeiten' },
             { key: 'canViewRestock', label: 'Auffüllen ansehen' },

@@ -116,12 +116,12 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
                     </DialogHeader>
 
                     <div className="space-y-4 mt-4">
-                        <div className="p-3 bg-slate-50 rounded-lg">
-                            <p className="text-sm font-medium text-slate-700">Deine Schicht:</p>
-                            <p className="text-sm text-slate-600 mt-1">
+                        <div className="p-3 bg-secondary rounded-lg border border-border">
+                            <p className="text-sm font-medium text-foreground">Deine Schicht:</p>
+                            <p className="text-sm text-muted-foreground mt-1">
                                 {format(new Date(shift.date), 'EEEE, d. MMMM', { locale: de })}
                             </p>
-                            <p className="text-sm text-slate-600">
+                            <p className="text-sm text-muted-foreground">
                                 {shift.start_time} - {shift.end_time} • {shift.shift_type}
                             </p>
                         </div>

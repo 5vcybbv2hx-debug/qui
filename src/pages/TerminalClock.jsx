@@ -344,14 +344,17 @@ export default function TerminalClock() {
                             {format(new Date(), "EEEE, d. MMMM yyyy · HH:mm", { locale: de })} Uhr
                         </p>
                     </div>
-                    <Button
-                        onClick={() => setReportModalOpen(true)}
-                        variant="outline"
-                        className="text-slate-300 border-slate-600 hover:bg-slate-700"
-                    >
-                        <FileText className="w-4 h-4 mr-2" />
-                        Berichte & Export
-                    </Button>
+                    <div className="flex gap-2">
+                        <TerminalReservation employees={employees} />
+                        <Button
+                            onClick={() => setReportModalOpen(true)}
+                            variant="outline"
+                            className="text-slate-300 border-slate-600 hover:bg-slate-700"
+                        >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Berichte & Export
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

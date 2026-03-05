@@ -343,6 +343,8 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                     </Card>
                 )}
 
+                <ShiftSwapMarketplaceCard currentEmployee={currentEmployee} />
+
                 <TodayOverview shifts={todayShifts} events={todayEvents} reservations={todayReservations} employees={employees} maxItems={3} />
 
                 {/* Upcoming Shifts & Todos */}

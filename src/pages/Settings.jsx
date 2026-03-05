@@ -192,7 +192,7 @@ export default function Settings() {
 
                  {/* Tabs */}
                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                     <TabsList className="grid w-full grid-cols-2 bg-card border border-border h-auto p-1">
+                     <TabsList className="grid w-full grid-cols-3 bg-card border border-border h-auto p-1">
                          <TabsTrigger value="appearance" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <SettingsIcon className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Allgemein</span>
@@ -200,6 +200,10 @@ export default function Settings() {
                          <TabsTrigger value="calendar" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <Calendar className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Kalender</span>
+                         </TabsTrigger>
+                         <TabsTrigger value="notifications" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                             <Bell className="w-5 h-5 sm:w-4 sm:h-4" />
+                             <span>Benachrichtigungen</span>
                          </TabsTrigger>
                      </TabsList>
 

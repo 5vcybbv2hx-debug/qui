@@ -223,7 +223,7 @@ export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuc
                             <Button 
                                 type="button" 
                                 variant="outline" 
-                                onClick={() => onOpenChange(false)}
+                                onClick={() => onOpenChange?.(false)}
                                 className="flex-1"
                             >
                                 Abbrechen

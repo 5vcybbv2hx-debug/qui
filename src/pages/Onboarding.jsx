@@ -125,8 +125,11 @@ export default function Onboarding() {
     : null;
 
   const isChecked = (sectionId, itemIndex, employeeId) => {
-    const key = `${sectionId}_${itemIndex}`;
-    return checklistItems.some(i => i.key === key && i.employee_id === employeeId);
+    return checklistItems.some(i =>
+      i.employee_id === employeeId &&
+      i.section_id === sectionId &&
+      i.item_index === itemIndex
+    );
   };
 
   const getSectionProgress = (sectionId, employeeId) => {

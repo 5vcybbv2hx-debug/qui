@@ -4,12 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, Clock, Plus, Wrench, TrendingUp, Calendar, User, Filter, X, CalendarDays } from "lucide-react";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AlertCircle, CheckCircle, Clock, Plus, Wrench, Calendar, User, Filter, X, CalendarDays, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import MaintenanceModal from "../components/maintenance/MaintenanceModal";
 import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
@@ -77,73 +76,23 @@ export default function MaintenancePage() {
     const dueSoon = tasks.filter(t => getTaskStatus(t) === 'bald fällig');
     const completed = tasks.filter(t => getTaskStatus(t) === 'erledigt');
 
-    // Anstehende Wartungen (nächste 30 Tage)
-    const upcomingMaintenance = useMemo(() => {
-        const today = new Date();
-        const next30Days = addDays(today, 30);
-        
-        return tasks
-            .filter(t => t.next_maintenance)
-            .map(t => ({
-                ...t,
-                next_date: new Date(t.next_maintenance),
-                days_until: Math.ceil((new Date(t.next_maintenance) - today) / (1000 * 60 * 60 * 24))
-            }))
-            .filter(t => t.next_date <= next30Days)
-            .sort((a, b) => a.next_date - b.next_date);
-    }, [tasks]);
+    const handleDragEnd = async (result) => {
+        const { source, destination, draggableId } = result;
+        if (!destination) return;
 
-    // Historie
-    const completedTasks = useMemo(() => {
-        return tasks.filter(t => t.last_maintenance && t.status === 'erledigt');
-    }, [tasks]);
+        const task = tasks.find(t => t.id === draggableId);
+        if (!task) return;
 
-    const filteredTasks = useMemo(() => {
-        return completedTasks.filter(task => {
-            if (dateFrom && task.last_maintenance < dateFrom) return false;
-            if (dateTo && task.last_maintenance > dateTo) return false;
-            if (selectedEquipment && task.equipment_name !== selectedEquipment) return false;
-            if (selectedResponsible && task.responsible !== selectedResponsible) return false;
-            return true;
-        });
-    }, [completedTasks, dateFrom, dateTo, selectedEquipment, selectedResponsible]);
+        let newStatus = 'erledigt';
+        if (destination.droppableId === 'overdue') newStatus = 'überfällig';
+        if (destination.droppableId === 'duesoon') newStatus = 'bald fällig';
+        if (destination.droppableId === 'completed') newStatus = 'erledigt';
 
-    const equipmentList = [...new Set(completedTasks.map(t => t.equipment_name))];
-    const responsibleList = [...new Set(completedTasks.map(t => t.responsible).filter(Boolean))];
-
-    const maintenanceByMonth = useMemo(() => {
-        const data = {};
-        filteredTasks.forEach(task => {
-            if (task.last_maintenance) {
-                const date = new Date(task.last_maintenance);
-                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-                data[key] = (data[key] || 0) + 1;
-            }
-        });
-        return Object.entries(data).map(([month, count]) => ({
-            month: new Date(month + '-01').toLocaleDateString('de-DE', { year: '2-digit', month: 'short' }),
-            count
-        })).sort((a, b) => a.month.localeCompare(b.month));
-    }, [filteredTasks]);
-
-    const maintenanceByEquipment = useMemo(() => {
-        const data = {};
-        filteredTasks.forEach(task => {
-            data[task.equipment_name] = (data[task.equipment_name] || 0) + 1;
-        });
-        return Object.entries(data).map(([name, value]) => ({ name, value }));
-    }, [filteredTasks]);
-
-    const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
-
-    const resetFilters = () => {
-        setDateFrom("");
-        setDateTo("");
-        setSelectedEquipment("");
-        setSelectedResponsible("");
+        // Wenn in "erledigt" verschoben, als erledigt markieren
+        if (newStatus === 'erledigt') {
+            completeMutation.mutate(task);
+        }
     };
-
-    const hasActiveFilters = dateFrom || dateTo || selectedEquipment || selectedResponsible;
 
     if (permissions.loading) return <div className="flex justify-center p-8">Lädt...</div>;
     if (!permissions.isManager) return <PermissionDenied />;
@@ -156,7 +105,7 @@ export default function MaintenancePage() {
                         <Wrench className="h-6 md:h-8 w-6 md:w-8" />
                         Wartung
                     </h1>
-                    <p className="text-xs md:text-sm text-muted-foreground mt-1">Wartungsplan, Anstehende Termine & Historie</p>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">Wartungsplan & Status</p>
                 </div>
                 {permissions.canEditEmployees && (
                     <Button 
@@ -170,63 +119,48 @@ export default function MaintenancePage() {
                 )}
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="overview" className="text-xs md:text-sm">
-                        <Wrench className="h-4 w-4 mr-1" />
-                        Übersicht
-                    </TabsTrigger>
-                    <TabsTrigger value="upcoming" className="text-xs md:text-sm">
-                        <CalendarDays className="h-4 w-4 mr-1" />
-                        Anstehend
-                    </TabsTrigger>
-                    <TabsTrigger value="history" className="text-xs md:text-sm">
-                        <TrendingUp className="h-4 w-4 mr-1" />
-                        Historie
-                    </TabsTrigger>
-                </TabsList>
+            {/* Dashboard Stats */}
+            <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4">
+                <Card className="border-red-200 bg-red-50">
+                    <CardHeader className="pb-2 md:pb-3">
+                        <CardTitle className="flex items-center gap-1 md:gap-2 text-red-700 text-xs md:text-base">
+                            <AlertCircle className="h-4 md:h-5 w-4 md:w-5" />
+                            Überfällig
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-2 md:p-6">
+                        <div className="text-2xl md:text-3xl font-bold text-red-700">{overdueTask.length}</div>
+                    </CardContent>
+                </Card>
 
-                {/* Übersicht Tab */}
-                <TabsContent value="overview" className="space-y-6">
-                    <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-4">
-                        <Card className="border-red-200 bg-red-50">
-                            <CardHeader className="pb-2 md:pb-3">
-                                <CardTitle className="flex items-center gap-1 md:gap-2 text-red-700 text-xs md:text-base">
-                                    <AlertCircle className="h-4 md:h-5 w-4 md:w-5" />
-                                    Überfällig
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 md:p-6">
-                                <div className="text-2xl md:text-3xl font-bold text-red-700">{overdueTask.length}</div>
-                            </CardContent>
-                        </Card>
+                <Card className="border-yellow-200 bg-yellow-50">
+                    <CardHeader className="pb-2 md:pb-3">
+                        <CardTitle className="flex items-center gap-1 md:gap-2 text-yellow-700 text-xs md:text-base">
+                            <Clock className="h-4 md:h-5 w-4 md:w-5" />
+                            Bald fällig
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-2 md:p-6">
+                        <div className="text-2xl md:text-3xl font-bold text-yellow-700">{dueSoon.length}</div>
+                    </CardContent>
+                </Card>
 
-                        <Card className="border-yellow-200 bg-yellow-50">
-                            <CardHeader className="pb-2 md:pb-3">
-                                <CardTitle className="flex items-center gap-1 md:gap-2 text-yellow-700 text-xs md:text-base">
-                                    <Clock className="h-4 md:h-5 w-4 md:w-5" />
-                                    Bald fällig
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 md:p-6">
-                                <div className="text-2xl md:text-3xl font-bold text-yellow-700">{dueSoon.length}</div>
-                            </CardContent>
-                        </Card>
+                <Card className="border-green-200 bg-green-50">
+                    <CardHeader className="pb-2 md:pb-3">
+                        <CardTitle className="flex items-center gap-1 md:gap-2 text-green-700 text-xs md:text-base">
+                            <CheckCircle className="h-4 md:h-5 w-4 md:w-5" />
+                            Erledigt
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-2 md:p-6">
+                        <div className="text-2xl md:text-3xl font-bold text-green-700">{completed.length}</div>
+                    </CardContent>
+                </Card>
+            </div>
 
-                        <Card className="border-green-200 bg-green-50">
-                            <CardHeader className="pb-2 md:pb-3">
-                                <CardTitle className="flex items-center gap-1 md:gap-2 text-green-700 text-xs md:text-base">
-                                    <CheckCircle className="h-4 md:h-5 w-4 md:w-5" />
-                                    Erledigt
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-2 md:p-6">
-                                <div className="text-2xl md:text-3xl font-bold text-green-700">{completed.length}</div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="space-y-4">
+            {/* Kanban Board */}
+            <DragDropContext onDragEnd={handleDragEnd}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[400px]">
                         {overdueTask.length > 0 && (
                             <div>
                                 <h2 className="text-xl font-semibold mb-3 text-red-700">Überfällig</h2>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info, Palette, Calendar } from 'lucide-react';
+import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info, Palette, Calendar, Bell, CheckSquare, AlertTriangle, Users, Package, Sparkles, Volume2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ColorCustomizer from '@/components/settings/ColorCustomizer';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -15,6 +16,7 @@ import BackupManager from '@/components/backup/BackupManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import CalendarExport from '@/components/calendar/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
+import PushNotificationManager from '@/components/notifications/PushNotificationManager';
 
 export default function Settings() {
      const queryClient = useQueryClient();

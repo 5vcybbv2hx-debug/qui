@@ -415,7 +415,7 @@ export default function Cleaning() {
 
                     <TabsContent value="deactivated">
                         {deactivatedTasks.length === 0 ? (
-                            <div className="text-center py-12 text-slate-400">
+                            <div className="text-center py-12 text-muted-foreground">
                                 <Archive className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                 <p>Keine deaktivierten Aufgaben</p>
                             </div>
@@ -491,7 +491,7 @@ export default function Cleaning() {
                             </div>
 
                             {formData.area === 'Wochentagsaufgaben' && (
-                                <div className="space-y-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                <div className="space-y-3 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
                                     <div className="space-y-2">
                                         <Label>Fälligkeitsdatum</Label>
                                         <Input
@@ -526,7 +526,7 @@ export default function Cleaning() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <p className="text-xs text-slate-500">
+                                                    <p className="text-xs text-muted-foreground">
                                             Ohne Auswahl wird automatisch die Aushilfe zugewiesen, die an diesem Tag arbeitet
                                         </p>
                                     </div>
@@ -565,29 +565,29 @@ export default function Cleaning() {
                         
                         <div className="space-y-4 mt-4">
                             {reports.length === 0 ? (
-                                <div className="text-center py-8 text-slate-500">
+                                <div className="text-center py-8 text-muted-foreground">
                                     <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                     <p>Noch keine Berichte vorhanden</p>
                                 </div>
                             ) : (
                                 reports.map(report => (
-                                    <div key={report.id} className="p-5 bg-white rounded-xl border border-slate-200 shadow-sm">
+                                    <div key={report.id} className="p-5 bg-card rounded-xl border border-border shadow-sm">
                                        <div className="flex items-start justify-between mb-4">
                                            <div className="flex items-start gap-3">
-                                               <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                                   <FileText className="w-5 h-5 text-green-600" />
+                                               <div className="flex-shrink-0 w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                                                   <FileText className="w-5 h-5 text-green-500" />
                                                </div>
                                                <div>
-                                                   <h3 className="font-semibold text-slate-900 text-lg">
+                                                   <h3 className="font-semibold text-foreground text-lg">
                                                        {format(new Date(report.week_start), 'dd.MM.', { locale: de })} - {format(new Date(report.week_end), 'dd.MM.yyyy', { locale: de })}
                                                    </h3>
                                                    <div className="flex items-center gap-3 mt-2">
                                                        <div className="flex items-center gap-1.5">
-                                                           <span className="text-2xl font-bold text-green-600">{report.completion_rate}%</span>
-                                                           <span className="text-xs text-slate-500">Erledigt</span>
+                                                           <span className="text-2xl font-bold text-green-500">{report.completion_rate}%</span>
+                                                           <span className="text-xs text-muted-foreground">Erledigt</span>
                                                        </div>
-                                                       <div className="h-4 w-px bg-slate-200" />
-                                                       <span className="text-sm text-slate-600">
+                                                       <div className="h-4 w-px bg-border" />
+                                                       <span className="text-sm text-muted-foreground">
                                                            {report.completed_tasks} von {report.total_tasks} Aufgaben
                                                        </span>
                                                    </div>
@@ -597,27 +597,27 @@ export default function Cleaning() {
                                         
                                         {report.report_data && report.report_data.length > 0 && (
                                             <div className="mt-4 space-y-3">
-                                                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Erledigte Aufgaben:</p>
+                                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Erledigte Aufgaben:</p>
                                                 <div className="space-y-2">
                                                     {report.report_data.map((task, idx) => (
-                                                        <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200">
-                                                            <div className="flex-shrink-0 w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                                                                <span className="text-green-600 text-xs">✓</span>
+                                                        <div key={idx} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+                                                            <div className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
+                                                                <span className="text-green-500 text-xs">✓</span>
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-start justify-between gap-2">
                                                                     <div className="flex-1">
-                                                                        <p className="font-medium text-slate-900">{task.task_title}</p>
-                                                                        <p className="text-xs text-slate-500 mt-0.5">{task.area} · {task.frequency}</p>
+                                                                        <p className="font-medium text-foreground">{task.task_title}</p>
+                                                                        <p className="text-xs text-muted-foreground mt-0.5">{task.area} · {task.frequency}</p>
                                                                     </div>
                                                                 </div>
                                                                 {task.completed_by && (
-                                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-slate-100">
-                                                                        <span className="text-xs text-slate-600">
-                                                                            👤 <span className="font-medium">{task.completed_by}</span>
+                                                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border">
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            👤 <span className="font-medium text-foreground">{task.completed_by}</span>
                                                                         </span>
                                                                         {task.completed_at && (
-                                                                            <span className="text-xs text-slate-400">
+                                                                            <span className="text-xs text-muted-foreground">
                                                                                 · {format(new Date(task.completed_at), 'dd.MM. HH:mm', { locale: de })} Uhr
                                                                             </span>
                                                                         )}

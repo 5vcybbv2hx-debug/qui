@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import TodayOverview from '@/components/dashboard/TodayOverview';
 import FirstStepsTour from '@/components/onboarding/FirstStepsTour';
 import { InteractiveTour, useTour } from '@/components/onboarding/InteractiveTour';
+import ShiftSwapMarketplaceCard from '@/components/shifts/ShiftSwapMarketplaceCard';
 
 export default function EmployeeDashboard({ currentEmployee, isManager, onSwitchToManager }) {
     const queryClient = useQueryClient();

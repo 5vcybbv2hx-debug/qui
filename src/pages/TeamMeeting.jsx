@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +34,7 @@ export default function TeamMeeting() {
     const [modalOpen, setModalOpen] = useState(false);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState(null);
+    const [showArchive, setShowArchive] = useState(false);
     const [formData, setFormData] = useState({
         topic: '',
         description: '',
@@ -49,18 +50,22 @@ export default function TeamMeeting() {
         }
     });
 
-    const { data: topics = [] } = useQuery({
+    const { data: allTopics = [] } = useQuery({
         queryKey: ['team-meeting-topics'],
         queryFn: async () => {
-            const allTopics = await base44.entities.TeamMeetingTopic.list('-created_date');
+            const items = await base44.entities.TeamMeetingTopic.list('-created_date');
             // Nur Manager sehen alle Themen, normale Mitarbeiter nur ihre eigenen
             if (!permissions.isManager && currentEmployee) {
-                return allTopics.filter(t => t.employee_id === currentEmployee.id);
+                return items.filter(t => t.employee_id === currentEmployee.id);
             }
-            return allTopics;
+            return items;
         },
         enabled: !!currentEmployee || permissions.isManager
     });
+
+    const topics = showArchive 
+        ? allTopics.filter(t => t.is_archived)
+        : allTopics.filter(t => !t.is_archived);
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.TeamMeetingTopic.create(data),
@@ -113,7 +118,23 @@ export default function TeamMeeting() {
             updateData.discussed_at = new Date().toISOString();
         }
         
+        if (status === 'erledigt') {
+            updateData.is_archived = true;
+            updateData.archived_at = new Date().toISOString();
+        }
+        
         updateMutation.mutate({ id: selectedTopic.id, data: updateData });
+    };
+
+    const handleArchiveToggle = (topic) => {
+        updateMutation.mutate({
+            id: topic.id,
+            data: {
+                ...topic,
+                is_archived: !topic.is_archived,
+                archived_at: !topic.is_archived ? new Date().toISOString() : null
+            }
+        });
     };
 
     const handleNotesUpdate = (notes) => {
@@ -172,30 +193,51 @@ export default function TeamMeeting() {
                     </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3 mb-6">
-                    <Card className="bg-slate-800 border-slate-700">
-                        <CardContent className="p-4 text-center">
-                            <Clock className="w-6 h-6 mx-auto mb-2 text-amber-400" />
-                            <p className="text-2xl font-bold text-white">{groupedTopics.offen.length}</p>
-                            <p className="text-xs text-slate-400">Offen</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-slate-800 border-slate-700">
-                        <CardContent className="p-4 text-center">
-                            <MessageSquare className="w-6 h-6 mx-auto mb-2 text-purple-400" />
-                            <p className="text-2xl font-bold text-white">{groupedTopics.besprochen.length}</p>
-                            <p className="text-xs text-slate-400">Besprochen</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-slate-800 border-slate-700">
-                        <CardContent className="p-4 text-center">
-                            <CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-400" />
-                            <p className="text-2xl font-bold text-white">{groupedTopics.erledigt.length}</p>
-                            <p className="text-xs text-slate-400">Erledigt</p>
-                        </CardContent>
-                    </Card>
+                {/* Tabs */}
+                <div className="flex gap-2 mb-6">
+                    <Button
+                        onClick={() => setShowArchive(false)}
+                        variant={!showArchive ? 'default' : 'outline'}
+                        className={!showArchive ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                    >
+                        Aktiv
+                    </Button>
+                    <Button
+                        onClick={() => setShowArchive(true)}
+                        variant={showArchive ? 'default' : 'outline'}
+                        className={showArchive ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                    >
+                        <Archive className="w-4 h-4 mr-2" />
+                        Archiv
+                    </Button>
                 </div>
+
+                {/* Stats - nur für aktive Themen */}
+                {!showArchive && (
+                    <div className="grid grid-cols-3 gap-3 mb-6">
+                        <Card className="bg-slate-800 border-slate-700">
+                            <CardContent className="p-4 text-center">
+                                <Clock className="w-6 h-6 mx-auto mb-2 text-amber-400" />
+                                <p className="text-2xl font-bold text-white">{groupedTopics.offen.length}</p>
+                                <p className="text-xs text-slate-400">Offen</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-slate-800 border-slate-700">
+                            <CardContent className="p-4 text-center">
+                                <MessageSquare className="w-6 h-6 mx-auto mb-2 text-purple-400" />
+                                <p className="text-2xl font-bold text-white">{groupedTopics.besprochen.length}</p>
+                                <p className="text-xs text-slate-400">Besprochen</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-slate-800 border-slate-700">
+                            <CardContent className="p-4 text-center">
+                                <CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-400" />
+                                <p className="text-2xl font-bold text-white">{groupedTopics.erledigt.length}</p>
+                                <p className="text-xs text-slate-400">Erledigt</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
                 {/* Info für Mitarbeiter */}
                 {!permissions.isManager && (
@@ -213,50 +255,88 @@ export default function TeamMeeting() {
                 )}
 
                 {/* Topics by Status */}
-                {['offen', 'besprochen', 'erledigt'].map(status => (
-                    groupedTopics[status].length > 0 && (
-                        <div key={status} className="mb-6">
-                            <h2 className="text-sm font-semibold text-slate-400 uppercase mb-3">
-                                {status === 'offen' ? 'Offene Themen' : status === 'besprochen' ? 'Besprochen' : 'Erledigt'}
-                            </h2>
-                            <div className="space-y-3">
-                                {groupedTopics[status].map(topic => (
-                                    <Card 
-                                        key={topic.id}
-                                        className="bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-750 transition-colors"
-                                        onClick={() => openDetail(topic)}
-                                    >
-                                        <CardContent className="p-4">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <h3 className="font-semibold text-white">{topic.topic}</h3>
-                                                        <Badge className={priorityColors[topic.priority]}>
-                                                            {topic.priority}
-                                                        </Badge>
+                {!showArchive ? (
+                    ['offen', 'besprochen', 'erledigt'].map(status => (
+                        groupedTopics[status].length > 0 && (
+                            <div key={status} className="mb-6">
+                                <h2 className="text-sm font-semibold text-slate-400 uppercase mb-3">
+                                    {status === 'offen' ? 'Offene Themen' : status === 'besprochen' ? 'Besprochen' : 'Erledigt'}
+                                </h2>
+                                <div className="space-y-3">
+                                    {groupedTopics[status].map(topic => (
+                                        <Card 
+                                            key={topic.id}
+                                            className="bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-750 transition-colors"
+                                            onClick={() => openDetail(topic)}
+                                        >
+                                            <CardContent className="p-4">
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <h3 className="font-semibold text-white">{topic.topic}</h3>
+                                                            <Badge className={priorityColors[topic.priority]}>
+                                                                {topic.priority}
+                                                            </Badge>
+                                                        </div>
+                                                        {topic.description && (
+                                                            <p className="text-sm text-slate-400 mb-2 line-clamp-2">
+                                                                {topic.description}
+                                                            </p>
+                                                        )}
+                                                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                                                            <span>Von: {topic.employee_name}</span>
+                                                            <span>•</span>
+                                                            <span>{format(new Date(topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
+                                                        </div>
                                                     </div>
-                                                    {topic.description && (
-                                                        <p className="text-sm text-slate-400 mb-2 line-clamp-2">
-                                                            {topic.description}
-                                                        </p>
-                                                    )}
-                                                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                                                        <span>Von: {topic.employee_name}</span>
-                                                        <span>•</span>
-                                                        <span>{format(new Date(topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
-                                                    </div>
+                                                    <Badge className={statusColors[topic.status]}>
+                                                        {topic.status}
+                                                    </Badge>
                                                 </div>
-                                                <Badge className={statusColors[topic.status]}>
-                                                    {topic.status}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )
+                    ))
+                ) : (
+                    <div className="space-y-3">
+                        {topics.map(topic => (
+                            <Card 
+                                key={topic.id}
+                                className="bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-750 transition-colors"
+                                onClick={() => openDetail(topic)}
+                            >
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <h3 className="font-semibold text-white">{topic.topic}</h3>
+                                                <Badge className={priorityColors[topic.priority]}>
+                                                    {topic.priority}
                                                 </Badge>
                                             </div>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
-                    )
-                ))}
+                                            {topic.description && (
+                                                <p className="text-sm text-slate-400 mb-2 line-clamp-2">
+                                                    {topic.description}
+                                                </p>
+                                            )}
+                                            <div className="flex items-center gap-3 text-xs text-slate-500">
+                                                <span>Von: {topic.employee_name}</span>
+                                                <span>•</span>
+                                                <span>{format(new Date(topic.archived_at || topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
+                                            </div>
+                                        </div>
+                                        <Badge className={statusColors[topic.status]}>
+                                            {topic.status}
+                                        </Badge>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
 
                 {topics.length === 0 && (
                     <div className="text-center py-12">
@@ -401,6 +481,19 @@ export default function TeamMeeting() {
                                         </div>
 
                                         <div className="flex gap-2 pt-4 border-t">
+                                            {selectedTopic.is_archived && (
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        handleArchiveToggle(selectedTopic);
+                                                        setDetailModalOpen(false);
+                                                    }}
+                                                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                                                >
+                                                    <RotateCcw className="w-4 h-4 mr-2" />
+                                                    Wiederherstellen
+                                                </Button>
+                                            )}
                                             <Button
                                                 variant="outline"
                                                 onClick={() => {

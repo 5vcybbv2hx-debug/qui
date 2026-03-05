@@ -71,6 +71,7 @@ import MyProfile from './pages/MyProfile';
 import MyShifts from './pages/MyShifts';
 import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
+import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
@@ -99,7 +100,6 @@ import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
-import Onboarding from './pages/Onboarding';
 import __Layout from './Layout.jsx';
 
 
@@ -128,6 +128,7 @@ export const PAGES = {
     "MyShifts": MyShifts,
     "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
+    "Onboarding": Onboarding,
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
     "PublicDrinkMenu": PublicDrinkMenu,
@@ -156,7 +157,6 @@ export const PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "WeeklyTasks": WeeklyTasks,
-    "Onboarding": Onboarding,
 }
 
 export const pagesConfig = {

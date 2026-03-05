@@ -77,36 +77,52 @@ export default function ShiftSwaps() {
 
     const approveMutation = useMutation({
         mutationFn: async ({ requestId, shiftId, newEmployeeId, newEmployeeName, request }) => {
+            // Update swap request status
             await base44.entities.ShiftSwapRequest.update(requestId, {
                 status: 'genehmigt',
+                target_employee_id: newEmployeeId,
+                target_employee_name: newEmployeeName,
                 approved_by: currentUser?.full_name || currentUser?.email,
                 response_date: new Date().toISOString()
             });
             
+            // Update the actual shift in the calendar
             await base44.entities.Shift.update(shiftId, {
                 employee_id: newEmployeeId,
                 employee_name: newEmployeeName
             });
 
+            // Reject all other bids for this request
+            try {
+                const allBids = await base44.entities.ShiftSwapBid.filter({ swap_request_id: requestId });
+                for (const bid of allBids) {
+                    await base44.entities.ShiftSwapBid.update(bid.id, {
+                        status: bid.bidding_employee_id === newEmployeeId ? 'akzeptiert' : 'abgelehnt'
+                    });
+                }
+            } catch (error) {
+                console.error('Fehler beim Aktualisieren der Bewerbungen:', error);
+            }
+
             try {
                 const requestingEmployee = employees.find(e => e.id === request.requesting_employee_id);
-                const targetEmployee = employees.find(e => e.id === request.target_employee_id);
+                const targetEmployee = employees.find(e => e.id === newEmployeeId);
                 
-                if (requestingEmployee?.email) {
+                if (requestingEmployee) {
                     await base44.entities.Notification.create({
                         type: 'shift_swap',
                         title: 'Schichttausch genehmigt',
-                        message: `Dein Schichttausch für ${format(parseISO(request.shift_date), 'dd.MM.yyyy', { locale: de })} wurde genehmigt.`,
+                        message: `Dein Schichttausch für ${format(parseISO(request.shift_date), 'dd.MM.yyyy', { locale: de })} wurde genehmigt. ${newEmployeeName} übernimmt deine Schicht.`,
                         related_id: requestId,
                         read_by: []
                     });
                 }
                 
-                if (targetEmployee?.email) {
+                if (targetEmployee) {
                     await base44.entities.Notification.create({
                         type: 'shift_swap',
-                        title: 'Schichttausch genehmigt',
-                        message: `Der Schichttausch mit ${request.requesting_employee_name} am ${format(parseISO(request.shift_date), 'dd.MM.yyyy', { locale: de })} wurde genehmigt.`,
+                        title: 'Schichttausch genehmigt – Du übernimmst die Schicht',
+                        message: `Du übernimmst die Schicht von ${request.requesting_employee_name} am ${format(parseISO(request.shift_date), 'dd.MM.yyyy', { locale: de })}.`,
                         related_id: requestId,
                         read_by: []
                     });
@@ -117,19 +133,27 @@ export default function ShiftSwaps() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['shift-swap-requests']);
+            queryClient.invalidateQueries(['shift-swap-bids']);
             queryClient.invalidateQueries(['shifts']);
             setSelectedRequest(null);
-            toast.success('Tauschanfrage genehmigt - Kalender wurde aktualisiert');
+            toast.success('Schichttausch genehmigt – Kalender wurde aktualisiert');
         }
     });
 
-    const handleApprove = (request) => {
-        if (confirm('Schichttausch genehmigen? Der Kalender wird automatisch aktualisiert.')) {
+    const handleApprove = (request, bidEmployeeId, bidEmployeeName) => {
+        // For marketplace requests, require selecting a bidder
+        if (request.marketplace && !bidEmployeeId) {
+            toast.error('Bitte wähle einen Bewerber aus');
+            return;
+        }
+        const newEmployeeId = bidEmployeeId || request.target_employee_id;
+        const newEmployeeName = bidEmployeeName || request.target_employee_name;
+        if (confirm(`Schichttausch genehmigen? ${newEmployeeName} übernimmt die Schicht. Der Kalender wird automatisch aktualisiert.`)) {
             approveMutation.mutate({
                 requestId: request.id,
                 shiftId: request.shift_id,
-                newEmployeeId: request.target_employee_id,
-                newEmployeeName: request.target_employee_name,
+                newEmployeeId,
+                newEmployeeName,
                 request: request
             });
         }

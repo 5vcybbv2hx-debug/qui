@@ -27,24 +27,28 @@ export default function TimeManagementPage() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-                    <TabsList className="grid w-full grid-cols-2 bg-card border border-border h-auto p-1">
+                    <TabsList className={`grid w-full bg-card border border-border h-auto p-1 ${permissions.isManager ? 'grid-cols-2' : 'grid-cols-1'}`}>
                         <TabsTrigger value="tracking" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                             <Clock className="w-5 h-5 sm:w-4 sm:h-4" />
                             <span>Zeiterfassung</span>
                         </TabsTrigger>
-                        <TabsTrigger value="terminal" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
-                            <LogIn className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Terminal</span>
-                        </TabsTrigger>
+                        {permissions.isManager && (
+                            <TabsTrigger value="terminal" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                                <LogIn className="w-5 h-5 sm:w-4 sm:h-4" />
+                                <span>Terminal</span>
+                            </TabsTrigger>
+                        )}
                     </TabsList>
 
                     <TabsContent value="tracking" className="space-y-0">
                         <TimeTrackingPage />
                     </TabsContent>
 
-                    <TabsContent value="terminal" className="space-y-0">
-                        <TerminalClockPage />
-                    </TabsContent>
+                    {permissions.isManager && (
+                        <TabsContent value="terminal" className="space-y-0">
+                            <TerminalClockPage />
+                        </TabsContent>
+                    )}
                 </Tabs>
             </div>
         </div>

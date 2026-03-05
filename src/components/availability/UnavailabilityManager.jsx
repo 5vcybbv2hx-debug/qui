@@ -1,0 +1,160 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { format, parseISO } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { Clock, CheckCircle2, XCircle, MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+
+export default function UnavailabilityManager() {
+    const queryClient = useQueryClient();
+    const [selectedReq, setSelectedReq] = useState(null);
+    const [responseNote, setResponseNote] = useState('');
+
+    const { data: requests = [] } = useQuery({
+        queryKey: ['unavailability-requests-all'],
+        queryFn: () => base44.entities.UnavailabilityRequest.list('-date', 200)
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, status, note }) => base44.entities.UnavailabilityRequest.update(id, {
+            status,
+            response_note: note,
+            responded_by: 'Manager'
+        }),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['unavailability-requests-all']);
+            setSelectedReq(null);
+            setResponseNote('');
+        }
+    });
+
+    const pending = requests.filter(r => r.status === 'ausstehend');
+    const decided = requests.filter(r => r.status !== 'ausstehend');
+
+    const handleDecide = (status) => {
+        if (!selectedReq) return;
+        updateMutation.mutate({ id: selectedReq.id, status, note: responseNote });
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Ausstehend */}
+            <div>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-yellow-400" />
+                    Ausstehend ({pending.length})
+                </h3>
+                {pending.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-4">Keine ausstehenden Termine</p>
+                ) : (
+                    <div className="space-y-2">
+                        {pending.map(req => (
+                            <Card key={req.id} className="p-4 bg-yellow-500/5 border-yellow-500/20 cursor-pointer hover:border-yellow-500/40 transition-all"
+                                onClick={() => { setSelectedReq(req); setResponseNote(''); }}>
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="font-semibold text-white text-sm">{req.employee_name}</p>
+                                            <Badge className="bg-yellow-600/20 text-yellow-400 border-yellow-600/30 text-xs">Ausstehend</Badge>
+                                        </div>
+                                        <p className="text-sm text-amber-300 font-medium">
+                                            {format(parseISO(req.date), 'EEE, dd. MMM yyyy', { locale: de })}
+                                            {req.end_date && req.end_date !== req.date && (
+                                                <span className="text-slate-400"> – {format(parseISO(req.end_date), 'dd. MMM', { locale: de })}</span>
+                                            )}
+                                        </p>
+                                        <p className="text-sm text-slate-300 mt-1">{req.reason}</p>
+                                    </div>
+                                    <div className="flex gap-2 shrink-0">
+                                        <Button size="sm" className="bg-green-700 hover:bg-green-600 text-white gap-1"
+                                            onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: req.id, status: 'genehmigt', note: '' }); }}>
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button size="sm" className="bg-red-700 hover:bg-red-600 text-white gap-1"
+                                            onClick={e => { e.stopPropagation(); setSelectedReq(req); setResponseNote(''); }}>
+                                            <XCircle className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Entschieden */}
+            {decided.length > 0 && (
+                <div>
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Bereits entschieden</h3>
+                    <div className="space-y-2">
+                        {decided.slice(0, 10).map(req => (
+                            <Card key={req.id} className="p-3 bg-slate-900 border-slate-800 opacity-75">
+                                <div className="flex items-center gap-3">
+                                    {req.status === 'genehmigt'
+                                        ? <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                                        : <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                                    }
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-slate-300">{req.employee_name} – {format(parseISO(req.date), 'dd. MMM', { locale: de })}</p>
+                                        <p className="text-xs text-slate-500 truncate">{req.reason}</p>
+                                    </div>
+                                    <Badge className={req.status === 'genehmigt'
+                                        ? 'bg-green-600/20 text-green-400 border-green-600/30 text-xs'
+                                        : 'bg-red-600/20 text-red-400 border-red-600/30 text-xs'}>
+                                        {req.status}
+                                    </Badge>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Entscheid-Dialog */}
+            <Dialog open={!!selectedReq} onOpenChange={() => { setSelectedReq(null); setResponseNote(''); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Termin entscheiden</DialogTitle>
+                    </DialogHeader>
+                    {selectedReq && (
+                        <div className="space-y-4 mt-2">
+                            <div className="p-4 bg-slate-800 rounded-lg space-y-1">
+                                <p className="font-semibold text-white">{selectedReq.employee_name}</p>
+                                <p className="text-amber-400 text-sm font-medium">
+                                    {format(parseISO(selectedReq.date), 'EEE, dd. MMM yyyy', { locale: de })}
+                                    {selectedReq.end_date && selectedReq.end_date !== selectedReq.date && (
+                                        <span> – {format(parseISO(selectedReq.end_date), 'dd. MMM', { locale: de })}</span>
+                                    )}
+                                </p>
+                                <p className="text-slate-300 text-sm">{selectedReq.reason}</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="flex items-center gap-1"><MessageSquare className="w-4 h-4" /> Notiz (optional)</Label>
+                                <Textarea
+                                    value={responseNote}
+                                    onChange={e => setResponseNote(e.target.value)}
+                                    placeholder="Begründung oder Hinweis..."
+                                    rows={2}
+                                />
+                            </div>
+                            <div className="flex gap-3">
+                                <Button className="flex-1 bg-green-700 hover:bg-green-600 gap-2" onClick={() => handleDecide('genehmigt')}>
+                                    <CheckCircle2 className="w-4 h-4" /> Genehmigen
+                                </Button>
+                                <Button className="flex-1 bg-red-700 hover:bg-red-600 gap-2" onClick={() => handleDecide('abgelehnt')}>
+                                    <XCircle className="w-4 h-4" /> Ablehnen
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}

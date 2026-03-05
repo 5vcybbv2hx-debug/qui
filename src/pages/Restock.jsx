@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
 import { Scan, Camera, Check, Trash2, CheckCheck, Plus, Pencil } from 'lucide-react';
 import { Button } from "@/components/ui/button";

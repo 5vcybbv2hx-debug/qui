@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { Plus, ShoppingCart, Trash2, Check, Clock, Package, Camera, Search } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';

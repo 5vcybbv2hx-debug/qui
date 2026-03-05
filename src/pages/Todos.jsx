@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, CheckSquare, Tag } from 'lucide-react';
+import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import TodoCategoryManager, { loadCategories } from '@/components/todos/TodoCategoryManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';

@@ -372,7 +372,7 @@ export default function ShiftSwaps() {
                                     placeholder="Schichten durchsuchen..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 bg-slate-900/50 border-slate-800/50 text-white placeholder:text-slate-500"
+                                    className="pl-10"
                                 />
                             </div>
                         </div>

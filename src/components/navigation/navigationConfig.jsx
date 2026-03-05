@@ -1,3 +1,4 @@
+
 import {
     Home, Calendar, Users, Package, Wine, BookOpen,
     CalendarCheck, CheckSquare, Sparkles, Wrench, TrendingUp,
@@ -73,7 +74,7 @@ export const navigationSections = [
         title: 'Einstellungen',
         items: [
             { name: 'Einstellungen', page: 'Settings', icon: Settings, permission: 'canViewDashboard', color: 'from-slate-500 to-slate-600' },
-            { name: 'Benachrichtigungen', page: 'NotificationSettings', icon: BellRing, permission: 'canViewDashboard', color: 'from-orange-400 to-red-500' },
+
             { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'isManager', color: 'from-indigo-400 to-blue-500' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Building2, permission: 'isManager', color: 'from-zinc-500 to-slate-600' },
         ]

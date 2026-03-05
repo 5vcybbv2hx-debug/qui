@@ -23,7 +23,12 @@ export default function UnavailabilityList() {
     const queryClient = useQueryClient();
     const [currentEmployee, setCurrentEmployee] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ date: '', end_date: '', start_time: '', end_time: '', notes: '' });
+    const [formData, setFormData] = useState({ date: '', end_date: '', shift_type: '', notes: '' });
+
+    const { data: shiftTypes = [] } = useQuery({
+        queryKey: ['shift-types'],
+        queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order')
+    });
 
     useEffect(() => {
         base44.auth.me().then(async (user) => {

@@ -96,19 +96,25 @@ export default function DocumentViewerModal({ document, open, onClose }) {
         </div>
 
         {/* Preview */}
-        <div className="flex-1 overflow-auto px-6 py-4">
+        <div className="flex-1 overflow-auto px-6 py-4 flex items-center justify-center">
           {previewUrl ? (
             isImage ? (
-              <img
-                src={previewUrl}
-                alt={document.name}
-                className="max-w-full max-h-full object-contain mx-auto rounded"
-              />
+              <div className="max-w-full max-h-full">
+                <img
+                  src={previewUrl}
+                  alt={document.name}
+                  className="max-w-full max-h-[600px] object-contain mx-auto rounded"
+                  onError={() => {
+                    // Fallback wenn Bild nicht lädt
+                  }}
+                />
+              </div>
             ) : isPDF ? (
               <iframe
-                src={previewUrl}
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true`}
                 className="w-full h-full rounded"
                 title={document.name}
+                style={{ minHeight: '600px' }}
               />
             ) : null
           ) : (

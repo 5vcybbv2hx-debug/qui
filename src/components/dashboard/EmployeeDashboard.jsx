@@ -416,7 +416,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                                             <Badge className={
                                                 todo.priority === 'dringend' ? 'bg-red-600/20 text-red-400' :
                                                 todo.priority === 'hoch' ? 'bg-orange-600/20 text-orange-400' :
-                                                'bg-slate-600/20 text-slate-400'
+                                                'bg-secondary text-muted-foreground'
                                             }>{todo.priority}</Badge>
                                         </div>
                                     </Card>

@@ -9,6 +9,7 @@ import { FileText, Upload, Search, Filter, FolderOpen, Archive } from 'lucide-re
 import { toast } from 'sonner';
 import DocumentUploader from '@/components/documents/DocumentUploader';
 import DocumentCard from '@/components/documents/DocumentCard';
+import DocumentViewerModal from '@/components/documents/DocumentViewerModal';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 
@@ -18,6 +19,8 @@ export default function DocumentsPage() {
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [entityFilter, setEntityFilter] = useState('all');
     const [showArchived, setShowArchived] = useState(false);
+    const [selectedDocument, setSelectedDocument] = useState(null);
+    const [viewerOpen, setViewerOpen] = useState(false);
     
     const permissions = usePermissions();
     const queryClient = useQueryClient();
@@ -170,6 +173,16 @@ export default function DocumentsPage() {
                     />
                 )}
 
+                {/* Document Viewer Modal */}
+                <DocumentViewerModal
+                    document={selectedDocument}
+                    open={viewerOpen}
+                    onClose={() => {
+                        setViewerOpen(false);
+                        setSelectedDocument(null);
+                    }}
+                />
+
                 {/* Documents Grid */}
                 {isLoading ? (
                     <div className="text-center py-12 text-slate-400">Lädt...</div>
@@ -201,6 +214,10 @@ export default function DocumentsPage() {
                                             onDelete={() => deleteMutation.mutate(doc.id)}
                                             onArchive={(isArchived) => archiveMutation.mutate({ id: doc.id, isArchived })}
                                             canEdit={permissions.isManager}
+                                            onView={(document) => {
+                                                setSelectedDocument(document);
+                                                setViewerOpen(true);
+                                            }}
                                         />
                                     ))}
                                 </div>

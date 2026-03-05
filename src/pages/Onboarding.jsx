@@ -97,12 +97,15 @@ export default function Onboarding() {
       if (existing) {
         await base44.entities.OnboardingChecklistItem.delete(existing.id);
       } else {
+        const section = EINLERNLISTE.find(s => s.id === sectionId);
         await base44.entities.OnboardingChecklistItem.create({
           key,
           employee_id: employeeId,
           employee_name: employeeName,
           section_id: sectionId,
           item_index: itemIndex,
+          category: section?.title || sectionId,
+          item_title: section?.items[itemIndex] || key,
         });
       }
     },

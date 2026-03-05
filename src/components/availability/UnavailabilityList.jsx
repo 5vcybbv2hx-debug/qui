@@ -143,15 +143,20 @@ export default function UnavailabilityList() {
                                 <Input type="date" value={formData.end_date} min={formData.date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} />
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                                <Label>Wunsch-Beginn</Label>
-                                <Input type="time" value={formData.start_time} onChange={e => setFormData({ ...formData, start_time: e.target.value })} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Wunsch-Ende</Label>
-                                <Input type="time" value={formData.end_time} onChange={e => setFormData({ ...formData, end_time: e.target.value })} />
-                            </div>
+                        <div className="space-y-2">
+                            <Label>Gewünschte Schicht (optional)</Label>
+                            <Select value={formData.shift_type} onValueChange={v => setFormData({ ...formData, shift_type: v })}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Schicht auswählen..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {shiftTypes.map(st => (
+                                        <SelectItem key={st.id} value={st.name}>
+                                            {st.name}{st.start_time && st.end_time ? ` (${st.start_time}–${st.end_time})` : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Anmerkung (optional)</Label>

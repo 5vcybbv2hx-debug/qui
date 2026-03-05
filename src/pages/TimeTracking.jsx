@@ -656,16 +656,18 @@ export default function TimeTracking() {
 
                 {/* Add Entry Button and Report Export */}
                 <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    <Button 
-                        onClick={() => {
-                            setSelectedEntry(null);
-                            setModalOpen(true);
-                        }}
-                        className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto text-sm"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {permissions.isManager ? 'Neue Zeiterfassung' : 'Manueller Zeiteintrag'}
-                    </Button>
+                    {permissions.isManager && (
+                        <Button 
+                            onClick={() => {
+                                setSelectedEntry(null);
+                                setModalOpen(true);
+                            }}
+                            className="bg-amber-600 hover:bg-amber-700 w-full sm:w-auto text-sm"
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Neue Zeiterfassung
+                        </Button>
+                    )}
                     <MonthlyReportExport isVisible={permissions.isManager} />
                 </div>
 

@@ -173,20 +173,18 @@ export default function Todos() {
                                <Tag className="w-4 h-4" />
                            </Button>
                        )}
-                       {permissions.canEditTodos && (
-                           <Button 
-                               size="sm"
-                               onClick={() => {
-                                   setSelectedTodo(null);
-                                   setModalOpen(true);
-                               }}
-                               className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20 text-xs h-9"
-                           >
-                               <Plus className="w-4 h-4 mr-1" />
-                               <span className="hidden sm:inline">Neue Aufgabe</span>
-                               <span className="sm:hidden">Neu</span>
-                           </Button>
-                       )}
+                       <Button 
+                           size="sm"
+                           onClick={() => {
+                               setSelectedTodo(null);
+                               setModalOpen(true);
+                           }}
+                           className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20 text-xs h-9"
+                       >
+                           <Plus className="w-4 h-4 mr-1" />
+                           <span className="hidden sm:inline">Neue Aufgabe</span>
+                           <span className="sm:hidden">Neu</span>
+                       </Button>
                     </div>
                 </div>
 

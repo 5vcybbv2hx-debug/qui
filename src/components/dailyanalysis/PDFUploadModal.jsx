@@ -5,13 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
 import { useMutation } from '@tanstack/react-query';
-import { Upload, AlertCircle } from 'lucide-react';
+import { Upload, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuccess }) {
     const [file, setFile] = useState(null);
     const [revenue, setRevenue] = useState('');
     const [notes, setNotes] = useState('');
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisError, setAnalysisError] = useState(null);
+    const [activeTab, setActiveTab] = useState('manual');
 
     const mutation = useMutation({
         mutationFn: async () => {
@@ -38,6 +42,58 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
         }
     });
 
+    const handleAnalyzePDF = async () => {
+        if (!file) {
+            setAnalysisError('Bitte wählen Sie eine PDF-Datei aus.');
+            return;
+        }
+
+        setAnalyzing(true);
+        setAnalysisError(null);
+
+        try {
+            const uploadResponse = await base44.integrations.Core.UploadFile({ file });
+            const analysisResponse = await base44.integrations.Core.InvokeLLM({
+                prompt: `Analysiere diese Z-Abschlag PDF von einer Bar/Lokal. Extrahiere die folgenden Informationen:
+                - Tagesumsatz / Gesamtumsatz (in Euro)
+                - Datum des Z-Abschlags
+                - Zahlungsarten und deren Summen
+                - Besondere Notizen oder Auffälligkeiten
+
+                Gib die Antwort als JSON zurück mit den Keys: "revenue" (Dezimalzahl), "date" (YYYY-MM-DD), "payment_methods" (Objekt), "notes" (String).`,
+                file_urls: [uploadResponse.file_url],
+                response_json_schema: {
+                    type: 'object',
+                    properties: {
+                        revenue: { type: 'number', description: 'Tagesumsatz in Euro' },
+                        date: { type: 'string', description: 'Datum im Format YYYY-MM-DD' },
+                        payment_methods: { 
+                            type: 'object',
+                            description: 'Zahlungsarten und Summen',
+                            additionalProperties: { type: 'number' }
+                        },
+                        notes: { type: 'string', description: 'Zusätzliche Notizen' }
+                    },
+                    required: ['revenue']
+                }
+            });
+
+            if (analysisResponse.revenue) {
+                setRevenue(analysisResponse.revenue.toString());
+                if (analysisResponse.notes) {
+                    setNotes(analysisResponse.notes);
+                }
+                setActiveTab('review');
+            } else {
+                setAnalysisError('Konnte keinen Umsatz in der PDF finden. Bitte manuell eingeben.');
+            }
+        } catch (error) {
+            setAnalysisError(`Analyse fehlgeschlagen: ${error.message}`);
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!revenue || parseFloat(revenue) <= 0) {
@@ -49,12 +105,19 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogContent className="bg-slate-800 border-slate-700 max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="text-white">Z-Abschlag hochladen</DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-slate-700">
+                        <TabsTrigger value="manual" className="text-slate-300">Manuell</TabsTrigger>
+                        <TabsTrigger value="ai" className="text-slate-300">KI-Analyse</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="manual" className="mt-4">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <Label htmlFor="date" className="text-slate-300">Datum</Label>
                         <Input 
@@ -108,24 +171,133 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
                         />
                     </div>
 
-                    <div className="flex gap-2 pt-4">
-                        <Button 
-                            type="button" 
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                            className="flex-1"
-                        >
-                            Abbrechen
-                        </Button>
-                        <Button 
-                            type="submit"
-                            disabled={mutation.isPending}
-                            className="flex-1 bg-amber-600 hover:bg-amber-700"
-                        >
-                            {mutation.isPending ? 'Wird gespeichert...' : 'Speichern'}
-                        </Button>
-                    </div>
-                </form>
+                            <div className="flex gap-2 pt-4">
+                                <Button 
+                                    type="button" 
+                                    variant="outline"
+                                    onClick={() => onOpenChange(false)}
+                                    className="flex-1"
+                                >
+                                    Abbrechen
+                                </Button>
+                                <Button 
+                                    type="submit"
+                                    disabled={mutation.isPending}
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                >
+                                    {mutation.isPending ? 'Wird gespeichert...' : 'Speichern'}
+                                </Button>
+                            </div>
+                        </form>
+                    </TabsContent>
+
+                    <TabsContent value="ai" className="mt-4 space-y-4">
+                        <div>
+                            <Label htmlFor="ai-pdf" className="text-slate-300">PDF-Datei</Label>
+                            <div className="mt-1 border-2 border-dashed border-slate-600 rounded-lg p-4">
+                                <input 
+                                    id="ai-pdf"
+                                    type="file"
+                                    accept=".pdf"
+                                    onChange={(e) => {
+                                        setFile(e.target.files?.[0] || null);
+                                        setAnalysisError(null);
+                                    }}
+                                    className="text-sm text-slate-400"
+                                />
+                                {file && (
+                                    <p className="text-sm text-green-400 mt-2 flex items-center gap-1">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        {file.name}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {analysisError && (
+                            <Alert className="bg-red-900/20 border-red-800">
+                                <AlertCircle className="h-4 w-4 text-red-400" />
+                                <AlertDescription className="text-red-300">{analysisError}</AlertDescription>
+                            </Alert>
+                        )}
+
+                        <div className="space-y-3">
+                            <Label className="text-slate-300">Analysierte Daten</Label>
+                            <div className="bg-slate-700 rounded-lg p-4 space-y-3">
+                                <div>
+                                    <Label htmlFor="ai-revenue" className="text-xs text-slate-400">Tagesumsatz (€)</Label>
+                                    <Input 
+                                        id="ai-revenue"
+                                        type="number" 
+                                        step="0.01"
+                                        placeholder="Wird automatisch gefüllt"
+                                        value={revenue}
+                                        onChange={(e) => setRevenue(e.target.value)}
+                                        className="bg-slate-800 border-slate-600 text-white mt-1"
+                                        disabled={analyzing}
+                                    />
+                                </div>
+
+                                <div>
+                                    <Label htmlFor="ai-notes" className="text-xs text-slate-400">Notizen</Label>
+                                    <Input 
+                                        id="ai-notes"
+                                        type="text" 
+                                        placeholder="Zusätzliche Notizen"
+                                        value={notes}
+                                        onChange={(e) => setNotes(e.target.value)}
+                                        className="bg-slate-800 border-slate-600 text-white mt-1"
+                                        disabled={analyzing}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-4">
+                            <Button 
+                                type="button" 
+                                variant="outline"
+                                onClick={() => {
+                                    setActiveTab('manual');
+                                    setAnalysisError(null);
+                                }}
+                                className="flex-1"
+                                disabled={analyzing}
+                            >
+                                Zurück
+                            </Button>
+                            <Button 
+                                type="button"
+                                onClick={handleAnalyzePDF}
+                                disabled={analyzing || !file}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                            >
+                                {analyzing ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Analysiert...
+                                    </>
+                                ) : (
+                                    'PDF analysieren'
+                                )}
+                            </Button>
+                        </div>
+
+                        {revenue && (
+                            <Button 
+                                type="button"
+                                onClick={() => {
+                                    if (revenue && parseFloat(revenue) > 0) {
+                                        setActiveTab('manual');
+                                    }
+                                }}
+                                className="w-full bg-amber-600 hover:bg-amber-700"
+                            >
+                                Weiter zu Überprüfung
+                            </Button>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </DialogContent>
         </Dialog>
     );

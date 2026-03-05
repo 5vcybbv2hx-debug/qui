@@ -268,7 +268,7 @@ export default function TeamMeeting() {
                 {/* Terminwünsche – nur für Manager sichtbar */}
                 {permissions.isManager && (
                     <div className="mt-8 border-t border-slate-700 pt-6">
-                        <h2 className="text-lg font-bold text-white mb-4">Terminwünsche der Mitarbeiter</h2>
+                        <h2 className="text-lg font-bold text-white mb-4">Wunschtage der Aushilfen</h2>
                         <UnavailabilityManager />
                     </div>
                 )}

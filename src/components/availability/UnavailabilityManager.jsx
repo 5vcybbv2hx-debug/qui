@@ -48,10 +48,10 @@ export default function UnavailabilityManager() {
             <div>
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-yellow-400" />
-                    Ausstehend ({pending.length})
+                    Wünsche ausstehend ({pending.length})
                 </h3>
                 {pending.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-4">Keine ausstehenden Termine</p>
+                    <p className="text-sm text-slate-500 text-center py-4">Keine ausstehenden Wunschtage</p>
                 ) : (
                     <div className="space-y-2">
                         {pending.map(req => (
@@ -72,13 +72,13 @@ export default function UnavailabilityManager() {
                                         <p className="text-sm text-slate-300 mt-1">{req.reason}</p>
                                     </div>
                                     <div className="flex gap-2 shrink-0">
-                                        <Button size="sm" className="bg-green-700 hover:bg-green-600 text-white gap-1"
+                                        <Button size="sm" className="bg-green-700 hover:bg-green-600 text-white gap-1 text-xs px-2"
                                             onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: req.id, status: 'genehmigt', note: '' }); }}>
-                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            <CheckCircle2 className="w-3.5 h-3.5" /> Einplanen
                                         </Button>
-                                        <Button size="sm" className="bg-red-700 hover:bg-red-600 text-white gap-1"
+                                        <Button size="sm" className="bg-red-700 hover:bg-red-600 text-white gap-1 text-xs px-2"
                                             onClick={e => { e.stopPropagation(); setSelectedReq(req); setResponseNote(''); }}>
-                                            <XCircle className="w-3.5 h-3.5" />
+                                            <XCircle className="w-3.5 h-3.5" /> Ablehnen
                                         </Button>
                                     </div>
                                 </div>
@@ -120,7 +120,7 @@ export default function UnavailabilityManager() {
             <Dialog open={!!selectedReq} onOpenChange={() => { setSelectedReq(null); setResponseNote(''); }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Termin entscheiden</DialogTitle>
+                        <DialogTitle>Wunsch ablehnen</DialogTitle>
                     </DialogHeader>
                     {selectedReq && (
                         <div className="space-y-4 mt-2">
@@ -144,8 +144,8 @@ export default function UnavailabilityManager() {
                                 />
                             </div>
                             <div className="flex gap-3">
-                                <Button className="flex-1 bg-green-700 hover:bg-green-600 gap-2" onClick={() => handleDecide('genehmigt')}>
-                                    <CheckCircle2 className="w-4 h-4" /> Genehmigen
+                                <Button variant="outline" className="flex-1" onClick={() => { setSelectedReq(null); setResponseNote(''); }}>
+                                    Abbrechen
                                 </Button>
                                 <Button className="flex-1 bg-red-700 hover:bg-red-600 gap-2" onClick={() => handleDecide('abgelehnt')}>
                                     <XCircle className="w-4 h-4" /> Ablehnen

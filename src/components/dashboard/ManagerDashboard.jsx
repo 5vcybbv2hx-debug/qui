@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import TodayOverview from '@/components/dashboard/TodayOverview';
+import ShiftSwapApprovalCard from '@/components/dashboard/ShiftSwapApprovalCard';
 
 export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts }) {
     const today = format(new Date(), 'yyyy-MM-dd');

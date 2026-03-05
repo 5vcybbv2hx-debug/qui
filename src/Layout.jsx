@@ -310,17 +310,17 @@ export default function Layout({ children, currentPageName }) {
                         <DrawerHeader className="border-b border-border">
                             <DrawerTitle className="text-foreground">Menü</DrawerTitle>
                         </DrawerHeader>
-                        <nav className="overflow-y-auto p-4 space-y-6">
+                        <nav className="overflow-y-auto p-4">
                             {navigationSections.map((section) => {
                                 const visibleItems = section.items.filter(item => permissions[item.permission]);
                                 if (visibleItems.length === 0) return null;
 
                                 return (
-                                    <div key={section.title}>
+                                    <div key={section.title} className="mb-6">
                                         <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
                                             {section.title}
                                         </h3>
-                                        <div className="space-y-1">
+                                        <div className="grid grid-cols-3 gap-2">
                                             {visibleItems.map((item) => {
                                                 const isActive = currentPageName === item.page;
                                                 const handleMobileNavClick = (e) => {
@@ -337,10 +337,10 @@ export default function Layout({ children, currentPageName }) {
                                                         to={createPageUrl(item.page)}
                                                         onClick={handleMobileNavClick}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all",
+                                                            "flex flex-col items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all text-center",
                                                             isActive 
                                                                 ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
-                                                                : "text-muted-foreground hover:bg-accent/50 active:bg-accent"
+                                                                : "bg-secondary/50 text-muted-foreground hover:bg-accent/50 active:bg-accent"
                                                         )}
                                                     >
                                                         <item.icon className="w-5 h-5" />

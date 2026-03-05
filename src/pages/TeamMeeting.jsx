@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check } from 'lucide-react';
+import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,50 @@ export default function TeamMeeting() {
         },
         enabled: !!currentEmployee || permissions.isManager
     });
+
+    // Get today's meeting RSVP
+    const { data: rsvpData = [] } = useQuery({
+        queryKey: ['team-meeting-rsvp-today'],
+        queryFn: async () => {
+            const today = format(new Date(), 'yyyy-MM-dd');
+            return base44.entities.TeamMeetingRSVP.filter({ meeting_date: today });
+        }
+    });
+
+    const createRsvpMutation = useMutation({
+        mutationFn: (data) => base44.entities.TeamMeetingRSVP.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['team-meeting-rsvp-today']);
+        }
+    });
+
+    const updateRsvpMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.TeamMeetingRSVP.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['team-meeting-rsvp-today']);
+        }
+    });
+
+    const handleRsvp = (status) => {
+        if (!currentEmployee) return;
+        
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const existingRsvp = rsvpData.find(r => r.employee_id === currentEmployee.id);
+        
+        if (existingRsvp) {
+            updateRsvpMutation.mutate({
+                id: existingRsvp.id,
+                data: { status }
+            });
+        } else {
+            createRsvpMutation.mutate({
+                meeting_date: today,
+                employee_id: currentEmployee.id,
+                employee_name: currentEmployee.name,
+                status
+            });
+        }
+    };
 
     const topics = showArchive 
         ? allTopics.filter(t => t.is_archived)
@@ -168,7 +212,30 @@ export default function TeamMeeting() {
                             {permissions.isManager ? 'Besprechungspunkte vom Team' : 'Reiche Themen für die nächste Teamsitzung ein'}
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        {/* RSVP für heutige Teamsitzung – nur für nicht-Manager */}
+                        {!permissions.isManager && currentEmployee && (
+                            <div className="flex gap-2 bg-slate-800 rounded-lg p-2">
+                                <Button
+                                    onClick={() => handleRsvp('zusage')}
+                                    variant={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'bg-green-600 hover:bg-green-700' : ''}
+                                    title="Zusage zur Teamsitzung heute"
+                                >
+                                    <ThumbsUp className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                    onClick={() => handleRsvp('absage')}
+                                    variant={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'absage' ? 'default' : 'outline'}
+                                    size="sm"
+                                    className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'absage' ? 'bg-red-600 hover:bg-red-700' : ''}
+                                    title="Absage zur Teamsitzung heute"
+                                >
+                                    <ThumbsDown className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
                         {permissions.isManager && (
                             <PDFExportButton
                                 data={topics}
@@ -239,6 +306,29 @@ export default function TeamMeeting() {
                             </CardContent>
                         </Card>
                     </div>
+                )}
+
+                {/* Manager RSVP Übersicht */}
+                {permissions.isManager && (
+                    <Card className="bg-slate-800 border-slate-700 p-4 mb-6">
+                        <div className="space-y-3">
+                            <h3 className="font-semibold text-white">Zusagen für heute</h3>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-green-400">{rsvpData.filter(r => r.status === 'zusage').length}</p>
+                                    <p className="text-xs text-green-300">Zugesagt</p>
+                                </div>
+                                <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-red-400">{rsvpData.filter(r => r.status === 'absage').length}</p>
+                                    <p className="text-xs text-red-300">Abgesagt</p>
+                                </div>
+                                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-slate-300">{(rsvpData.length)}</p>
+                                    <p className="text-xs text-slate-400">Gesamt</p>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
                 )}
 
                 {/* Info für Mitarbeiter */}

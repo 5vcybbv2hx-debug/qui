@@ -74,6 +74,7 @@ import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
+import PublicDrinkMenu from './pages/PublicDrinkMenu';
 import PublicMenu from './pages/PublicMenu';
 import PublicReservation from './pages/PublicReservation';
 import QRCodes from './pages/QRCodes';
@@ -99,7 +100,6 @@ import Vacation from './pages/Vacation';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
-import PublicDrinkMenu from './pages/PublicDrinkMenu';
 import __Layout from './Layout.jsx';
 
 
@@ -131,6 +131,7 @@ export const PAGES = {
     "Onboarding": Onboarding,
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
+    "PublicDrinkMenu": PublicDrinkMenu,
     "PublicMenu": PublicMenu,
     "PublicReservation": PublicReservation,
     "QRCodes": QRCodes,
@@ -156,7 +157,6 @@ export const PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "WeeklyTasks": WeeklyTasks,
-    "PublicDrinkMenu": PublicDrinkMenu,
 }
 
 export const pagesConfig = {

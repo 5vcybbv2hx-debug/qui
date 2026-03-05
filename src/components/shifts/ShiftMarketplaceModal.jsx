@@ -112,16 +112,16 @@ export default function ShiftMarketplaceModal({ open, onOpenChange }) {
                                         {/* Header */}
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1">
-                                                <p className="font-semibold text-slate-900 flex items-center gap-2">
+                                                <p className="font-semibold text-foreground flex items-center gap-2">
                                                     {requestingEmployee?.name} sucht Tausch
                                                     {hasApplied && (
-                                                        <Badge className="bg-blue-100 text-blue-700 text-xs">
+                                                        <Badge className="bg-blue-600/20 text-blue-400 text-xs">
                                                             <CheckCircle2 className="w-3 h-3 mr-1" />
                                                             Du hast dich beworben
                                                         </Badge>
                                                     )}
                                                 </p>
-                                                <p className="text-xs text-slate-500 mt-1">
+                                                <p className="text-xs text-muted-foreground mt-1">
                                                     Erstellt: {format(parseISO(shift.created_date), 'dd.MM.yyyy HH:mm', { locale: de })}
                                                 </p>
                                             </div>

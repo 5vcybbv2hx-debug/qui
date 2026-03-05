@@ -10,7 +10,7 @@ import TerminalClockPage from './TerminalClock';
 
 export default function TimeManagementPage() {
     const permissions = usePermissions();
-    const [activeTab, setActiveTab] = useState(permissions.isTerminal ? 'terminal' : 'tracking');
+    const [activeTab, setActiveTab] = useState('tracking');
 
     if (!permissions.canViewDashboard && !permissions.isTerminal) {
         return <PermissionDenied message="Du hast keine Berechtigung für die Zeiterfassung." />;

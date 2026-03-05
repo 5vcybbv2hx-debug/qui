@@ -67,6 +67,7 @@ export async function loadPermissions() {
             canViewOnboarding: isTerminal ? false : (perms.canViewOnboarding ?? isManager),
             canViewInventory: isTerminal ? false : (perms.canViewInventory ?? isManager),
             canViewWastage: isTerminal ? false : (perms.canViewWastage ?? isManager),
+            canViewWarehouse: isTerminal ? false : (perms.canViewWarehouse ?? isManager),
         };
 
         loadingPromise = null;

@@ -11,6 +11,8 @@ import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
 
+const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/FrOmvmQFvvBJvqo4CJaBPA';
+
 export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuccess }) {
      const queryClient = useQueryClient();
      const [formData, setFormData] = useState({

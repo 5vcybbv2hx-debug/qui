@@ -128,21 +128,21 @@ export default function ShiftMarketplaceModal({ open, onOpenChange }) {
                                         </div>
 
                                         {/* Shift Info */}
-                                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
-                                            <p className="text-sm font-medium text-blue-900 mb-2">Schicht zum Tauschen:</p>
-                                            <p className="text-sm font-semibold text-slate-700">
+                                        <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/20">
+                                            <p className="text-sm font-medium text-blue-400 mb-2">Schicht zum Tauschen:</p>
+                                            <p className="text-sm font-semibold text-foreground">
                                                 {format(parseISO(shift.shift_date), 'EEEE, d. MMMM yyyy', { locale: de })}
                                             </p>
-                                            <p className="text-sm text-slate-600">
+                                            <p className="text-sm text-muted-foreground">
                                                 {shift.shift_time}
                                             </p>
                                         </div>
 
                                         {/* Grund */}
                                         {shift.reason && (
-                                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                                                <p className="text-xs text-slate-500 font-medium mb-1">Grund:</p>
-                                                <p className="text-sm text-slate-700">{shift.reason}</p>
+                                            <div className="bg-secondary rounded-lg p-3 border border-border">
+                                                <p className="text-xs text-muted-foreground font-medium mb-1">Grund:</p>
+                                                <p className="text-sm text-foreground">{shift.reason}</p>
                                             </div>
                                         )}
 

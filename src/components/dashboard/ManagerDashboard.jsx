@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import TodayOverview from '@/components/dashboard/TodayOverview';
 import ShiftSwapApprovalCard from '@/components/dashboard/ShiftSwapApprovalCard';
+import TeamMeetingReminder from '@/components/dashboard/TeamMeetingReminder';
 
 export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts }) {
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -165,6 +166,9 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                         </Link>
                     ))}
                 </div>
+
+                {/* Team Meeting Reminder */}
+                <TeamMeetingReminder />
 
                 {/* Alerts */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -32,6 +32,12 @@ export default function Articles() {
     const { confirm, Dialog: alertDialog } = useAlertDialog();
     const categoryRefs = useRef({});
 
+    useEffect(() => {
+        const handleOnline = () => syncMutations(base44).catch(console.error);
+        window.addEventListener('online', handleOnline);
+        return () => window.removeEventListener('online', handleOnline);
+    }, []);
+
     const [modalOpen, setModalOpen] = useState(false);
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
@@ -57,22 +63,32 @@ export default function Articles() {
     });
 
     const createMutation = useMutation({
-        mutationFn: (data) => {
+        mutationFn: async (data) => {
             if (!data.barcode) {
                 data.barcode = `GEN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            }
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'Article', type: 'create', data });
+                return { ...data, id: `offline-${Date.now()}`, _offline: true };
             }
             return base44.entities.Article.create(data);
         },
         onSuccess: (newArticle) => {
             queryClient.setQueryData(['articles'], (old) => old ? [...old, newArticle] : [newArticle]);
-            queryClient.invalidateQueries(['articles']);
+            if (!newArticle._offline) queryClient.invalidateQueries(['articles']);
             setModalOpen(false);
             setSelectedArticle(null);
         }
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.Article.update(id, data),
+        mutationFn: async ({ id, data }) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'Article', type: 'update', id, data });
+                return { queued: true };
+            }
+            return base44.entities.Article.update(id, data);
+        },
         onMutate: async ({ id, data }) => {
             await queryClient.cancelQueries(['articles']);
             const previous = queryClient.getQueryData(['articles']);
@@ -82,15 +98,21 @@ export default function Articles() {
         onError: (err, variables, context) => {
             queryClient.setQueryData(['articles'], context.previous);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['articles']);
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['articles']);
             setModalOpen(false);
             setSelectedArticle(null);
         }
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.Article.delete(id),
+        mutationFn: async (id) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'Article', type: 'delete', id });
+                return { queued: true };
+            }
+            return base44.entities.Article.delete(id);
+        },
         onMutate: async (id) => {
             await queryClient.cancelQueries(['articles']);
             const previous = queryClient.getQueryData(['articles']);
@@ -100,7 +122,9 @@ export default function Articles() {
         onError: (err, variables, context) => {
             queryClient.setQueryData(['articles'], context.previous);
         },
-        onSuccess: () => queryClient.invalidateQueries(['articles'])
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['articles']);
+        }
     });
 
     const handleSave = (data, id) => {

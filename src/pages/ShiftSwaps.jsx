@@ -440,7 +440,7 @@ export default function ShiftSwaps() {
                             {pendingRequests.length > 0 ? (
                                 <div className="grid gap-4">
                                     {pendingRequests.map(request => (
-                                        <Card key={request.id} className="p-5 bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl border-l-4 border-l-amber-500">
+                                        <Card key={request.id} className="p-5 bg-card border-border hover:border-amber-500/30 transition-all border-l-4 border-l-amber-500">
                                             <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-3">
@@ -448,42 +448,42 @@ export default function ShiftSwaps() {
                                                             <Clock className="w-3 h-3 mr-1" />
                                                             Ausstehend
                                                         </Badge>
-                                                        <span className="text-xs text-slate-500">
+                                                        <span className="text-xs text-muted-foreground">
                                                             {format(parseISO(request.created_date), 'dd.MM.yyyy HH:mm', { locale: de })}
                                                         </span>
                                                     </div>
-                                                    
+
                                                     <div className="space-y-2 mb-4">
-                                                        <p className="text-lg font-semibold text-white">
+                                                        <p className="text-lg font-semibold text-foreground">
                                                             {request.requesting_employee_name} → {request.target_employee_name}
                                                         </p>
-                                                        <p className="text-sm text-slate-300">
+                                                        <p className="text-sm text-muted-foreground">
                                                             {format(parseISO(request.shift_date), 'EEEE, d. MMMM yyyy', { locale: de })} • {request.shift_time}
                                                         </p>
                                                     </div>
-                                                    
+
                                                     {request.reason && (
-                                                       <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                                           <p className="text-xs text-slate-500 mb-1">Grund:</p>
-                                                           <p className="text-sm text-slate-300">{request.reason}</p>
+                                                       <div className="p-3 bg-secondary rounded-lg border border-border">
+                                                           <p className="text-xs text-muted-foreground mb-1">Grund:</p>
+                                                           <p className="text-sm text-foreground">{request.reason}</p>
                                                        </div>
                                                     )}
 
-                                                    {/* Show bids for marketplace requests */}
-                                                    {request.marketplace && (() => {
-                                                       const requestBids = bids.filter(b => b.swap_request_id === request.id && b.status === 'ausstehend');
-                                                       if (requestBids.length === 0) return (
-                                                           <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                                               <p className="text-xs text-slate-500">Noch keine Bewerber</p>
-                                                           </div>
-                                                       );
-                                                       return (
-                                                           <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                                               <p className="text-xs text-slate-400 font-medium mb-2">Bewerber ({requestBids.length}):</p>
-                                                               <div className="space-y-2">
-                                                                   {requestBids.map(bid => (
-                                                                       <div key={bid.id} className="flex items-center justify-between">
-                                                                           <span className="text-sm text-slate-300">{bid.bidding_employee_name}</span>
+                                                     {/* Show bids for marketplace requests */}
+                                                     {request.marketplace && (() => {
+                                                        const requestBids = bids.filter(b => b.swap_request_id === request.id && b.status === 'ausstehend');
+                                                        if (requestBids.length === 0) return (
+                                                            <div className="p-3 bg-secondary rounded-lg border border-border">
+                                                                <p className="text-xs text-muted-foreground">Noch keine Bewerber</p>
+                                                            </div>
+                                                        );
+                                                        return (
+                                                            <div className="p-3 bg-secondary rounded-lg border border-border">
+                                                                <p className="text-xs text-muted-foreground font-medium mb-2">Bewerber ({requestBids.length}):</p>
+                                                                <div className="space-y-2">
+                                                                    {requestBids.map(bid => (
+                                                                        <div key={bid.id} className="flex items-center justify-between">
+                                                                            <span className="text-sm text-foreground">{bid.bidding_employee_name}</span>
                                                                            <Button
                                                                                size="sm"
                                                                                onClick={() => handleApprove(request, bid.bidding_employee_id, bid.bidding_employee_name)}

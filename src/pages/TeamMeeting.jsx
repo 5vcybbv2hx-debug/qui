@@ -422,16 +422,20 @@ export default function TeamMeeting() {
                                 )}
 
                                 {/* Offen */}
-                                {employees.length - rsvpData.length > 0 && (
-                                    <div className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-3">
-                                        <p className="text-xs font-semibold text-slate-300 mb-2">OFFEN ({employees.length - rsvpData.length})</p>
-                                        <div className="space-y-1">
-                                            {employees.filter(emp => !rsvpData.find(r => r.employee_id === emp.id)).map(emp => (
-                                                <p key={emp.id} className="text-sm text-slate-400">○ {emp.name}</p>
-                                            ))}
+                                {(() => {
+                                    const respondedEmployeeIds = new Set(rsvpData.map(r => r.employee_id));
+                                    const pendingEmployees = employees.filter(emp => !respondedEmployeeIds.has(emp.id));
+                                    return pendingEmployees.length > 0 ? (
+                                        <div className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-3">
+                                            <p className="text-xs font-semibold text-slate-300 mb-2">OFFEN ({pendingEmployees.length})</p>
+                                            <div className="space-y-1">
+                                                {pendingEmployees.map(emp => (
+                                                    <p key={emp.id} className="text-sm text-slate-400">○ {emp.name}</p>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    ) : null;
+                                })()}
                             </div>
                         </div>
                     </Card>

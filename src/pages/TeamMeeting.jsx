@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw } from 'lucide-react';
+import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -266,12 +266,14 @@ export default function TeamMeeting() {
                                     {groupedTopics[status].map(topic => (
                                         <Card 
                                             key={topic.id}
-                                            className="bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-750 transition-colors"
-                                            onClick={() => openDetail(topic)}
+                                            className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors"
                                         >
                                             <CardContent className="p-4">
                                                 <div className="flex items-start justify-between gap-3">
-                                                    <div className="flex-1">
+                                                    <div 
+                                                        className="flex-1 cursor-pointer"
+                                                        onClick={() => openDetail(topic)}
+                                                    >
                                                         <div className="flex items-center gap-2 mb-2">
                                                             <h3 className="font-semibold text-white">{topic.topic}</h3>
                                                             <Badge className={priorityColors[topic.priority]}>
@@ -289,9 +291,36 @@ export default function TeamMeeting() {
                                                             <span>{format(new Date(topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
                                                         </div>
                                                     </div>
-                                                    <Badge className={statusColors[topic.status]}>
-                                                        {topic.status}
-                                                    </Badge>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <Badge className={statusColors[topic.status]}>
+                                                            {topic.status}
+                                                        </Badge>
+                                                        {status === 'erledigt' && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleStatusChange('offen');
+                                                                }}
+                                                                className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
+                                                                title="Zurück zu offen"
+                                                            >
+                                                                <RotateCcw className="w-4 h-4 text-blue-400" />
+                                                            </button>
+                                                        )}
+                                                        {status !== 'erledigt' && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedTopic(topic);
+                                                                    handleStatusChange('erledigt');
+                                                                }}
+                                                                className="p-2 rounded-lg hover:bg-green-500/20 transition-colors"
+                                                                title="Als erledigt abhaken"
+                                                            >
+                                                                <Check className="w-4 h-4 text-green-400" />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -305,12 +334,14 @@ export default function TeamMeeting() {
                         {topics.map(topic => (
                             <Card 
                                 key={topic.id}
-                                className="bg-slate-800 border-slate-700 cursor-pointer hover:bg-slate-750 transition-colors"
-                                onClick={() => openDetail(topic)}
+                                className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors"
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1">
+                                        <div 
+                                            className="flex-1 cursor-pointer"
+                                            onClick={() => openDetail(topic)}
+                                        >
                                             <div className="flex items-center gap-2 mb-2">
                                                 <h3 className="font-semibold text-white">{topic.topic}</h3>
                                                 <Badge className={priorityColors[topic.priority]}>
@@ -328,9 +359,22 @@ export default function TeamMeeting() {
                                                 <span>{format(new Date(topic.archived_at || topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
                                             </div>
                                         </div>
-                                        <Badge className={statusColors[topic.status]}>
-                                            {topic.status}
-                                        </Badge>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <Badge className={statusColors[topic.status]}>
+                                                {topic.status}
+                                            </Badge>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedTopic(topic);
+                                                    handleArchiveToggle(topic);
+                                                }}
+                                                className="p-2 rounded-lg hover:bg-blue-500/20 transition-colors"
+                                                title="Aus Archiv entfernen"
+                                            >
+                                                <RotateCcw className="w-4 h-4 text-blue-400" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>

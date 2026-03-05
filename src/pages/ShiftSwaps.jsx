@@ -463,14 +463,44 @@ export default function ShiftSwaps() {
                                                     </div>
                                                     
                                                     {request.reason && (
-                                                        <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                                            <p className="text-xs text-slate-500 mb-1">Grund:</p>
-                                                            <p className="text-sm text-slate-300">{request.reason}</p>
-                                                        </div>
+                                                       <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                                           <p className="text-xs text-slate-500 mb-1">Grund:</p>
+                                                           <p className="text-sm text-slate-300">{request.reason}</p>
+                                                       </div>
                                                     )}
-                                                </div>
 
-                                                <div className="flex lg:flex-col gap-2">
+                                                    {/* Show bids for marketplace requests */}
+                                                    {request.marketplace && (() => {
+                                                       const requestBids = bids.filter(b => b.swap_request_id === request.id && b.status === 'ausstehend');
+                                                       if (requestBids.length === 0) return (
+                                                           <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                                               <p className="text-xs text-slate-500">Noch keine Bewerber</p>
+                                                           </div>
+                                                       );
+                                                       return (
+                                                           <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                                               <p className="text-xs text-slate-400 font-medium mb-2">Bewerber ({requestBids.length}):</p>
+                                                               <div className="space-y-2">
+                                                                   {requestBids.map(bid => (
+                                                                       <div key={bid.id} className="flex items-center justify-between">
+                                                                           <span className="text-sm text-slate-300">{bid.bidding_employee_name}</span>
+                                                                           <Button
+                                                                               size="sm"
+                                                                               onClick={() => handleApprove(request, bid.bidding_employee_id, bid.bidding_employee_name)}
+                                                                               className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+                                                                           >
+                                                                               <Check className="w-3 h-3 mr-1" />
+                                                                               Auswählen
+                                                                           </Button>
+                                                                       </div>
+                                                                   ))}
+                                                               </div>
+                                                           </div>
+                                                       );
+                                                    })()}
+                                                    </div>
+
+                                                    <div className="flex lg:flex-col gap-2">
                                                    <Button
                                                        variant="outline"
                                                        onClick={() => handleReject(request)}

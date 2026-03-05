@@ -48,7 +48,7 @@ export default function UnavailabilityList() {
         onSuccess: () => {
             queryClient.invalidateQueries(['unavailability-requests']);
             setModalOpen(false);
-            setFormData({ date: '', end_date: '', start_time: '', end_time: '', notes: '' });
+            setFormData({ date: '', end_date: '', shift_type: '', notes: '' });
         }
     });
 

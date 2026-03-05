@@ -361,8 +361,8 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                         </div>
                         {myUpcomingShifts.length === 0 ? (
                             <Card className="p-8 text-center bg-card border-border">
-                                <Calendar className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                                <p className="text-slate-400">Keine kommenden Schichten</p>
+                                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                                <p className="text-muted-foreground">Keine kommenden Schichten</p>
                             </Card>
                         ) : (
                             <div className="space-y-3">

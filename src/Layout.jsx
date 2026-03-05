@@ -315,14 +315,27 @@ export default function Layout({ children, currentPageName }) {
                                 const visibleItems = section.items.filter(item => permissions[item.permission]);
                                 if (visibleItems.length === 0) return null;
 
+                                const colors = [
+                                    { bg: 'bg-blue-600/20', text: 'text-blue-400', border: 'border-blue-500/30' },
+                                    { bg: 'bg-purple-600/20', text: 'text-purple-400', border: 'border-purple-500/30' },
+                                    { bg: 'bg-pink-600/20', text: 'text-pink-400', border: 'border-pink-500/30' },
+                                    { bg: 'bg-green-600/20', text: 'text-green-400', border: 'border-green-500/30' },
+                                    { bg: 'bg-orange-600/20', text: 'text-orange-400', border: 'border-orange-500/30' },
+                                    { bg: 'bg-cyan-600/20', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+                                    { bg: 'bg-red-600/20', text: 'text-red-400', border: 'border-red-500/30' },
+                                    { bg: 'bg-yellow-600/20', text: 'text-yellow-400', border: 'border-yellow-500/30' },
+                                    { bg: 'bg-indigo-600/20', text: 'text-indigo-400', border: 'border-indigo-500/30' },
+                                ];
+
                                 return (
                                     <div key={section.title} className="mb-6">
                                         <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
                                             {section.title}
                                         </h3>
                                         <div className="grid grid-cols-3 gap-2">
-                                            {visibleItems.map((item) => {
+                                            {visibleItems.map((item, idx) => {
                                                 const isActive = currentPageName === item.page;
+                                                const color = colors[idx % colors.length];
                                                 const handleMobileNavClick = (e) => {
                                                     haptics.selection();
                                                     if (isActive) {
@@ -337,10 +350,10 @@ export default function Layout({ children, currentPageName }) {
                                                         to={createPageUrl(item.page)}
                                                         onClick={handleMobileNavClick}
                                                         className={cn(
-                                                            "flex flex-col items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all text-center",
+                                                            "flex flex-col items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all text-center border",
                                                             isActive 
-                                                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
-                                                                : "bg-secondary/50 text-muted-foreground hover:bg-accent/50 active:bg-accent"
+                                                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20 border-amber-500/50" 
+                                                                : `${color.bg} ${color.text} hover:opacity-80 active:opacity-100 ${color.border}`
                                                         )}
                                                     >
                                                         <item.icon className="w-5 h-5" />

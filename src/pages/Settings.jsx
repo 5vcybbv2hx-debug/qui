@@ -78,6 +78,17 @@ export default function Settings() {
         setDateFormat(savedDateFormat);
         setLanguage(savedLanguage);
         applyTheme(savedTheme);
+
+        // Load notification settings
+        setSoundEnabled(localStorage.getItem('soundEnabled') !== 'false');
+        setVibrationEnabled(localStorage.getItem('vibrationEnabled') !== 'false');
+        setBarcodeSoundEnabled(localStorage.getItem('barcodeSoundEnabled') !== 'false');
+        base44.auth.me().then(user => {
+            setCurrentUser(user);
+            if (user.notification_preferences) {
+                setNotifPreferences(prev => ({ ...prev, ...user.notification_preferences }));
+            }
+        });
     }, []);
 
     const applyTheme = (newTheme) => {

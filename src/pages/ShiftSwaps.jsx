@@ -384,7 +384,7 @@ export default function ShiftSwaps() {
                                         r.shift_id === shift.id && r.status === 'ausstehend'
                                     );
                                     return (
-                                        <Card key={shift.id} className="p-5 bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl">
+                                        <Card key={shift.id} className="p-5 bg-card border-border hover:border-amber-500/30 transition-all">
                                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">
@@ -398,14 +398,14 @@ export default function ShiftSwaps() {
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <p className="text-lg font-semibold text-white mb-1">
+                                                    <p className="text-lg font-semibold text-foreground mb-1">
                                                         {format(parseISO(shift.date), 'EEEE, d. MMMM yyyy', { locale: de })}
                                                     </p>
-                                                    <p className="text-sm text-slate-300">
+                                                    <p className="text-sm text-muted-foreground">
                                                         {shift.start_time} - {shift.end_time}
                                                     </p>
                                                     {shift.notes && (
-                                                        <p className="text-xs text-slate-500 mt-2">{shift.notes}</p>
+                                                        <p className="text-xs text-muted-foreground mt-2">{shift.notes}</p>
                                                     )}
                                                 </div>
                                                 <div>

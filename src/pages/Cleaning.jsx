@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff, Archive } from 'lucide-react';

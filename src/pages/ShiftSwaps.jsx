@@ -304,20 +304,20 @@ export default function ShiftSwaps() {
                                 {myRequests.map(request => {
                                     const isRequester = request.requesting_employee_id === currentEmployee?.id;
                                     return (
-                                        <Card key={request.id} className="p-5 bg-slate-900/50 border-slate-800/50 hover:border-amber-500/30 transition-all backdrop-blur-xl">
+                                        <Card key={request.id} className="p-5 bg-card border-border hover:border-amber-500/30 transition-all">
                                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-3">
                                                         {getStatusBadge(request.status)}
-                                                        <span className="text-xs text-slate-500">
+                                                        <span className="text-xs text-muted-foreground">
                                                             {format(parseISO(request.created_date), 'dd.MM.yyyy HH:mm', { locale: de })}
                                                         </span>
                                                     </div>
                                                     
                                                     <div className="space-y-2">
                                                         <div className="flex items-center gap-2">
-                                                            <RepeatIcon className="w-4 h-4 text-slate-400" />
-                                                            <p className="text-sm font-medium text-white">
+                                                            <RepeatIcon className="w-4 h-4 text-muted-foreground" />
+                                                            <p className="text-sm font-medium text-foreground">
                                                                 {isRequester ? (
                                                                     <>Du → {request.target_employee_name}</>
                                                                 ) : (
@@ -326,22 +326,22 @@ export default function ShiftSwaps() {
                                                             </p>
                                                         </div>
                                                         <div className="flex items-center gap-2">
-                                                            <Calendar className="w-4 h-4 text-slate-400" />
-                                                            <p className="text-sm text-slate-300">
+                                                            <Calendar className="w-4 h-4 text-muted-foreground" />
+                                                            <p className="text-sm text-muted-foreground">
                                                                 {format(parseISO(request.shift_date), 'EEEE, d. MMMM yyyy', { locale: de })} • {request.shift_time}
                                                             </p>
                                                         </div>
                                                     </div>
                                                     
                                                     {request.reason && (
-                                                        <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
-                                                            <p className="text-xs text-slate-500 mb-1">Grund:</p>
-                                                            <p className="text-sm text-slate-300">{request.reason}</p>
+                                                        <div className="mt-3 p-3 bg-secondary rounded-lg border border-border">
+                                                            <p className="text-xs text-muted-foreground mb-1">Grund:</p>
+                                                            <p className="text-sm text-foreground">{request.reason}</p>
                                                         </div>
                                                     )}
 
                                                     {request.approved_by && (
-                                                        <p className="text-xs text-slate-500 mt-3">
+                                                        <p className="text-xs text-muted-foreground mt-3">
                                                             {request.status === 'genehmigt' ? 'Genehmigt' : 'Abgelehnt'} von {request.approved_by} am {format(parseISO(request.response_date), 'dd.MM.yyyy', { locale: de })}
                                                         </p>
                                                     )}

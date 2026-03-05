@@ -108,13 +108,15 @@ export default function TeamMeeting() {
         });
     };
 
-    const handleStatusChange = (status) => {
+    const handleStatusChange = (status, topic = selectedTopic) => {
+        if (!topic) return;
+        
         const updateData = {
-            ...selectedTopic,
+            ...topic,
             status: status
         };
         
-        if (status === 'besprochen' && !selectedTopic.discussed_at) {
+        if (status === 'besprochen' && !topic.discussed_at) {
             updateData.discussed_at = new Date().toISOString();
         }
         
@@ -123,7 +125,7 @@ export default function TeamMeeting() {
             updateData.archived_at = new Date().toISOString();
         }
         
-        updateMutation.mutate({ id: selectedTopic.id, data: updateData });
+        updateMutation.mutate({ id: topic.id, data: updateData });
     };
 
     const handleArchiveToggle = (topic) => {
@@ -299,7 +301,7 @@ export default function TeamMeeting() {
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    handleStatusChange('offen');
+                                                                    handleStatusChange('offen', topic);
                                                                 }}
                                                                 className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
                                                                 title="Zurück zu offen"
@@ -311,8 +313,7 @@ export default function TeamMeeting() {
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    setSelectedTopic(topic);
-                                                                    handleStatusChange('erledigt');
+                                                                    handleStatusChange('erledigt', topic);
                                                                 }}
                                                                 className="p-2 rounded-lg hover:bg-green-500/20 transition-colors"
                                                                 title="Als erledigt abhaken"

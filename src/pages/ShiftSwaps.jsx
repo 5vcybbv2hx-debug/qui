@@ -234,10 +234,10 @@ export default function ShiftSwaps() {
 
     if (loadingRequests) {
         return (
-            <div className="min-h-screen bg-slate-950 p-6 flex items-center justify-center">
+            <div className="min-h-screen bg-background p-6 flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
-                    <p className="text-slate-400">Lade Schichttausch-Anfragen...</p>
+                    <p className="text-muted-foreground">Lade Schichttausch-Anfragen...</p>
                 </div>
             </div>
         );

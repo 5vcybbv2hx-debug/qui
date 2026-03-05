@@ -370,8 +370,9 @@ export default function TeamMeeting() {
                 {/* Manager RSVP Übersicht */}
                 {permissions.isManager && currentSchedule && (
                     <Card className="bg-slate-800 border-slate-700 p-4 mb-6">
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             <h3 className="font-semibold text-white">Zusagen für {format(new Date(currentSchedule.date), 'dd.MM.yyyy', { locale: de })}</h3>
+                            
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 text-center">
                                     <p className="text-2xl font-bold text-green-400">{rsvpData.filter(r => r.status === 'zusage').length}</p>
@@ -382,9 +383,48 @@ export default function TeamMeeting() {
                                     <p className="text-xs text-red-300">Abgesagt</p>
                                 </div>
                                 <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-slate-300">{(rsvpData.length)}</p>
-                                    <p className="text-xs text-slate-400">Gesamt</p>
+                                    <p className="text-2xl font-bold text-slate-300">{employees.length - rsvpData.length}</p>
+                                    <p className="text-xs text-slate-400">Offen</p>
                                 </div>
+                            </div>
+
+                            {/* Detaillierte Liste */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                {/* Zugesagt */}
+                                {rsvpData.filter(r => r.status === 'zusage').length > 0 && (
+                                    <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-green-300 mb-2">ZUGESAGT ({rsvpData.filter(r => r.status === 'zusage').length})</p>
+                                        <div className="space-y-1">
+                                            {rsvpData.filter(r => r.status === 'zusage').map(rsvp => (
+                                                <p key={rsvp.id} className="text-sm text-green-200">✓ {rsvp.employee_name}</p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Abgesagt */}
+                                {rsvpData.filter(r => r.status === 'absage').length > 0 && (
+                                    <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-red-300 mb-2">ABGESAGT ({rsvpData.filter(r => r.status === 'absage').length})</p>
+                                        <div className="space-y-1">
+                                            {rsvpData.filter(r => r.status === 'absage').map(rsvp => (
+                                                <p key={rsvp.id} className="text-sm text-red-200">✗ {rsvp.employee_name}</p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Offen */}
+                                {employees.length - rsvpData.length > 0 && (
+                                    <div className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-3">
+                                        <p className="text-xs font-semibold text-slate-300 mb-2">OFFEN ({employees.length - rsvpData.length})</p>
+                                        <div className="space-y-1">
+                                            {employees.filter(emp => !rsvpData.find(r => r.employee_id === emp.id)).map(emp => (
+                                                <p key={emp.id} className="text-sm text-slate-400">○ {emp.name}</p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Card>

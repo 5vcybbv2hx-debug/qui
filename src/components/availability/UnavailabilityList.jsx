@@ -65,7 +65,7 @@ export default function UnavailabilityList() {
             employee_name: currentEmployee.name,
             date: formData.date,
             end_date: formData.end_date || formData.date,
-            reason: [formData.start_time && formData.end_time ? `${formData.start_time}–${formData.end_time} Uhr` : '', formData.notes].filter(Boolean).join(' | ') || 'Keine weiteren Angaben',
+            reason: [formData.shift_type, formData.notes].filter(Boolean).join(' | ') || 'Keine weiteren Angaben',
             status: 'ausstehend'
         });
     };

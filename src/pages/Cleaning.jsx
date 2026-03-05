@@ -48,11 +48,11 @@ export default function Cleaning() {
         localStorage.setItem('cleaning_pending_updates', JSON.stringify(pendingUpdates));
     }, [pendingUpdates]);
 
-    // Online/offline detection
+    // Online/offline detection + sync
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
-            syncPendingUpdates();
+            syncMutations(base44).then(() => queryClient.invalidateQueries(['cleaning'])).catch(console.error);
         };
         const handleOffline = () => setIsOnline(false);
         window.addEventListener('online', handleOnline);
@@ -62,22 +62,6 @@ export default function Cleaning() {
             window.removeEventListener('offline', handleOffline);
         };
     }, []);
-
-    // Sync pending updates when online
-    const syncPendingUpdates = async () => {
-        if (pendingUpdates.length === 0) return;
-        
-        for (const update of pendingUpdates) {
-            try {
-                await base44.entities.CleaningTask.update(update.id, update.data);
-            } catch (error) {
-                console.error('Sync failed:', error);
-            }
-        }
-        
-        setPendingUpdates([]);
-        queryClient.invalidateQueries(['cleaning']);
-    };
 
     const { data: user } = useQuery({
         queryKey: ['user'],
@@ -132,22 +116,18 @@ export default function Cleaning() {
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => {
-            if (!isOnline) {
-                // Store for later sync
-                setPendingUpdates(prev => [...prev, { id, data }]);
-                // Optimistic update
-                queryClient.setQueryData(['cleaning'], (old) => {
-                    return old.map(task => task.id === id ? { ...task, ...data } : task);
-                });
-                return Promise.resolve();
+        mutationFn: async ({ id, data }) => {
+            if (!navigator.onLine) {
+                await queueMutation({ entityName: 'CleaningTask', type: 'update', id, data });
+                queryClient.setQueryData(['cleaning'], (old) => 
+                    old?.map(task => task.id === id ? { ...task, ...data } : task) || old
+                );
+                return { queued: true };
             }
             return base44.entities.CleaningTask.update(id, data);
         },
-        onSuccess: () => {
-            if (isOnline) {
-                queryClient.invalidateQueries(['cleaning']);
-            }
+        onSuccess: (result) => {
+            if (!result?.queued) queryClient.invalidateQueries(['cleaning']);
         }
     });
 

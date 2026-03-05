@@ -22,6 +22,7 @@ import BulkImporter from '@/components/articles/BulkImporter';
 import ArticleCard from '@/components/articles/ArticleCard';
 import { useAlertDialog } from '@/components/ui/use-alert-dialog';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 
 export default function Articles() {
     const navigate = useNavigate();

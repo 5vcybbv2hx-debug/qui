@@ -282,7 +282,7 @@ export default function TeamMeeting() {
                                     className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'bg-green-600 hover:bg-green-700' : ''}
                                     title={`Zusage zur Teamsitzung am ${currentSchedule.date}`}
                                 >
-                                    <ThumbsUp className="w-4 h-4" />
+                                    ✓ Zusage
                                 </Button>
                                 <Button
                                     onClick={() => handleRsvp('absage')}
@@ -291,7 +291,7 @@ export default function TeamMeeting() {
                                     className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'absage' ? 'bg-red-600 hover:bg-red-700' : ''}
                                     title={`Absage zur Teamsitzung am ${currentSchedule.date}`}
                                 >
-                                    <ThumbsDown className="w-4 h-4" />
+                                    ✗ Absage
                                 </Button>
                             </div>
                         )}

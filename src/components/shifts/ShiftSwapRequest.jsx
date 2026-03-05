@@ -102,7 +102,7 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
                 size="sm"
                 onClick={() => setModalOpen(true)}
                 disabled={hasPendingRequest}
-                className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 disabled:opacity-50"
                 title={hasPendingRequest ? 'Bereits eine ausstehende Anfrage' : 'Tauschanfrage erstellen'}
             >
                 <RepeatIcon className="w-4 h-4 mr-1" />

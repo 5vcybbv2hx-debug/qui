@@ -244,7 +244,7 @@ export default function ShiftSwaps() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-950 p-6">
+        <div className="min-h-screen bg-background p-6">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -253,8 +253,8 @@ export default function ShiftSwaps() {
                             <RepeatIcon className="w-7 h-7 text-slate-900" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Schichttausch</h1>
-                            <p className="text-slate-400">Schichten anbieten, anfragen und genehmigen</p>
+                            <h1 className="text-3xl font-bold text-foreground">Schichttausch</h1>
+                            <p className="text-muted-foreground">Schichten anbieten, anfragen und genehmigen</p>
                         </div>
                     </div>
                 </div>

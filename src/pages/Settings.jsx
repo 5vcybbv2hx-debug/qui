@@ -510,6 +510,130 @@ export default function Settings() {
                              </Card>
                          </div>
                      </TabsContent>
+                    {/* Notifications Tab */}
+                    <TabsContent value="notifications" className="space-y-6">
+                        {currentUser && (
+                            <Card className="p-6 bg-gradient-to-br from-amber-900/30 to-orange-900/20 border-amber-700">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-foreground font-semibold mb-1">Push-Benachrichtigungen</h3>
+                                        <p className="text-sm text-muted-foreground">Aktiviere Push-Benachrichtigungen für Echtzeit-Meldungen auf deinem Gerät</p>
+                                    </div>
+                                    <PushNotificationManager userEmail={currentUser.email} />
+                                </div>
+                            </Card>
+                        )}
+
+                        <div className="space-y-3">
+                            {notificationTypes.map((type) => {
+                                const Icon = type.icon;
+                                return (
+                                    <Card key={type.key} className="p-4 bg-card border-border">
+                                        <div className="flex items-start gap-4">
+                                            <div className="p-2 bg-secondary rounded-lg shrink-0">
+                                                <Icon className={`w-5 h-5 ${type.color}`} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <Label htmlFor={type.key} className="text-foreground font-medium cursor-pointer">{type.title}</Label>
+                                                <p className="text-sm text-muted-foreground mt-0.5">{type.description}</p>
+                                            </div>
+                                            <Switch
+                                                id={type.key}
+                                                checked={notifPreferences[type.key]}
+                                                onCheckedChange={() => setNotifPreferences(prev => ({ ...prev, [type.key]: !prev[type.key] }))}
+                                                className="shrink-0"
+                                            />
+                                        </div>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Button onClick={() => saveNotifMutation.mutate()} disabled={saveNotifMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
+                                {saveNotifMutation.isPending ? 'Speichern...' : 'Einstellungen speichern'}
+                            </Button>
+                        </div>
+
+                        <div>
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                                <Volume2 className="w-5 h-5" />
+                                Töne & Vibrationen
+                            </h2>
+                            <div className="space-y-3">
+                                <Card className="p-4 bg-card border-border">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium text-foreground">Benachrichtigungstöne</Label>
+                                        <Switch checked={soundEnabled} onCheckedChange={(v) => { setSoundEnabled(v); localStorage.setItem('soundEnabled', v); }} />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">Töne bei neuen Benachrichtigungen abspielen</p>
+                                </Card>
+                                <Card className="p-4 bg-card border-border">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium text-foreground">Vibrationen</Label>
+                                        <Switch checked={vibrationEnabled} onCheckedChange={(v) => { setVibrationEnabled(v); localStorage.setItem('vibrationEnabled', v); }} />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">Gerät vibrieren lassen bei Benachrichtigungen</p>
+                                </Card>
+                                <Card className="p-4 bg-card border-border">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-sm font-medium text-foreground">Barcode-Scanner Ton</Label>
+                                        <Switch checked={barcodeSoundEnabled} onCheckedChange={(v) => { setBarcodeSoundEnabled(v); localStorage.setItem('barcodeSoundEnabled', v); }} />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">Ton beim Scannen von Barcodes abspielen</p>
+                                </Card>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                                <Download className="w-5 h-5" />
+                                Daten
+                            </h2>
+                            <div className="space-y-3">
+                                <Card className="p-4 bg-card border-border">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <Label className="text-sm font-medium text-foreground">Daten exportieren</Label>
+                                            <p className="text-xs text-muted-foreground mt-1">Speichere ein Backup deiner Daten als JSON</p>
+                                        </div>
+                                        <Button variant="outline" size="sm" onClick={() => exportDataMutation.mutate()} disabled={exportDataMutation.isPending} className="gap-2">
+                                            <Download className="w-4 h-4" />
+                                            {exportDataMutation.isPending ? 'Lädt...' : 'Export'}
+                                        </Button>
+                                    </div>
+                                </Card>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Card className="p-4 bg-red-500/10 border-red-500/20 cursor-pointer hover:bg-red-500/20 transition-colors">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <Label className="text-sm font-medium text-red-400">Account löschen</Label>
+                                                    <p className="text-xs text-red-300/70 mt-1">Löscht deinen Account und alle Daten</p>
+                                                </div>
+                                                <Trash2 className="w-4 h-4 text-red-400" />
+                                            </div>
+                                        </Card>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Account löschen?</AlertDialogTitle>
+                                            <AlertDialogDescription>Dies kann nicht rückgängig gemacht werden. Alle deine Daten werden permanent gelöscht.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deleteAccountMutation.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Löschen</AlertDialogAction>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                        </div>
+
+                        <Card className="p-4 bg-blue-500/10 border-blue-500/20">
+                            <p className="text-sm text-blue-400">
+                                <strong>Hinweis:</strong> Benachrichtigungen werden nur an dich gesendet, wenn du die entsprechenden Berechtigungen hast.
+                            </p>
+                        </Card>
+                    </TabsContent>
+
                     </Tabs>
                     </div>
                     </div>

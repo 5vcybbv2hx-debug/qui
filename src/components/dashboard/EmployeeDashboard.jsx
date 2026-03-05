@@ -132,7 +132,15 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
 
     const myUpcomingShifts = shifts
         .filter(s => s.employee_id === currentEmployee.id && (isFuture(parseISO(s.date)) || isToday(parseISO(s.date))))
-        .sort((a, b) => parseISO(a.date) - parseISO(b.date))
+        .sort((a, b) => {
+            const dateA = parseISO(a.date);
+            const dateB = parseISO(b.date);
+            if (dateA.getTime() !== dateB.getTime()) {
+                return dateA.getTime() - dateB.getTime();
+            }
+            // Falls Daten gleich sind, nach Startzeit sortieren
+            return (a.start_time || '').localeCompare(b.start_time || '');
+        })
         .slice(0, 5);
 
     const weekEntries = timeEntries.filter(e => {

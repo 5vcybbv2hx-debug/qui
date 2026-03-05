@@ -123,6 +123,36 @@ export default function Settings() {
         }
     };
 
+    const saveNotifMutation = useMutation({
+        mutationFn: () => base44.auth.updateMe({ notification_preferences: notifPreferences }),
+        onSuccess: () => toast.success('Benachrichtigungseinstellungen gespeichert'),
+        onError: () => toast.error('Fehler beim Speichern')
+    });
+
+    const exportDataMutation = useMutation({
+        mutationFn: async () => {
+            const data = await base44.functions.invoke('exportUserData', {});
+            return data;
+        },
+        onSuccess: (data) => {
+            const element = document.createElement('a');
+            element.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(JSON.stringify(data.data, null, 2))}`);
+            element.setAttribute('download', `backup-${new Date().toISOString().split('T')[0]}.json`);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            toast.success('Daten exportiert');
+        },
+        onError: () => toast.error('Fehler beim Exportieren')
+    });
+
+    const deleteAccountMutation = useMutation({
+        mutationFn: () => base44.functions.invoke('deleteMyAccount', {}),
+        onSuccess: () => { toast.success('Account wird gelöscht...'); setTimeout(() => base44.auth.logout(), 2000); },
+        onError: () => toast.error('Fehler beim Löschen des Accounts')
+    });
+
     const themes = [
         {
             value: 'light',

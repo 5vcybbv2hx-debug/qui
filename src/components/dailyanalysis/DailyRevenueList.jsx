@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
+import DayDetailModal from './DayDetailModal';
 
 export default function DailyRevenueList({ revenues, timeEntries, tipDistributions, employees = [], onSelectDate, selectedDate }) {
+    const [detailRevenue, setDetailRevenue] = useState(null);
     const employeeMap = new Map(employees.map(emp => [emp.id, emp]));
 
     const getOperatingDate = (te) => {

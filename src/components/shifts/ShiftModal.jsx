@@ -312,7 +312,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                 >
                                                     {emp.name?.charAt(0)}
                                                 </div>
-                                                <span className="text-sm font-medium text-slate-800 truncate">{emp.name}</span>
+                                                <span className="text-sm font-medium text-foreground truncate">{emp.name}</span>
                                             </button>
                                         );
                                     })}

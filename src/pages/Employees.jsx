@@ -85,6 +85,7 @@ export default function Employees() {
         is_active: true
     });
     const [skillsFilter, setSkillsFilter] = useState([]);
+    const [showInactive, setShowInactive] = useState(false);
     
     const [whatsappGroupLink, setWhatsappGroupLink] = useState('https://chat.whatsapp.com/FrOmvmQFvvBJvqo4CJaBPA');
 

@@ -564,7 +564,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                         onClick={() => setFormData({ ...formData, color })}
                                         className={cn(
                                             "w-8 h-8 rounded-full transition-all",
-                                            formData.color === color && "ring-2 ring-offset-2 ring-slate-400"
+                                            formData.color === color && "ring-2 ring-offset-2 ring-primary"
                                         )}
                                         style={{ backgroundColor: color }}
                                     />

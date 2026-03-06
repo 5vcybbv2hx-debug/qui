@@ -509,7 +509,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                 />
                             </div>
 
-                            <div className="text-xs text-blue-600 flex items-start gap-1">
+                            <div className="text-xs text-muted-foreground flex items-start gap-1">
                                 <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                 <span>
                                     Es werden ca. {generateRecurringDates().length} Schichten pro Mitarbeiter erstellt

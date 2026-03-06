@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
+import * as pdfjsLib from 'pdfjs-dist';
 
 export default function TableGridWithLayout({ tables, reservations, getTableReservation, onTableClick, roomName }) {
     // Lade das Layout für den aktuellen Raum

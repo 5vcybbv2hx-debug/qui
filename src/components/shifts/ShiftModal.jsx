@@ -573,8 +573,8 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                     type="button"
                                     onClick={() => setFormData({ ...formData, color: '' })}
                                     className={cn(
-                                        "w-8 h-8 rounded-full border-2 border-slate-300 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50",
-                                        !formData.color && "ring-2 ring-offset-2 ring-slate-400"
+                                        "w-8 h-8 rounded-full border-2 border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-secondary",
+                                        !formData.color && "ring-2 ring-offset-2 ring-primary"
                                     )}
                                 >
                                     <X className="w-4 h-4" />

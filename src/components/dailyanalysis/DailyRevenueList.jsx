@@ -118,5 +118,14 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
                 </div>
             </CardContent>
         </Card>
+
+        <DayDetailModal
+            open={!!detailRevenue}
+            onOpenChange={(open) => !open && setDetailRevenue(null)}
+            revenue={detailRevenue}
+            tipDistribution={detailRevenue?.tipDistribution}
+            laborCost={detailRevenue?.laborCost || 0}
+            staffCount={detailRevenue?.staffCount || 0}
+        />
     );
 }

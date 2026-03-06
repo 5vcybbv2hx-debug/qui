@@ -13,6 +13,7 @@ import TableCalendarView from '@/components/seating/TableCalendarView';
 import TableModal from '@/components/seating/TableModal';
 import RoomManager from '@/components/seating/RoomManager';
 import LayoutEditor from '@/components/seating/LayoutEditor';
+import MultiRoomFloorPlanEditor from '@/components/seating/MultiRoomFloorPlanEditor';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 

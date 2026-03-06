@@ -174,7 +174,7 @@ export default function SeatingChartPage() {
                         }}
                     />
                 ) : view === 'grid' ? (
-                    <TableGrid 
+                    <TableGridWithLayout 
                         tables={filteredTables} 
                         reservations={reservations}
                         getTableReservation={getTableReservation}
@@ -182,6 +182,7 @@ export default function SeatingChartPage() {
                             setSelectedTable(table);
                             setShowModal(true);
                         }}
+                        roomName={activeRoom}
                     />
                 ) : view === 'list' ? (
                     <TableList 

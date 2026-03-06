@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Grid2x2, List, Settings, Move, CalendarDays, Layers } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TableGrid from '@/components/seating/TableGrid';
+import TableGridWithLayout from '@/components/seating/TableGridWithLayout';
 import TableList from '@/components/seating/TableList';
 import FloorPlanView from '@/components/seating/FloorPlanView';
 import TableCalendarView from '@/components/seating/TableCalendarView';

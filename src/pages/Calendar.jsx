@@ -22,6 +22,7 @@ import EventDetailsModal from '@/components/calendar/EventDetailsModal';
 import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import UnifiedCalendarView from '@/components/calendar/UnifiedCalendarView';
 import DayDetailModal from '@/components/calendar/DayDetailModal';
+import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';

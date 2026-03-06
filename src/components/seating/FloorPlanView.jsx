@@ -147,20 +147,28 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
 
         const startPos = getClientPos(e);
         const origPos = { ...positionsRef.current[tableId] };
+        const rect = canvas.getBoundingClientRect();
         let hasMoved = false;
 
         const onMove = (mv) => {
             mv.preventDefault();
             const cur = getClientPos(mv);
-            const dx = cur.x - startPos.x;
-            const dy = cur.y - startPos.y;
+            // Berechne die Delta basierend auf Canvas-Position und Zoom
+            const dx = (cur.x - startPos.x) / zoom;
+            const dy = (cur.y - startPos.y) / zoom;
 
             if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasMoved = true;
 
-            const rect = canvasRef.current?.getBoundingClientRect();
-            if (!rect) return;
-            const newX = Math.max(30, Math.min(rect.width - 30, origPos.x + dx));
-            const newY = Math.max(30, Math.min(rect.height - 30, origPos.y + dy));
+            // Snap to 10px Grid
+            const GRID = 10;
+            let newX = origPos.x + dx;
+            let newY = origPos.y + dy;
+            newX = Math.round(newX / GRID) * GRID;
+            newY = Math.round(newY / GRID) * GRID;
+
+            // Bounds checking
+            newX = Math.max(30, Math.min(1200, newX));
+            newY = Math.max(30, Math.min(2000, newY));
 
             positionsRef.current[tableId] = { x: newX, y: newY };
             setPositions(prev => ({ ...prev, [tableId]: { x: newX, y: newY } }));

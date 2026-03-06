@@ -327,9 +327,9 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                     </Label>
                                     <div className="space-y-2 max-h-64 overflow-y-auto">
                                         {selectedEmployees.map(empData => {
-                                            const employee = employees.find(e => e.id === empData.employee_id);
-                                            return (
-                                                <div key={empData.employee_id} className="p-3 bg-white rounded-lg border border-slate-200">
+                                             const employee = employees.find(e => e.id === empData.employee_id);
+                                             return (
+                                                 <div key={empData.employee_id} className="p-3 bg-card rounded-lg border border-border">
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <div 
                                                             className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold"

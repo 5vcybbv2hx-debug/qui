@@ -458,7 +458,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                             <div className="space-y-2">
                                 <Label className="text-xs">Muster</Label>
                                 <Select value={recurringData.pattern} onValueChange={(v) => setRecurringData({ ...recurringData, pattern: v })}>
-                                    <SelectTrigger className="bg-white">
+                                    <SelectTrigger className="bg-card">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>

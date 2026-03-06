@@ -690,9 +690,15 @@ export default function TimeTracking() {
                             <option value="eingereicht">Eingereicht</option>
                             <option value="genehmigt">Genehmigt</option>
                         </select>
-                        {(filterEmployee || filterStatus) && (
+                        <input
+                            type="date"
+                            value={filterDate}
+                            onChange={(e) => setFilterDate(e.target.value)}
+                            className="text-sm bg-background border border-border rounded px-2 py-1 text-foreground flex-1 min-w-[130px]"
+                        />
+                        {(filterEmployee || filterStatus || filterDate) && (
                             <button
-                                onClick={() => { setFilterEmployee(''); setFilterStatus(''); }}
+                                onClick={() => { setFilterEmployee(''); setFilterStatus(''); setFilterDate(''); }}
                                 className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300"
                             >
                                 <X className="w-3 h-3" /> Zurücksetzen

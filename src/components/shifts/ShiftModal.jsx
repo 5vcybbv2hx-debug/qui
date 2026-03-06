@@ -211,7 +211,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 if (hasExisting) continue;
 
                 const employee = employees.find(e => e.id === empData.employee_id);
-                const shiftColor = formData.color || employee?.color || predefinedColors[0];
+                const shiftColor = getColorForShiftType(empData.shift_type);
                 const shiftData = {
                     employee_id: empData.employee_id,
                     employee_name: employee?.name || '',

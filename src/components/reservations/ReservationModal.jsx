@@ -12,6 +12,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch } from "@/components/ui/switch";
 import { haptics } from "@/components/utils/haptics";
+import MultiRoomFloorPlanEditor from '@/components/seating/MultiRoomFloorPlanEditor';
 
 export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false }) {
     const queryClient = useQueryClient();

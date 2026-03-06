@@ -22,6 +22,7 @@ export default function SeatingChartPage() {
     const [view, setView] = useState('grid');
     const [showModal, setShowModal] = useState(false);
     const [showLayoutEditor, setShowLayoutEditor] = useState(false);
+    const [showMultiRoomEditor, setShowMultiRoomEditor] = useState(false);
     const [selectedTable, setSelectedTable] = useState(null);
     const [selectedRoom, setSelectedRoom] = useState(null);
 

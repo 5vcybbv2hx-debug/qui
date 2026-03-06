@@ -219,6 +219,51 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
         setIsPanning(false);
     };
 
+    const getTouchDistance = (touches) => {
+        if (touches.length < 2) return 0;
+        const dx = touches[0].clientX - touches[1].clientX;
+        const dy = touches[0].clientY - touches[1].clientY;
+        return Math.hypot(dx, dy);
+    };
+
+    const handleTouchStart = (e) => {
+        if (e.touches.length === 2 && !editMode) {
+            // Pinch-to-zoom
+            e.preventDefault();
+            touchRef.current.startDistance = getTouchDistance(e.touches);
+            touchRef.current.startZoom = zoom;
+        } else if (e.touches.length === 1 && !editMode) {
+            // Single touch pan
+            setIsPanning(true);
+            panStartRef.current = {
+                x: e.touches[0].clientX - pan.x,
+                y: e.touches[0].clientY - pan.y
+            };
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (e.touches.length === 2 && !editMode) {
+            // Pinch-to-zoom
+            e.preventDefault();
+            const currentDistance = getTouchDistance(e.touches);
+            const scale = currentDistance / touchRef.current.startDistance;
+            const newZoom = Math.min(Math.max(touchRef.current.startZoom * scale, 0.5), 5);
+            setZoom(newZoom);
+        } else if (e.touches.length === 1 && isPanning && !editMode) {
+            // Single touch pan
+            e.preventDefault();
+            setPan({
+                x: e.touches[0].clientX - panStartRef.current.x,
+                y: e.touches[0].clientY - panStartRef.current.y
+            });
+        }
+    };
+
+    const handleTouchEnd = () => {
+        setIsPanning(false);
+    };
+
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between flex-wrap gap-2">

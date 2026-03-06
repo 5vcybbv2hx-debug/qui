@@ -69,8 +69,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                 start_time: shift.start_time || '18:00',
                 end_time: shift.end_time || '02:00',
                 shift_type: shift.shift_type || '',
-                notes: shift.notes || '',
-                color: shift.color || ''
+                notes: shift.notes || ''
             });
             setSelectedEmployees([]);
             setIsRecurring(false);

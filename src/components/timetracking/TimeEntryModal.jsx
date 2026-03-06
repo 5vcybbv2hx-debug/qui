@@ -153,7 +153,11 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
                             <Input
                                 type="time"
                                 value={formData.start_time}
-                                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                                onChange={(e) => {
+                                    const newStart = e.target.value;
+                                    const autoBreak = calculateLegalBreak(newStart, formData.end_time);
+                                    setFormData({ ...formData, start_time: newStart, break_minutes: autoBreak });
+                                }}
                                 required
                             />
                         </div>
@@ -163,7 +167,11 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
                             <Input
                                 type="time"
                                 value={formData.end_time}
-                                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                                onChange={(e) => {
+                                    const newEnd = e.target.value;
+                                    const autoBreak = calculateLegalBreak(formData.start_time, newEnd);
+                                    setFormData({ ...formData, end_time: newEnd, break_minutes: autoBreak });
+                                }}
                                 required
                             />
                         </div>

@@ -74,6 +74,10 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     const [positions, setPositions] = useState({});
     const positionsRef = useRef({});
     const [editMode, setEditMode] = useState(false);
+    const [zoom, setZoom] = useState(1);
+    const [pan, setPan] = useState({ x: 0, y: 0 });
+    const [isPanning, setIsPanning] = useState(false);
+    const panStartRef = useRef({ x: 0, y: 0 });
 
     // Hole den Grundriss aus dem ersten aktiven Layout
     const { data: layouts = [] } = useQuery({
@@ -165,6 +169,32 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
 
     const today = format(new Date(), 'EEEE, d. MMMM', { locale: de });
 
+    const handleWheel = (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        setZoom(prev => Math.min(Math.max(prev * delta, 0.5), 3));
+    };
+
+    const handleMouseDown = (e) => {
+        if (e.button !== 2 && !editMode) { // Rechtsklick zum Pan
+            setIsPanning(true);
+            panStartRef.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+        }
+    };
+
+    const handleMouseMove = (e) => {
+        if (isPanning && !editMode) {
+            setPan({
+                x: e.clientX - panStartRef.current.x,
+                y: e.clientY - panStartRef.current.y
+            });
+        }
+    };
+
+    const handleMouseUp = () => {
+        setIsPanning(false);
+    };
+
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -175,7 +205,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                             Bearbeitungsmodus: Tische per Drag &amp; Drop verschieben
                         </p>
                     ) : (
-                        <p className="text-xs text-muted-foreground">Auf Tisch klicken für Details. Manager-Modus zum Verschieben.</p>
+                        <p className="text-xs text-muted-foreground">Auf Tisch klicken für Details. Scrollrad zum Zoomen, Mitteltaste zum Verschieben.</p>
                     )}
                     <Button
                         size="sm"
@@ -204,18 +234,34 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                 ref={canvasRef}
                 className={cn(
                     "relative w-full bg-card border rounded-xl overflow-hidden",
-                    editMode ? "border-amber-500/50 border-2" : "border-border"
+                    editMode ? "border-amber-500/50 border-2" : "border-border",
+                    isPanning && "cursor-grabbing"
                 )}
                 style={{ height: '520px' }}
                 onClick={() => !editMode && setSelectedTableId(null)}
+                onWheel={handleWheel}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
             >
-                {/* Grundriss als Hintergrund */}
+                {/* Grundriss als Hintergrund mit Zoom/Pan */}
                 {floorPlan?.floor_plan_url && (
-                    <img
-                        src={floorPlan.floor_plan_url}
-                        alt="Grundriss"
-                        className="absolute inset-0 w-full h-full object-contain opacity-40 pointer-events-none"
-                    />
+                    <div
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                            transformOrigin: 'top left',
+                            pointerEvents: 'none'
+                        }}
+                    >
+                        <img
+                            src={floorPlan.floor_plan_url}
+                            alt="Grundriss"
+                            className="w-full h-full object-contain opacity-40"
+                        />
+                    </div>
                 )}
 
                 <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none">

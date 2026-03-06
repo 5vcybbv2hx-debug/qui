@@ -297,11 +297,11 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                 type="button"
                                                 onClick={() => toggleEmployee(emp.id)}
                                                 className={cn(
-                                                    "flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-left",
-                                                    isSelected 
-                                                        ? "border-amber-500 bg-amber-50" 
-                                                        : "border-slate-200 hover:border-slate-300 bg-white"
-                                                )}
+                                                     "flex items-center gap-2 p-2 rounded-lg border-2 transition-all text-left",
+                                                     isSelected 
+                                                         ? "border-primary bg-primary/10" 
+                                                         : "border-border hover:border-primary/50 bg-card"
+                                                 )}
                                             >
                                                 <div 
                                                     className={cn(

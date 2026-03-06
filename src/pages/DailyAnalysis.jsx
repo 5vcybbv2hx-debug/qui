@@ -22,6 +22,9 @@ export default function DailyAnalysis() {
     const [tipCalculatorOpen, setTipCalculatorOpen] = useState(false);
     const [laborCostLoading, setLaborCostLoading] = useState(false);
     const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const [reanalyzingAll, setReanalyzingAll] = useState(false);
+    const [reanalyzeProgress, setReanalyzeProgress] = useState({ done: 0, total: 0, errors: [] });
+    const [reanalyzeOpen, setReanalyzeOpen] = useState(false);
     const queryClient = useQueryClient();
 
     const { data: dailyRevenues = [] } = useQuery({

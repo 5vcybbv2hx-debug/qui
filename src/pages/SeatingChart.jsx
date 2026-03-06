@@ -174,7 +174,9 @@ export default function SeatingChartPage() {
                     </div>
                 </div>
 
-                {view === 'floorplan' ? (
+                {view === 'multiroom' ? (
+                    <MultiRoomFloorPlanEditor />
+                ) : view === 'floorplan' ? (
                     <FloorPlanView
                         tables={filteredTables}
                         reservations={reservations}

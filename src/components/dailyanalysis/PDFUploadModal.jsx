@@ -260,30 +260,30 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
                             <Label className="text-slate-300">Analysierte Daten</Label>
                             <div className="bg-slate-700 rounded-lg p-4 space-y-3">
                                 <div>
-                                    <Label htmlFor="ai-revenue" className="text-xs text-slate-400">Tagesumsatz (€)</Label>
-                                    <Input 
-                                        id="ai-revenue"
-                                        type="number" 
-                                        step="0.01"
-                                        placeholder="Wird automatisch gefüllt"
-                                        value={revenue}
-                                        onChange={(e) => setRevenue(e.target.value)}
-                                        className="bg-slate-800 border-slate-600 text-white mt-1"
-                                        disabled={analyzing}
-                                    />
+                                    <Label htmlFor="ai-revenue" className="text-xs text-slate-400">Gesamtumsatz (€)</Label>
+                                    <Input id="ai-revenue" type="number" step="0.01" placeholder="Wird automatisch gefüllt" value={revenue} onChange={(e) => setRevenue(e.target.value)} className="bg-slate-800 border-slate-600 text-white mt-1" disabled={analyzing} />
                                 </div>
-
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <Label className="text-xs text-slate-400">Umsatz Bar (€)</Label>
+                                        <Input type="number" step="0.01" placeholder="optional" value={revenueCash} onChange={(e) => setRevenueCash(e.target.value)} className="bg-slate-800 border-slate-600 text-white mt-1" disabled={analyzing} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-slate-400">Umsatz EC (€)</Label>
+                                        <Input type="number" step="0.01" placeholder="optional" value={revenueEC} onChange={(e) => setRevenueEC(e.target.value)} className="bg-slate-800 border-slate-600 text-white mt-1" disabled={analyzing} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-slate-400">Umsatzsteuer (€)</Label>
+                                        <Input type="number" step="0.01" placeholder="optional" value={vat} onChange={(e) => setVat(e.target.value)} className="bg-slate-800 border-slate-600 text-white mt-1" disabled={analyzing} />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-slate-400">Eigenbedarf (€)</Label>
+                                        <Input type="number" step="0.01" placeholder="optional" value={ownConsumption} onChange={(e) => setOwnConsumption(e.target.value)} className="bg-slate-800 border-slate-600 text-white mt-1" disabled={analyzing} />
+                                    </div>
+                                </div>
                                 <div>
                                     <Label htmlFor="ai-notes" className="text-xs text-slate-400">Notizen</Label>
-                                    <Input 
-                                        id="ai-notes"
-                                        type="text" 
-                                        placeholder="Zusätzliche Notizen"
-                                        value={notes}
-                                        onChange={(e) => setNotes(e.target.value)}
-                                        className="bg-slate-800 border-slate-600 text-white mt-1"
-                                        disabled={analyzing}
-                                    />
+                                    <Input id="ai-notes" type="text" placeholder="Zusätzliche Notizen" value={notes} onChange={(e) => setNotes(e.target.value)} className="bg-slate-800 border-slate-600 text-white mt-1" disabled={analyzing} />
                                 </div>
                             </div>
                         </div>

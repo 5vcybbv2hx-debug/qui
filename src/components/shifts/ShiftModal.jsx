@@ -349,11 +349,11 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                                     type="button"
                                                                     onClick={() => updateEmployeeShiftType(empData.employee_id, type.name)}
                                                                     className={cn(
-                                                                        "px-2 py-1 rounded text-xs font-medium transition-all",
-                                                                        isSelected 
-                                                                            ? "bg-amber-500 text-white" 
-                                                                            : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                                                                    )}
+                                                                         "px-2 py-1 rounded text-xs font-medium transition-all",
+                                                                         isSelected 
+                                                                             ? "bg-primary text-primary-foreground" 
+                                                                             : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
+                                                                     )}
                                                                 >
                                                                     {type.name}
                                                                 </button>

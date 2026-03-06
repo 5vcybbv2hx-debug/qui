@@ -123,7 +123,7 @@ export default function VisualFloorPlanEditor({ roomId, roomName, onTablePositio
                 <label className="block">
                     <input
                         type="file"
-                        accept=".jpg,.jpeg,.png"
+                        accept=".jpg,.jpeg,.png,.pdf"
                         onChange={handleFloorPlanUpload}
                         className="hidden"
                     />

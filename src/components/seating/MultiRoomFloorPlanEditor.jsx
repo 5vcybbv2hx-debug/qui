@@ -133,16 +133,20 @@ export default function MultiRoomFloorPlanEditor({ onTableSelect = null }) {
     return (
         <div className="bg-card rounded-2xl border border-border p-4 space-y-4">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Alle Tische auf Grundriss platzieren</h3>
+                <h3 className="text-lg font-semibold">
+                    {onTableSelect ? 'Tisch wählen' : 'Alle Tische auf Grundriss platzieren'}
+                </h3>
                 <div className="flex gap-2">
-                    <Button
-                        onClick={() => saveMutation.mutate()}
-                        disabled={!unsavedChanges || saveMutation.isPending}
-                        className="gap-2"
-                    >
-                        <Save className="w-4 h-4" />
-                        Speichern
-                    </Button>
+                    {!onTableSelect && (
+                        <Button
+                            onClick={() => saveMutation.mutate()}
+                            disabled={!unsavedChanges || saveMutation.isPending}
+                            className="gap-2"
+                        >
+                            <Save className="w-4 h-4" />
+                            Speichern
+                        </Button>
+                    )}
                 </div>
             </div>
 

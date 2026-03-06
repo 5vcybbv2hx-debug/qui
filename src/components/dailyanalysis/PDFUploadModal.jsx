@@ -33,6 +33,10 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
             await base44.entities.DailyRevenue.create({
                 date: selectedDate,
                 revenue: parseFloat(revenue),
+                revenue_cash: revenueCash ? parseFloat(revenueCash) : undefined,
+                revenue_ec: revenueEC ? parseFloat(revenueEC) : undefined,
+                vat: vat ? parseFloat(vat) : undefined,
+                own_consumption: ownConsumption ? parseFloat(ownConsumption) : undefined,
                 pdf_url: pdfUrl,
                 notes: notes || undefined
             });

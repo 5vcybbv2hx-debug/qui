@@ -2,11 +2,22 @@ import React from 'react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Card } from '@/components/ui/card';
-import { Calendar, AlertCircle, CalendarCheck } from 'lucide-react';
+import { Calendar, AlertCircle, CalendarCheck, Clock } from 'lucide-react';
 
 export default function TodayOverview({ shifts = [], events = [], reservations = [], employees = [], maxItems = null }) {
-    if (shifts.length === 0 && events.length === 0 && reservations.length === 0) {
-        return null;
+    // Schichten werden bereits gefiltert übergeben, aber wir zeigen es immer an falls es Inhalte gibt
+    const hasContent = shifts.length > 0 || events.length > 0 || reservations.length > 0;
+    
+    if (!hasContent) {
+        return (
+            <Card className="p-6 bg-card border-border">
+                <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-green-500" />
+                    Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
+                </h3>
+                <p className="text-sm text-slate-500 italic text-center py-4">Nichts geplant für heute</p>
+            </Card>
+        );
     }
 
     const shiftsToShow = maxItems ? shifts.slice(0, maxItems) : shifts;
@@ -28,19 +39,26 @@ export default function TodayOverview({ shifts = [], events = [], reservations =
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <p className="text-xs text-slate-400 mb-2 uppercase">Schichten ({shifts.length})</p>
+                    <p className="text-xs text-slate-400 mb-2 uppercase flex items-center gap-2">
+                        <Clock className="w-4 h-4" />
+                        Schichten ({shifts.length})
+                    </p>
                     <div className="space-y-2">
-                        {shiftsToShow.map(shift => (
-                            <div key={shift.id} className="flex items-center gap-2 text-sm">
-                                <div 
-                                    className="w-2 h-2 rounded-full" 
-                                    style={{ backgroundColor: shift.color || getEmployeeColor(shift.employee_id) }} 
-                                />
-                                <span className="text-slate-300 truncate">{shift.employee_name}</span>
-                                <span className="text-slate-500 text-xs ml-auto">{shift.start_time?.substring(0, 5)}</span>
-                            </div>
-                        ))}
-                        {shifts.length === 0 && <p className="text-sm text-slate-600 italic">Keine Schichten</p>}
+                        {shiftsToShow.length > 0 ? (
+                            shiftsToShow.map(shift => (
+                                <div key={shift.id} className="flex items-center gap-2 text-sm p-2 rounded bg-slate-900/30 hover:bg-slate-900/50 transition-colors">
+                                    <div 
+                                        className="w-3 h-3 rounded-full flex-shrink-0" 
+                                        style={{ backgroundColor: shift.color || getEmployeeColor(shift.employee_id) }} 
+                                    />
+                                    <span className="text-slate-300 truncate flex-1">{shift.employee_name}</span>
+                                    <span className="text-slate-500 text-xs whitespace-nowrap ml-2">{shift.start_time?.substring(0, 5)}-{shift.end_time?.substring(0, 5)}</span>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-slate-600 italic py-2">Keine Schichten</p>
+                        )}
+                        {shifts.length > maxItems && <p className="text-xs text-slate-500 pt-2">+{shifts.length - shiftsToShow.length} weitere</p>}
                     </div>
                 </div>
 

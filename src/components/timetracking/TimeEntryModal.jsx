@@ -186,6 +186,11 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
                             placeholder="z.B. 30"
                             min="0"
                         />
+                        {formData.break_minutes > 0 && (
+                            <p className="text-xs text-amber-600">
+                                ⚖️ Gesetzliche Pause automatisch eingetragen ({formData.break_minutes} Min.) – vollständig bezahlt. Manuell anpassbar.
+                            </p>
+                        )}
                     </div>
 
                     {totalHours > 0 && (

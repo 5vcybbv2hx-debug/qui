@@ -46,6 +46,18 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
         }
     }, [entry, currentEmployee, open]);
 
+    const calculateLegalBreak = (startTime, endTime) => {
+        if (!startTime || !endTime) return 0;
+        const [startH, startM] = startTime.split(':').map(Number);
+        const [endH, endM] = endTime.split(':').map(Number);
+        let totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+        if (totalMinutes < 0) totalMinutes += 24 * 60;
+        const workHours = totalMinutes / 60;
+        if (workHours > 9) return 45;
+        if (workHours > 6) return 30;
+        return 0;
+    };
+
     const calculateHours = () => {
         if (!formData.start_time || !formData.end_time) return 0;
         

@@ -49,6 +49,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
     });
 
     const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const [employeeSearch, setEmployeeSearch] = useState('');
     const [isRecurring, setIsRecurring] = useState(false);
     const [recurringData, setRecurringData] = useState({
         pattern: 'weekly',

@@ -79,6 +79,18 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
                                     <td className="text-right py-3 px-2 text-green-400 font-semibold">
                                         {day.revenue.toFixed(2)} €
                                     </td>
+                                    <td className="text-right py-3 px-2 text-slate-300 hidden md:table-cell">
+                                        {day.revenue_cash != null ? `${day.revenue_cash.toFixed(2)} €` : '-'}
+                                    </td>
+                                    <td className="text-right py-3 px-2 text-slate-300 hidden md:table-cell">
+                                        {day.revenue_ec != null ? `${day.revenue_ec.toFixed(2)} €` : '-'}
+                                    </td>
+                                    <td className="text-right py-3 px-2 text-slate-400 hidden lg:table-cell">
+                                        {day.vat != null ? `${day.vat.toFixed(2)} €` : '-'}
+                                    </td>
+                                    <td className="text-right py-3 px-2 text-slate-400 hidden lg:table-cell">
+                                        {day.own_consumption != null ? `${day.own_consumption.toFixed(2)} €` : '-'}
+                                    </td>
                                     <td className="text-right py-3 px-2 text-amber-400">
                                         {day.laborCost.toFixed(2)} €
                                     </td>

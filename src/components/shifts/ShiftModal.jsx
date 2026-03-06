@@ -391,20 +391,20 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                 Schichttyp & Zeiten
                             </Label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {shiftTypes.map((type, index) => {
-                                    const isSelected = formData.shift_type === type.name;
-                                    const color = getColorForOrder(type.order || 0, shiftTypes.length);
-                                    return (
-                                        <button
-                                            key={type.id}
-                                            type="button"
-                                            onClick={() => handleShiftTypeChange(type.name)}
-                                            className={cn(
-                                                "p-3 rounded-lg border-2 transition-all text-left",
-                                                isSelected 
-                                                    ? "border-amber-500 bg-amber-50" 
-                                                    : "border-slate-200 hover:border-slate-300 bg-white"
-                                            )}
+                                 {shiftTypes.map((type, index) => {
+                                     const isSelected = formData.shift_type === type.name;
+                                     const color = getColorForOrder(type.order || 0, shiftTypes.length);
+                                     return (
+                                         <button
+                                             key={type.id}
+                                             type="button"
+                                             onClick={() => handleShiftTypeChange(type.name)}
+                                             className={cn(
+                                                 "p-3 rounded-lg border-2 transition-all text-left",
+                                                 isSelected 
+                                                     ? "border-primary bg-primary/10" 
+                                                     : "border-border hover:border-primary/50 bg-card"
+                                             )}
                                         >
                                             <div className="flex items-center gap-2 mb-1">
                                                 <div 

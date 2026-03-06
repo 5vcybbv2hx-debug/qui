@@ -73,13 +73,13 @@ export default function TableGridWithLayout({ tables, reservations, getTableRese
 
     return (
         <div className="bg-card rounded-2xl border border-border p-4 min-h-96 overflow-auto">
-            {/* Background-Foto wenn vorhanden */}
-            {layout?.floor_plan_url && (
+            {/* Background-Foto/PDF wenn vorhanden */}
+            {backgroundUrl && (
                 <div
                     className="relative bg-slate-100 border border-border rounded-lg overflow-hidden mb-4"
                     style={{
                         height: '500px',
-                        backgroundImage: `url(${layout.floor_plan_url})`,
+                        backgroundImage: `url(${backgroundUrl})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center'
                     }}

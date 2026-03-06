@@ -853,6 +853,13 @@ export default function TimeTracking() {
                     })}
                 </div>
 
+                {filteredEntries.length === 0 && visibleEntries.length > 0 && (
+                    <Card className="p-8 bg-card border-border text-center text-muted-foreground">
+                        <Filter className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                        <p>Keine Einträge für diesen Filter</p>
+                    </Card>
+                )}
+
                 {visibleEntries.length === 0 && (
                     <Card className="p-12 bg-card border-border">
                         <div className="text-center text-muted-foreground">

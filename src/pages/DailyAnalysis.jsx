@@ -67,7 +67,7 @@ export default function DailyAnalysis() {
 
     // Daten für aktuellen Tag
     const todayRevenue = dailyRevenues.find(dr => dr.date === selectedDate);
-    const todayTimeEntries = timeEntries.filter(te => getOperatingDate(te) === selectedDate && te.status === 'approved');
+    const todayTimeEntries = timeEntries.filter(te => getOperatingDate(te) === selectedDate && te.status === 'genehmigt');
     const todayTipDistribution = tipDistributions.find(td => td.date === selectedDate);
     
     // Verkaufsbericht für aktuellen Tag

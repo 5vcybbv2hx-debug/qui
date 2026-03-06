@@ -279,7 +279,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                     {editMode ? (
                         <p className="text-xs text-amber-400 flex items-center gap-1.5">
                             <Move className="w-3.5 h-3.5" />
-                            Bearbeitungsmodus: Tische per Drag &amp; Drop verschieben
+                            Bearbeitungsmodus: Tische per Drag verschieben (Snap-to-Grid). PDF bleibt als Referenz.
                         </p>
                     ) : (
                         <p className="text-xs text-muted-foreground">Auf Tisch klicken für Details. Zoomen: Scrollrad (Desktop) oder zwei Finger (Handy). Verschieben: Mitteltaste (Desktop) oder ein Finger (Handy).</p>

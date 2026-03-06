@@ -57,6 +57,10 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
                             <tr className="border-b border-slate-700">
                                 <th className="text-left py-2 px-2 text-slate-400 font-semibold">Datum</th>
                                 <th className="text-right py-2 px-2 text-slate-400 font-semibold">Umsatz</th>
+                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden md:table-cell">Bar</th>
+                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden md:table-cell">EC</th>
+                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden lg:table-cell">MwSt.</th>
+                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden lg:table-cell">Eigenbedarf</th>
                                 <th className="text-right py-2 px-2 text-slate-400 font-semibold">Personalkosten</th>
                                 <th className="text-right py-2 px-2 text-slate-400 font-semibold">Personal</th>
                                 <th className="text-right py-2 px-2 text-slate-400 font-semibold">Trinkgeld</th>

@@ -546,41 +546,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                         </div>
                     )}
 
-                    {!shift && (
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <Palette className="w-4 h-4" />
-                                Schichtfarbe (optional)
-                            </Label>
-                            <div className="flex gap-2 flex-wrap">
-                                {predefinedColors.map((color, idx) => (
-                                    <button
-                                        key={idx}
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, color })}
-                                        className={cn(
-                                            "w-8 h-8 rounded-full transition-all",
-                                            formData.color === color && "ring-2 ring-offset-2 ring-primary"
-                                        )}
-                                        style={{ backgroundColor: color }}
-                                    />
-                                ))}
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, color: '' })}
-                                    className={cn(
-                                        "w-8 h-8 rounded-full border-2 border-border bg-card flex items-center justify-center text-muted-foreground hover:bg-secondary",
-                                        !formData.color && "ring-2 ring-offset-2 ring-primary"
-                                    )}
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <p className="text-xs text-slate-500">
-                                {formData.color ? 'Benutzerdefinierte Farbe' : 'Standard: Mitarbeiterfarbe'}
-                            </p>
-                        </div>
-                    )}
+
 
                     {shift && (
                         <div className="grid grid-cols-2 gap-3">

@@ -146,7 +146,7 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
                     </div>
 
                     <div>
-                        <Label htmlFor="revenue" className="text-slate-300">Tagesumsatz (€)</Label>
+                        <Label htmlFor="revenue" className="text-slate-300">Gesamtumsatz (€)</Label>
                         <Input 
                             id="revenue"
                             type="number" 
@@ -157,6 +157,25 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
                             className="bg-slate-700 border-slate-600 text-white mt-1"
                             required
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <Label htmlFor="revenue_cash" className="text-slate-300 text-sm">Umsatz Bar (€)</Label>
+                            <Input id="revenue_cash" type="number" step="0.01" placeholder="optional" value={revenueCash} onChange={(e) => setRevenueCash(e.target.value)} className="bg-slate-700 border-slate-600 text-white mt-1" />
+                        </div>
+                        <div>
+                            <Label htmlFor="revenue_ec" className="text-slate-300 text-sm">Umsatz EC (€)</Label>
+                            <Input id="revenue_ec" type="number" step="0.01" placeholder="optional" value={revenueEC} onChange={(e) => setRevenueEC(e.target.value)} className="bg-slate-700 border-slate-600 text-white mt-1" />
+                        </div>
+                        <div>
+                            <Label htmlFor="vat" className="text-slate-300 text-sm">Umsatzsteuer (€)</Label>
+                            <Input id="vat" type="number" step="0.01" placeholder="optional" value={vat} onChange={(e) => setVat(e.target.value)} className="bg-slate-700 border-slate-600 text-white mt-1" />
+                        </div>
+                        <div>
+                            <Label htmlFor="own_consumption" className="text-slate-300 text-sm">Eigenbedarf (€)</Label>
+                            <Input id="own_consumption" type="number" step="0.01" placeholder="optional" value={ownConsumption} onChange={(e) => setOwnConsumption(e.target.value)} className="bg-slate-700 border-slate-600 text-white mt-1" />
+                        </div>
                     </div>
 
                     <div>

@@ -103,7 +103,7 @@ export default function TimeEntryModal({ open, onClose, entry, currentEmployee, 
                                     <SelectValue placeholder="Mitarbeiter wählen..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {allEmployees.map(emp => (
+                                    {[...allEmployees].sort((a, b) => a.name.localeCompare(b.name, 'de')).map(emp => (
                                         <SelectItem key={emp.id} value={emp.id}>
                                             {emp.name}
                                         </SelectItem>

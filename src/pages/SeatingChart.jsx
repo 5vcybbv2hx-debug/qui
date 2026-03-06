@@ -127,6 +127,15 @@ export default function SeatingChartPage() {
                     )}
                     <div className="flex gap-2">
                         <Button
+                            variant={view === 'multiroom' ? 'default' : 'outline'}
+                            onClick={() => setView('multiroom')}
+                            size="sm"
+                            className={view === 'multiroom' ? 'bg-primary hover:bg-primary/90' : ''}
+                        >
+                            <Move className="h-4 w-4 mr-2" />
+                            Alle Räume
+                        </Button>
+                        <Button
                             variant={view === 'floorplan' ? 'default' : 'outline'}
                             onClick={() => setView('floorplan')}
                             size="sm"

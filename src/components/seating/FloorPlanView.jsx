@@ -191,7 +191,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     const handleWheel = (e) => {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        setZoom(prev => Math.min(Math.max(prev * delta, 0.5), 3));
+        setZoom(prev => Math.min(Math.max(prev * delta, 0.5), 5));
     };
 
     const handleMouseDown = (e) => {

@@ -6,7 +6,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function MultiRoomFloorPlanEditor() {
+export default function MultiRoomFloorPlanEditor({ onTableSelect = null }) {
     const [pdfImage, setPdfImage] = useState(null);
     const [pdfLoading, setPdfLoading] = useState(false);
     const [tablePositions, setTablePositions] = useState({});

@@ -24,8 +24,13 @@ function getDefaultPosition(index, total) {
     };
 }
 
-function TableShape({ posX, posY, table, isReserved, isSelected, editMode, onMouseDown, onClick }) {
-    const size = TABLE_SIZES[table.shape] || TABLE_SIZES.square;
+function TableShape({ posX, posY, table, isReserved, isSelected, editMode, onMouseDown, onClick, onSizeChange }) {
+    const baseSize = TABLE_SIZES[table.shape] || TABLE_SIZES.square;
+    const multiplier = table.size_multiplier || 1;
+    const size = {
+        w: baseSize.w * multiplier,
+        h: baseSize.h * multiplier
+    };
     const isRound = table.shape === 'round';
 
     return (
@@ -58,7 +63,21 @@ function TableShape({ posX, posY, table, isReserved, isSelected, editMode, onMou
                     {table.table_number}
                 </span>
                 <span className="text-[10px] opacity-60">{table.capacity}P</span>
-                {editMode && <Move className="w-3 h-3 opacity-50 mt-0.5" />}
+                {editMode && isSelected && (
+                    <input
+                        type="range"
+                        min="0.5"
+                        max="2"
+                        step="0.1"
+                        defaultValue={multiplier}
+                        onChange={(e) => onSizeChange(parseFloat(e.target.value))}
+                        className="w-10 h-1 mt-1 cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                    />
+                )}
+                {editMode && !isSelected && <Move className="w-3 h-3 opacity-50 mt-0.5" />}
             </div>
             {isReserved && !editMode && (
                 <div className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-background" />
@@ -103,8 +122,8 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     }, [tableIds]);
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, position_x, position_y }) =>
-            base44.entities.Table.update(id, { position_x, position_y }),
+        mutationFn: ({ id, position_x, position_y, size_multiplier }) =>
+            base44.entities.Table.update(id, { position_x, position_y, size_multiplier }),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tables'] })
     });
 
@@ -293,11 +312,21 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                                 editMode={editMode}
                                 onMouseDown={(e) => handleDragStart(e, table.id)}
                                 onTouchStart={(e) => handleDragStart(e, table.id)}
+                                onSizeChange={(multiplier) => {
+                                    updateMutation.mutate({
+                                        id: table.id,
+                                        position_x: Math.round(pos.x),
+                                        position_y: Math.round(pos.y),
+                                        size_multiplier: multiplier
+                                    });
+                                }}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (!editMode) {
                                         setSelectedTableId(table.id);
                                         onTableClick(table);
+                                    } else {
+                                        setSelectedTableId(table.id);
                                     }
                                 }}
                             />

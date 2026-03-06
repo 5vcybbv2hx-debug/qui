@@ -334,6 +334,30 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                     </div>
                 </form>
             </DialogContent>
+
+            {showFloorPlan && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+                        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+                            <h2 className="text-lg font-semibold">Tisch wählen</h2>
+                            <button
+                                onClick={() => setShowFloorPlan(false)}
+                                className="p-1 hover:bg-gray-100 rounded"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <MultiRoomFloorPlanEditor 
+                                onTableSelect={(tableNumber) => {
+                                    setFormData({ ...formData, table: tableNumber });
+                                    setShowFloorPlan(false);
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </Dialog>
     );
 }

@@ -16,6 +16,7 @@ import MultiRoomFloorPlanEditor from '@/components/seating/MultiRoomFloorPlanEdi
 
 export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false }) {
     const queryClient = useQueryClient();
+    const [showFloorPlan, setShowFloorPlan] = useState(false);
     const [formData, setFormData] = useState({
         customer_name: '',
         phone: '',

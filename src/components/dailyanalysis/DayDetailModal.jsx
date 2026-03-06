@@ -128,15 +128,17 @@ export default function DayDetailModal({ open, onOpenChange, revenue, tipDistrib
                                         <span className="text-slate-400 text-sm">€</span>
                                     </div>
                                 ) : (
-                                    value != null && (
-                                        <div key={key} className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2 text-slate-300 text-sm">
-                                                <Icon className="w-4 h-4 text-slate-500" />
-                                                {label}
-                                            </div>
-                                            <span className={`font-semibold ${color}`}>{value.toFixed(2)} €</span>
+                                    <div key={key} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 text-slate-300 text-sm">
+                                            <Icon className="w-4 h-4 text-slate-500" />
+                                            {label}
                                         </div>
-                                    )
+                                        {value != null ? (
+                                            <span className={`font-semibold ${color}`}>{value.toFixed(2)} €</span>
+                                        ) : (
+                                            <span className="text-slate-600 text-sm">–</span>
+                                        )}
+                                    </div>
                                 )
                             ))}
 

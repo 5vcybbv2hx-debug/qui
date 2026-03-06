@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { Upload, DollarSign, Users, Gift, AlertCircle, Loader2, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { Upload, DollarSign, Users, Gift, AlertCircle, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { format, parseISO, addDays, subDays, isToday, parse } from 'date-fns';
 import { de } from 'date-fns/locale';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';

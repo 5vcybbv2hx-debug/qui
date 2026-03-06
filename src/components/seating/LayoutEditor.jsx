@@ -5,13 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Upload, Save } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import TableGridEditor from './TableGridEditor';
+import { Save } from 'lucide-react';
+import VisualFloorPlanEditor from './VisualFloorPlanEditor';
 
 export default function LayoutEditor({ roomId, roomName, open, onClose }) {
     const [layoutName, setLayoutName] = useState('Standard');
-    const [floorPlanUrl, setFloorPlanUrl] = useState('');
+    const [tablePositions, setTablePositions] = useState([]);
     const queryClient = useQueryClient();
 
     const { data: layout } = useQuery({
@@ -26,21 +25,9 @@ export default function LayoutEditor({ roomId, roomName, open, onClose }) {
     useEffect(() => {
         if (layout) {
             setLayoutName(layout.layout_name);
-            setFloorPlanUrl(layout.floor_plan_url || '');
+            setTablePositions(layout.tables || []);
         }
     }, [layout]);
-
-    const handleFloorPlanUpload = async (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        try {
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
-            setFloorPlanUrl(file_url);
-        } catch (error) {
-            console.error('Upload fehlgeschlagen:', error);
-        }
-    };
 
     const saveMutation = useMutation({
         mutationFn: async () => {
@@ -48,7 +35,7 @@ export default function LayoutEditor({ roomId, roomName, open, onClose }) {
                 room_id: roomId,
                 room_name: roomName,
                 layout_name: layoutName,
-                floor_plan_url: floorPlanUrl
+                tables: tablePositions
             };
 
             if (layout?.id) {
@@ -65,83 +52,47 @@ export default function LayoutEditor({ roomId, roomName, open, onClose }) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Tischplan konfigurieren: {roomName}</DialogTitle>
+                    <DialogTitle>Tischplan: {roomName}</DialogTitle>
                 </DialogHeader>
 
-                <Tabs defaultValue="grid" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="grid">Tische platzieren</TabsTrigger>
-                        <TabsTrigger value="settings">Einstellungen</TabsTrigger>
-                    </TabsList>
+                <div className="space-y-4">
+                    {/* Layout Name */}
+                    <div className="space-y-2">
+                        <Label>Layout-Name</Label>
+                        <Input
+                            value={layoutName}
+                            onChange={(e) => setLayoutName(e.target.value)}
+                            placeholder="z.B. Standard, Event-Setup"
+                        />
+                    </div>
 
-                    {/* Grid Editor Tab */}
-                    <TabsContent value="grid" className="space-y-4 mt-4">
-                        <TableGridEditor roomId={roomId} roomName={roomName} />
-                    </TabsContent>
+                    {/* Visual Floor Plan Editor */}
+                    <VisualFloorPlanEditor
+                        roomId={roomId}
+                        roomName={roomName}
+                        onTablePositionsChange={setTablePositions}
+                    />
 
-                    {/* Settings Tab */}
-                    <TabsContent value="settings" className="space-y-4 mt-4">
-                        {/* Layout Name */}
-                        <div className="space-y-2">
-                            <Label>Layout-Name</Label>
-                            <Input
-                                value={layoutName}
-                                onChange={(e) => setLayoutName(e.target.value)}
-                                placeholder="z.B. Standard, Event-Setup"
-                            />
-                        </div>
-
-                        {/* Floor Plan Upload */}
-                        <div className="space-y-2">
-                            <Label>Grundriss als Referenz (optional)</Label>
-                            <p className="text-xs text-muted-foreground">
-                                Lade einen Grundriss hoch, um die Tischplatzierung zu unterstützen.
-                            </p>
-                            <div className="flex gap-2">
-                                <label className="flex-1">
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        onChange={handleFloorPlanUpload}
-                                        className="hidden"
-                                    />
-                                    <Button variant="outline" className="w-full" asChild>
-                                        <span><Upload className="w-4 h-4 mr-2" />Grundriss hochladen</span>
-                                    </Button>
-                                </label>
-                            </div>
-                            {floorPlanUrl && (
-                                <div className="mt-3 border border-border rounded-lg overflow-hidden">
-                                    <img
-                                        src={floorPlanUrl}
-                                        alt="Grundriss"
-                                        className="w-full h-auto max-h-48 object-contain"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-                </Tabs>
-
-                {/* Aktionen */}
-                <div className="flex gap-2 mt-6">
-                    <Button
-                        variant="outline"
-                        onClick={onClose}
-                        className="flex-1"
-                    >
-                        Abbrechen
-                    </Button>
-                    <Button
-                        onClick={() => saveMutation.mutate()}
-                        disabled={saveMutation.isPending}
-                        className="flex-1"
-                    >
-                        <Save className="w-4 h-4 mr-2" />
-                        Speichern
-                    </Button>
+                    {/* Aktionen */}
+                    <div className="flex gap-2 pt-4 border-t border-border">
+                        <Button
+                            variant="outline"
+                            onClick={onClose}
+                            className="flex-1"
+                        >
+                            Abbrechen
+                        </Button>
+                        <Button
+                            onClick={() => saveMutation.mutate()}
+                            disabled={saveMutation.isPending}
+                            className="flex-1"
+                        >
+                            <Save className="w-4 h-4 mr-2" />
+                            Speichern
+                        </Button>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>

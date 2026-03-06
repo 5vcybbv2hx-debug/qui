@@ -31,7 +31,7 @@ export default function DailyAnalysis() {
 
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries'],
-        queryFn: () => base44.entities.TimeEntry.list('-date'),
+        queryFn: () => base44.entities.TimeEntry.list('-date', 500),
         staleTime: 2 * 60 * 1000,
     });
 

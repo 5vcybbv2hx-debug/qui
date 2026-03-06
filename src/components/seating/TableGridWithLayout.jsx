@@ -5,6 +5,9 @@ import { cn } from '@/lib/utils';
 import * as pdfjsLib from 'pdfjs-dist';
 
 export default function TableGridWithLayout({ tables, reservations, getTableReservation, onTableClick, roomName }) {
+    const [pdfImage, setPdfImage] = useState(null);
+    const [pdfLoading, setPdfLoading] = useState(false);
+
     // Lade das Layout für den aktuellen Raum
     const { data: layout } = useQuery({
         queryKey: ['seating-layout', roomName],
@@ -15,8 +18,47 @@ export default function TableGridWithLayout({ tables, reservations, getTableRese
         enabled: !!roomName
     });
 
+    // PDF zu Bild konvertieren
+    useEffect(() => {
+        if (!layout?.floor_plan_url) return;
+
+        const isPdf = layout.floor_plan_url.toLowerCase().endsWith('.pdf');
+        if (!isPdf) {
+            setPdfImage(null);
+            return;
+        }
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+        const renderPdf = async () => {
+            try {
+                setPdfLoading(true);
+                const pdf = await pdfjsLib.getDocument(layout.floor_plan_url).promise;
+                const page = await pdf.getPage(1);
+                
+                const viewport = page.getViewport({ scale: 2 });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                
+                await page.render({ canvasContext: context, viewport }).promise;
+                setPdfImage(canvas.toDataURL('image/png'));
+            } catch (error) {
+                console.error('PDF rendering failed:', error);
+                setPdfImage(null);
+            } finally {
+                setPdfLoading(false);
+            }
+        };
+
+        renderPdf();
+    }, [layout?.floor_plan_url]);
+
     const tablePositions = layout?.tables || [];
     const hasLayout = tablePositions.length > 0;
+    const backgroundUrl = pdfImage || layout?.floor_plan_url;
 
     if (!hasLayout) {
         // Fallback zu normalem Grid wenn kein Layout vorhanden

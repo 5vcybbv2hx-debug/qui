@@ -93,7 +93,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     const [positions, setPositions] = useState({});
     const positionsRef = useRef({});
     const [editMode, setEditMode] = useState(false);
-    const [zoom, setZoom] = useState(1.5);
+    const [zoom, setZoom] = useState(3);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
     const panStartRef = useRef({ x: 0, y: 0 });

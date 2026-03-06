@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -74,6 +74,13 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     const [positions, setPositions] = useState({});
     const positionsRef = useRef({});
     const [editMode, setEditMode] = useState(false);
+
+    // Hole den Grundriss aus dem ersten aktiven Layout
+    const { data: layouts = [] } = useQuery({
+        queryKey: ['seating-layout'],
+        queryFn: () => base44.entities.SeatingLayout.filter({ is_active: true })
+    });
+    const floorPlan = layouts[0];
 
     const tableIds = tables.map(t => t.id).join(',');
 
@@ -202,6 +209,15 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                 style={{ height: '520px' }}
                 onClick={() => !editMode && setSelectedTableId(null)}
             >
+                {/* Grundriss als Hintergrund */}
+                {floorPlan?.floor_plan_url && (
+                    <img
+                        src={floorPlan.floor_plan_url}
+                        alt="Grundriss"
+                        className="absolute inset-0 w-full h-full object-contain opacity-40 pointer-events-none"
+                    />
+                )}
+
                 <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none">
                     <defs>
                         <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">

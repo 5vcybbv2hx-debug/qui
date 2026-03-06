@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Grid2x2, List, Settings, Move, CalendarDays } from 'lucide-react';
+import { Plus, Grid2x2, List, Settings, Move, CalendarDays, Layers } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import TableGrid from '@/components/seating/TableGrid';
 import TableList from '@/components/seating/TableList';
@@ -11,6 +11,7 @@ import FloorPlanView from '@/components/seating/FloorPlanView';
 import TableCalendarView from '@/components/seating/TableCalendarView';
 import TableModal from '@/components/seating/TableModal';
 import RoomManager from '@/components/seating/RoomManager';
+import LayoutEditor from '@/components/seating/LayoutEditor';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 
@@ -18,6 +19,7 @@ export default function SeatingChartPage() {
     const permissions = usePermissions();
     const [view, setView] = useState('grid');
     const [showModal, setShowModal] = useState(false);
+    const [showLayoutEditor, setShowLayoutEditor] = useState(false);
     const [selectedTable, setSelectedTable] = useState(null);
     const [selectedRoom, setSelectedRoom] = useState(null);
 
@@ -59,6 +61,26 @@ export default function SeatingChartPage() {
                         <p className="text-muted-foreground mt-1">Verwaltung und Reservierungen</p>
                     </div>
                     <div className="flex gap-2">
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                                    <Layers className="h-4 w-4 mr-2" />
+                                    Layout
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle>Tischplan-Layout bearbeiten</DialogTitle>
+                                </DialogHeader>
+                                {activeRoom && (
+                                    <LayoutEditor 
+                                        roomId={activeRoom}
+                                        open={true}
+                                        onClose={() => {}}
+                                    />
+                                )}
+                            </DialogContent>
+                        </Dialog>
                         <Dialog>
                             <DialogTrigger asChild>
                                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">

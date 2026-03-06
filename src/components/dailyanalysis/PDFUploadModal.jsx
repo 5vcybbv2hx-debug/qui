@@ -67,23 +67,23 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
             const uploadResponse = await base44.integrations.Core.UploadFile({ file });
             const analysisResponse = await base44.integrations.Core.InvokeLLM({
                 prompt: `Analysiere diese Z-Abschlag PDF von einer Bar/Lokal. Extrahiere die folgenden Informationen:
-                - Tagesumsatz / Gesamtumsatz (in Euro)
-                - Datum des Z-Abschlags
-                - Zahlungsarten und deren Summen
-                - Besondere Notizen oder Auffälligkeiten
+                - Gesamtumsatz / Tagesumsatz (in Euro, Brutto)
+                - Umsatz Bar (Bargeld-Umsatz)
+                - Umsatz EC / Kartenzahlung
+                - Umsatzsteuer (MwSt.)
+                - Eigenbedarf / Eigenverbrauch
+                - Besondere Notizen
 
-                Gib die Antwort als JSON zurück mit den Keys: "revenue" (Dezimalzahl), "date" (YYYY-MM-DD), "payment_methods" (Objekt), "notes" (String).`,
+                Gib die Antwort als JSON zurück.`,
                 file_urls: [uploadResponse.file_url],
                 response_json_schema: {
                     type: 'object',
                     properties: {
-                        revenue: { type: 'number', description: 'Tagesumsatz in Euro' },
-                        date: { type: 'string', description: 'Datum im Format YYYY-MM-DD' },
-                        payment_methods: { 
-                            type: 'object',
-                            description: 'Zahlungsarten und Summen',
-                            additionalProperties: { type: 'number' }
-                        },
+                        revenue: { type: 'number', description: 'Gesamtumsatz in Euro' },
+                        revenue_cash: { type: 'number', description: 'Umsatz Bar (Bargeld) in Euro' },
+                        revenue_ec: { type: 'number', description: 'Umsatz EC/Karte in Euro' },
+                        vat: { type: 'number', description: 'Umsatzsteuer in Euro' },
+                        own_consumption: { type: 'number', description: 'Eigenbedarf/Eigenverbrauch in Euro' },
                         notes: { type: 'string', description: 'Zusätzliche Notizen' }
                     },
                     required: ['revenue']
@@ -92,6 +92,10 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
 
             if (analysisResponse.revenue) {
                 setRevenue(analysisResponse.revenue.toString());
+                if (analysisResponse.revenue_cash) setRevenueCash(analysisResponse.revenue_cash.toString());
+                if (analysisResponse.revenue_ec) setRevenueEC(analysisResponse.revenue_ec.toString());
+                if (analysisResponse.vat) setVat(analysisResponse.vat.toString());
+                if (analysisResponse.own_consumption) setOwnConsumption(analysisResponse.own_consumption.toString());
                 if (analysisResponse.notes) {
                     setNotes(analysisResponse.notes);
                 }

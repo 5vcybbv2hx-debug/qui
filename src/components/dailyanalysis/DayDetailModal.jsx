@@ -1,30 +1,105 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { DollarSign, CreditCard, Banknote, Receipt, ShoppingBag, Users, Gift, FileText } from 'lucide-react';
+import { DollarSign, CreditCard, Banknote, Receipt, ShoppingBag, Users, Gift, FileText, Pencil, Check, X } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function DayDetailModal({ open, onOpenChange, revenue, tipDistribution, laborCost, staffCount }) {
+    const queryClient = useQueryClient();
+    const [editing, setEditing] = useState(false);
+    const [form, setForm] = useState({});
+
+    useEffect(() => {
+        if (revenue) {
+            setForm({
+                revenue: revenue.revenue ?? '',
+                revenue_cash: revenue.revenue_cash ?? '',
+                revenue_ec: revenue.revenue_ec ?? '',
+                vat: revenue.vat ?? '',
+                own_consumption: revenue.own_consumption ?? '',
+                notes: revenue.notes ?? '',
+            });
+        }
+        setEditing(false);
+    }, [revenue]);
+
+    const updateMutation = useMutation({
+        mutationFn: async () => {
+            // We need to find the actual DailyRevenue record by date
+            const records = await base44.entities.DailyRevenue.filter({ date: revenue.date });
+            if (!records[0]) throw new Error('Datensatz nicht gefunden');
+            await base44.entities.DailyRevenue.update(records[0].id, {
+                revenue: parseFloat(form.revenue) || 0,
+                revenue_cash: form.revenue_cash !== '' ? parseFloat(form.revenue_cash) : null,
+                revenue_ec: form.revenue_ec !== '' ? parseFloat(form.revenue_ec) : null,
+                vat: form.vat !== '' ? parseFloat(form.vat) : null,
+                own_consumption: form.own_consumption !== '' ? parseFloat(form.own_consumption) : null,
+                notes: form.notes || null,
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['daily-revenues'] });
+            setEditing(false);
+        }
+    });
+
     if (!revenue) return null;
 
     const date = parseISO(revenue.date);
 
     const rows = [
-        { label: 'Gesamtumsatz', value: revenue.revenue, color: 'text-green-400', icon: DollarSign },
-        { label: 'Umsatz Bar', value: revenue.revenue_cash, color: 'text-yellow-400', icon: Banknote },
-        { label: 'Umsatz EC', value: revenue.revenue_ec, color: 'text-blue-400', icon: CreditCard },
-        { label: 'Umsatzsteuer', value: revenue.vat, color: 'text-slate-400', icon: Receipt },
-        { label: 'Eigenbedarf', value: revenue.own_consumption, color: 'text-orange-400', icon: ShoppingBag },
+        { label: 'Gesamtumsatz', key: 'revenue', value: revenue.revenue, color: 'text-green-400', icon: DollarSign, required: true },
+        { label: 'Umsatz Bar', key: 'revenue_cash', value: revenue.revenue_cash, color: 'text-yellow-400', icon: Banknote },
+        { label: 'Umsatz EC', key: 'revenue_ec', value: revenue.revenue_ec, color: 'text-blue-400', icon: CreditCard },
+        { label: 'Umsatzsteuer', key: 'vat', value: revenue.vat, color: 'text-slate-400', icon: Receipt },
+        { label: 'Eigenbedarf', key: 'own_consumption', value: revenue.own_consumption, color: 'text-orange-400', icon: ShoppingBag },
     ];
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={(v) => { if (!v) setEditing(false); onOpenChange(v); }}>
             <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="text-white text-xl">
-                        {format(date, 'EEEE, dd. MMMM yyyy', { locale: de })}
-                    </DialogTitle>
+                    <div className="flex items-center justify-between">
+                        <DialogTitle className="text-white text-xl">
+                            {format(date, 'EEEE, dd. MMMM yyyy', { locale: de })}
+                        </DialogTitle>
+                        {!editing ? (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditing(true)}
+                                className="border-slate-600 text-slate-300 hover:text-white"
+                            >
+                                <Pencil className="w-3.5 h-3.5 mr-1" /> Bearbeiten
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setEditing(false)}
+                                    className="border-slate-600 text-slate-300"
+                                    disabled={updateMutation.isPending}
+                                >
+                                    <X className="w-3.5 h-3.5 mr-1" /> Abbrechen
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={() => updateMutation.mutate()}
+                                    className="bg-amber-600 hover:bg-amber-700"
+                                    disabled={updateMutation.isPending}
+                                >
+                                    <Check className="w-3.5 h-3.5 mr-1" /> {updateMutation.isPending ? 'Speichern...' : 'Speichern'}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </DialogHeader>
 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -35,17 +110,54 @@ export default function DayDetailModal({ open, onOpenChange, revenue, tipDistrib
                             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                                 <DollarSign className="w-4 h-4" /> Z-Abschlag
                             </h3>
-                            {rows.map(({ label, value, color, icon: Icon }) => (
-                                value != null && (
-                                    <div key={label} className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2 text-slate-300 text-sm">
+                            {rows.map(({ label, key, value, color, icon: Icon, required }) => (
+                                editing ? (
+                                    <div key={key} className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 text-slate-300 text-sm w-32 shrink-0">
                                             <Icon className="w-4 h-4 text-slate-500" />
                                             {label}
                                         </div>
-                                        <span className={`font-semibold ${color}`}>{value.toFixed(2)} €</span>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder={required ? 'Pflichtfeld' : 'optional'}
+                                            value={form[key]}
+                                            onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}
+                                            className="bg-slate-700 border-slate-600 text-white text-right h-8 text-sm"
+                                        />
+                                        <span className="text-slate-400 text-sm">€</span>
                                     </div>
+                                ) : (
+                                    value != null && (
+                                        <div key={key} className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 text-slate-300 text-sm">
+                                                <Icon className="w-4 h-4 text-slate-500" />
+                                                {label}
+                                            </div>
+                                            <span className={`font-semibold ${color}`}>{value.toFixed(2)} €</span>
+                                        </div>
+                                    )
                                 )
                             ))}
+
+                            {/* Notizen */}
+                            {editing ? (
+                                <div>
+                                    <Label className="text-xs text-slate-400">Notizen</Label>
+                                    <Input
+                                        type="text"
+                                        placeholder="Notizen"
+                                        value={form.notes}
+                                        onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
+                                        className="bg-slate-700 border-slate-600 text-white h-8 text-sm mt-1"
+                                    />
+                                </div>
+                            ) : revenue.notes ? (
+                                <div className="pt-2 border-t border-slate-700">
+                                    <p className="text-xs text-slate-500 mb-1">Notizen</p>
+                                    <p className="text-slate-300 text-sm">{revenue.notes}</p>
+                                </div>
+                            ) : null}
                         </div>
 
                         {/* Personalkosten */}
@@ -89,14 +201,6 @@ export default function DayDetailModal({ open, onOpenChange, revenue, tipDistrib
                                     <span className="text-slate-300 text-sm">Quote</span>
                                     <span className="text-slate-400 text-sm">{tipDistribution.tip_percentage} %</span>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Notizen */}
-                        {revenue.notes && (
-                            <div className="bg-slate-800 rounded-xl p-4">
-                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">Notizen</h3>
-                                <p className="text-slate-300 text-sm">{revenue.notes}</p>
                             </div>
                         )}
                     </div>

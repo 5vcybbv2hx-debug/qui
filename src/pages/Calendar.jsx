@@ -217,6 +217,7 @@ export default function CalendarPage() {
                             </Button>
                             <ShiftSwapManager />
                             {permissions.isAdmin && <MonthlyStaffingCheck />}
+                            {permissions.isAdmin && <DefaultShiftRulesManager />}
                             {permissions.canEditShifts && <ShiftRequirementsManager />}
                             {permissions.canEditShifts && <OpeningHoursManager />}
                             <Button variant="outline" onClick={handleBackup} title="Backup als JSON">
@@ -224,7 +225,6 @@ export default function CalendarPage() {
                                 Sicherung
                             </Button>
                             <LiveSyncInstructions />
-                            <CalendarExport shifts={shifts} reservations={reservations} />
                             {permissions.canEditShifts && (
                                 <Button onClick={() => handleAddShift(new Date())} className="bg-amber-600 hover:bg-amber-700">
                                     <Plus className="w-4 h-4 mr-2" />

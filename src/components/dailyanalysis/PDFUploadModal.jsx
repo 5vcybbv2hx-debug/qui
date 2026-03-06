@@ -12,6 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuccess }) {
     const [file, setFile] = useState(null);
     const [revenue, setRevenue] = useState('');
+    const [revenueCash, setRevenueCash] = useState('');
+    const [revenueEC, setRevenueEC] = useState('');
+    const [vat, setVat] = useState('');
+    const [ownConsumption, setOwnConsumption] = useState('');
     const [notes, setNotes] = useState('');
     const [analyzing, setAnalyzing] = useState(false);
     const [analysisError, setAnalysisError] = useState(null);

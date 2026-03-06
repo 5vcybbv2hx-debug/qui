@@ -391,14 +391,22 @@ export default function TimeTracking() {
         })
         .reduce((sum, e) => sum + (e.total_hours || 0), 0);
 
-    // Group by employee
-    const entriesByEmployee = visibleEntries.reduce((groups, entry) => {
+    // Filter + Group by employee
+    const filteredEntries = visibleEntries.filter(e => {
+        const matchEmployee = !filterEmployee || e.employee_name === filterEmployee;
+        const matchStatus = !filterStatus || e.status === filterStatus;
+        return matchEmployee && matchStatus;
+    });
+
+    const entriesByEmployee = filteredEntries.reduce((groups, entry) => {
         if (!groups[entry.employee_name]) {
             groups[entry.employee_name] = [];
         }
         groups[entry.employee_name].push(entry);
         return groups;
     }, {});
+
+    const employeeNames = [...new Set(visibleEntries.map(e => e.employee_name))].sort();
 
     return (
         <div className="min-h-screen bg-background">

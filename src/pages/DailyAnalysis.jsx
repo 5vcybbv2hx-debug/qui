@@ -338,7 +338,7 @@ export default function DailyAnalysis() {
             )}
 
             {/* Verlauf */}
-            <DailyRevenueList revenues={dailyRevenues} timeEntries={timeEntries} tipDistributions={tipDistributions} />
+            <DailyRevenueList revenues={dailyRevenues} timeEntries={timeEntries} tipDistributions={tipDistributions} employees={employees} />
 
             {/* Modals */}
             <PDFUploadModal 

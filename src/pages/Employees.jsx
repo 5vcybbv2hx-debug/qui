@@ -655,41 +655,48 @@ export default function Employees() {
                     ))}
                 </div>
 
-                {/* Inactive Employees */}
+                {/* Ehemalige Button + Section */}
                 {permissions.isManager && inactiveEmployees.length > 0 && (
                     <div className="mt-8">
-                        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-4">
-                            Inaktive Mitarbeiter
-                        </h2>
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {inactiveEmployees.map(employee => (
-                                <Card 
-                                    key={employee.id}
-                                    className="p-4 bg-card/50 border-border opacity-60"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div 
-                                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
-                                            style={{ backgroundColor: employee.color || '#64748b' }}
-                                        >
-                                            {employee.name?.charAt(0).toUpperCase()}
+                        <button
+                            onClick={() => setShowInactive(v => !v)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 transition-all text-sm font-medium mb-4"
+                        >
+                            <Archive className="w-4 h-4" />
+                            Ehemalige ({inactiveEmployees.length})
+                            <span className="text-xs text-slate-500">{showInactive ? '▲' : '▼'}</span>
+                        </button>
+                        {showInactive && (
+                            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {inactiveEmployees.map(employee => (
+                                    <Card 
+                                        key={employee.id}
+                                        className="p-4 bg-card/50 border-border opacity-60"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div 
+                                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
+                                                style={{ backgroundColor: employee.color || '#64748b' }}
+                                            >
+                                                {employee.name?.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-slate-300">{employee.name}</p>
+                                                <p className="text-xs text-slate-500">{employee.role}</p>
+                                            </div>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm"
+                                                onClick={() => openModal(employee)}
+                                                className="text-slate-400"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="font-medium text-slate-300">{employee.name}</p>
-                                            <p className="text-xs text-slate-500">{employee.role}</p>
-                                        </div>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm"
-                                            onClick={() => openModal(employee)}
-                                            className="text-slate-400"
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

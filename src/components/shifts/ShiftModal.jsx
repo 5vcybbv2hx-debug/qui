@@ -372,7 +372,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                     {shift && (
                         <div className="space-y-2">
                             <Label>Mitarbeiter</Label>
-                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <div className="flex items-center gap-3 p-3 bg-secondary/30 rounded-lg border border-border">
                                 <div 
                                     className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
                                     style={{ backgroundColor: formData.color }}

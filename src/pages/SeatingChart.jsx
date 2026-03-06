@@ -61,7 +61,7 @@ export default function SeatingChartPage() {
                         <p className="text-muted-foreground mt-1">Verwaltung und Reservierungen</p>
                     </div>
                     <div className="flex gap-2">
-                        <Dialog>
+                        <Dialog open={showLayoutEditor} onOpenChange={setShowLayoutEditor}>
                             <DialogTrigger asChild>
                                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
                                     <Layers className="h-4 w-4 mr-2" />
@@ -75,8 +75,8 @@ export default function SeatingChartPage() {
                                 {activeRoom && (
                                     <LayoutEditor 
                                         roomId={activeRoom}
-                                        open={true}
-                                        onClose={() => {}}
+                                        open={showLayoutEditor}
+                                        onClose={() => setShowLayoutEditor(false)}
                                     />
                                 )}
                             </DialogContent>

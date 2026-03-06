@@ -17,6 +17,7 @@ import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
 import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManager';
 import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
+import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function Shifts() {

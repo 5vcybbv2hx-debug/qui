@@ -245,65 +245,65 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
             >
-                {/* Grundriss als Hintergrund mit Zoom/Pan */}
-                {floorPlan?.floor_plan_url && (
-                    <div
-                        style={{
-                            position: 'absolute',
-                            inset: 0,
-                            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                            transformOrigin: 'top left',
-                            pointerEvents: 'none'
-                        }}
-                    >
+                {/* Container für Grundriss und Tische mit gemeinsamer Transformation */}
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                        transformOrigin: 'top left'
+                    }}
+                >
+                    {/* Grundriss als Hintergrund */}
+                    {floorPlan?.floor_plan_url && (
                         <img
                             src={floorPlan.floor_plan_url}
                             alt="Grundriss"
-                            className="w-full h-full object-contain opacity-40"
+                            className="absolute inset-0 w-full h-full object-contain opacity-40 pointer-events-none"
                         />
-                    </div>
-                )}
+                    )}
 
-                <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none">
-                    <defs>
-                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.5" />
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grid)" />
-                </svg>
+                    <svg className="absolute inset-0 w-full h-full opacity-10 pointer-events-none">
+                        <defs>
+                            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="hsl(var(--foreground))" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#grid)" />
+                    </svg>
 
-                {tables.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-                        Keine Tische in diesem Raum. Bitte zuerst Tische anlegen.
-                    </div>
-                )}
+                    {tables.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
+                            Keine Tische in diesem Raum. Bitte zuerst Tische anlegen.
+                        </div>
+                    )}
 
-                {tables.map((table) => {
-                    const pos = positions[table.id];
-                    if (!pos) return null;
-                    const reservation = getTableReservation(table.id);
-                    return (
-                        <TableShape
-                            key={table.id}
-                            table={table}
-                            posX={pos.x}
-                            posY={pos.y}
-                            isReserved={!!reservation}
-                            isSelected={selectedTableId === table.id}
-                            editMode={editMode}
-                            onMouseDown={(e) => handleDragStart(e, table.id)}
-                            onTouchStart={(e) => handleDragStart(e, table.id)}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (!editMode) {
-                                    setSelectedTableId(table.id);
-                                    onTableClick(table);
-                                }
-                            }}
-                        />
-                    );
-                })}
+                    {tables.map((table) => {
+                        const pos = positions[table.id];
+                        if (!pos) return null;
+                        const reservation = getTableReservation(table.id);
+                        return (
+                            <TableShape
+                                key={table.id}
+                                table={table}
+                                posX={pos.x}
+                                posY={pos.y}
+                                isReserved={!!reservation}
+                                isSelected={selectedTableId === table.id}
+                                editMode={editMode}
+                                onMouseDown={(e) => handleDragStart(e, table.id)}
+                                onTouchStart={(e) => handleDragStart(e, table.id)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!editMode) {
+                                        setSelectedTableId(table.id);
+                                        onTableClick(table);
+                                    }
+                                }}
+                            />
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );

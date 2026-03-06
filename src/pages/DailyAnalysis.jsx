@@ -76,24 +76,48 @@ export default function DailyAnalysis() {
     // Employee-Map für schnelle Lookups
     const employeeMap = new Map(employees.map(emp => [emp.id, emp]));
 
-    // Personalkosten mit Employee-Raten berechnen
-    const todayTimeEntriesWithRates = todayTimeEntries.map(te => {
-        const employee = employeeMap.get(te.employee_id);
-        const hourlyRate = employee?.hourly_rate || 0;
-        return {
-            ...te,
-            hourly_rate: hourlyRate,
-            cost: te.total_hours * hourlyRate
-        };
-    });
+    // Personalkosten: Nutze SalesReport wenn verfügbar, sonst TimeEntry Daten
+    let todayTimeEntriesWithRates = [];
+    let totalLaborCost = 0;
+    let staffCount = 0;
+
+    if (todaySalesReport?.labor_costs_details && Array.isArray(todaySalesReport.labor_costs_details)) {
+        // Aus Verkaufsbericht
+        todayTimeEntriesWithRates = todaySalesReport.labor_costs_details.map((detail, idx) => ({
+            id: `report-${idx}`,
+            employee_id: detail.employee_id || '',
+            employee_name: detail.employee_name || 'Unbekannt',
+            total_hours: detail.hours || 0,
+            hourly_rate: detail.hourly_rate || 0,
+            cost: detail.cost || 0,
+            date: selectedDate,
+            start_time: '',
+            end_time: ''
+        }));
+        totalLaborCost = todayTimeEntriesWithRates.reduce((sum, te) => sum + te.cost, 0);
+        staffCount = todayTimeEntriesWithRates.length;
+    } else {
+        // Aus TimeEntry fallback
+        todayTimeEntriesWithRates = todayTimeEntries.map(te => {
+            const employee = employeeMap.get(te.employee_id);
+            const hourlyRate = employee?.hourly_rate || 0;
+            return {
+                ...te,
+                hourly_rate: hourlyRate,
+                cost: te.total_hours * hourlyRate
+            };
+        });
+        totalLaborCost = todayTimeEntriesWithRates.reduce((sum, te) => sum + te.cost, 0);
+        staffCount = new Set(todayTimeEntriesWithRates.map(te => te.employee_id)).size;
+    }
 
     // Filtere nach ausgewählten Mitarbeitern
     const filteredTimeEntries = selectedEmployees.length > 0 
         ? todayTimeEntriesWithRates.filter(te => selectedEmployees.includes(te.employee_id))
         : todayTimeEntriesWithRates;
 
-    const totalLaborCost = filteredTimeEntries.reduce((sum, te) => sum + te.cost, 0);
-    const staffCount = new Set(filteredTimeEntries.map(te => te.employee_id)).size;
+    const filteredLaborCost = filteredTimeEntries.reduce((sum, te) => sum + te.cost, 0);
+    const filteredStaffCount = new Set(filteredTimeEntries.map(te => te.employee_id)).size;
 
     const handleFetchLaborCosts = async () => {
         setLaborCostLoading(true);
@@ -166,11 +190,14 @@ export default function DailyAnalysis() {
                         {todayTimeEntriesWithRates.length > 0 ? (
                             <>
                                 <div className="text-2xl font-bold text-amber-400">
-                                    {totalLaborCost.toFixed(2)} €
+                                    {filteredLaborCost.toFixed(2)} €
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">
-                                    {staffCount} Mitarbeiter • {todayTimeEntriesWithRates.reduce((sum, te) => sum + te.total_hours, 0).toFixed(1)}h
+                                    {filteredStaffCount} Mitarbeiter • {filteredTimeEntries.reduce((sum, te) => sum + te.total_hours, 0).toFixed(1)}h
                                 </p>
+                                {todaySalesReport && (
+                                    <p className="text-xs text-blue-400 mt-2">✓ Aus Verkaufsbericht</p>
+                                )}
                             </>
                         ) : (
                             <div className="text-slate-500 text-sm">

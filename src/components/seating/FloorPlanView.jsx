@@ -274,7 +274,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                             Bearbeitungsmodus: Tische per Drag &amp; Drop verschieben
                         </p>
                     ) : (
-                        <p className="text-xs text-muted-foreground">Auf Tisch klicken für Details. Scrollrad zum Zoomen, Mitteltaste zum Verschieben.</p>
+                        <p className="text-xs text-muted-foreground">Auf Tisch klicken für Details. Zoomen: Scrollrad (Desktop) oder zwei Finger (Handy). Verschieben: Mitteltaste (Desktop) oder ein Finger (Handy).</p>
                     )}
                     <Button
                         size="sm"

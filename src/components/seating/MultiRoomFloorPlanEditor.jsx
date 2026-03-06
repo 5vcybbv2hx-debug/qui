@@ -166,13 +166,22 @@ export default function MultiRoomFloorPlanEditor({ onTableSelect = null }) {
                 {Object.entries(tablePositions).map(([tableId, pos]) => (
                     <button
                         key={tableId}
-                        onMouseDown={(e) => handleTableMouseDown(e, tableId)}
+                        onMouseDown={(e) => {
+                            if (onTableSelect) return; // Kein Drag wenn Auswahlmodus aktiv
+                            handleTableMouseDown(e, tableId);
+                        }}
+                        onClick={() => {
+                            if (onTableSelect) {
+                                onTableSelect(pos.tableNumber);
+                            }
+                        }}
                         className={cn(
                             'absolute w-12 h-12 rounded-lg flex items-center justify-center text-xs font-bold transition-all shadow-md border-2',
-                            draggingTable === tableId
-                                ? 'bg-blue-500 border-blue-600 z-50 scale-110'
-                                : 'bg-green-500/80 border-green-600 hover:bg-green-500 hover:scale-105',
-                            'text-white cursor-grab active:cursor-grabbing'
+                            onTableSelect
+                                ? 'bg-amber-500 border-amber-600 hover:bg-amber-600 hover:scale-110 cursor-pointer'
+                                : draggingTable === tableId
+                                    ? 'bg-blue-500 border-blue-600 z-50 scale-110'
+                                    : 'bg-green-500/80 border-green-600 hover:bg-green-500 hover:scale-105 cursor-grab active:cursor-grabbing'
                         )}
                         style={{
                             left: `${pos.x}px`,

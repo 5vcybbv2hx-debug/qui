@@ -290,14 +290,15 @@ export default function TimeTracking() {
             const entry = clockEntries.find(e => e.id === entryId);
             const clockOutTime = new Date();
             const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
-            const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+            const breakMinutes = calcLegalBreak(totalMinutes);
+            const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
 
             // ArbZG Prüfung
             const tempEntry = {
                 date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
                 start_time: format(new Date(entry.clock_in), 'HH:mm'),
                 end_time: format(clockOutTime, 'HH:mm'),
-                break_minutes: 0,
+                break_minutes: breakMinutes,
                 total_hours: totalHours,
                 employee_id: entry.employee_id
             };
@@ -307,7 +308,7 @@ export default function TimeTracking() {
             // Update Clock Entry
             await base44.entities.ClockEntry.update(entryId, {
                 clock_out: clockOutTime.toISOString(),
-                break_minutes: 0,
+                break_minutes: breakMinutes,
                 total_hours: totalHours,
                 status: 'clocked_out',
                 arbzg_warning: warningText
@@ -320,9 +321,9 @@ export default function TimeTracking() {
                 date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
                 start_time: format(new Date(entry.clock_in), 'HH:mm'),
                 end_time: format(clockOutTime, 'HH:mm'),
-                break_minutes: 0,
+                break_minutes: breakMinutes,
                 total_hours: totalHours,
-                notes: 'Automatisch von Stempeluhr übertragen',
+                notes: `Automatisch von Stempeluhr übertragen${breakMinutes > 0 ? ` | ${breakMinutes} Min. Pause (gesetzl.) eingerechnet` : ''}`,
                 status: 'eingereicht',
                 arbzg_warning: warningText,
                 employee_confirmed: true,

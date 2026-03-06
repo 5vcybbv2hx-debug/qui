@@ -30,6 +30,10 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
         return {
             date: dateStr,
             revenue: rev.revenue,
+            revenue_cash: rev.revenue_cash,
+            revenue_ec: rev.revenue_ec,
+            vat: rev.vat,
+            own_consumption: rev.own_consumption,
             laborCost,
             staffCount,
             tips: tips?.total_tips || 0,

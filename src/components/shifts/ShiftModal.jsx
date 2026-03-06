@@ -388,9 +388,9 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                             </Label>
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                  {shiftTypes.map((type, index) => {
-                                     const isSelected = formData.shift_type === type.name;
-                                     const color = getColorForOrder(type.order || 0, shiftTypes.length);
-                                     return (
+                                      const isSelected = formData.shift_type === type.name;
+                                      const color = getColorForShiftType(type.name);
+                                      return (
                                          <button
                                              key={type.id}
                                              type="button"

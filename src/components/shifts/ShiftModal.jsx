@@ -487,8 +487,8 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                 className={cn(
                                                     "w-9 h-9 rounded-full text-xs font-medium transition-all",
                                                     recurringData.weekdays.includes(idx)
-                                                        ? "bg-blue-600 text-white"
-                                                        : "bg-white text-slate-600 hover:bg-slate-100"
+                                                        ? "bg-primary text-primary-foreground"
+                                                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                                                 )}
                                             >
                                                 {day}

@@ -196,8 +196,8 @@ export default function Shifts() {
                         </Button>
                         <ShiftSwapManager />
                         {permissions.isAdmin && <MonthlyStaffingCheck />}
-                        {permissions.canEditShifts && <ShiftRequirementsManager />}
-                        {permissions.canEditShifts && <DefaultShiftRulesManager />}
+                        {permissions.isAdmin && <ShiftRequirementsManager />}
+                        {permissions.isAdmin && <DefaultShiftRulesManager />}
                         {permissions.canEditShifts && <OpeningHoursManager />}
                         <Button
                             variant="outline"

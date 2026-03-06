@@ -44,6 +44,10 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
         onSuccess: () => {
             setFile(null);
             setRevenue('');
+            setRevenueCash('');
+            setRevenueEC('');
+            setVat('');
+            setOwnConsumption('');
             setNotes('');
             onOpenChange(false);
             onSuccess?.();

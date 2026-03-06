@@ -338,7 +338,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                     <div className="flex gap-1 flex-wrap">
                                                         {shiftTypes.map(type => {
                                                             const isSelected = empData.shift_type === type.name;
-                                                            const color = getColorForOrder(type.order || 0, shiftTypes.length);
+                                                            const color = getColorForShiftType(type.name);
                                                             return (
                                                                 <button
                                                                     key={type.id}

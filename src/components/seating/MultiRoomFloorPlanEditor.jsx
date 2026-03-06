@@ -63,18 +63,40 @@ export default function MultiRoomFloorPlanEditor({ onTableSelect = null }) {
     // Initialisiere Tischpositionen aus bestehenden Layouts
     useEffect(() => {
         const positions = {};
+        
+        // Wenn ein Master Layout existiert, nutze dessen Positionen
+        if (masterLayout?.tables && masterLayout.tables.length > 0) {
+            masterLayout.tables.forEach(layoutTable => {
+                const tableData = allTables.find(t => t.id === layoutTable.table_id);
+                if (tableData) {
+                    positions[layoutTable.table_id] = {
+                        x: layoutTable.x,
+                        y: layoutTable.y,
+                        tableId: layoutTable.table_id,
+                        tableNumber: layoutTable.table_number,
+                        room: tableData.room,
+                        capacity: tableData.capacity
+                    };
+                }
+            });
+        }
+        
+        // Füge fehlende Tische hinzu
         allTables.forEach(table => {
-            positions[table.id] = {
-                x: table.position_x || Math.random() * 800,
-                y: table.position_y || Math.random() * 600,
-                tableId: table.id,
-                tableNumber: table.table_number,
-                room: table.room,
-                capacity: table.capacity
-            };
+            if (!positions[table.id]) {
+                positions[table.id] = {
+                    x: table.position_x || Math.random() * 800,
+                    y: table.position_y || Math.random() * 600,
+                    tableId: table.id,
+                    tableNumber: table.table_number,
+                    room: table.room,
+                    capacity: table.capacity
+                };
+            }
         });
+        
         setTablePositions(positions);
-    }, [allTables]);
+    }, [allTables, masterLayout]);
 
     const handleTableMouseDown = (e, tableId) => {
         e.preventDefault();

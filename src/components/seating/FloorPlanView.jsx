@@ -97,6 +97,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
     const panStartRef = useRef({ x: 0, y: 0 });
+    const touchRef = useRef({ startDistance: 0, startZoom: 1.2 });
 
     // Hole den Grundriss aus dem ersten aktiven Layout
     const { data: layouts = [] } = useQuery({

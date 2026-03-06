@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, addDays, addWeeks, eachDayOfInterval } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { X, Trash2, Plus, Minus, Users, Clock, Repeat, AlertCircle, Palette } from 'lucide-react';
+import { Trash2, Plus, Minus, Users, Clock, Repeat, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";

@@ -210,11 +210,23 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                         </div>
                         <div className="space-y-2">
                             <Label>Tisch</Label>
-                            <Input
-                                value={formData.table}
-                                onChange={(e) => setFormData({ ...formData, table: e.target.value })}
-                                placeholder="z.B. T5"
-                            />
+                            <div className="flex gap-2">
+                                <Input
+                                    value={formData.table}
+                                    onChange={(e) => setFormData({ ...formData, table: e.target.value })}
+                                    placeholder="z.B. T5"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setShowFloorPlan(true)}
+                                    title="Tisch auf Grundriss wählen"
+                                    className="shrink-0"
+                                >
+                                    <MapPin className="w-4 h-4" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
 

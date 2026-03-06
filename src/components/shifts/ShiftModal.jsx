@@ -337,7 +337,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                                         >
                                                             {employee?.name?.charAt(0)}
                                                         </div>
-                                                        <span className="text-sm font-medium">{employee?.name}</span>
+                                                        <span className="text-sm font-medium text-foreground">{employee?.name}</span>
                                                     </div>
                                                     <div className="flex gap-1 flex-wrap">
                                                         {shiftTypes.map(type => {

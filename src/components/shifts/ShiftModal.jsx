@@ -284,7 +284,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                     onChange={(e) => setEmployeeSearch(e.target.value)}
                                     className="mb-2"
                                 />
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-slate-50 rounded-lg">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-secondary rounded-lg">
                                     {[...employees]
                                         .filter(emp => emp.is_active !== false)
                                         .sort((a, b) => a.name?.localeCompare(b.name, 'de'))

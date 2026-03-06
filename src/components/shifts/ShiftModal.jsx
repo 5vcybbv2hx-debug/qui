@@ -32,15 +32,14 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         queryFn: () => base44.entities.ShiftRequirement.list()
     });
 
-    const getColorForOrder = (order, totalTypes) => {
-        const hue = 120 - (order / Math.max(totalTypes - 1, 1)) * 120;
+    const getColorForShiftType = (shiftTypeName) => {
+        if (!shiftTypeName || shiftTypes.length === 0) return '#6366f1';
+        const shiftType = shiftTypes.find(t => t.name === shiftTypeName);
+        if (!shiftType) return '#6366f1';
+        const order = shiftType.order || 0;
+        const hue = 120 - (order / Math.max(shiftTypes.length - 1, 1)) * 120;
         return `hsl(${hue}, 70%, 50%)`;
     };
-
-    const predefinedColors = [
-        '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
-        '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
-    ];
 
     const [formData, setFormData] = useState({
         employee_id: '',

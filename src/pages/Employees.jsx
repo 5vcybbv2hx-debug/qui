@@ -252,8 +252,9 @@ export default function Employees() {
         
         const cleanedData = {
             ...formData,
-            hourly_rate: formData.hourly_rate ? parseFloat(formData.hourly_rate) : undefined,
-            vacation_days_per_year: formData.vacation_days_per_year ? parseInt(formData.vacation_days_per_year) : undefined
+            hourly_rate: formData.hourly_rate !== '' ? parseFloat(formData.hourly_rate) : undefined,
+            vacation_days_per_year: formData.vacation_days_per_year !== '' ? parseInt(formData.vacation_days_per_year) : undefined,
+            weekly_hours: formData.weekly_hours !== '' ? parseFloat(formData.weekly_hours) : undefined
         };
         
         if (selectedEmployee) {

@@ -61,26 +61,22 @@ export default function SeatingChartPage() {
                         <p className="text-muted-foreground mt-1">Verwaltung und Reservierungen</p>
                     </div>
                     <div className="flex gap-2">
-                        <Dialog open={showLayoutEditor} onOpenChange={setShowLayoutEditor}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                                    <Layers className="h-4 w-4 mr-2" />
-                                    Layout
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle>Tischplan-Layout bearbeiten</DialogTitle>
-                                </DialogHeader>
-                                {activeRoom && (
-                                    <LayoutEditor 
-                                        roomId={activeRoom}
-                                        open={showLayoutEditor}
-                                        onClose={() => setShowLayoutEditor(false)}
-                                    />
-                                )}
-                            </DialogContent>
-                        </Dialog>
+                        {activeRoom && (
+                            <LayoutEditor 
+                                roomId={activeRoom}
+                                roomName={activeRoom}
+                                open={showLayoutEditor}
+                                onClose={() => setShowLayoutEditor(false)}
+                            />
+                        )}
+                        <Button 
+                            variant="outline" 
+                            className="border-primary text-primary hover:bg-primary/10"
+                            onClick={() => setShowLayoutEditor(true)}
+                        >
+                            <Layers className="h-4 w-4 mr-2" />
+                            Layout
+                        </Button>
                         <Dialog>
                             <DialogTrigger asChild>
                                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">

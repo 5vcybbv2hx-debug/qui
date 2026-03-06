@@ -36,10 +36,13 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
             revenue_ec: rev.revenue_ec,
             vat: rev.vat,
             own_consumption: rev.own_consumption,
+            pdf_url: rev.pdf_url,
+            notes: rev.notes,
             laborCost,
             staffCount,
             tips: tips?.total_tips || 0,
-            tipPercentage: tips?.tip_percentage || 0
+            tipPercentage: tips?.tip_percentage || 0,
+            tipDistribution: tips || null
         };
     });
 

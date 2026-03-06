@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 
-export default function DailyRevenueList({ revenues, timeEntries, tipDistributions, employees = [] }) {
+export default function DailyRevenueList({ revenues, timeEntries, tipDistributions, employees = [], onSelectDate, selectedDate }) {
     const employeeMap = new Map(employees.map(emp => [emp.id, emp]));
 
     const getOperatingDate = (te) => {

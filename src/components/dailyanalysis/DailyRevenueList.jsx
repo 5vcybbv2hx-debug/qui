@@ -75,7 +75,7 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
                             {last30Days.map((day) => (
                                <tr
                                    key={day.date}
-                                   onClick={() => onSelectDate?.(day.date)}
+                                   onClick={() => setDetailRevenue(day)}
                                    className={`border-b border-slate-700 hover:bg-slate-700/50 cursor-pointer transition-colors ${day.date === selectedDate ? 'bg-slate-700/70 ring-1 ring-amber-500/50' : ''}`}
                                >
                                     <td className="py-3 px-2 text-white">

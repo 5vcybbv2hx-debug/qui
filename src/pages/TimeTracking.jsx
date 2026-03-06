@@ -30,6 +30,8 @@ export default function TimeTracking() {
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [currentEmployee, setCurrentEmployee] = useState(null);
+    const [filterEmployee, setFilterEmployee] = useState('');
+    const [filterStatus, setFilterStatus] = useState('');
 
     useEffect(() => {
         const loadEmployee = async () => {

@@ -99,19 +99,35 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         }
     }, [shift, selectedDate, open, shiftTypes]);
 
+    const getDefaultShiftForEmployee = (employeeId) => {
+        if (formData.date) {
+            const dayName = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][new Date(formData.date).getDay()];
+            const rule = defaultRules.find(r => r.employee_id === employeeId && r.day_of_week === dayName);
+            if (rule) {
+                const shiftType = shiftTypes.find(t => t.name === rule.shift_type);
+                return {
+                    shift_type: rule.shift_type,
+                    start_time: shiftType?.start_time || '16:00',
+                    end_time: shiftType?.end_time || '03:00'
+                };
+            }
+        }
+        const defaultType = shiftTypes[0];
+        return {
+            shift_type: defaultType?.name || '',
+            start_time: defaultType?.start_time || '16:00',
+            end_time: defaultType?.end_time || '03:00'
+        };
+    };
+
     const toggleEmployee = (employeeId) => {
         setSelectedEmployees(prev => {
             const exists = prev.find(e => e.employee_id === employeeId);
             if (exists) {
                 return prev.filter(e => e.employee_id !== employeeId);
             } else {
-                const defaultType = shiftTypes[0];
-                return [...prev, { 
-                    employee_id: employeeId, 
-                    shift_type: defaultType?.name || '',
-                    start_time: defaultType?.start_time || '16:00',
-                    end_time: defaultType?.end_time || '03:00'
-                }];
+                const defaults = getDefaultShiftForEmployee(employeeId);
+                return [...prev, { employee_id: employeeId, ...defaults }];
             }
         });
     };

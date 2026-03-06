@@ -48,8 +48,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         start_time: '16:00',
         end_time: '03:00',
         shift_type: '',
-        notes: '',
-        color: ''
+        notes: ''
     });
 
     const [selectedEmployees, setSelectedEmployees] = useState([]);

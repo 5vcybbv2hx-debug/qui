@@ -664,6 +664,41 @@ export default function TimeTracking() {
                     </div>
                 </Card>
 
+                {/* Filter Bar */}
+                {permissions.isManager && (
+                    <div className="flex flex-wrap gap-2 items-center mb-4 p-3 bg-card border border-border rounded-lg">
+                        <Filter className="w-4 h-4 text-muted-foreground" />
+                        <select
+                            value={filterEmployee}
+                            onChange={(e) => setFilterEmployee(e.target.value)}
+                            className="text-sm bg-background border border-border rounded px-2 py-1 text-foreground flex-1 min-w-[140px]"
+                        >
+                            <option value="">Alle Mitarbeiter</option>
+                            {employeeNames.map(name => (
+                                <option key={name} value={name}>{name}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="text-sm bg-background border border-border rounded px-2 py-1 text-foreground flex-1 min-w-[130px]"
+                        >
+                            <option value="">Alle Status</option>
+                            <option value="entwurf">Entwurf</option>
+                            <option value="eingereicht">Eingereicht</option>
+                            <option value="genehmigt">Genehmigt</option>
+                        </select>
+                        {(filterEmployee || filterStatus) && (
+                            <button
+                                onClick={() => { setFilterEmployee(''); setFilterStatus(''); }}
+                                className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300"
+                            >
+                                <X className="w-3 h-3" /> Zurücksetzen
+                            </button>
+                        )}
+                    </div>
+                )}
+
                 {/* Add Entry Button and Report Export */}
                 <div className="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                     {permissions.isManager && (

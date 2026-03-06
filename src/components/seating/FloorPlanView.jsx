@@ -302,7 +302,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
             <div
                 ref={canvasRef}
                 className={cn(
-                    "relative w-full bg-card border rounded-xl overflow-hidden",
+                    "relative w-full bg-card border rounded-xl overflow-hidden touch-none",
                     editMode ? "border-amber-500/50 border-2" : "border-border",
                     isPanning && "cursor-grabbing"
                 )}
@@ -313,6 +313,9 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
             >
                 {/* Container für Grundriss und Tische mit gemeinsamer Transformation */}
                 <div

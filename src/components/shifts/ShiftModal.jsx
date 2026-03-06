@@ -449,8 +449,8 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                     </div>
 
                     {!shift && isRecurring && (
-                        <div className="space-y-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                        <div className="space-y-3 p-3 bg-secondary/50 border border-border rounded-lg">
+                            <div className="flex items-center gap-2 text-foreground text-sm font-medium">
                                 <Repeat className="w-4 h-4" />
                                 Wiederholungseinstellungen
                             </div>

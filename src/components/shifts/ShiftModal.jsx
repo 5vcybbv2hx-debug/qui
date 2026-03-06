@@ -22,6 +22,11 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order')
     });
 
+    const { data: defaultRules = [] } = useQuery({
+        queryKey: ['default-shift-rules'],
+        queryFn: () => base44.entities.DefaultShiftRule.list()
+    });
+
     const { data: requirements = [] } = useQuery({
         queryKey: ['shift-requirements'],
         queryFn: () => base44.entities.ShiftRequirement.list()

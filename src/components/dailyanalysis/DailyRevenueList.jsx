@@ -107,13 +107,22 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
                                     <td className="text-right py-3 px-2">
                                         {day.tips > 0 ? (
                                             <span className="text-purple-400 font-semibold">
-                                                {day.tips.toFixed(2)} € ({day.tipPercentage}%)
+                                                {day.tips.toFixed(2)} €
                                             </span>
                                         ) : (
                                             <span className="text-slate-500">-</span>
                                         )}
                                     </td>
-                                </tr>
+                                    <td className="text-right py-3 px-2 hidden md:table-cell">
+                                        {day.tipDistribution?.tip_per_person != null ? (
+                                            <span className="text-purple-300">
+                                                {day.tipDistribution.tip_per_person.toFixed(2)} €
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-500">-</span>
+                                        )}
+                                    </td>
+                                    </tr>
                             ))}
                         </tbody>
                     </table>

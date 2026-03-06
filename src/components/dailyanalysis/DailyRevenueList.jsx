@@ -51,6 +51,7 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
     }
 
     return (
+        <>
         <Card className="bg-slate-800 border-slate-700">
             <CardHeader>
                 <CardTitle className="text-white">Letzte Einträge</CardTitle>

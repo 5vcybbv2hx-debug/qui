@@ -93,7 +93,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
     const [positions, setPositions] = useState({});
     const positionsRef = useRef({});
     const [editMode, setEditMode] = useState(false);
-    const [zoom, setZoom] = useState(3);
+    const [zoom, setZoom] = useState(1.2);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [isPanning, setIsPanning] = useState(false);
     const panStartRef = useRef({ x: 0, y: 0 });
@@ -256,7 +256,7 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
                     editMode ? "border-amber-500/50 border-2" : "border-border",
                     isPanning && "cursor-grabbing"
                 )}
-                style={{ height: '520px' }}
+                style={{ height: '600px' }}
                 onClick={() => !editMode && setSelectedTableId(null)}
                 onWheel={handleWheel}
                 onMouseDown={handleMouseDown}

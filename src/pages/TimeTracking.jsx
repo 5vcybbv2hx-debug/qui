@@ -396,7 +396,8 @@ export default function TimeTracking() {
     const filteredEntries = visibleEntries.filter(e => {
         const matchEmployee = !filterEmployee || e.employee_name === filterEmployee;
         const matchStatus = !filterStatus || e.status === filterStatus;
-        return matchEmployee && matchStatus;
+        const matchDate = !filterDate || e.date === filterDate;
+        return matchEmployee && matchStatus && matchDate;
     });
 
     const entriesByEmployee = filteredEntries.reduce((groups, entry) => {

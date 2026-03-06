@@ -198,8 +198,56 @@ export default function DailyAnalysis() {
         <div className="max-w-6xl mx-auto p-6 space-y-6">
             {/* Header */}
             <div className="space-y-3">
-                <h1 className="text-2xl font-bold text-white">Tagesanalyse</h1>
-                <p className="text-slate-400">Z-Abschlag, Personalkosten und Trinkgeldverteilung</p>
+                <div className="flex items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">Tagesanalyse</h1>
+                        <p className="text-slate-400">Z-Abschlag, Personalkosten und Trinkgeldverteilung</p>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleReanalyzeAll}
+                        disabled={reanalyzingAll || dailyRevenues.filter(r => r.pdf_url).length === 0}
+                        className="border-slate-600 text-slate-300 hover:text-white whitespace-nowrap"
+                    >
+                        {reanalyzingAll ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                        )}
+                        Alle PDFs neu analysieren ({dailyRevenues.filter(r => r.pdf_url).length})
+                    </Button>
+                </div>
+
+                {/* Re-analyze progress */}
+                {reanalyzeOpen && (
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold text-white">
+                                {reanalyzingAll ? `Analysiere... ${reanalyzeProgress.done}/${reanalyzeProgress.total}` : `Fertig: ${reanalyzeProgress.done}/${reanalyzeProgress.total}`}
+                            </p>
+                            {!reanalyzingAll && (
+                                <button onClick={() => setReanalyzeOpen(false)} className="text-slate-400 hover:text-white text-xs">✕ Schließen</button>
+                            )}
+                        </div>
+                        <div className="w-full bg-slate-700 rounded-full h-2">
+                            <div
+                                className="bg-amber-500 h-2 rounded-full transition-all"
+                                style={{ width: `${reanalyzeProgress.total ? (reanalyzeProgress.done / reanalyzeProgress.total) * 100 : 0}%` }}
+                            />
+                        </div>
+                        {!reanalyzingAll && reanalyzeProgress.errors.length === 0 && (
+                            <p className="text-sm text-green-400 flex items-center gap-1">
+                                <CheckCircle2 className="w-4 h-4" /> Alle PDFs erfolgreich analysiert.
+                            </p>
+                        )}
+                        {reanalyzeProgress.errors.length > 0 && (
+                            <div className="text-xs text-red-400 space-y-1">
+                                {reanalyzeProgress.errors.map((e, i) => <p key={i}>⚠️ {e}</p>)}
+                            </div>
+                        )}
+                    </div>
+                )}
                 
                 <div className="flex items-center gap-2">
                     <button

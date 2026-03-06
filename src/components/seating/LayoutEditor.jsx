@@ -17,9 +17,8 @@ export default function LayoutEditor({ roomId, open, onClose }) {
     const queryClient = useQueryClient();
 
     const { data: tables = [] } = useQuery({
-        queryKey: ['tables', roomId],
-        queryFn: () => base44.entities.Table.filter({ room: roomId, is_active: true }),
-        enabled: !!roomId
+        queryKey: ['tables'],
+        queryFn: () => base44.entities.Table.filter({ is_active: true })
     });
 
     const { data: layout } = useQuery({

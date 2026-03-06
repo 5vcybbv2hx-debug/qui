@@ -119,6 +119,10 @@ export default function FloorPlanView({ tables, getTableReservation, onTableClic
         positionsRef.current = init;
         setPositions({ ...init });
         setSelectedTableId(null);
+        
+        // Zentrieren und Pan zurücksetzen
+        setZoom(1.2);
+        setPan({ x: 0, y: 0 });
     }, [tableIds]);
 
     const updateMutation = useMutation({

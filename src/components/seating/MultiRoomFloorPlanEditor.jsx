@@ -199,7 +199,7 @@ export default function MultiRoomFloorPlanEditor({ onTableSelect = null }) {
                 ))}
             </div>
 
-            {unsavedChanges && (
+            {!onTableSelect && unsavedChanges && (
                 <div className="text-sm text-amber-600 font-medium">
                     ⚠️ Ungespeicherte Änderungen – bitte Speichern klicken
                 </div>

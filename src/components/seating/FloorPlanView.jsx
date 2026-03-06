@@ -51,18 +51,18 @@ function TableShape({ posX, posY, table, isReserved, isSelected, editMode, onMou
             onClick={onClick}
         >
             <div className={cn(
-                'w-full h-full flex flex-col items-center justify-center border-2 select-none shadow-md transition-shadow hover:shadow-xl',
-                isRound ? 'rounded-full' : 'rounded-xl',
-                editMode && 'ring-2 ring-amber-400/30 border-dashed',
-                isSelected ? 'ring-2 ring-amber-400/70' : '',
+                'w-full h-full flex flex-col items-center justify-center border select-none shadow-sm transition-all hover:shadow-md',
+                isRound ? 'rounded-full' : 'rounded-lg',
+                editMode && 'ring-2 ring-amber-400/40 border-dashed border-amber-400/60',
+                isSelected ? 'ring-2 ring-amber-400/80 shadow-md' : '',
                 isReserved
-                    ? 'bg-rose-500/30 border-rose-400 text-rose-200'
-                    : 'bg-blue-500/20 border-blue-400/80 text-blue-100'
+                    ? 'bg-gradient-to-br from-rose-500/25 to-rose-500/15 border-rose-400/50 text-rose-300'
+                    : 'bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-blue-400/40 text-blue-200'
             )}>
-                <span className="text-xs font-bold leading-tight text-center px-1">
+                <span className="text-sm font-semibold leading-tight text-center px-1">
                     {table.table_number}
                 </span>
-                <span className="text-[10px] opacity-60">{table.capacity}P</span>
+                <span className="text-[11px] opacity-70 font-medium">{table.capacity}P</span>
                 {editMode && isSelected && (
                     <input
                         type="range"

@@ -141,13 +141,47 @@ export default function DailyAnalysis() {
                 <h1 className="text-2xl font-bold text-white">Tagesanalyse</h1>
                 <p className="text-slate-400">Z-Abschlag, Personalkosten und Trinkgeldverteilung</p>
                 
-                <div className="flex gap-2">
-                    <input
-                        type="date"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white"
-                    />
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setSelectedDate(format(subDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
+                        className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                        title="Vorheriger Tag"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    <label className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white cursor-pointer hover:bg-slate-700 transition-colors group">
+                        <CalendarDays className="w-4 h-4 text-amber-400" />
+                        <span className="font-medium">
+                            {isToday(parseISO(selectedDate))
+                                ? 'Heute'
+                                : format(parseISO(selectedDate), 'EEE, dd. MMMM yyyy', { locale: de })}
+                        </span>
+                        <input
+                            type="date"
+                            value={selectedDate}
+                            onChange={(e) => setSelectedDate(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                        />
+                    </label>
+
+                    <button
+                        onClick={() => setSelectedDate(format(addDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
+                        className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                        title="Nächster Tag"
+                        disabled={isToday(parseISO(selectedDate))}
+                    >
+                        <ChevronRight className={`w-4 h-4 ${isToday(parseISO(selectedDate)) ? 'opacity-30' : ''}`} />
+                    </button>
+
+                    {!isToday(parseISO(selectedDate)) && (
+                        <button
+                            onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
+                            className="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-sm hover:bg-amber-500/30 transition-colors"
+                        >
+                            Heute
+                        </button>
+                    )}
                 </div>
             </div>
 

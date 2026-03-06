@@ -225,6 +225,13 @@ export default function TimeTracking() {
         }
     });
 
+    const calcLegalBreak = (workMinutes) => {
+        const workHours = workMinutes / 60;
+        if (workHours > 9) return 45;
+        if (workHours > 6) return 30;
+        return 0;
+    };
+
     const clockOutAllMutation = useMutation({
         mutationFn: async () => {
             const activeClockedIn = clockEntries.filter(e => e.status === 'clocked_in');
@@ -232,13 +239,14 @@ export default function TimeTracking() {
             
             const promises = activeClockedIn.map(async (entry) => {
                 const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
-                const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+                const breakMinutes = calcLegalBreak(totalMinutes);
+                const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
 
                 const tempEntry = {
                     date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
                     start_time: format(new Date(entry.clock_in), 'HH:mm'),
                     end_time: format(clockOutTime, 'HH:mm'),
-                    break_minutes: 0,
+                    break_minutes: breakMinutes,
                     total_hours: totalHours,
                     employee_id: entry.employee_id
                 };
@@ -247,7 +255,7 @@ export default function TimeTracking() {
 
                 await base44.entities.ClockEntry.update(entry.id, {
                     clock_out: clockOutTime.toISOString(),
-                    break_minutes: 0,
+                    break_minutes: breakMinutes,
                     total_hours: totalHours,
                     status: 'clocked_out',
                     arbzg_warning: warningText
@@ -259,9 +267,9 @@ export default function TimeTracking() {
                     date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
                     start_time: format(new Date(entry.clock_in), 'HH:mm'),
                     end_time: format(clockOutTime, 'HH:mm'),
-                    break_minutes: 0,
+                    break_minutes: breakMinutes,
                     total_hours: totalHours,
-                    notes: 'Automatisch von Stempeluhr übertragen (Massen-Ausstempelung)',
+                    notes: `Automatisch von Stempeluhr übertragen (Massen-Ausstempelung)${breakMinutes > 0 ? ` | ${breakMinutes} Min. Pause (gesetzl.) eingerechnet` : ''}`,
                     status: 'eingereicht',
                     arbzg_warning: warningText,
                     employee_confirmed: true,

@@ -123,6 +123,63 @@ export default function DailyAnalysis() {
     const filteredLaborCost = filteredTimeEntries.reduce((sum, te) => sum + te.cost, 0);
     const filteredStaffCount = new Set(filteredTimeEntries.map(te => te.employee_id)).size;
 
+    const handleReanalyzeAll = async () => {
+        const withPDF = dailyRevenues.filter(r => r.pdf_url);
+        if (withPDF.length === 0) {
+            alert('Keine Einträge mit PDF vorhanden.');
+            return;
+        }
+        setReanalyzingAll(true);
+        setReanalyzeProgress({ done: 0, total: withPDF.length, errors: [] });
+        setReanalyzeOpen(true);
+
+        const errors = [];
+        for (let i = 0; i < withPDF.length; i++) {
+            const record = withPDF[i];
+            try {
+                const result = await base44.integrations.Core.InvokeLLM({
+                    prompt: `Analysiere diese Z-Abschlag PDF von einer Bar/Lokal. Extrahiere:
+                    - Gesamtumsatz / Tagesumsatz (in Euro, Brutto)
+                    - Umsatz Bar (Bargeld-Umsatz)
+                    - Umsatz EC / Kartenzahlung
+                    - Umsatzsteuer (MwSt.)
+                    - Eigenbedarf / Eigenverbrauch
+                    Gib die Antwort als JSON zurück.`,
+                    file_urls: [record.pdf_url],
+                    response_json_schema: {
+                        type: 'object',
+                        properties: {
+                            revenue: { type: 'number' },
+                            revenue_cash: { type: 'number' },
+                            revenue_ec: { type: 'number' },
+                            vat: { type: 'number' },
+                            own_consumption: { type: 'number' },
+                        },
+                        required: ['revenue']
+                    }
+                });
+
+                if (result.revenue) {
+                    await base44.entities.DailyRevenue.update(record.id, {
+                        revenue: result.revenue,
+                        revenue_cash: result.revenue_cash ?? record.revenue_cash,
+                        revenue_ec: result.revenue_ec ?? record.revenue_ec,
+                        vat: result.vat ?? record.vat,
+                        own_consumption: result.own_consumption ?? record.own_consumption,
+                    });
+                } else {
+                    errors.push(`${record.date}: Kein Umsatz erkannt`);
+                }
+            } catch (e) {
+                errors.push(`${record.date}: ${e.message}`);
+            }
+            setReanalyzeProgress({ done: i + 1, total: withPDF.length, errors: [...errors] });
+        }
+
+        setReanalyzingAll(false);
+        queryClient.invalidateQueries({ queryKey: ['daily-revenues'] });
+    };
+
     const handleFetchLaborCosts = async () => {
         setLaborCostLoading(true);
         try {

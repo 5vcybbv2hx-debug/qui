@@ -505,7 +505,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                     value={recurringData.endDate}
                                     onChange={(e) => setRecurringData({ ...recurringData, endDate: e.target.value })}
                                     min={formData.date}
-                                    className="bg-white"
+                                    className="bg-card"
                                 />
                             </div>
 

@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil, Trash2, GripVertical } from 'lucide-react';
+import { Pencil, Trash2, GripVertical, MapPin } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 const ArticleCard = memo(function ArticleCard({ 
     article, 
@@ -91,6 +91,13 @@ const ArticleCard = memo(function ArticleCard({
                 )}
                 
                 <div className="text-xs text-slate-400 space-y-1">
+                    {(article.shelf_id || article.storage_location) && (
+                        <p className="flex items-center gap-1 text-blue-400 font-medium">
+                            <MapPin className="w-3 h-3" />
+                            {article.shelf_id && <span className="font-mono bg-blue-500/20 px-1.5 py-0.5 rounded text-blue-300">{article.shelf_id}</span>}
+                            {article.storage_location && <span>{article.storage_location}</span>}
+                        </p>
+                    )}
                     {article.suppliers?.length > 0 && (
                         <p>📦 {article.suppliers.join(', ')}</p>
                     )}
@@ -120,6 +127,8 @@ const ArticleCard = memo(function ArticleCard({
            prevProps.isLowStock === nextProps.isLowStock &&
            prevProps.article.current_stock === nextProps.article.current_stock &&
            prevProps.article.image_url === nextProps.article.image_url &&
+           prevProps.article.shelf_id === nextProps.article.shelf_id &&
+           prevProps.article.storage_location === nextProps.article.storage_location &&
            prevProps.dragHandleProps === nextProps.dragHandleProps;
 });
 

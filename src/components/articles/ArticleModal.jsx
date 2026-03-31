@@ -39,6 +39,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         purchase_price: '',
         current_stock: '',
         min_stock: '',
+        shelf_id: '',
+        storage_location: '',
         image_url: '',
         allergens: '',
         notes: ''
@@ -58,6 +60,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 purchase_price: article.purchase_price || '',
                 current_stock: article.current_stock || '',
                 min_stock: article.min_stock || '',
+                shelf_id: article.shelf_id || '',
+                storage_location: article.storage_location || '',
                 image_url: article.image_url || '',
                 allergens: article.allergens || '',
                 notes: article.notes || ''
@@ -75,6 +79,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 purchase_price: '',
                 current_stock: '',
                 min_stock: '',
+                shelf_id: '',
+                storage_location: '',
                 image_url: '',
                 allergens: '',
                 notes: ''
@@ -421,6 +427,26 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                         onChange={(val) => setFormData({ ...formData, allergens: val })}
                         articleName={formData.name}
                     />
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <Label>Regal-ID</Label>
+                            <Input
+                                value={formData.shelf_id}
+                                onChange={(e) => setFormData({ ...formData, shelf_id: e.target.value.toUpperCase() })}
+                                placeholder="z.B. A1, B2, C3"
+                                className="font-mono"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Lagerort</Label>
+                            <Input
+                                value={formData.storage_location}
+                                onChange={(e) => setFormData({ ...formData, storage_location: e.target.value })}
+                                placeholder="z.B. Keller, Kühlraum"
+                            />
+                        </div>
+                    </div>
 
                     <div className="space-y-2">
                         <Label>Notizen</Label>

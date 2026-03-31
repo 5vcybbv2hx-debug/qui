@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils';
 
 export default function GlobalSearch({ open, onClose }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [focusedIdx, setFocusedIdx] = useState(0);
+    const inputRef = useRef(null);
+    const resultsRef = useRef([]);
     const navigate = useNavigate();
 
     const { data: articles = [] } = useQuery({
@@ -54,6 +57,15 @@ export default function GlobalSearch({ open, onClose }) {
         queryFn: () => base44.entities.StorageItem.filter({ is_active: true }),
         enabled: open
     });
+
+    // Reset on open/close
+    useEffect(() => {
+        if (open) {
+            setSearchTerm('');
+            setFocusedIdx(0);
+            setTimeout(() => inputRef.current?.focus(), 50);
+        }
+    }, [open]);
 
     // Keyboard shortcut (Ctrl/Cmd + K)
     useEffect(() => {
@@ -113,216 +125,198 @@ export default function GlobalSearch({ open, onClose }) {
 
     const hasResults = Object.values(searchResults).some(arr => arr.length > 0);
 
+    // Flat list for keyboard nav
+    const flatResults = [
+        ...searchResults.pages.map(p => ({ type: 'page', item: p, path: createPageUrl(p.page) })),
+        ...searchResults.articles.map(a => ({ type: 'article', item: a, path: createPageUrl('Warehouse') })),
+        ...searchResults.storageItems.map(s => ({ type: 'storage', item: s, path: createPageUrl('Storage') })),
+        ...searchResults.menuItems.map(m => ({ type: 'menu', item: m, path: createPageUrl('DrinkMenu') })),
+        ...searchResults.recipes.map(r => ({ type: 'recipe', item: r, path: createPageUrl('Recipes') })),
+        ...searchResults.employees.map(e => ({ type: 'employee', item: e, path: createPageUrl('Employees') })),
+        ...searchResults.todos.map(t => ({ type: 'todo', item: t, path: createPageUrl('Todos') })),
+    ];
+
     const handleNavigate = (path) => {
         navigate(path);
         onClose();
         setSearchTerm('');
     };
 
+    const handleKeyDown = (e) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setFocusedIdx(i => Math.min(i + 1, flatResults.length - 1));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setFocusedIdx(i => Math.max(i - 1, 0));
+        } else if (e.key === 'Enter' && flatResults[focusedIdx]) {
+            handleNavigate(flatResults[focusedIdx].path);
+        }
+    };
+
+    useEffect(() => {
+        setFocusedIdx(0);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        resultsRef.current[focusedIdx]?.scrollIntoView({ block: 'nearest' });
+    }, [focusedIdx]);
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
-                <div className="border-b border-border p-4 flex items-center gap-3">
-                    <Search className="w-5 h-5 text-muted-foreground" />
+                <div className="border-b border-border p-3 sm:p-4 flex items-center gap-3">
+                    <Search className="w-5 h-5 text-muted-foreground shrink-0" />
                     <Input
-                        placeholder="Suche nach Artikeln, Rezepten, Mitarbeitern..."
+                        ref={inputRef}
+                        placeholder="Artikel, Lager, Rezepte, Mitarbeiter..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
-                        autoFocus
+                        onKeyDown={handleKeyDown}
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-base h-10"
                     />
-                    <Badge variant="outline" className="text-xs">
-                        <Command className="w-3 h-3 mr-1" />K
-                    </Badge>
+                    {searchTerm ? (
+                        <button onClick={() => setSearchTerm('')} className="text-muted-foreground hover:text-foreground shrink-0 text-xl leading-none">×</button>
+                    ) : (
+                        <Badge variant="outline" className="text-xs hidden sm:flex shrink-0">
+                            <Command className="w-3 h-3 mr-1" />K
+                        </Badge>
+                    )}
                 </div>
 
-                <div className="max-h-[500px] overflow-y-auto">
+                <div className="max-h-[60vh] sm:max-h-[500px] overflow-y-auto">
                     {searchTerm.length < 2 ? (
                         <div className="p-8 text-center text-muted-foreground">
-                            <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p>Gib mindestens 2 Zeichen ein, um zu suchen</p>
+                            <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                            <p className="text-sm">Mindestens 2 Zeichen eingeben</p>
                         </div>
                     ) : !hasResults ? (
                         <div className="p-8 text-center text-muted-foreground">
-                            <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p>Keine Ergebnisse für "{searchTerm}"</p>
+                            <Search className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                            <p className="text-sm">Keine Ergebnisse für &ldquo;{searchTerm}&rdquo;</p>
                         </div>
                     ) : (
-                        <div className="p-2 space-y-4">
-                            {searchResults.pages.length > 0 && (
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Seiten</p>
-                                    <div className="space-y-1">
-                                        {searchResults.pages.map(page => (
-                                            <button
-                                                key={page.page}
-                                                onClick={() => handleNavigate(createPageUrl(page.page))}
-                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
-                                            >
-                                                <page.icon className="w-5 h-5 text-muted-foreground" />
-                                                <span className="font-medium">{page.name}</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {searchResults.menuItems.length > 0 && (
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Getränke</p>
-                                    <div className="space-y-1">
-                                        {searchResults.menuItems.map(item => (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => handleNavigate(createPageUrl('DrinkMenu'))}
-                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
-                                            >
-                                                <Wine className="w-5 h-5 text-amber-500" />
-                                                <div className="flex-1">
-                                                    <p className="font-medium">{item.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{item.category}</p>
-                                                </div>
-                                                <Badge variant="outline">{item.price.toFixed(2)} €</Badge>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {searchResults.articles.length > 0 && (
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Artikel (Inventar)</p>
-                                    <div className="space-y-1">
-                                        {searchResults.articles.map(article => (
-                                            <button
-                                                key={article.id}
-                                                onClick={() => handleNavigate(createPageUrl('Warehouse'))}
-                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
-                                            >
-                                                <Package className="w-5 h-5 text-blue-500" />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-medium truncate">{article.name}</p>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        {(article.shelf_id || article.storage_location) && (
-                                                            <span className="flex items-center gap-1 text-xs text-blue-400 font-medium">
-                                                                <MapPin className="w-3 h-3" />
-                                                                {article.shelf_id && <span className="font-mono bg-blue-500/20 px-1 rounded">{article.shelf_id}</span>}
-                                                                {article.storage_location && <span>{article.storage_location}</span>}
-                                                            </span>
-                                                        )}
-                                                        {article.category && <span className="text-xs text-muted-foreground">{article.category}</span>}
-                                                    </div>
-                                                </div>
-                                                {article.current_stock !== undefined && (
-                                                    <Badge variant={article.current_stock <= (article.min_stock || 0) ? "destructive" : "outline"}>
-                                                        {article.current_stock}
-                                                    </Badge>
+                        <div className="p-2 space-y-1">
+                            {(() => {
+                                let globalIdx = 0;
+                                const sections = [
+                                    { key: 'pages', label: 'Seiten', icon: null, color: '', items: searchResults.pages,
+                                      render: (p, idx, focused) => (
+                                        <button key={p.page} ref={el => resultsRef.current[idx] = el}
+                                            onClick={() => handleNavigate(createPageUrl(p.page))}
+                                            className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left', focused ? 'bg-accent' : 'hover:bg-accent/60')}>
+                                            <p.icon className="w-4 h-4 text-muted-foreground shrink-0" />
+                                            <span className="font-medium text-sm">{p.name}</span>
+                                        </button>
+                                      )
+                                    },
+                                    { key: 'articles', label: 'Artikel (Inventar)', items: searchResults.articles,
+                                      render: (a, idx, focused) => (
+                                        <button key={a.id} ref={el => resultsRef.current[idx] = el}
+                                            onClick={() => handleNavigate(createPageUrl('Warehouse'))}
+                                            className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left', focused ? 'bg-accent' : 'hover:bg-accent/60')}>
+                                            <Package className="w-4 h-4 text-blue-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{a.name}</p>
+                                                {(a.shelf_id || a.storage_location) && (
+                                                    <p className="flex items-center gap-1 text-xs text-blue-400 font-semibold mt-0.5">
+                                                        <MapPin className="w-3 h-3 shrink-0" />
+                                                        {[a.shelf_id, a.storage_location].filter(Boolean).join(' · ')}
+                                                    </p>
                                                 )}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {searchResults.storageItems.length > 0 && (
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Lagerartikel</p>
-                                    <div className="space-y-1">
-                                        {searchResults.storageItems.map(item => (
-                                            <button
-                                                key={item.id}
-                                                onClick={() => handleNavigate(createPageUrl('Storage'))}
-                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
-                                            >
-                                                <Warehouse className="w-5 h-5 text-violet-500" />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="font-medium truncate">{item.name}</p>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        {item.location_label && (
-                                                            <span className="flex items-center gap-1 text-xs text-violet-400 font-medium">
-                                                                <MapPin className="w-3 h-3" />
-                                                                {item.location_label}
-                                                            </span>
-                                                        )}
-                                                        {item.category && <span className="text-xs text-muted-foreground">{item.category}</span>}
-                                                    </div>
-                                                </div>
-                                                <Badge variant={item.condition === 'defekt' ? 'destructive' : 'outline'}>
-                                                    {item.condition || 'gut'}
-                                                </Badge>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {searchResults.recipes.length > 0 && (
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Rezepte</p>
-                                    <div className="space-y-1">
-                                        {searchResults.recipes.map(recipe => (
-                                            <button
-                                                key={recipe.id}
-                                                onClick={() => handleNavigate(createPageUrl('Recipes'))}
-                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
-                                            >
-                                                <BookOpen className="w-5 h-5 text-pink-500" />
-                                                <div className="flex-1">
-                                                    <p className="font-medium">{recipe.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{recipe.category}</p>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {searchResults.employees.length > 0 && (
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Mitarbeiter</p>
-                                    <div className="space-y-1">
-                                        {searchResults.employees.map(employee => (
-                                            <button
-                                                key={employee.id}
-                                                onClick={() => handleNavigate(createPageUrl('Employees'))}
-                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
-                                            >
-                                                <Users className="w-5 h-5 text-green-500" />
-                                                <div className="flex-1">
-                                                    <p className="font-medium">{employee.name}</p>
-                                                    <p className="text-xs text-muted-foreground">{employee.role}</p>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {searchResults.todos.length > 0 && (
-                                <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Aufgaben</p>
-                                    <div className="space-y-1">
-                                        {searchResults.todos.map(todo => (
-                                            <button
-                                                key={todo.id}
-                                                onClick={() => handleNavigate(createPageUrl('Todos'))}
-                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
-                                            >
-                                                <CheckSquare className="w-5 h-5 text-orange-500" />
-                                                <div className="flex-1">
-                                                    <p className="font-medium">{todo.title}</p>
-                                                    {todo.description && (
-                                                        <p className="text-xs text-muted-foreground line-clamp-1">{todo.description}</p>
-                                                    )}
-                                                </div>
-                                                <Badge variant={todo.priority === 'dringend' || todo.priority === 'hoch' ? 'destructive' : 'outline'}>
-                                                    {todo.priority}
-                                                </Badge>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                                            </div>
+                                            {a.current_stock !== undefined && (
+                                                <Badge variant={a.current_stock <= (a.min_stock || 0) ? 'destructive' : 'outline'} className="shrink-0 text-xs">{a.current_stock}</Badge>
+                                            )}
+                                        </button>
+                                      )
+                                    },
+                                    { key: 'storageItems', label: 'Lagerartikel', items: searchResults.storageItems,
+                                      render: (s, idx, focused) => (
+                                        <button key={s.id} ref={el => resultsRef.current[idx] = el}
+                                            onClick={() => handleNavigate(createPageUrl('Storage'))}
+                                            className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left', focused ? 'bg-accent' : 'hover:bg-accent/60')}>
+                                            <Warehouse className="w-4 h-4 text-violet-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{s.name}</p>
+                                                {s.location_label && (
+                                                    <p className="flex items-center gap-1 text-xs text-violet-400 font-semibold mt-0.5">
+                                                        <MapPin className="w-3 h-3 shrink-0" />{s.location_label}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <Badge variant={s.condition === 'defekt' ? 'destructive' : 'outline'} className="shrink-0 text-xs">{s.condition || 'gut'}</Badge>
+                                        </button>
+                                      )
+                                    },
+                                    { key: 'menuItems', label: 'Getränke', items: searchResults.menuItems,
+                                      render: (m, idx, focused) => (
+                                        <button key={m.id} ref={el => resultsRef.current[idx] = el}
+                                            onClick={() => handleNavigate(createPageUrl('DrinkMenu'))}
+                                            className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left', focused ? 'bg-accent' : 'hover:bg-accent/60')}>
+                                            <Wine className="w-4 h-4 text-amber-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{m.name}</p>
+                                                <p className="text-xs text-muted-foreground">{m.category}</p>
+                                            </div>
+                                            {m.price != null && <Badge variant="outline" className="shrink-0 text-xs">{Number(m.price).toFixed(2)} €</Badge>}
+                                        </button>
+                                      )
+                                    },
+                                    { key: 'recipes', label: 'Rezepte', items: searchResults.recipes,
+                                      render: (r, idx, focused) => (
+                                        <button key={r.id} ref={el => resultsRef.current[idx] = el}
+                                            onClick={() => handleNavigate(createPageUrl('Recipes'))}
+                                            className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left', focused ? 'bg-accent' : 'hover:bg-accent/60')}>
+                                            <BookOpen className="w-4 h-4 text-pink-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{r.name}</p>
+                                                <p className="text-xs text-muted-foreground">{r.category}</p>
+                                            </div>
+                                        </button>
+                                      )
+                                    },
+                                    { key: 'employees', label: 'Mitarbeiter', items: searchResults.employees,
+                                      render: (e, idx, focused) => (
+                                        <button key={e.id} ref={el => resultsRef.current[idx] = el}
+                                            onClick={() => handleNavigate(createPageUrl('Employees'))}
+                                            className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left', focused ? 'bg-accent' : 'hover:bg-accent/60')}>
+                                            <Users className="w-4 h-4 text-green-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{e.name}</p>
+                                                <p className="text-xs text-muted-foreground">{e.role}</p>
+                                            </div>
+                                        </button>
+                                      )
+                                    },
+                                    { key: 'todos', label: 'Aufgaben', items: searchResults.todos,
+                                      render: (t, idx, focused) => (
+                                        <button key={t.id} ref={el => resultsRef.current[idx] = el}
+                                            onClick={() => handleNavigate(createPageUrl('Todos'))}
+                                            className={cn('w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left', focused ? 'bg-accent' : 'hover:bg-accent/60')}>
+                                            <CheckSquare className="w-4 h-4 text-orange-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm truncate">{t.title}</p>
+                                                {t.description && <p className="text-xs text-muted-foreground truncate">{t.description}</p>}
+                                            </div>
+                                            <Badge variant={t.priority === 'dringend' || t.priority === 'hoch' ? 'destructive' : 'outline'} className="shrink-0 text-xs">{t.priority}</Badge>
+                                        </button>
+                                      )
+                                    },
+                                ];
+                                return sections.map(section => {
+                                    if (!section.items?.length) return null;
+                                    return (
+                                        <div key={section.key}>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 pt-3 pb-1">{section.label}</p>
+                                            {section.items.map(item => {
+                                                const idx = globalIdx++;
+                                                return section.render(item, idx, focusedIdx === idx);
+                                            })}
+                                        </div>
+                                    );
+                                });
+                            })()}
                         </div>
                     )}
                 </div>

@@ -294,14 +294,14 @@ export default function Articles() {
 
     return (
         <div>
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-8 pb-24 md:pb-0">
+            <div className="max-w-6xl mx-auto px-4 py-4 sm:py-8 pb-24 md:pb-0">
                 {/* Header */}
-                <div className="flex flex-col gap-2 sm:gap-3 mb-5 sm:mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">Artikeldatenbank</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Artikeldatenbank</h1>
                         <p className="text-muted-foreground text-sm mt-1">Verwalte alle Artikel für die Auffüllliste</p>
                     </div>
-                    <div className="flex gap-1 sm:gap-2 flex-wrap">
+                    <div className="flex gap-2 flex-wrap items-center">
                         <BulkImporter />
                         <LabelPrinter articles={baseFilteredArticles} />
                         {permissions.isManager && (
@@ -323,18 +323,17 @@ export default function Articles() {
                         <LowStockAlert />
                         <CategoryManager />
                         {selectedArticlesData.length > 0 && (
-                           <Button onClick={() => setBulkEditOpen(true)} variant="outline"
-                                className="border-amber-600 text-white bg-amber-600 hover:bg-amber-700">
+                            <Button onClick={() => setBulkEditOpen(true)} variant="outline"
+                                className="border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30">
                                 <CheckSquare className="w-4 h-4 mr-2" />
-                                Bearbeiten ({selectedArticlesData.length})
+                                Auswahl ({selectedArticlesData.length})
                             </Button>
                         )}
-                        <Button onClick={() => setScannerOpen(true)} variant="outline"
-                            className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700">
+                        <Button onClick={() => setScannerOpen(true)} variant="outline">
                             <Camera className="w-4 h-4 mr-2" />
                             Scannen
                         </Button>
-                        <Button onClick={handleAdd} className="bg-amber-600 hover:bg-amber-700">
+                        <Button onClick={handleAdd} className="bg-amber-600 hover:bg-amber-700 text-white">
                             <Plus className="w-4 h-4 mr-2" />
                             Neuer Artikel
                         </Button>
@@ -342,27 +341,29 @@ export default function Articles() {
                 </div>
 
                 {/* Search & Filter */}
-                <Card className="p-3 sm:p-4 bg-card border-border mb-5 sm:mb-6">
+                <Card className="p-4 bg-card border-border mb-6">
                     <div className="space-y-3">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                             <Input
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Nach Name oder Barcode..."
-                                className="pl-10"
+                                placeholder="Nach Name oder Barcode suchen..."
+                                className="pl-10 h-10"
                             />
                         </div>
 
                         {/* Kategorie-Chips */}
-                        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
                             <button
                                 onClick={() => setFilterCategory('all')}
-                                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                                    filterCategory === 'all' ? 'bg-amber-500 text-slate-900' : 'bg-secondary text-muted-foreground hover:bg-accent'
+                                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap border ${
+                                    filterCategory === 'all'
+                                        ? 'bg-amber-500 text-slate-900 border-amber-500'
+                                        : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground'
                                 }`}
                             >
-                                Alle <span className="opacity-70">({baseFilteredArticles.length})</span>
+                                Alle <span className="opacity-60">({baseFilteredArticles.length})</span>
                             </button>
                             {categories.map(cat => (
                                 <button
@@ -371,13 +372,15 @@ export default function Articles() {
                                         if (filterCategory === cat.name) scrollToCategory(cat.name);
                                         else setFilterCategory(cat.name);
                                     }}
-                                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
-                                        filterCategory === cat.name ? 'bg-amber-500 text-slate-900' : 'bg-secondary text-muted-foreground hover:bg-accent'
+                                    className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap border ${
+                                        filterCategory === cat.name
+                                            ? 'bg-amber-500 text-slate-900 border-amber-500'
+                                            : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground'
                                     }`}
                                 >
                                     {cat.name}
                                     {articleCountByCategory[cat.name] ? (
-                                        <span className="ml-1 opacity-70">({articleCountByCategory[cat.name]})</span>
+                                        <span className="ml-1 opacity-60">({articleCountByCategory[cat.name]})</span>
                                     ) : null}
                                 </button>
                             ))}
@@ -386,12 +389,12 @@ export default function Articles() {
                         {/* Lieferant & Bestand */}
                         <div className="flex gap-2">
                             <select value={filterSupplier} onChange={(e) => setFilterSupplier(e.target.value)}
-                                className="flex-1 px-2 py-2 rounded-md bg-background border border-border text-foreground text-xs sm:text-sm">
+                                className="flex-1 h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
                                 <option value="all">Alle Lieferanten</option>
                                 {allSuppliers.map(sup => <option key={sup} value={sup}>{sup}</option>)}
                             </select>
                             <select value={filterStock} onChange={(e) => setFilterStock(e.target.value)}
-                                className="flex-1 px-2 py-2 rounded-md bg-background border border-border text-foreground text-xs sm:text-sm">
+                                className="flex-1 h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
                                 <option value="all">Alle Bestände</option>
                                 <option value="niedrig">Niedrig</option>
                                 <option value="leer">Leer</option>
@@ -501,9 +504,10 @@ export default function Articles() {
                 </DragDropContext>
 
                 {groupedArticles.length === 0 && (
-                    <div className="text-center py-12">
-                        <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                        <p className="text-muted-foreground">Keine Artikel gefunden</p>
+                    <div className="text-center py-16 text-muted-foreground">
+                        <Package className="w-12 h-12 mx-auto mb-3 opacity-40" />
+                        <p className="font-medium">Keine Artikel gefunden</p>
+                        <p className="text-sm mt-1">Passe deine Suchkriterien an oder erstelle einen neuen Artikel.</p>
                     </div>
                 )}
 

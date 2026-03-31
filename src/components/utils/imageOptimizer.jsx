@@ -116,7 +116,7 @@ export function OptimizedImage({
   ...props
 }) {
   const [displaySrc, setDisplaySrc] = useState(
-    lazy ? (placeholder || src) : (useWebP ? ImageOptimizer.convertToWebP(src) : src)
+    lazy ? src : (useWebP ? ImageOptimizer.convertToWebP(src) : src)
   );
 
   useEffect(() => {

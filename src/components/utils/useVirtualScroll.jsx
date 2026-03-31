@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 /**
  * Hook for virtual scrolling large lists

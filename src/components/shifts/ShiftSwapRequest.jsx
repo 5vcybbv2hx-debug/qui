@@ -19,25 +19,7 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
         reason: ''
     });
 
-    if (!shift || !shift.id) {
-        return null;
-    }
-
     const { data: employees = [] } = useQuery({
-        queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
-    });
-
-    const { data: existingRequests = [] } = useQuery({
-        queryKey: ['shift-swap-requests', shift.id],
-        queryFn: () => base44.entities.ShiftSwapRequest.filter({ 
-            shift_id: shift.id,
-            status: 'ausstehend' 
-        }),
-        enabled: !!shift?.id
-    });
-
-    const createMutation = useMutation({
         mutationFn: async (data) => {
             // Benachrichtigung für Manager erstellen
             await base44.entities.ShiftSwapRequest.create(data);
@@ -97,6 +79,10 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
 
     // Filter out the current shift's employee
     const availableEmployees = employees.filter(e => e.id !== shift.employee_id);
+
+    if (!shift || !shift.id) {
+        return null;
+    }
 
     const hasPendingRequest = existingRequests.length > 0;
 

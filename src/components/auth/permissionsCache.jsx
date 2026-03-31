@@ -76,3 +76,8 @@ export async function loadPermissions() {
 
     return loadingPromise;
 }
+
+export function invalidatePermissionsCache() {
+    cachedPermissions = null;
+    loadingPromise = null;
+}

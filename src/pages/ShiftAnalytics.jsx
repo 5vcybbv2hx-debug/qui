@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { usePermissions } from '@/components/auth/usePermissions';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';

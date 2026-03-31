@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { loadPermissions } from './permissionsCache';
+import { loadPermissions, clearPermissionsCache, invalidatePermissionsCache } from './permissionsCache';
+
+export { clearPermissionsCache, invalidatePermissionsCache };
 
 const defaultPermissions = {
     role: null,
@@ -37,6 +39,8 @@ const defaultPermissions = {
     canViewInventory: false,
     canViewWastage: false,
     canViewWarehouse: false,
+    canDeleteReservations: false,
+    canViewPriceCalculator: false,
 };
 
 export function usePermissions() {

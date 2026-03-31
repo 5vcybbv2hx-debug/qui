@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CleaningList from '@/components/cleaning/CleaningList';
+import CleaningQRGenerator from '@/components/cleaning/CleaningQRGenerator';
 import AreasManager from '@/components/cleaning/AreasManager';
 import PinVerification from '@/components/terminal/PinVerification';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -22,6 +23,7 @@ export default function Cleaning() {
     const permissions = usePermissions();
     const [modalOpen, setModalOpen] = useState(false);
     const [reportsModalOpen, setReportsModalOpen] = useState(false);
+    const [qrModalOpen, setQrModalOpen] = useState(false);
     const [pinModalOpen, setPinModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [formData, setFormData] = useState({
@@ -315,6 +317,15 @@ export default function Cleaning() {
                         </div>
                     </div>
                     <div className="flex gap-1 sm:gap-2 flex-wrap">
+                         <Button
+                             size="sm"
+                             variant="outline"
+                             onClick={() => setQrModalOpen(true)}
+                             className="text-amber-400 border-amber-500/40 hover:bg-amber-500/10 text-xs h-9"
+                         >
+                             <span className="hidden sm:inline">QR-Codes</span>
+                             <span className="sm:hidden">QR</span>
+                         </Button>
                          <Button 
                              size="sm"
                              variant="outline"
@@ -525,6 +536,9 @@ export default function Cleaning() {
                         </form>
                     </DialogContent>
                 </Dialog>
+
+                {/* QR Generator */}
+                <CleaningQRGenerator open={qrModalOpen} onClose={() => setQrModalOpen(false)} />
 
                 {/* Pin Verification */}
                 <PinVerification

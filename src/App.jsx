@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster"
+import CleaningChecklist from './pages/CleaningChecklist';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
+      <Route path="/CleaningChecklist" element={<CleaningChecklist />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

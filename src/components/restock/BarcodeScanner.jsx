@@ -1,10 +1,42 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
-import { Camera, X } from 'lucide-react';
+import { Camera, Keyboard } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export default function BarcodeScanner({ onScan, open, onClose }) {
+/**
+ * Unified QR + Barcode Scanner
+ * Props:
+ *   onScan(text)  - called with scanned/entered value
+ *   open          - controls dialog visibility
+ *   onClose       - called to close
+ *   title         - optional custom dialog title
+ *   hint          - optional context hint shown below scanner
+ *   mode          - 'inventory' | 'storage' | 'kanban' | 'default' (cosmetic only)
+ */
+export default function BarcodeScanner({ onScan, open, onClose, title, hint, mode = 'default' }) {
+    const [manualInput, setManualInput] = useState('');
+    const [showManual, setShowManual] = useState(false);
+
+    const contextLabels = {
+        inventory: { title: 'Inventur-Scan', hint: 'Artikel scannen, um den Bestand zu aktualisieren' },
+        storage:   { title: 'Lager-Scan',    hint: 'QR-Code oder Barcode des Lagerartikels scannen' },
+        kanban:    { title: 'Kanban-Scan',   hint: 'Artikel scannen, um die Karte zu verknüpfen' },
+        default:   { title: 'Barcode scannen', hint: 'Halte den Code vor die Kamera' },
+    };
+    const ctx = contextLabels[mode] || contextLabels.default;
+    const dialogTitle = title || ctx.title;
+    const dialogHint  = hint  || ctx.hint;
+
+    const handleManualSubmit = (e) => {
+        e.preventDefault();
+        if (manualInput.trim()) {
+            onScan(manualInput.trim());
+            setManualInput('');
+            setShowManual(false);
+        }
+    };
     const scannerRef = useRef(null);
     const scannerInstanceRef = useRef(null);
     const [isInitialized, setIsInitialized] = useState(false);
@@ -119,7 +151,7 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Camera className="w-5 h-5" />
-                        Barcode scannen
+                        {dialogTitle}
                     </DialogTitle>
                 </DialogHeader>
                 
@@ -153,14 +185,37 @@ export default function BarcodeScanner({ onScan, open, onClose }) {
                         ref={scannerRef}
                         className="rounded-lg overflow-hidden border-2 border-slate-700 bg-slate-900 min-h-[450px]"
                     />
-                    <div className="mt-4 p-3 bg-slate-100 rounded-lg border border-slate-300">
-                        <p className="text-sm text-slate-700 text-center font-medium">
-                            📱 Halte den Barcode vor die Kamera
+                    <div className="mt-4 p-3 bg-secondary rounded-lg border border-border">
+                        <p className="text-sm text-foreground text-center font-medium">
+                            📱 {dialogHint}
                         </p>
-                        <p className="text-xs text-slate-500 text-center mt-1">
-                            Stelle sicher, dass der Barcode gut beleuchtet und lesbar ist
+                        <p className="text-xs text-muted-foreground text-center mt-1">
+                            Stelle sicher, dass der Code gut beleuchtet und lesbar ist
                         </p>
                     </div>
+
+                    {/* Manual input toggle */}
+                    {showManual ? (
+                        <form onSubmit={handleManualSubmit} className="flex gap-2 mt-2">
+                            <Input
+                                autoFocus
+                                value={manualInput}
+                                onChange={(e) => setManualInput(e.target.value)}
+                                placeholder="Code manuell eingeben..."
+                                className="flex-1"
+                            />
+                            <Button type="submit" className="bg-amber-600 hover:bg-amber-700">OK</Button>
+                            <Button type="button" variant="outline" onClick={() => setShowManual(false)}>✕</Button>
+                        </form>
+                    ) : (
+                        <button
+                            onClick={() => setShowManual(true)}
+                            className="mt-2 w-full text-xs text-muted-foreground flex items-center justify-center gap-1 hover:text-foreground transition-colors py-1"
+                        >
+                            <Keyboard className="w-3 h-3" />
+                            Manuell eingeben
+                        </button>
+                    )}
                 </div>
 
                 <Button 

@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
     Search, Wine, Users, Package, Calendar, CheckSquare, 
-    Sparkles, BookOpen, Clock, FileText, Command
+    Sparkles, BookOpen, Clock, FileText, Command, MapPin, Warehouse
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -49,6 +49,12 @@ export default function GlobalSearch({ open, onClose }) {
         enabled: open
     });
 
+    const { data: storageItems = [] } = useQuery({
+        queryKey: ['storage-items'],
+        queryFn: () => base44.entities.StorageItem.filter({ is_active: true }),
+        enabled: open
+    });
+
     // Keyboard shortcut (Ctrl/Cmd + K)
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -80,8 +86,15 @@ export default function GlobalSearch({ open, onClose }) {
         ),
         articles: articles.filter(a => 
             a.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            a.barcode?.includes(searchTerm)
-        ).slice(0, 5),
+            a.barcode?.includes(searchTerm) ||
+            a.shelf_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            a.storage_location?.toLowerCase().includes(searchTerm.toLowerCase())
+        ).slice(0, 6),
+        storageItems: storageItems.filter(s =>
+            s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.location_label?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.category?.toLowerCase().includes(searchTerm.toLowerCase())
+        ).slice(0, 6),
         recipes: recipes.filter(r => 
             r.name?.toLowerCase().includes(searchTerm.toLowerCase())
         ).slice(0, 5),
@@ -96,7 +109,7 @@ export default function GlobalSearch({ open, onClose }) {
             t.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             t.description?.toLowerCase().includes(searchTerm.toLowerCase())
         ).slice(0, 5)
-    } : { pages: [], articles: [], recipes: [], employees: [], menuItems: [], todos: [] };
+    } : { pages: [], articles: [], recipes: [], employees: [], menuItems: [], todos: [], storageItems: [] };
 
     const hasResults = Object.values(searchResults).some(arr => arr.length > 0);
 
@@ -178,7 +191,7 @@ export default function GlobalSearch({ open, onClose }) {
 
                             {searchResults.articles.length > 0 && (
                                 <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Artikel</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Artikel (Inventar)</p>
                                     <div className="space-y-1">
                                         {searchResults.articles.map(article => (
                                             <button
@@ -187,17 +200,56 @@ export default function GlobalSearch({ open, onClose }) {
                                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
                                             >
                                                 <Package className="w-5 h-5 text-blue-500" />
-                                                <div className="flex-1">
-                                                    <p className="font-medium">{article.name}</p>
-                                                    {article.barcode && (
-                                                        <p className="text-xs text-muted-foreground">{article.barcode}</p>
-                                                    )}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium truncate">{article.name}</p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        {(article.shelf_id || article.storage_location) && (
+                                                            <span className="flex items-center gap-1 text-xs text-blue-400 font-medium">
+                                                                <MapPin className="w-3 h-3" />
+                                                                {article.shelf_id && <span className="font-mono bg-blue-500/20 px-1 rounded">{article.shelf_id}</span>}
+                                                                {article.storage_location && <span>{article.storage_location}</span>}
+                                                            </span>
+                                                        )}
+                                                        {article.category && <span className="text-xs text-muted-foreground">{article.category}</span>}
+                                                    </div>
                                                 </div>
                                                 {article.current_stock !== undefined && (
                                                     <Badge variant={article.current_stock <= (article.min_stock || 0) ? "destructive" : "outline"}>
                                                         {article.current_stock}
                                                     </Badge>
                                                 )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {searchResults.storageItems.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase px-3 py-2">Lagerartikel</p>
+                                    <div className="space-y-1">
+                                        {searchResults.storageItems.map(item => (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => handleNavigate(createPageUrl('Storage'))}
+                                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
+                                            >
+                                                <Warehouse className="w-5 h-5 text-violet-500" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium truncate">{item.name}</p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        {item.location_label && (
+                                                            <span className="flex items-center gap-1 text-xs text-violet-400 font-medium">
+                                                                <MapPin className="w-3 h-3" />
+                                                                {item.location_label}
+                                                            </span>
+                                                        )}
+                                                        {item.category && <span className="text-xs text-muted-foreground">{item.category}</span>}
+                                                    </div>
+                                                </div>
+                                                <Badge variant={item.condition === 'defekt' ? 'destructive' : 'outline'}>
+                                                    {item.condition || 'gut'}
+                                                </Badge>
                                             </button>
                                         ))}
                                     </div>

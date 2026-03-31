@@ -2,7 +2,7 @@ import {
     Home, Calendar, Users, Package, Wine, BookOpen,
     CalendarCheck, CheckSquare, Sparkles, Wrench, TrendingUp,
     Bell, Shield, GraduationCap, Clock, Settings, QrCode,
-    RepeatIcon, BarChart2, FileText, Building2, BellRing, ShoppingCart, RefreshCw, Archive
+    RepeatIcon, BarChart2, FileText, Building2, BellRing, ShoppingCart, RefreshCw, Archive, ClipboardCheck
 } from 'lucide-react';
 
 export const navigationSections = [
@@ -55,6 +55,7 @@ export const navigationSections = [
     {
         title: 'Organisation',
         items: [
+            { name: 'Tagesabschluss', page: 'Closing', icon: ClipboardCheck, permission: 'canViewCleaning', color: 'from-violet-500 to-purple-600' },
             { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos', color: 'from-emerald-500 to-green-600' },
             { name: 'Putzen', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning', color: 'from-sky-400 to-blue-500' },
             { name: 'Wochentagsaufgaben', page: 'WeeklyTasks', icon: RepeatIcon, permission: 'canViewCleaning', color: 'from-teal-400 to-cyan-500' },

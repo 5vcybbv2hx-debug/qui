@@ -1,0 +1,78 @@
+{
+  "name": "ClosingSession",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum"
+    },
+    "started_by": {
+      "type": "string",
+      "description": "Gestartet von"
+    },
+    "completed_by": {
+      "type": "string",
+      "description": "Abgeschlossen von"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "is_complete": {
+      "type": "boolean",
+      "default": false
+    },
+    "completion_rate": {
+      "type": "number",
+      "description": "Erledigungsquote in %"
+    },
+    "items": {
+      "type": "array",
+      "description": "Erledigte Aufgaben mit Status",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "done_by": {
+            "type": "string"
+          },
+          "done_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "value": {
+            "type": "string",
+            "description": "Optional: eingegebener Wert"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Abschlussnotizen"
+    },
+    "cash_amount": {
+      "type": "number",
+      "description": "Kassenstand"
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

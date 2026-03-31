@@ -1,0 +1,43 @@
+{
+  "name": "ClosingTask",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Aufgabentitel"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Kasse",
+        "Bar",
+        "K\u00fcche",
+        "Reinigung",
+        "Sicherheit",
+        "Sonstiges"
+      ],
+      "description": "Kategorie"
+    },
+    "order": {
+      "type": "number",
+      "description": "Reihenfolge"
+    },
+    "requires_value": {
+      "type": "boolean",
+      "default": false,
+      "description": "Erfordert Eingabe (z.B. Kassenstand)"
+    },
+    "value_label": {
+      "type": "string",
+      "description": "Beschriftung des Eingabefelds (z.B. 'Betrag in \u20ac')"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "title",
+    "category"
+  ]
+}

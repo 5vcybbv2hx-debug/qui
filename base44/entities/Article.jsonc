@@ -19,7 +19,34 @@
       "items": {
         "type": "string"
       },
-      "description": "Liste der Lieferanten"
+      "description": "Liste der Lieferantennamen (R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
+    },
+    "supplier_details": {
+      "type": "array",
+      "description": "Lieferanten mit Preisen und Details",
+      "items": {
+        "type": "object",
+        "properties": {
+          "supplier_name": {
+            "type": "string"
+          },
+          "purchase_price": {
+            "type": "number"
+          },
+          "article_number": {
+            "type": "string"
+          },
+          "packaging_info": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "is_primary": {
+            "type": "boolean"
+          }
+        }
+      }
     },
     "content_unit": {
       "type": "string",
@@ -39,7 +66,7 @@
     },
     "purchase_price": {
       "type": "number",
-      "description": "Einkaufspreis pro Einheit"
+      "description": "Einkaufspreis pro Einheit (Hauptlieferant)"
     },
     "price_per_liter": {
       "type": "number",

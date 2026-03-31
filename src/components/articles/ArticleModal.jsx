@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Camera, X, Upload, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
+import SupplierDetailsEditor from './SupplierDetailsEditor';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,20 +23,22 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
     });
 
     const [scannerOpen, setScannerOpen] = useState(false);
-    const [newSupplier, setNewSupplier] = useState('');
     const [uploading, setUploading] = useState(false);
     const [imageEditorOpen, setImageEditorOpen] = useState(false);
     const [tempImageUrl, setTempImageUrl] = useState('');
     const [detectingAllergens, setDetectingAllergens] = useState(false);
+    const { data: allSuppliers = [] } = useQuery({
+        queryKey: ['suppliers-list'],
+        queryFn: () => base44.entities.Supplier.filter({ is_active: true }, 'order')
+    });
+    const supplierNames = allSuppliers.map(s => s.name);
+
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
         category: '',
         suppliers: [],
-        unit: '',
-        quantity: '',
-        content_amount: '',
-        content_unit: '',
+        supplier_details: [],
         purchase_price: '',
         current_stock: '',
         min_stock: '',
@@ -43,7 +46,11 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         storage_location: '',
         image_url: '',
         allergens: '',
-        notes: ''
+        notes: '',
+        unit: '',
+        quantity: '',
+        content_amount: '',
+        content_unit: '',
     });
 
     useEffect(() => {
@@ -53,6 +60,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 name: article.name || '',
                 category: article.category || '',
                 suppliers: article.suppliers || [],
+                supplier_details: article.supplier_details || [],
                 unit: article.unit || '',
                 quantity: article.quantity || '',
                 content_amount: article.content_amount || '',
@@ -72,6 +80,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 name: '',
                 category: '',
                 suppliers: [],
+                supplier_details: [],
                 unit: '',
                 quantity: '',
                 content_amount: '',
@@ -86,7 +95,6 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 notes: ''
             });
         }
-        setNewSupplier('');
     }, [article, open]);
 
     const detectAllergens = async () => {
@@ -123,12 +131,18 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
+        // Sync suppliers string array from supplier_details for backward compat
+        const supplierNames = formData.supplier_details.map(s => s.supplier_name).filter(Boolean);
+        // Primary price from primary supplier or first
+        const primary = formData.supplier_details.find(s => s.is_primary) || formData.supplier_details[0];
+        const primaryPrice = primary?.purchase_price ? parseFloat(primary.purchase_price) : undefined;
+
         const dataToSave = {
             ...formData,
+            suppliers: supplierNames.length > 0 ? supplierNames : formData.suppliers,
             quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
             content_amount: formData.content_amount ? parseFloat(formData.content_amount) : undefined,
-            purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
+            purchase_price: primaryPrice ?? (formData.purchase_price ? parseFloat(formData.purchase_price) : undefined),
             current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
         };
@@ -140,23 +154,6 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
     const handleScan = (barcode) => {
         setFormData({ ...formData, barcode });
         setScannerOpen(false);
-    };
-
-    const addSupplier = () => {
-        if (newSupplier.trim() && !formData.suppliers.includes(newSupplier.trim())) {
-            setFormData({
-                ...formData,
-                suppliers: [...formData.suppliers, newSupplier.trim()]
-            });
-            setNewSupplier('');
-        }
-    };
-
-    const removeSupplier = (supplier) => {
-        setFormData({
-            ...formData,
-            suppliers: formData.suppliers.filter(s => s !== supplier)
-        });
     };
 
     const handleImageUpload = async (e) => {
@@ -263,30 +260,12 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Lieferanten</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                value={newSupplier}
-                                onChange={(e) => setNewSupplier(e.target.value)}
-                                placeholder="Lieferant hinzufügen..."
-                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSupplier())}
-                            />
-                            <Button type="button" onClick={addSupplier} variant="outline">+</Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {formData.suppliers.map(supplier => (
-                                <Badge key={supplier} variant="secondary" className="flex items-center gap-1">
-                                    {supplier}
-                                    <button
-                                        type="button"
-                                        onClick={() => removeSupplier(supplier)}
-                                        className="ml-1 hover:text-red-600"
-                                    >
-                                        <X className="w-3 h-3" />
-                                    </button>
-                                </Badge>
-                            ))}
-                        </div>
+                        <Label className="font-semibold">Lieferanten & Preise</Label>
+                        <SupplierDetailsEditor
+                            value={formData.supplier_details}
+                            onChange={(details) => setFormData({ ...formData, supplier_details: details })}
+                            availableSuppliers={supplierNames}
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">

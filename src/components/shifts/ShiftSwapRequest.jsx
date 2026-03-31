@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { createNotification } from '@/utils/createNotification';
 
 export default function ShiftSwapRequest({ shift, onSuccess }) {
     const queryClient = useQueryClient();
@@ -20,16 +21,27 @@ export default function ShiftSwapRequest({ shift, onSuccess }) {
     });
 
     const { data: employees = [] } = useQuery({
+        queryKey: ['employees'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+    });
+
+    const { data: existingRequests = [] } = useQuery({
+        queryKey: ['shift-swap-requests', shift?.id],
+        queryFn: () => base44.entities.ShiftSwapRequest.filter({ 
+            shift_id: shift.id,
+            status: 'ausstehend' 
+        }),
+        enabled: !!shift?.id
+    });
+
+    const createMutation = useMutation({
         mutationFn: async (data) => {
-            // Benachrichtigung für Manager erstellen
             await base44.entities.ShiftSwapRequest.create(data);
-            await base44.entities.Notification.create({
+            await createNotification({
                 type: 'shift_swap',
                 title: 'Neue Schichttausch-Anfrage',
                 message: `${data.requesting_employee_name} möchte die Schicht am ${format(new Date(data.shift_date), 'dd.MM.yyyy', { locale: de })} mit ${data.target_employee_name} tauschen.`,
-                related_id: shift.id,
-                target_roles: ['admin', 'Manager'],
-                read_by: []
+                relatedId: shift.id
             });
         },
         onSuccess: () => {

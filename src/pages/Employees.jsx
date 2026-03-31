@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { createNotification } from '@/utils/createNotification';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -138,13 +139,11 @@ export default function Employees() {
             
             // Benachrichtigung für Manager erstellen, wenn Mitarbeiter eigene Daten bearbeitet
             if (isOwnProfile && !permissions.isManager) {
-                await base44.entities.Notification.create({
+                await createNotification({
                     type: 'employee_update',
                     title: 'Mitarbeiterdaten geändert',
                     message: `${data.name} hat seine/ihre Profildaten aktualisiert.`,
-                    related_id: id,
-                    target_roles: ['admin', 'Manager'],
-                    read_by: []
+                    relatedId: id
                 });
             }
         },

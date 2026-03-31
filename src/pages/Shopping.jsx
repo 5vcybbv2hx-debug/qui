@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import BarcodeScanner from '../components/restock/BarcodeScanner';
+import KanbanScanModal from '../components/shopping/KanbanScanModal';
 
 const getSupplierColor = (index) => {
     const colors = [
@@ -48,6 +49,7 @@ export default function Shopping() {
     const [selectedItem, setSelectedItem] = useState(null);
     const [activeTab, setActiveTab] = useState('alle');
     const [scannerOpen, setScannerOpen] = useState(false);
+    const [kanbanOpen, setKanbanOpen] = useState(false);
     const [eanInput, setEanInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [formData, setFormData] = useState({
@@ -263,6 +265,14 @@ export default function Shopping() {
                         </div>
                         {permissions.canEditShopping && (
                             <div className="flex gap-2">
+                                <Button
+                                    onClick={() => setKanbanOpen(true)}
+                                    variant="outline"
+                                    className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+                                >
+                                    <Camera className="w-4 h-4 mr-2" />
+                                    Kanban
+                                </Button>
                                 <Button 
                                     onClick={() => setScannerOpen(true)}
                                     variant="outline"
@@ -663,6 +673,13 @@ export default function Shopping() {
                     open={scannerOpen}
                     onClose={() => setScannerOpen(false)}
                     onScan={handleBarcodeScan}
+                />
+
+                {/* Kanban QR Scanner */}
+                <KanbanScanModal
+                    open={kanbanOpen}
+                    onClose={() => setKanbanOpen(false)}
+                    suppliers={activeSuppliers}
                 />
             </div>
         </div>

@@ -158,6 +158,12 @@ export default function Todos() {
     const activeTodos = todos.filter(t => !t.is_archived);
     const archivedTodos = todos.filter(t => t.is_archived);
 
+    // Merge saved categories with any categories actually used in todos
+    const allCategories = Array.from(new Set([
+        ...categories,
+        ...todos.map(t => t.category).filter(Boolean)
+    ])).sort();
+
     const displayTodos = showArchived ? archivedTodos : activeTodos;
 
     const filteredTodos = displayTodos.filter(todo => {
@@ -225,7 +231,7 @@ export default function Todos() {
                     
                     {!showArchived && (
                         <div className="flex gap-2 overflow-x-auto pb-1">
-                            {['alle', ...categories].map(cat => {
+                             {['alle', ...allCategories].map(cat => {
                                 const count = activeTodos.filter(t => cat === 'alle' || t.category === cat).length;
                                 return (
                                     <Button

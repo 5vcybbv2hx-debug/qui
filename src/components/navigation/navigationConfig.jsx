@@ -1,9 +1,8 @@
-
 import {
     Home, Calendar, Users, Package, Wine, BookOpen,
     CalendarCheck, CheckSquare, Sparkles, Wrench, TrendingUp,
     Bell, Shield, GraduationCap, Clock, Settings, QrCode,
-    RepeatIcon, BarChart2, FileText, Building2, BellRing, ShoppingCart, RefreshCw
+    RepeatIcon, BarChart2, FileText, Building2, BellRing, ShoppingCart, RefreshCw, Archive
 } from 'lucide-react';
 
 export const navigationSections = [
@@ -36,6 +35,7 @@ export const navigationSections = [
             { name: 'Rezepte', page: 'Recipes', icon: BookOpen, permission: 'canViewDashboard', color: 'from-pink-500 to-fuchsia-600' },
             { name: 'Preisrechner', page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator', color: 'from-amber-400 to-yellow-500' },
             { name: 'Lieferanten', page: 'Suppliers', icon: Package, permission: 'isManager', color: 'from-yellow-500 to-orange-500' },
+            { name: 'Lagerplätze', page: 'Storage', icon: Archive, permission: 'canViewWarehouse', color: 'from-stone-400 to-zinc-500' },
         ]
     },
     {

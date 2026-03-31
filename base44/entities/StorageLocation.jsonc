@@ -1,0 +1,27 @@
+{
+  "name": "StorageLocation",
+  "type": "object",
+  "properties": {
+    "area": {
+      "type": "string",
+      "description": "Bereich (z.B. Keller, B\u00fcro, K\u00fcche)"
+    },
+    "furniture": {
+      "type": "string",
+      "description": "M\u00f6belst\u00fcck / Beh\u00e4lter (z.B. Regal A, Schrank 1)"
+    },
+    "position": {
+      "type": "string",
+      "description": "Position (z.B. Fach 2, Oberste Reihe)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": [
+    "area",
+    "furniture",
+    "position"
+  ]
+}

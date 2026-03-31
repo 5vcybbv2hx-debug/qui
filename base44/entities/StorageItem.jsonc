@@ -1,0 +1,61 @@
+{
+  "name": "StorageItem",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Bezeichnung des Artikels"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Werkzeug",
+        "Reinigung",
+        "Ger\u00e4te",
+        "B\u00fcro",
+        "Sonstiges"
+      ],
+      "description": "Kategorie"
+    },
+    "location_id": {
+      "type": "string",
+      "description": "ID des Lagerorts"
+    },
+    "location_label": {
+      "type": "string",
+      "description": "Lagerort (lesbar, z.B. Keller > Regal A > Fach 2)"
+    },
+    "quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Anzahl"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "gut",
+        "ok",
+        "defekt"
+      ],
+      "default": "gut",
+      "description": "Zustand"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung / Notizen"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Bild-URL"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "name",
+    "category"
+  ]
+}

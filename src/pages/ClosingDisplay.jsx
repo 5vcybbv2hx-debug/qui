@@ -84,32 +84,42 @@ export default function ClosingDisplay() {
             </div>
 
             {/* Task grid */}
-            <div className="flex-1 px-10 py-6 grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(categories.length, 3)}, 1fr)` }}>
+            <div className="flex-1 px-10 py-6 grid gap-6 overflow-auto" style={{ gridTemplateColumns: `repeat(${Math.min(categories.length, 3)}, 1fr)` }}>
                 {categories.map(cat => {
                     const catTasks = tasks.filter(t => t.category === cat);
-                    const catDone = catTasks.filter(t => itemMap[t.id]?.done).length;
+                    const pendingTasks = catTasks.filter(t => !itemMap[t.id]?.done);
+                    const doneTasks = catTasks.filter(t => itemMap[t.id]?.done);
+                    const catDone = doneTasks.length;
+                    const allDone = catDone === catTasks.length && catTasks.length > 0;
                     return (
-                        <div key={cat} className="bg-slate-900 rounded-2xl border border-white/10 overflow-hidden">
-                            <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
-                                <span className={cn('font-bold text-base', CATEGORY_COLORS[cat] || 'text-slate-300')}>{cat}</span>
+                        <div key={cat} className={cn('bg-slate-900 rounded-2xl border overflow-hidden', allDone ? 'border-green-500/30' : 'border-white/10')}>
+                            <div className={cn('px-5 py-3 border-b flex items-center justify-between', allDone ? 'border-green-500/20 bg-green-900/20' : 'border-white/10')}>
+                                <div className="flex items-center gap-2">
+                                    {allDone && <CheckCircle2 className="w-4 h-4 text-green-400" />}
+                                    <span className={cn('font-bold text-base', CATEGORY_COLORS[cat] || 'text-slate-300')}>{cat}</span>
+                                </div>
                                 <span className="text-sm text-slate-400">{catDone}/{catTasks.length}</span>
                             </div>
                             <div className="p-3 space-y-2">
-                                {catTasks.map(task => {
+                                {/* Pending tasks first */}
+                                {pendingTasks.map(task => (
+                                    <div key={task.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-800/80 border border-white/5">
+                                        <Circle className="w-5 h-5 text-amber-400 shrink-0" />
+                                        <p className="text-sm font-semibold text-white truncate">{task.title}</p>
+                                    </div>
+                                ))}
+                                {/* Done tasks below, smaller */}
+                                {doneTasks.length > 0 && pendingTasks.length > 0 && (
+                                    <div className="border-t border-white/5 my-1" />
+                                )}
+                                {doneTasks.map(task => {
                                     const item = itemMap[task.id];
                                     return (
-                                        <div key={task.id} className={cn('flex items-center gap-3 px-3 py-2.5 rounded-xl', item?.done ? 'bg-green-500/10' : 'bg-slate-800/50')}>
-                                            {item?.done
-                                                ? <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0" />
-                                                : <Circle className="w-5 h-5 text-slate-600 shrink-0" />
-                                            }
+                                        <div key={task.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-green-500/5">
+                                            <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
                                             <div className="flex-1 min-w-0">
-                                                <p className={cn('text-sm font-medium truncate', item?.done ? 'line-through text-slate-500' : 'text-white')}>
-                                                    {task.title}
-                                                </p>
-                                                {item?.done && item.done_by && (
-                                                    <p className="text-xs text-slate-500 truncate">{item.done_by}</p>
-                                                )}
+                                                <p className="text-xs text-slate-500 line-through truncate">{task.title}</p>
+                                                {item?.done_by && <p className="text-xs text-slate-600 truncate">{item.done_by}</p>}
                                             </div>
                                         </div>
                                     );

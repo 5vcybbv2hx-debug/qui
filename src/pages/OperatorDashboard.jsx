@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import SmartSuggestions from '@/components/dashboard/SmartSuggestions';
 
 function StatCard({ icon: Icon, label, value, sub, color, to }) {
     const inner = (
@@ -171,6 +172,9 @@ export default function OperatorDashboard() {
                         </Link>
                     </div>
                 </section>
+
+                {/* Smart Suggestions */}
+                <SmartSuggestions />
 
                 {/* Low Stock */}
                 {lowStock.length > 0 && (

@@ -60,7 +60,7 @@ export const navigationSections = [
             { name: 'Tageseröffnung', page: 'Opening', icon: Sun, permission: 'canViewCleaning', color: 'from-amber-400 to-yellow-500' },
             { name: 'Tagesabschluss', page: 'Closing', icon: ClipboardCheck, permission: 'canViewCleaning', color: 'from-violet-500 to-purple-600' },
             { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos', color: 'from-emerald-500 to-green-600' },
-            { name: 'Putzen', page: 'Cleaning', icon: Sparkles, permission: 'canViewCleaning', color: 'from-sky-400 to-blue-500' },
+
             { name: 'Wochentagsaufgaben', page: 'WeeklyTasks', icon: RepeatIcon, permission: 'canViewCleaning', color: 'from-teal-400 to-cyan-500' },
             { name: 'Wartung', page: 'Maintenance', icon: Wrench, permission: 'isManager', color: 'from-stone-500 to-zinc-600' },
             { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard', color: 'from-violet-400 to-purple-500' },

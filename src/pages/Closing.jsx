@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, getDay, isWeekend } from 'date-fns';
+import { format, getDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
     CheckCircle2, Circle, Plus, Tv, History, ChevronDown, ChevronUp,
     ClipboardCheck, AlertCircle, Lock, Unlock, RefreshCw, Layers,
-    Calendar, Filter, X, ChevronRight, Eye
+    Calendar, X, ChevronRight, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -115,6 +115,7 @@ export default function Closing() {
     const permissions = usePermissions();
     const [currentUser, setCurrentUser] = useState(null);
     const [activeSession, setActiveSession] = useState(null);
+    const [cleaningStates, setCleaningStates] = useState({});
     const [itemStates, setItemStates] = useState({});
     const [notes, setNotes] = useState('');
     const [showHistory, setShowHistory] = useState(false);
@@ -133,6 +134,11 @@ export default function Closing() {
         queryFn: () => base44.entities.ClosingTask.filter({ is_active: true }, 'order')
     });
 
+    const { data: cleaningTasks = [] } = useQuery({
+        queryKey: ['cleaning-tasks-for-closing'],
+        queryFn: () => base44.entities.CleaningTask.filter({ is_active: true }, 'area')
+    });
+
     const { data: sessions = [] } = useQuery({
         queryKey: ['closing-sessions'],
         queryFn: () => base44.entities.ClosingSession.list('-date', 30)
@@ -140,9 +146,19 @@ export default function Closing() {
 
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const todaySession = sessions.find(s => s.date === todayStr);
+    const dow = getDay(new Date());
 
     // Filter tasks relevant to today + role filter
     const relevantTasks = tasks.filter(t => isTaskRelevantToday(t, isEventDay));
+
+    // Filter cleaning tasks relevant today
+    const relevantCleaningTasks = cleaningTasks.filter(t => {
+        const freq = t.frequency || 'täglich';
+        if (freq === 'täglich') return true;
+        if (freq === 'am Wochenende' && (dow === 5 || dow === 6)) return true;
+        if (freq === 'an Sonderöffnungstagen' && isEventDay) return true;
+        return false;
+    });
     const filteredTasks = roleFilter === 'Alle'
         ? relevantTasks
         : relevantTasks.filter(t => (t.required_role || 'Alle') === roleFilter || (t.required_role || 'Alle') === 'Alle');
@@ -151,13 +167,31 @@ export default function Closing() {
         if (todaySession) {
             setActiveSession(todaySession);
             const states = {};
+            const cleanStates = {};
             (todaySession.items || []).forEach(item => {
-                states[item.task_id] = { done: item.done, value: item.value || '' };
+                if (item._type === 'cleaning') {
+                    cleanStates[item.task_id] = { done: item.done };
+                } else {
+                    states[item.task_id] = { done: item.done, value: item.value || '' };
+                }
             });
             setItemStates(states);
+            setCleaningStates(cleanStates);
             setNotes(todaySession.notes || '');
         }
     }, [todaySession?.id]);
+
+    // Sync cleaningStates from live CleaningTask data (completed today)
+    useEffect(() => {
+        const todayStr2 = format(new Date(), 'yyyy-MM-dd');
+        const states = {};
+        relevantCleaningTasks.forEach(t => {
+            if (t.is_completed && t.completed_at?.startsWith(todayStr2)) {
+                states[t.id] = { done: true, done_by: t.completed_by };
+            }
+        });
+        setCleaningStates(prev => ({ ...states, ...prev }));
+    }, [cleaningTasks.length]);
 
     const sessionMutation = useMutation({
         mutationFn: ({ id, data }) => id
@@ -174,21 +208,44 @@ export default function Closing() {
         onSuccess: () => { queryClient.invalidateQueries(['closing-tasks']); setTaskModalOpen(false); }
     });
 
-    const buildItems = (states) => relevantTasks.map(t => ({
-        task_id: t.id,
-        title: t.title,
-        category: t.category,
-        required_role: t.required_role,
-        done: states[t.id]?.done || false,
-        value: states[t.id]?.value || '',
-        done_by: states[t.id]?.done ? (currentUser?.full_name || currentUser?.email || '') : null,
-        done_at: states[t.id]?.done ? new Date().toISOString() : null,
-    }));
+    const cleaningMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
+        onMutate: ({ id, data }) => {
+            queryClient.setQueryData(['cleaning-tasks-for-closing'], (old) =>
+                old?.map(t => t.id === id ? { ...t, ...data } : t) || old
+            );
+        },
+        onSuccess: () => queryClient.invalidateQueries(['cleaning-tasks-for-closing'])
+    });
 
-    const saveSession = async (states, isComplete = false, notesVal) => {
-        const items = buildItems(states);
+    const buildItems = (states, cleanStates) => [
+        ...relevantTasks.map(t => ({
+            task_id: t.id,
+            title: t.title,
+            category: t.category,
+            required_role: t.required_role,
+            done: states[t.id]?.done || false,
+            value: states[t.id]?.value || '',
+            done_by: states[t.id]?.done ? (currentUser?.full_name || currentUser?.email || '') : null,
+            done_at: states[t.id]?.done ? new Date().toISOString() : null,
+        })),
+        ...relevantCleaningTasks.map(t => ({
+            task_id: t.id,
+            title: t.title,
+            category: `Reinigung: ${t.area || ''}`,
+            _type: 'cleaning',
+            done: cleanStates[t.id]?.done || t.is_completed || false,
+            done_by: cleanStates[t.id]?.done_by || t.completed_by || null,
+            done_at: t.completed_at || null,
+        }))
+    ];
+
+    const saveSession = async (states, isComplete = false, notesVal, cleanStates) => {
+        const effectiveCleanStates = cleanStates ?? cleaningStates;
+        const items = buildItems(states, effectiveCleanStates);
+        const totalTasks = relevantTasks.length + relevantCleaningTasks.length;
         const done = items.filter(i => i.done).length;
-        const rate = relevantTasks.length > 0 ? Math.round((done / relevantTasks.length) * 100) : 0;
+        const rate = totalTasks > 0 ? Math.round((done / totalTasks) * 100) : 0;
         const data = {
             date: todayStr,
             items,
@@ -212,17 +269,37 @@ export default function Closing() {
             [task.id]: { done: !itemStates[task.id]?.done, value: itemStates[task.id]?.value || '' }
         };
         setItemStates(newStates);
-        await saveSession(newStates);
+        await saveSession(newStates, false, undefined, cleaningStates);
     };
 
     const setValue = (taskId, value) => {
         setItemStates(prev => ({ ...prev, [taskId]: { ...prev[taskId], value } }));
     };
 
+    const toggleCleaningTask = async (task) => {
+        const isDone = !cleaningStates[task.id]?.done && !task.is_completed;
+        const newCleanStates = {
+            ...cleaningStates,
+            [task.id]: { done: isDone, done_by: isDone ? (currentUser?.full_name || currentUser?.email || '') : null }
+        };
+        setCleaningStates(newCleanStates);
+        await cleaningMutation.mutateAsync({
+            id: task.id,
+            data: {
+                is_completed: isDone,
+                completed_by: isDone ? (currentUser?.full_name || currentUser?.email || '') : null,
+                completed_at: isDone ? new Date().toISOString() : null
+            }
+        });
+        await saveSession(itemStates, false, undefined, newCleanStates);
+    };
+
     const handleFinalize = async () => {
-        const undone = relevantTasks.filter(t => !itemStates[t.id]?.done);
-        if (undone.length > 0 && !confirm(`Noch ${undone.length} Aufgaben offen. Trotzdem abschließen?`)) return;
-        await saveSession(itemStates, true);
+        const undoneClosing = relevantTasks.filter(t => !itemStates[t.id]?.done);
+        const undoneCleaning = relevantCleaningTasks.filter(t => !cleaningStates[t.id]?.done && !t.is_completed);
+        const undone = undoneClosing.length + undoneCleaning.length;
+        if (undone > 0 && !confirm(`Noch ${undone} Aufgaben offen. Trotzdem abschließen?`)) return;
+        await saveSession(itemStates, true, undefined, cleaningStates);
     };
 
     const handleReopen = async () => {
@@ -241,11 +318,11 @@ export default function Closing() {
     };
 
     const categories = [...new Set(filteredTasks.map(t => t.category))];
-    const doneCount = relevantTasks.filter(t => itemStates[t.id]?.done).length;
-    const progress = relevantTasks.length > 0 ? Math.round((doneCount / relevantTasks.length) * 100) : 0;
+    const cleaningDoneCount = relevantCleaningTasks.filter(t => cleaningStates[t.id]?.done || t.is_completed).length;
+    const doneCount = relevantTasks.filter(t => itemStates[t.id]?.done).length + cleaningDoneCount;
+    const totalCount = relevantTasks.length + relevantCleaningTasks.length;
+    const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
     const isFinalized = activeSession?.is_complete;
-
-    const dow = getDay(new Date());
     const dayLabel = dow === 5 ? '🎉 Freitag' : dow === 6 ? '🌙 Samstag' : null;
 
     return (
@@ -329,7 +406,7 @@ export default function Closing() {
                         />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                        {doneCount} von {relevantTasks.length} Aufgaben erledigt
+                        {doneCount} von {totalCount} Aufgaben erledigt
                         {isFinalized && activeSession?.completed_by && (
                             <span className="ml-2 text-green-400">· abgeschlossen von {activeSession.completed_by}</span>
                         )}
@@ -457,7 +534,57 @@ export default function Closing() {
                     );
                 })}
 
-                {filteredTasks.length === 0 && (
+                {/* Cleaning Tasks Section */}
+                {relevantCleaningTasks.length > 0 && (
+                    <div className="mb-4 border border-green-500/30 rounded-xl overflow-hidden">
+                        <button
+                            onClick={() => setCollapsedCats(p => ({ ...p, _cleaning: !p._cleaning }))}
+                            className="w-full flex items-center justify-between px-4 py-3 bg-green-500/10 hover:bg-green-500/20 transition-colors"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-green-400" />
+                                <span className="text-sm font-semibold text-green-400">Reinigung</span>
+                                <span className="text-sm text-muted-foreground">{cleaningDoneCount}/{relevantCleaningTasks.length}</span>
+                            </div>
+                            {collapsedCats._cleaning ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
+                        </button>
+                        {!collapsedCats._cleaning && (
+                            <div className="divide-y divide-border/50">
+                                {relevantCleaningTasks.map(task => {
+                                    const isDone = cleaningStates[task.id]?.done || task.is_completed;
+                                    const doneBy = cleaningStates[task.id]?.done_by || task.completed_by;
+                                    return (
+                                        <div key={task.id} className={cn('px-4 py-3 transition-colors', isDone ? 'bg-green-500/5' : 'bg-background')}>
+                                            <button
+                                                onClick={() => !isFinalized && toggleCleaningTask(task)}
+                                                disabled={isFinalized}
+                                                className="flex items-center gap-3 w-full text-left"
+                                            >
+                                                {isDone
+                                                    ? <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                                    : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
+                                                }
+                                                <div className="flex-1">
+                                                    <p className={cn('text-sm font-medium', isDone ? 'line-through text-muted-foreground' : 'text-foreground')}>
+                                                        {task.title}
+                                                    </p>
+                                                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                                        <span className="text-xs px-1.5 py-0.5 rounded-md bg-green-500/15 text-green-400">{task.area}</span>
+                                                        {isDone && doneBy && (
+                                                            <span className="text-xs text-muted-foreground">— {doneBy}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {filteredTasks.length === 0 && relevantCleaningTasks.length === 0 && (
                     <div className="text-center py-16 text-muted-foreground border border-dashed border-border rounded-xl">
                         <ClipboardCheck className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         <p className="font-medium">Keine Aufgaben für heute</p>

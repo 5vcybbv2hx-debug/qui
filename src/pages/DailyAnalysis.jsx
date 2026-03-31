@@ -1,27 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { Upload, DollarSign, Users, Gift, AlertCircle, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2 } from 'lucide-react';
-import { format, parseISO, addDays, subDays, isToday, parse } from 'date-fns';
+import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info } from 'lucide-react';
+import { format, parseISO, addDays, subDays, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
 import TipCalculator from '@/components/dailyanalysis/TipCalculator.jsx';
 import DailyRevenueList from '@/components/dailyanalysis/DailyRevenueList.jsx';
+import { cn } from '@/lib/utils';
+
+// An employee is "daily-paid" (Aushilfe) if their role is Aushilfe OR they have an hourly_rate but no monthly contract
+const isDailyPaid = (employee) => {
+    if (!employee) return false;
+    return employee.role === 'Aushilfe' || (employee.hourly_rate > 0 && employee.contract_type === 'Minijob');
+};
+
+function KpiCard({ icon: Icon, label, value, sub, color = 'text-foreground', highlight = false, children }) {
+    return (
+        <Card className={cn('bg-card border-border', highlight && 'border-amber-500/50 bg-amber-500/5')}>
+            <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 uppercase tracking-wide">
+                    {Icon && <Icon className="w-3.5 h-3.5" />}
+                    {label}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+                <div className={cn('text-2xl font-bold', color)}>{value}</div>
+                {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+                {children}
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function DailyAnalysis() {
     const permissions = usePermissions();
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [tipCalculatorOpen, setTipCalculatorOpen] = useState(false);
-    const [laborCostLoading, setLaborCostLoading] = useState(false);
-    const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [reanalyzingAll, setReanalyzingAll] = useState(false);
     const [reanalyzeProgress, setReanalyzeProgress] = useState({ done: 0, total: 0, errors: [] });
     const [reanalyzeOpen, setReanalyzeOpen] = useState(false);
@@ -57,11 +79,9 @@ export default function DailyAnalysis() {
         staleTime: 2 * 60 * 1000,
     });
 
-    // Bestimme den "Betriebstag" einer Schicht (Schichten vor 09:00 Uhr gehören zum Vortag)
     const getOperatingDate = (timeEntry) => {
         const startHour = parseInt(timeEntry.start_time.split(':')[0]);
         if (startHour < 9) {
-            // Schicht beginnt vor 09:00 Uhr, gehört zum Vortag
             const prevDate = new Date(timeEntry.date);
             prevDate.setDate(prevDate.getDate() - 1);
             return prevDate.toISOString().split('T')[0];
@@ -69,96 +89,87 @@ export default function DailyAnalysis() {
         return timeEntry.date;
     };
 
-    // Daten für aktuellen Tag
     const todayRevenue = dailyRevenues.find(dr => dr.date === selectedDate);
-    const todayTimeEntries = timeEntries.filter(te => getOperatingDate(te) === selectedDate && te.status === 'genehmigt');
     const todayTipDistribution = tipDistributions.find(td => td.date === selectedDate);
-    
-    // Verkaufsbericht für aktuellen Tag
     const todaySalesReport = salesReports.find(sr => sr.report_date === selectedDate && sr.processing_status === 'completed');
+    const employeeMap = useMemo(() => new Map(employees.map(emp => [emp.id, emp])), [employees]);
 
-    // Employee-Map für schnelle Lookups
-    const employeeMap = new Map(employees.map(emp => [emp.id, emp]));
+    // Build enriched time entries for the day
+    const todayTimeEntriesWithRates = useMemo(() => {
+        const dayEntries = timeEntries.filter(te => getOperatingDate(te) === selectedDate && te.status === 'genehmigt');
 
-    // Personalkosten: Nutze SalesReport wenn verfügbar, sonst TimeEntry Daten
-    let todayTimeEntriesWithRates = [];
-    let totalLaborCost = 0;
-    let staffCount = 0;
+        if (todaySalesReport?.labor_costs_details && Array.isArray(todaySalesReport.labor_costs_details)) {
+            return todaySalesReport.labor_costs_details.map((detail, idx) => {
+                const emp = employees.find(e => e.id === detail.employee_id) || null;
+                return {
+                    id: `report-${idx}`,
+                    employee_id: detail.employee_id || `unknown-${idx}`,
+                    employee_name: detail.employee_name || 'Unbekannt',
+                    total_hours: detail.hours || 0,
+                    hourly_rate: detail.hourly_rate || 0,
+                    cost: detail.cost || 0,
+                    date: selectedDate,
+                    start_time: '',
+                    end_time: '',
+                    _isDaily: emp ? isDailyPaid(emp) : (detail.hourly_rate > 0),
+                    _contractType: emp?.contract_type || '',
+                    _role: emp?.role || '',
+                };
+            });
+        }
 
-    if (todaySalesReport?.labor_costs_details && Array.isArray(todaySalesReport.labor_costs_details)) {
-        // Aus Verkaufsbericht
-        todayTimeEntriesWithRates = todaySalesReport.labor_costs_details.map((detail, idx) => ({
-            id: `report-${idx}`,
-            employee_id: detail.employee_id || '',
-            employee_name: detail.employee_name || 'Unbekannt',
-            total_hours: detail.hours || 0,
-            hourly_rate: detail.hourly_rate || 0,
-            cost: detail.cost || 0,
-            date: selectedDate,
-            start_time: '',
-            end_time: ''
-        }));
-        totalLaborCost = todayTimeEntriesWithRates.reduce((sum, te) => sum + te.cost, 0);
-        staffCount = todayTimeEntriesWithRates.length;
-    } else {
-        // Aus TimeEntry fallback
-        todayTimeEntriesWithRates = todayTimeEntries.map(te => {
-            const employee = employeeMap.get(te.employee_id);
-            const hourlyRate = employee?.hourly_rate || 0;
+        return dayEntries.map(te => {
+            const emp = employeeMap.get(te.employee_id);
+            const hourlyRate = emp?.hourly_rate || 0;
             return {
                 ...te,
                 hourly_rate: hourlyRate,
-                cost: te.total_hours * hourlyRate
+                cost: te.total_hours * hourlyRate,
+                _isDaily: emp ? isDailyPaid(emp) : false,
+                _contractType: emp?.contract_type || '',
+                _role: emp?.role || '',
             };
         });
-        totalLaborCost = todayTimeEntriesWithRates.reduce((sum, te) => sum + te.cost, 0);
-        staffCount = new Set(todayTimeEntriesWithRates.map(te => te.employee_id)).size;
-    }
+    }, [timeEntries, selectedDate, todaySalesReport, employees, employeeMap]);
 
-    // Filtere nach ausgewählten Mitarbeitern
-    const filteredTimeEntries = selectedEmployees.length > 0 
-        ? todayTimeEntriesWithRates.filter(te => selectedEmployees.includes(te.employee_id))
-        : todayTimeEntriesWithRates;
+    // Split into daily-paid vs full-time
+    const dailyPaidEntries = todayTimeEntriesWithRates.filter(e => e._isDaily);
+    const fullTimeEntries = todayTimeEntriesWithRates.filter(e => !e._isDaily);
 
-    const filteredLaborCost = filteredTimeEntries.reduce((sum, te) => sum + te.cost, 0);
-    const filteredStaffCount = new Set(filteredTimeEntries.map(te => te.employee_id)).size;
+    const dailyLaborCost = dailyPaidEntries.reduce((s, e) => s + e.cost, 0);
+    const fullTimeLaborCost = fullTimeEntries.reduce((s, e) => s + e.cost, 0);
+    const totalLaborCost = dailyLaborCost + fullTimeLaborCost;
+
+    const revenue = todayRevenue?.revenue || 0;
+    const barMinusPersonnel = revenue > 0 ? revenue - dailyLaborCost : null;
+    const totalRatio = revenue > 0 ? (totalLaborCost / revenue) * 100 : null;
+    const dailyRatio = revenue > 0 ? (dailyLaborCost / revenue) * 100 : null;
+
+    const staffCount = new Set(todayTimeEntriesWithRates.map(te => te.employee_id)).size;
 
     const handleReanalyzeAll = async () => {
         const withPDF = dailyRevenues.filter(r => r.pdf_url);
-        if (withPDF.length === 0) {
-            alert('Keine Einträge mit PDF vorhanden.');
-            return;
-        }
+        if (withPDF.length === 0) { alert('Keine Einträge mit PDF vorhanden.'); return; }
         setReanalyzingAll(true);
         setReanalyzeProgress({ done: 0, total: withPDF.length, errors: [] });
         setReanalyzeOpen(true);
-
         const errors = [];
         for (let i = 0; i < withPDF.length; i++) {
             const record = withPDF[i];
             try {
                 const result = await base44.integrations.Core.InvokeLLM({
-                    prompt: `Analysiere diese Z-Abschlag PDF von einer Bar/Lokal. Extrahiere:
-                    - Gesamtumsatz / Tagesumsatz (in Euro, Brutto)
-                    - Umsatz Bar (Bargeld-Umsatz)
-                    - Umsatz EC / Kartenzahlung
-                    - Umsatzsteuer (MwSt.)
-                    - Eigenbedarf / Eigenverbrauch
-                    Gib die Antwort als JSON zurück.`,
+                    prompt: `Analysiere diese Z-Abschlag PDF. Extrahiere: Gesamtumsatz, Bar-Umsatz, EC-Umsatz, MwSt, Eigenbedarf. Gib JSON zurück.`,
                     file_urls: [record.pdf_url],
                     response_json_schema: {
                         type: 'object',
                         properties: {
-                            revenue: { type: 'number' },
-                            revenue_cash: { type: 'number' },
-                            revenue_ec: { type: 'number' },
-                            vat: { type: 'number' },
+                            revenue: { type: 'number' }, revenue_cash: { type: 'number' },
+                            revenue_ec: { type: 'number' }, vat: { type: 'number' },
                             own_consumption: { type: 'number' },
                         },
                         required: ['revenue']
                     }
                 });
-
                 if (result.revenue) {
                     await base44.entities.DailyRevenue.update(record.id, {
                         revenue: result.revenue,
@@ -175,323 +186,305 @@ export default function DailyAnalysis() {
             }
             setReanalyzeProgress({ done: i + 1, total: withPDF.length, errors: [...errors] });
         }
-
         setReanalyzingAll(false);
         queryClient.invalidateQueries({ queryKey: ['daily-revenues'] });
     };
 
-    const handleFetchLaborCosts = async () => {
-        setLaborCostLoading(true);
-        try {
-            // Invalidiere TimeEntries Daten um sie neu zu laden
-            await queryClient.invalidateQueries({ queryKey: ['time-entries'] });
-        } finally {
-            setLaborCostLoading(false);
-        }
-    };
-
-    if (!permissions.canViewAnalytics && !permissions.isManager) {
-        return <PermissionDenied />;
-    }
+    if (!permissions.canViewAnalytics && !permissions.isManager) return <PermissionDenied />;
 
     return (
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="max-w-3xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-5 pb-24 md:pb-8">
+
             {/* Header */}
-            <div className="space-y-3">
-                <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Tagesanalyse</h1>
-                        <p className="text-slate-400">Z-Abschlag, Personalkosten und Trinkgeldverteilung</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Tagesanalyse</h1>
+                        <p className="text-sm text-muted-foreground">Z-Abschlag · Personal · Trinkgeld</p>
                     </div>
-                    <Button
-                        size="sm"
-                        variant="outline"
+                    <Button size="sm" variant="outline"
                         onClick={handleReanalyzeAll}
                         disabled={reanalyzingAll || dailyRevenues.filter(r => r.pdf_url).length === 0}
-                        className="border-slate-600 text-slate-300 hover:text-white whitespace-nowrap"
+                        className="shrink-0 text-xs"
                     >
-                        {reanalyzingAll ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                        )}
-                        Alle PDFs neu analysieren ({dailyRevenues.filter(r => r.pdf_url).length})
+                        {reanalyzingAll ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                        PDFs ({dailyRevenues.filter(r => r.pdf_url).length})
                     </Button>
                 </div>
 
-                {/* Re-analyze progress */}
+                {/* Progress */}
                 {reanalyzeOpen && (
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <div className="bg-card border border-border rounded-xl p-3 space-y-2">
                         <div className="flex items-center justify-between">
-                            <p className="text-sm font-semibold text-white">
-                                {reanalyzingAll ? `Analysiere... ${reanalyzeProgress.done}/${reanalyzeProgress.total}` : `Fertig: ${reanalyzeProgress.done}/${reanalyzeProgress.total}`}
+                            <p className="text-sm font-semibold text-foreground">
+                                {reanalyzingAll ? `Analysiere... ${reanalyzeProgress.done}/${reanalyzeProgress.total}` : `Fertig ${reanalyzeProgress.done}/${reanalyzeProgress.total}`}
                             </p>
                             {!reanalyzingAll && (
-                                <button onClick={() => setReanalyzeOpen(false)} className="text-slate-400 hover:text-white text-xs">✕ Schließen</button>
+                                <button onClick={() => setReanalyzeOpen(false)} className="text-muted-foreground text-xs">✕</button>
                             )}
                         </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2">
-                            <div
-                                className="bg-amber-500 h-2 rounded-full transition-all"
-                                style={{ width: `${reanalyzeProgress.total ? (reanalyzeProgress.done / reanalyzeProgress.total) * 100 : 0}%` }}
-                            />
+                        <div className="w-full bg-secondary rounded-full h-1.5">
+                            <div className="bg-amber-500 h-1.5 rounded-full transition-all"
+                                style={{ width: `${reanalyzeProgress.total ? (reanalyzeProgress.done / reanalyzeProgress.total) * 100 : 0}%` }} />
                         </div>
                         {!reanalyzingAll && reanalyzeProgress.errors.length === 0 && (
-                            <p className="text-sm text-green-400 flex items-center gap-1">
-                                <CheckCircle2 className="w-4 h-4" /> Alle PDFs erfolgreich analysiert.
+                            <p className="text-xs text-green-400 flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Alle PDFs erfolgreich analysiert.
                             </p>
                         )}
-                        {reanalyzeProgress.errors.length > 0 && (
-                            <div className="text-xs text-red-400 space-y-1">
-                                {reanalyzeProgress.errors.map((e, i) => <p key={i}>⚠️ {e}</p>)}
-                            </div>
-                        )}
+                        {reanalyzeProgress.errors.map((e, i) => <p key={i} className="text-xs text-red-400">⚠️ {e}</p>)}
                     </div>
                 )}
-                
+
+                {/* Date picker */}
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setSelectedDate(format(subDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
-                        className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                        title="Vorheriger Tag"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground transition-colors"
                     >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-5 h-5" />
                     </button>
 
-                    <label className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white cursor-pointer hover:bg-slate-700 transition-colors group">
-                        <CalendarDays className="w-4 h-4 text-amber-400" />
-                        <span className="font-medium">
+                    <label className="relative flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl bg-card border border-border text-foreground cursor-pointer">
+                        <CalendarDays className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="font-medium text-sm flex-1 text-center">
                             {isToday(parseISO(selectedDate))
                                 ? 'Heute'
-                                : format(parseISO(selectedDate), 'EEE, dd. MMMM yyyy', { locale: de })}
+                                : format(parseISO(selectedDate), 'EEE, dd. MMM yyyy', { locale: de })}
                         </span>
-                        <input
-                            type="date"
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                        />
+                        <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full" />
                     </label>
 
                     <button
                         onClick={() => setSelectedDate(format(addDays(parseISO(selectedDate), 1), 'yyyy-MM-dd'))}
-                        className="p-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                        title="Nächster Tag"
                         disabled={isToday(parseISO(selectedDate))}
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-card border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
                     >
-                        <ChevronRight className={`w-4 h-4 ${isToday(parseISO(selectedDate)) ? 'opacity-30' : ''}`} />
+                        <ChevronRight className="w-5 h-5" />
                     </button>
 
                     {!isToday(parseISO(selectedDate)) && (
-                        <button
-                            onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-                            className="px-3 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-400 text-sm hover:bg-amber-500/30 transition-colors"
-                        >
+                        <button onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
+                            className="px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 text-sm whitespace-nowrap">
                             Heute
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* KPIs */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card className="bg-slate-800 border-slate-700">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                            <DollarSign className="w-4 h-4" />
-                            Tagesumsatz
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {todayRevenue ? (
-                            <div className="text-2xl font-bold text-green-400">
-                                {todayRevenue.revenue.toFixed(2)} €
-                            </div>
-                        ) : (
-                            <div className="text-slate-500 text-sm">Nicht erfasst</div>
-                        )}
-                        <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="mt-2 w-full"
-                            onClick={() => setUploadModalOpen(true)}
-                        >
-                            <Upload className="w-3 h-3 mr-1" />
-                            Z-Abschlag hochladen
-                        </Button>
-                    </CardContent>
-                </Card>
+            {/* KPI Grid: 2 cols on mobile */}
+            <div className="grid grid-cols-2 gap-3">
+                {/* Revenue */}
+                <KpiCard icon={DollarSign} label="Tagesumsatz" value={revenue > 0 ? `${revenue.toFixed(2)} €` : '–'} color="text-green-400"
+                    sub={todayRevenue?.revenue_cash ? `Bar: ${todayRevenue.revenue_cash.toFixed(2)} €` : undefined}>
+                    <Button size="sm" variant="outline" className="mt-2 w-full h-8 text-xs" onClick={() => setUploadModalOpen(true)}>
+                        <Upload className="w-3 h-3 mr-1" /> Z-Abschlag
+                    </Button>
+                </KpiCard>
 
-                <Card className="bg-slate-800 border-slate-700">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Personalkosten
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {todayTimeEntriesWithRates.length > 0 ? (
-                            <>
-                                <div className="text-2xl font-bold text-amber-400">
-                                    {filteredLaborCost.toFixed(2)} €
-                                </div>
-                                <p className="text-xs text-slate-500 mt-1">
-                                    {filteredStaffCount} Mitarbeiter • {filteredTimeEntries.reduce((sum, te) => sum + te.total_hours, 0).toFixed(1)}h
-                                </p>
-                                {todaySalesReport && (
-                                    <p className="text-xs text-blue-400 mt-2">✓ Aus Verkaufsbericht</p>
-                                )}
-                            </>
-                        ) : (
-                            <div className="text-slate-500 text-sm">
-                                {todaySalesReport ? 'Bericht verarbeitet aber keine Details vorhanden' : 'Noch kein Bericht vorhanden'}
-                            </div>
-                        )}
-                        <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="mt-2 w-full"
-                            onClick={handleFetchLaborCosts}
-                            disabled={laborCostLoading}
-                        >
-                            {laborCostLoading ? (
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                            ) : (
-                                <Users className="w-3 h-3 mr-1" />
-                            )}
-                            {laborCostLoading ? 'Wird geladen...' : 'Abrufen'}
-                        </Button>
-                    </CardContent>
-                </Card>
+                {/* Tip */}
+                <KpiCard icon={Gift} label="Trinkgeld" value={todayTipDistribution ? `${todayTipDistribution.total_tips.toFixed(2)} €` : '–'} color="text-purple-400"
+                    sub={todayTipDistribution ? `${todayTipDistribution.tip_per_person.toFixed(2)} € / Person` : undefined}>
+                    <Button size="sm" variant="outline" className="mt-2 w-full h-8 text-xs"
+                        onClick={() => setTipCalculatorOpen(true)}
+                        disabled={!todayRevenue || todayTimeEntriesWithRates.length === 0}>
+                        <Gift className="w-3 h-3 mr-1" /> Berechnen
+                    </Button>
+                </KpiCard>
 
-                <Card className="bg-slate-800 border-slate-700">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-400 flex items-center gap-2">
-                            <Gift className="w-4 h-4" />
-                            Trinkgeld
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {todayTipDistribution ? (
-                            <>
-                                <div className="text-2xl font-bold text-purple-400">
-                                    {todayTipDistribution.total_tips.toFixed(2)} €
-                                </div>
-                                <p className="text-xs text-slate-500 mt-1">
-                                    {todayTipDistribution.tip_per_person.toFixed(2)} € pro Person
-                                </p>
-                            </>
-                        ) : (
-                            <div className="text-slate-500 text-sm">Nicht berechnet</div>
-                        )}
-                        <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="mt-2 w-full"
-                            onClick={() => setTipCalculatorOpen(true)}
-                            disabled={!todayRevenue || todayTimeEntries.length === 0}
-                        >
-                            <Gift className="w-3 h-3 mr-1" />
-                            Berechnen
-                        </Button>
-                    </CardContent>
-                </Card>
+                {/* Daily paid labor */}
+                <KpiCard icon={Users} label="Aushilfen Personal"
+                    value={dailyPaidEntries.length > 0 ? `${dailyLaborCost.toFixed(2)} €` : '–'}
+                    color="text-amber-400"
+                    sub={dailyPaidEntries.length > 0
+                        ? `${new Set(dailyPaidEntries.map(e => e.employee_id)).size} Pers. · ${dailyPaidEntries.reduce((s, e) => s + e.total_hours, 0).toFixed(1)}h${dailyRatio !== null ? ` · ${dailyRatio.toFixed(1)}%` : ''}`
+                        : 'Keine täglichen Aushilfen'}>
+                </KpiCard>
+
+                {/* Full-time labor — informational */}
+                <KpiCard icon={Users} label="Festangestellte"
+                    value={fullTimeEntries.length > 0 ? `${fullTimeLaborCost.toFixed(2)} €` : '–'}
+                    color="text-blue-400"
+                    sub={fullTimeEntries.length > 0
+                        ? `${new Set(fullTimeEntries.map(e => e.employee_id)).size} Pers. · nur Info`
+                        : 'Nicht in Tageskalkulation'}>
+                </KpiCard>
             </div>
 
-            {/* Personalkosten Details */}
-            {todayTimeEntriesWithRates.length > 0 && (
-                <Card className="bg-slate-800 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-white">Personalkosten Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {/* Filter */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 pb-4 border-b border-slate-700">
-                            {todayTimeEntriesWithRates.map((te) => (
-                                <label key={te.employee_id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-700 p-2 rounded">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedEmployees.includes(te.employee_id)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setSelectedEmployees([...selectedEmployees, te.employee_id]);
-                                            } else {
-                                                setSelectedEmployees(selectedEmployees.filter(id => id !== te.employee_id));
-                                            }
-                                        }}
-                                        className="rounded"
-                                    />
-                                    <span className="text-sm text-slate-300">{te.employee_name}</span>
-                                </label>
-                            ))}
+            {/* Bar minus Personnel — prominent */}
+            {revenue > 0 && (
+                <Card className={cn(
+                    'border-2',
+                    barMinusPersonnel !== null && barMinusPersonnel >= 0
+                        ? 'border-green-500/40 bg-green-500/5'
+                        : 'border-red-500/40 bg-red-500/5'
+                )}>
+                    <CardContent className="px-4 py-4">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                                    <TrendingDown className="w-3.5 h-3.5" />
+                                    Bar minus Aushilfen-Personal
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    Umsatz − tägliche Personalkosten (ohne Festangestellte)
+                                </p>
+                            </div>
+                            <div className={cn('text-2xl font-bold shrink-0',
+                                barMinusPersonnel !== null && barMinusPersonnel >= 0 ? 'text-green-400' : 'text-red-400'
+                            )}>
+                                {barMinusPersonnel !== null ? `${barMinusPersonnel.toFixed(2)} €` : '–'}
+                            </div>
                         </div>
-
-                        {/* Gefilterte Liste */}
-                        <div className="space-y-2">
-                            {filteredTimeEntries.map((te) => (
-                                <div key={te.id} className="flex items-center justify-between p-3 bg-slate-900 rounded-lg">
+                        {totalRatio !== null && (
+                            <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                    <span className="text-muted-foreground text-xs">Gesamtpersonalquote</span>
+                                    <p className={cn('font-bold', totalRatio > 35 ? 'text-red-400' : totalRatio > 25 ? 'text-amber-400' : 'text-green-400')}>
+                                        {totalRatio.toFixed(1)} %
+                                    </p>
+                                </div>
+                                {dailyRatio !== null && dailyRatio !== totalRatio && (
                                     <div>
-                                        <h4 className="font-semibold text-white">{te.employee_name}</h4>
-                                        <p className="text-xs text-slate-400">{te.total_hours.toFixed(1)}h</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="font-semibold text-amber-400">
-                                            {te.cost.toFixed(2)} €
-                                        </div>
-                                        <p className="text-xs text-slate-500">
-                                            {te.hourly_rate.toFixed(2)} €/h
+                                        <span className="text-muted-foreground text-xs">Quote Aushilfen</span>
+                                        <p className={cn('font-bold', dailyRatio > 25 ? 'text-amber-400' : 'text-green-400')}>
+                                            {dailyRatio.toFixed(1)} %
                                         </p>
                                     </div>
-                                </div>
-                            ))}
-                            {filteredTimeEntries.length === 0 && selectedEmployees.length > 0 && (
-                                <p className="text-center text-slate-400 py-4">Keine Daten für ausgewählte Mitarbeiter</p>
-                            )}
-                        </div>
+                                )}
+                            </div>
+                        )}
+                        {fullTimeEntries.length > 0 && (
+                            <p className="mt-2 text-xs text-muted-foreground flex items-start gap-1">
+                                <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                                Festangestellte ({fullTimeLaborCost.toFixed(2)} €) werden nicht abgezogen, da ihre Kosten im Monatsgehalt fixiert sind.
+                            </p>
+                        )}
                     </CardContent>
                 </Card>
             )}
 
-            {/* Trinkgeldverteilung */}
-            {todayTipDistribution && (
-                <Card className="bg-slate-800 border-slate-700">
-                    <CardHeader>
-                        <CardTitle className="text-white">Trinkgeldverteilung</CardTitle>
+            {/* Revenue breakdown */}
+            {todayRevenue && (todayRevenue.revenue_cash || todayRevenue.revenue_ec || todayRevenue.vat || todayRevenue.own_consumption) && (
+                <Card className="bg-card border-border">
+                    <CardHeader className="pb-2 pt-4 px-4">
+                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Umsatz Aufschlüsselung</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <Alert className="mb-4 bg-purple-900/20 border-purple-800">
-                            <Gift className="h-4 w-4 text-purple-400" />
-                            <AlertDescription className="text-purple-300">
-                                {todayTipDistribution.tip_percentage}% von {todayTipDistribution.total_revenue.toFixed(2)} € 
+                    <CardContent className="px-4 pb-4 grid grid-cols-2 gap-2">
+                        {todayRevenue.revenue_cash > 0 && (
+                            <div className="bg-secondary/50 rounded-lg p-2.5">
+                                <p className="text-xs text-muted-foreground">Bar</p>
+                                <p className="font-bold text-foreground">{todayRevenue.revenue_cash.toFixed(2)} €</p>
+                            </div>
+                        )}
+                        {todayRevenue.revenue_ec > 0 && (
+                            <div className="bg-secondary/50 rounded-lg p-2.5">
+                                <p className="text-xs text-muted-foreground">EC / Karte</p>
+                                <p className="font-bold text-foreground">{todayRevenue.revenue_ec.toFixed(2)} €</p>
+                            </div>
+                        )}
+                        {todayRevenue.vat > 0 && (
+                            <div className="bg-secondary/50 rounded-lg p-2.5">
+                                <p className="text-xs text-muted-foreground">MwSt.</p>
+                                <p className="font-bold text-foreground">{todayRevenue.vat.toFixed(2)} €</p>
+                            </div>
+                        )}
+                        {todayRevenue.own_consumption > 0 && (
+                            <div className="bg-secondary/50 rounded-lg p-2.5">
+                                <p className="text-xs text-muted-foreground">Eigenbedarf</p>
+                                <p className="font-bold text-foreground">{todayRevenue.own_consumption.toFixed(2)} €</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Personnel details */}
+            {todayTimeEntriesWithRates.length > 0 && (
+                <Card className="bg-card border-border">
+                    <CardHeader className="pb-2 pt-4 px-4">
+                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Personalkosten Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4 space-y-2">
+                        {dailyPaidEntries.length > 0 && (
+                            <div>
+                                <p className="text-xs font-semibold text-amber-400 mb-1.5">Aushilfen (fließen in Kalkulation ein)</p>
+                                {dailyPaidEntries.map(te => (
+                                    <div key={te.id} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">{te.employee_name}</p>
+                                            <p className="text-xs text-muted-foreground">{te.total_hours.toFixed(1)}h × {te.hourly_rate.toFixed(2)} €</p>
+                                        </div>
+                                        <span className="font-bold text-amber-400">{te.cost.toFixed(2)} €</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {fullTimeEntries.length > 0 && (
+                            <div className={dailyPaidEntries.length > 0 ? 'pt-2' : ''}>
+                                <p className="text-xs font-semibold text-blue-400 mb-1.5">Festangestellte (nur Info, nicht in Tageskalkulation)</p>
+                                {fullTimeEntries.map(te => (
+                                    <div key={te.id} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0 opacity-70">
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">{te.employee_name}</p>
+                                            <p className="text-xs text-muted-foreground">{te.total_hours.toFixed(1)}h · {te._role || te._contractType}</p>
+                                        </div>
+                                        <span className="font-bold text-blue-400">{te.cost.toFixed(2)} €</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {todaySalesReport && (
+                            <p className="text-xs text-muted-foreground pt-1">✓ Daten aus Verkaufsbericht</p>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Tip distribution */}
+            {todayTipDistribution && (
+                <Card className="bg-card border-border">
+                    <CardHeader className="pb-2 pt-4 px-4">
+                        <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                            <Gift className="w-3.5 h-3.5" /> Trinkgeldverteilung
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4 space-y-2">
+                        <Alert className="bg-purple-900/20 border-purple-800 py-2">
+                            <AlertDescription className="text-purple-300 text-xs">
+                                {todayTipDistribution.tip_percentage}% von {todayTipDistribution.total_revenue.toFixed(2)} €
                                 = {todayTipDistribution.total_tips.toFixed(2)} € für {todayTipDistribution.employee_count} Personen
                             </AlertDescription>
                         </Alert>
-                        <div className="space-y-2">
-                            {todayTipDistribution.distribution_details?.map((detail, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-900 rounded-lg">
-                                    <div className="font-semibold text-white">{detail.employee_name}</div>
-                                    <div className="text-purple-400 font-semibold">
-                                        {detail.tip_amount.toFixed(2)} €
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {todayTipDistribution.distribution_details?.map((detail, idx) => (
+                            <div key={idx} className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
+                                <span className="text-sm font-medium text-foreground">{detail.employee_name}</span>
+                                <span className="font-bold text-purple-400">{detail.tip_amount.toFixed(2)} €</span>
+                            </div>
+                        ))}
                     </CardContent>
                 </Card>
             )}
 
-            {/* Verlauf */}
-            <DailyRevenueList revenues={dailyRevenues} timeEntries={timeEntries} tipDistributions={tipDistributions} employees={employees} onSelectDate={setSelectedDate} selectedDate={selectedDate} />
+            {/* History */}
+            <DailyRevenueList
+                revenues={dailyRevenues}
+                timeEntries={timeEntries}
+                tipDistributions={tipDistributions}
+                employees={employees}
+                onSelectDate={setSelectedDate}
+                selectedDate={selectedDate}
+            />
 
             {/* Modals */}
-            <PDFUploadModal 
-                open={uploadModalOpen} 
+            <PDFUploadModal
+                open={uploadModalOpen}
                 onOpenChange={setUploadModalOpen}
                 selectedDate={selectedDate}
                 onSuccess={() => queryClient.invalidateQueries({ queryKey: ['daily-revenues'] })}
             />
-
-            <TipCalculator 
+            <TipCalculator
                 open={tipCalculatorOpen}
                 onOpenChange={setTipCalculatorOpen}
                 date={selectedDate}

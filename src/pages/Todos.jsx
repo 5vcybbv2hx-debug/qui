@@ -36,6 +36,7 @@ export default function Todos() {
     const [categories, setCategories] = useState(() => loadCategories());
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('priority'); // 'priority' | 'date' | 'manual'
+    const [filtersOpen, setFiltersOpen] = useState(false);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
@@ -275,30 +276,39 @@ export default function Todos() {
                     <Input
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Suche nach Titel, Beschreibung, Person..."
-                        className="pl-9 pr-9 h-10"
+                        placeholder="Suche..."
+                        className="pl-9 pr-9 h-12 text-base"
                     />
                     {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1">
                             <X className="w-4 h-4" />
                         </button>
                     )}
                 </div>
 
                 {/* Tabs + Filters */}
-                <div className="flex flex-col gap-2 mb-4">
+                <div className="flex flex-col gap-2 mb-5">
                     <div className="flex gap-2 items-center">
                         <Tabs value={showArchived ? 'archiv' : 'aktiv'} onValueChange={(v) => setShowArchived(v === 'archiv')} className="flex-1">
-                            <TabsList className="bg-card border border-border w-full grid grid-cols-2">
-                                <TabsTrigger value="aktiv">Aktiv ({activeTodos.length})</TabsTrigger>
-                                <TabsTrigger value="archiv">Archiv ({archivedTodos.length})</TabsTrigger>
+                            <TabsList className="bg-card border border-border w-full grid grid-cols-2 h-11">
+                                <TabsTrigger value="aktiv" className="text-sm">Aktiv ({activeTodos.length})</TabsTrigger>
+                                <TabsTrigger value="archiv" className="text-sm">Archiv ({archivedTodos.length})</TabsTrigger>
                             </TabsList>
                         </Tabs>
-                        {/* Sort toggle */}
+                        <button
+                            onClick={() => setFiltersOpen(f => !f)}
+                            className={cn(
+                                'h-11 px-3 rounded-lg border text-sm font-medium transition-all flex items-center gap-1.5 shrink-0',
+                                (filtersOpen || hasActiveFilters) ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground hover:text-foreground bg-card'
+                            )}
+                        >
+                            <span>Filter</span>
+                            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-current" />}
+                        </button>
                         <select
                             value={sortBy}
                             onChange={e => setSortBy(e.target.value)}
-                            className="h-9 text-xs px-2 rounded-md border border-border bg-card text-foreground shrink-0"
+                            className="h-11 text-sm px-2 rounded-lg border border-border bg-card text-foreground shrink-0"
                         >
                             <option value="priority">Priorität</option>
                             <option value="date">Datum</option>
@@ -306,69 +316,78 @@ export default function Todos() {
                         </select>
                     </div>
 
-                    {!showArchived && (
-                        <div className="flex gap-1.5 overflow-x-auto pb-1 flex-wrap">
+                    {filtersOpen && !showArchived && (
+                        <div className="rounded-xl border border-border bg-card p-3 space-y-3">
                             {/* Status */}
-                            {['offen', 'in_bearbeitung', 'erledigt', 'alle'].map(s => (
-                                <button key={s}
-                                    onClick={() => setStatusFilter(s)}
-                                    className={cn('px-2.5 py-1 rounded-lg text-xs font-medium border transition-all whitespace-nowrap',
-                                        statusFilter === s
-                                            ? 'bg-amber-500 text-slate-900 border-amber-500'
-                                            : 'border-border text-muted-foreground hover:text-foreground'
-                                    )}>
-                                    {s === 'offen' ? 'Offen' : s === 'in_bearbeitung' ? 'Aktiv' : s === 'erledigt' ? 'Erledigt' : 'Alle'}
-                                </button>
-                            ))}
-                            <div className="w-px bg-border mx-1" />
+                            <div>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Status</p>
+                                <div className="flex gap-2 flex-wrap">
+                                    {['offen', 'in_bearbeitung', 'erledigt', 'alle'].map(s => (
+                                        <button key={s}
+                                            onClick={() => setStatusFilter(s)}
+                                            className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
+                                                statusFilter === s ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground'
+                                            )}>
+                                            {s === 'offen' ? 'Offen' : s === 'in_bearbeitung' ? 'Aktiv' : s === 'erledigt' ? 'Erledigt' : 'Alle'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                             {/* Priority */}
-                            {[['alle', ''], ['dringend', '🔴'], ['hoch', '🟠'], ['mittel', '🔵'], ['niedrig', '⚪']].map(([p, icon]) => (
-                                <button key={p}
-                                    onClick={() => setPriorityFilter(p)}
-                                    className={cn('px-2.5 py-1 rounded-lg text-xs font-medium border transition-all whitespace-nowrap',
-                                        priorityFilter === p
-                                            ? 'bg-amber-500 text-slate-900 border-amber-500'
-                                            : 'border-border text-muted-foreground hover:text-foreground'
-                                    )}>
-                                    {icon} {p === 'alle' ? 'Alle Prio' : p.charAt(0).toUpperCase() + p.slice(1)}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {!showArchived && (allCategories.length > 0 || allAssignees.length > 0) && (
-                        <div className="flex gap-1.5 overflow-x-auto pb-1">
+                            <div>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Priorität</p>
+                                <div className="flex gap-2 flex-wrap">
+                                    {[['alle', '', 'Alle'], ['dringend', '🔴', 'Dringend'], ['hoch', '🟠', 'Hoch'], ['mittel', '🔵', 'Mittel'], ['niedrig', '⚪', 'Niedrig']].map(([p, icon, label]) => (
+                                        <button key={p}
+                                            onClick={() => setPriorityFilter(p)}
+                                            className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
+                                                priorityFilter === p ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground'
+                                            )}>
+                                            {icon} {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                             {/* Category */}
-                            {['alle', ...allCategories].map(cat => (
-                                <button key={cat}
-                                    onClick={() => setCategoryFilter(cat)}
-                                    className={cn('px-2.5 py-1 rounded-lg text-xs font-medium border transition-all whitespace-nowrap',
-                                        categoryFilter === cat
-                                            ? 'bg-blue-500/20 text-blue-400 border-blue-500/40'
-                                            : 'border-border text-muted-foreground hover:text-foreground'
-                                    )}>
-                                    {cat === 'alle' ? 'Alle Kat.' : cat}
+                            {allCategories.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Kategorie</p>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {['alle', ...allCategories].map(cat => (
+                                            <button key={cat}
+                                                onClick={() => setCategoryFilter(cat)}
+                                                className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
+                                                    categoryFilter === cat ? 'bg-blue-500 text-white border-blue-500' : 'border-border text-muted-foreground'
+                                                )}>
+                                                {cat === 'alle' ? 'Alle' : cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {/* Person */}
+                            {allAssignees.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Person</p>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {allAssignees.map(p => (
+                                            <button key={p}
+                                                onClick={() => setPersonFilter(personFilter === p ? 'alle' : p)}
+                                                className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
+                                                    personFilter === p ? 'bg-purple-500 text-white border-purple-500' : 'border-border text-muted-foreground'
+                                                )}>
+                                                👤 {p.split(' ')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                            {hasActiveFilters && (
+                                <button onClick={resetFilters} className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1 pt-1">
+                                    <X className="w-3.5 h-3.5" /> Alle Filter zurücksetzen
                                 </button>
-                            ))}
-                            {allAssignees.length > 0 && <div className="w-px bg-border mx-1" />}
-                            {allAssignees.map(p => (
-                                <button key={p}
-                                    onClick={() => setPersonFilter(personFilter === p ? 'alle' : p)}
-                                    className={cn('px-2.5 py-1 rounded-lg text-xs font-medium border transition-all whitespace-nowrap',
-                                        personFilter === p
-                                            ? 'bg-purple-500/20 text-purple-400 border-purple-500/40'
-                                            : 'border-border text-muted-foreground hover:text-foreground'
-                                    )}>
-                                    👤 {p.split(' ')[0]}
-                                </button>
-                            ))}
+                            )}
                         </div>
-                    )}
-
-                    {hasActiveFilters && (
-                        <button onClick={resetFilters} className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 self-start">
-                            <X className="w-3 h-3" /> Filter zurücksetzen
-                        </button>
                     )}
                 </div>
 

@@ -72,64 +72,64 @@ export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDe
     return (
         <Card className={cn(
             "border transition-all overflow-hidden",
-            pCfg.cardBg || "bg-card border-border/50 hover:border-border",
+            pCfg.cardBg || "bg-card border-border/50",
             isCompleted && "opacity-50"
         )}>
             <div className="flex">
                 {/* Priority stripe */}
-                <div className={cn("w-1 shrink-0", pCfg.color)} />
+                <div className={cn("w-1.5 shrink-0", pCfg.color)} />
 
-                <div className="flex gap-2 px-3 py-3 flex-1 min-w-0">
-                    {/* Status toggle */}
+                <div className="flex gap-3 px-3 py-4 flex-1 min-w-0">
+                    {/* Status toggle - bigger touch target */}
                     <button
                         onClick={() => onStatusChange(todo, statusCycle[todo.status])}
-                        className={cn("mt-0.5 shrink-0 transition-all hover:opacity-70", statusColor)}
+                        className={cn("mt-0.5 shrink-0 transition-all active:scale-90", statusColor)}
                         title={`${statusConfig[todo.status]?.label} → weiterklicken`}
                     >
-                        <StatusIcon className={cn("w-5 h-5", isInProgress && "animate-spin")} />
+                        <StatusIcon className={cn("w-6 h-6", isInProgress && "animate-spin")} />
                     </button>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-1">
+                        <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                                <h4 className={cn(
-                                    "font-medium text-sm leading-snug",
-                                    isCompleted ? "text-muted-foreground line-through" : "text-foreground"
-                                )}>
-                                    {todo.title}
-                                    {todo.priority === 'dringend' && !isCompleted && (
-                                        <span className="ml-1.5 text-xs text-red-400 font-bold">❗</span>
-                                    )}
-                                </h4>
-                                {!isCompleted && todo.description && (
-                                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{todo.description}</p>
+                            <h4 className={cn(
+                                "font-semibold text-base leading-snug",
+                                isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+                            )}>
+                                {todo.title}
+                                {todo.priority === 'dringend' && !isCompleted && (
+                                    <span className="ml-1.5 text-sm text-red-400 font-bold">❗</span>
                                 )}
+                            </h4>
+                            {!isCompleted && todo.description && (
+                                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{todo.description}</p>
+                            )}
                             </div>
 
-                            <div className="flex items-center gap-0.5 shrink-0">
+                            <div className="flex items-center gap-1 shrink-0">
                                 {/* Manual sort arrows */}
                                 {sortBy === 'manual' && allTodos && (
                                     <div className="flex flex-col">
-                                        <button onClick={handleMoveUp} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0.5">
-                                            <ChevronUp className="w-3.5 h-3.5" />
+                                        <button onClick={handleMoveUp} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-1">
+                                            <ChevronUp className="w-4 h-4" />
                                         </button>
-                                        <button onClick={handleMoveDown} disabled={idx === allTodos.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0.5">
-                                            <ChevronDown className="w-3.5 h-3.5" />
+                                        <button onClick={handleMoveDown} disabled={idx === allTodos.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-1">
+                                            <ChevronDown className="w-4 h-4" />
                                         </button>
                                     </div>
                                 )}
 
                                 {/* Quick edit button */}
                                 <Button variant="ghost" size="icon" onClick={() => onEdit(todo)}
-                                    className="h-7 w-7 text-muted-foreground hover:text-foreground">
-                                    <Pencil className="w-3.5 h-3.5" />
+                                    className="h-9 w-9 text-muted-foreground hover:text-foreground">
+                                    <Pencil className="w-4 h-4" />
                                 </Button>
 
                                 {/* More actions */}
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground">
                                             <MoreVertical className="w-4 h-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -191,62 +191,62 @@ export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDe
                         </div>
 
                         {/* Meta row */}
-                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
                             {todo.category && (
-                                <span className={cn("text-[10px] px-1.5 py-0.5 rounded border font-medium", categoryColors[todo.category] || categoryColors['Sonstiges'])}>
+                                <span className={cn("text-xs px-2 py-0.5 rounded-md border font-medium", categoryColors[todo.category] || categoryColors['Sonstiges'])}>
                                     {todo.category}
                                 </span>
                             )}
-                            <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium", `${pCfg.badge}`)}>
+                            <span className={cn("text-xs px-2 py-0.5 rounded-md font-medium", `${pCfg.badge}`)}>
                                 {pCfg.label}
                             </span>
                             {todo.due_date && (
                                 <span className={cn(
-                                    "flex items-center gap-1 text-[10px] font-medium",
+                                    "flex items-center gap-1 text-xs font-medium",
                                     isOverdue ? "text-red-400" : isDueToday ? "text-orange-400" : "text-muted-foreground"
                                 )}>
-                                    <Calendar className="w-3 h-3" />
+                                    <Calendar className="w-3.5 h-3.5" />
                                     {formatDueDate(todo.due_date)}
                                     {isOverdue && ' ⚠️'}
                                 </span>
                             )}
                             {assignees.length > 0 && (
-                                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                    <User className="w-3 h-3" />
+                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <User className="w-3.5 h-3.5" />
                                     {assignees.join(', ')}
                                 </span>
                             )}
                             {subtasks.length > 0 && (
                                 <button
                                     onClick={() => setShowSubtasks(s => !s)}
-                                    className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground py-0.5"
                                 >
                                     ☑ {doneSubtasks}/{subtasks.length}
-                                    {showSubtasks ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                    {showSubtasks ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                                 </button>
                             )}
                             {todo.completed_by && isCompleted && (
-                                <span className="text-[10px] text-muted-foreground">✓ {todo.completed_by}</span>
+                                <span className="text-xs text-muted-foreground">✓ {todo.completed_by}</span>
                             )}
                         </div>
 
                         {/* Subtasks */}
                         {showSubtasks && subtasks.length > 0 && (
-                            <div className="mt-2 space-y-1.5 pl-1 border-l-2 border-border ml-1">
+                            <div className="mt-3 space-y-2 pl-2 border-l-2 border-border ml-1">
                                 {subtasks.map(sub => (
                                     <button
                                         key={sub.id}
                                         onClick={() => handleSubtaskToggle(sub.id)}
-                                        className="flex items-center gap-2 w-full text-left group"
+                                        className="flex items-center gap-2.5 w-full text-left group py-0.5"
                                     >
-                                        <div className={cn("w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all",
+                                        <div className={cn("w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-all",
                                             sub.done
                                                 ? "bg-green-500 border-green-500"
                                                 : "border-border group-hover:border-foreground"
                                         )}>
-                                            {sub.done && <Check className="w-2.5 h-2.5 text-white" />}
+                                            {sub.done && <Check className="w-3 h-3 text-white" />}
                                         </div>
-                                        <span className={cn("text-xs", sub.done ? "line-through text-muted-foreground" : "text-foreground")}>
+                                        <span className={cn("text-sm", sub.done ? "line-through text-muted-foreground" : "text-foreground")}>
                                             {sub.title}
                                         </span>
                                     </button>

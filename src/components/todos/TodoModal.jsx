@@ -103,7 +103,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-lg max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
                         {todo ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}
@@ -113,20 +113,20 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                 <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                     {/* Title */}
                     <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Titel *</Label>
+                        <Label className="text-base font-semibold">Titel *</Label>
                         <Input
                             value={formData.title}
                             onChange={e => set('title', e.target.value)}
                             placeholder="Aufgabe eingeben..."
                             required
-                            className="h-11 text-base"
+                            className="h-12 text-base"
                             autoFocus
                         />
                     </div>
 
                     {/* Description */}
                     <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Beschreibung</Label>
+                        <Label className="text-sm font-semibold">Beschreibung</Label>
                         <Textarea
                             value={formData.description}
                             onChange={e => set('description', e.target.value)}
@@ -138,21 +138,21 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
 
                     {/* Priority - visual chips */}
                     <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Priorität</Label>
-                        <div className="flex gap-2 flex-wrap">
+                        <Label className="text-sm font-semibold">Priorität</Label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                             {PRIORITIES.map(p => (
                                 <button
                                     key={p.value}
                                     type="button"
                                     onClick={() => set('priority', p.value)}
                                     className={cn(
-                                        "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all",
+                                        "flex items-center gap-2 px-3 py-3 rounded-xl border text-sm font-medium transition-all active:scale-95",
                                         formData.priority === p.value
                                             ? "border-foreground text-foreground bg-accent"
-                                            : "border-border text-muted-foreground hover:text-foreground"
+                                            : "border-border text-muted-foreground"
                                     )}
                                 >
-                                    <span className={cn("w-2.5 h-2.5 rounded-full", p.color)} />
+                                    <span className={cn("w-3 h-3 rounded-full shrink-0", p.color)} />
                                     {p.label}
                                 </button>
                             ))}
@@ -162,11 +162,11 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                     {/* Category + Status */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-medium">Kategorie</Label>
+                            <Label className="text-sm font-semibold">Kategorie</Label>
                             <select
                                 value={formData.category}
                                 onChange={e => set('category', e.target.value)}
-                                className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                                className="w-full h-12 rounded-xl border border-input bg-background px-3 text-base text-foreground"
                             >
                                 {categories.map(cat => (
                                     <option key={cat} value={cat}>{cat}</option>
@@ -174,11 +174,11 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                             </select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-medium">Status</Label>
+                            <Label className="text-sm font-semibold">Status</Label>
                             <select
                                 value={formData.status}
                                 onChange={e => set('status', e.target.value)}
-                                className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                                className="w-full h-12 rounded-xl border border-input bg-background px-3 text-base text-foreground"
                             >
                                 {STATUSES.map(s => (
                                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -189,19 +189,19 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
 
                     {/* Due date */}
                     <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Fällig am</Label>
+                        <Label className="text-sm font-semibold">Fällig am</Label>
                         <Input
                             type="date"
                             value={formData.due_date}
                             onChange={e => set('due_date', e.target.value)}
-                            className="h-11"
+                            className="h-12 text-base"
                         />
                     </div>
 
                     {/* Assignees - multi-select checkboxes */}
                     {employees?.length > 0 && (
                         <div className="space-y-1.5">
-                            <Label className="text-sm font-medium">Zugewiesen an</Label>
+                            <Label className="text-sm font-semibold">Zugewiesen an</Label>
                             <div className="flex flex-wrap gap-2">
                                 {employees.map(emp => {
                                     const selected = formData.assigned_to_names?.includes(emp.name);
@@ -211,13 +211,13 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                                             type="button"
                                             onClick={() => toggleAssignee(emp.name)}
                                             className={cn(
-                                                "px-3 py-1.5 rounded-lg border text-sm transition-all",
+                                                "px-3 py-2.5 rounded-xl border text-sm transition-all active:scale-95",
                                                 selected
-                                                    ? "bg-amber-500/20 border-amber-500/50 text-amber-300 font-medium"
-                                                    : "border-border text-muted-foreground hover:text-foreground"
+                                                    ? "bg-amber-500/20 border-amber-500/50 text-amber-300 font-semibold"
+                                                    : "border-border text-muted-foreground"
                                             )}
                                         >
-                                            {selected && '✓ '}{emp.name}
+                                            {selected ? '✓ ' : ''}{emp.name}
                                         </button>
                                     );
                                 })}
@@ -234,7 +234,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
 
                     {/* Subtasks */}
                     <div className="space-y-1.5">
-                        <Label className="text-sm font-medium">Unteraufgaben</Label>
+                        <Label className="text-sm font-semibold">Unteraufgaben</Label>
                         {formData.subtasks.length > 0 && (
                             <div className="space-y-1 mb-2">
                                 {formData.subtasks.map(sub => (
@@ -254,9 +254,9 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                                 onChange={e => setNewSubtask(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSubtask(); } }}
                                 placeholder="Unteraufgabe hinzufügen..."
-                                className="h-9 text-sm flex-1"
+                                className="h-11 text-base flex-1"
                             />
-                            <Button type="button" size="sm" variant="outline" onClick={addSubtask} disabled={!newSubtask.trim()} className="h-9 px-3">
+                            <Button type="button" variant="outline" onClick={addSubtask} disabled={!newSubtask.trim()} className="h-11 px-4">
                                 <Plus className="w-4 h-4" />
                             </Button>
                         </div>
@@ -264,10 +264,10 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
 
                     {/* Actions */}
                     <div className="flex gap-2 pt-2">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 text-base">
                             Abbrechen
                         </Button>
-                        <Button type="submit" className="flex-1 h-11 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold">
+                        <Button type="submit" className="flex-1 h-12 text-base bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold">
                             {todo ? 'Speichern' : 'Hinzufügen'}
                         </Button>
                     </div>

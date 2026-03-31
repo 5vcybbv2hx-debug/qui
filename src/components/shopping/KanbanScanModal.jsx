@@ -4,17 +4,47 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, AlertCircle, PlusCircle, QrCode, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CheckCircle2, AlertCircle, PlusCircle, QrCode, RefreshCw, Flame, AlertTriangle, Info } from 'lucide-react';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
+import { cn } from '@/lib/utils';
 
-/**
- * KanbanScanModal – scan QR/barcode → auto-add to shopping list.
- * Prevents duplicates by incrementing quantity if item already open.
- */
+const URGENCY = [
+    { value: 'dringend', label: 'Dringend', icon: Flame,         color: 'text-red-400',    bg: 'bg-red-500/15 border-red-500/30' },
+    { value: 'bald',     label: 'Bald',     icon: AlertTriangle, color: 'text-amber-400',  bg: 'bg-amber-500/15 border-amber-500/30' },
+    { value: 'normal',   label: 'Normal',   icon: Info,           color: 'text-blue-400',   bg: 'bg-blue-500/15 border-blue-500/30' },
+];
+
+function UrgencyPicker({ value, onChange }) {
+    return (
+        <div className="flex gap-2">
+            {URGENCY.map(u => (
+                <button
+                    key={u.value}
+                    type="button"
+                    onClick={() => onChange(u.value)}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-xs font-semibold transition-all',
+                        value === u.value ? `${u.bg} ${u.color}` : 'border-border text-muted-foreground hover:bg-accent/50'
+                    )}
+                >
+                    <u.icon className="w-3.5 h-3.5" />
+                    {u.label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
 export default function KanbanScanModal({ open, onClose, suppliers = [] }) {
     const queryClient = useQueryClient();
     const [scannerOpen, setScannerOpen] = useState(false);
-    const [feedback, setFeedback] = useState(null); // { type: 'added'|'updated'|'notfound', name, qty }
+    const [pendingArticle, setPendingArticle] = useState(null); // article being confirmed
+    const [qty, setQty] = useState(1);
+    const [urgency, setUrgency] = useState('normal');
+    const [feedback, setFeedback] = useState(null);
     const [sessionLog, setSessionLog] = useState([]);
 
     const { data: articles = [] } = useQuery({
@@ -41,11 +71,45 @@ export default function KanbanScanModal({ open, onClose, suppliers = [] }) {
 
     const showFeedback = (fb) => {
         setFeedback(fb);
-        setSessionLog(prev => [fb, ...prev].slice(0, 10));
-        setTimeout(() => setFeedback(null), 3000);
+        setSessionLog(prev => [{ ...fb, time: new Date().toLocaleTimeString('de', { hour: '2-digit', minute: '2-digit' }) }, ...prev].slice(0, 15));
+        setTimeout(() => setFeedback(null), 4000);
     };
 
-    const handleScan = useCallback(async (barcode) => {
+    // Called after user confirms the pending article
+    const handleConfirm = useCallback(async () => {
+        if (!pendingArticle) return;
+        const { article, existing } = pendingArticle;
+        const urgencyNote = urgency !== 'normal' ? ` [${URGENCY.find(u => u.value === urgency)?.label}]` : '';
+
+        if (existing) {
+            const newQty = parseFloat(existing.quantity || 1) + parseFloat(qty);
+            await updateMutation.mutateAsync({
+                id: existing.id,
+                data: {
+                    ...existing,
+                    quantity: newQty,
+                    notes: [existing.notes, `+${qty} via Kanban${urgencyNote}`].filter(Boolean).join(' | ')
+                }
+            });
+            showFeedback({ type: 'updated', name: article.name, qty: newQty });
+        } else {
+            await createMutation.mutateAsync({
+                item_name: article.name,
+                category: article.suppliers?.[0] || suppliers[0]?.name || '',
+                quantity: parseFloat(qty),
+                unit: article.content_unit || '',
+                status: 'offen',
+                notes: `Kanban${urgencyNote}${article.barcode ? ` · ${article.barcode}` : ''}`
+            });
+            showFeedback({ type: 'added', name: article.name, qty });
+        }
+
+        setPendingArticle(null);
+        setQty(1);
+        setUrgency('normal');
+    }, [pendingArticle, qty, urgency, createMutation, updateMutation, suppliers]);
+
+    const handleScan = useCallback((barcode) => {
         setScannerOpen(false);
 
         const article = articles.find(a =>
@@ -54,37 +118,32 @@ export default function KanbanScanModal({ open, onClose, suppliers = [] }) {
         );
 
         if (!article) {
-            showFeedback({ type: 'notfound', name: barcode, qty: null });
+            showFeedback({ type: 'notfound', name: barcode });
             return;
         }
 
-        // Re-fetch latest shopping list to avoid stale data
         const latest = queryClient.getQueryData(['shopping-list']) || shoppingItems;
         const existing = latest.find(i => i.item_name === article.name && i.status === 'offen');
 
-        if (existing) {
-            const newQty = parseFloat(existing.quantity || 1) + 1;
-            await updateMutation.mutateAsync({ id: existing.id, data: { ...existing, quantity: newQty } });
-            showFeedback({ type: 'updated', name: article.name, qty: newQty });
-        } else {
-            await createMutation.mutateAsync({
-                item_name: article.name,
-                category: article.suppliers?.[0] || suppliers[0]?.name || '',
-                quantity: 1,
-                unit: article.content_unit || '',
-                status: 'offen',
-                notes: `Kanban: ${article.barcode || barcode}`
-            });
-            showFeedback({ type: 'added', name: article.name, qty: 1 });
-        }
-    }, [articles, shoppingItems, queryClient, createMutation, updateMutation, suppliers]);
+        // Suggest quantity: min_stock - current_stock if available, else 1
+        const suggested = article.min_stock && article.current_stock != null
+            ? Math.max(1, article.min_stock - article.current_stock)
+            : 1;
+
+        setQty(suggested);
+        setUrgency(article.current_stock === 0 ? 'dringend' : article.current_stock <= (article.min_stock || 0) ? 'bald' : 'normal');
+        setPendingArticle({ article, existing });
+    }, [articles, shoppingItems, queryClient]);
 
     const handleClose = () => {
         setScannerOpen(false);
         setFeedback(null);
         setSessionLog([]);
+        setPendingArticle(null);
         onClose();
     };
+
+    const urgencyConfig = URGENCY.find(u => u.value === urgency);
 
     return (
         <>
@@ -99,44 +158,101 @@ export default function KanbanScanModal({ open, onClose, suppliers = [] }) {
 
                     {/* Feedback banner */}
                     {feedback && (
-                        <div className={`flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition-all ${
-                            feedback.type === 'added'    ? 'bg-green-500/15 text-green-400 border border-green-500/30' :
-                            feedback.type === 'updated'  ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30' :
-                                                           'bg-red-500/15 text-red-400 border border-red-500/30'
-                        }`}>
-                            {feedback.type === 'added'   && <PlusCircle className="w-5 h-5 shrink-0" />}
-                            {feedback.type === 'updated' && <CheckCircle2 className="w-5 h-5 shrink-0" />}
-                            {feedback.type === 'notfound'&& <AlertCircle className="w-5 h-5 shrink-0" />}
+                        <div className={cn('flex items-center gap-3 p-3 rounded-lg text-sm font-medium border',
+                            feedback.type === 'added'    ? 'bg-green-500/15 text-green-400 border-green-500/30' :
+                            feedback.type === 'updated'  ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' :
+                                                           'bg-red-500/15 text-red-400 border-red-500/30'
+                        )}>
+                            {feedback.type === 'added'    && <PlusCircle className="w-5 h-5 shrink-0" />}
+                            {feedback.type === 'updated'  && <CheckCircle2 className="w-5 h-5 shrink-0" />}
+                            {feedback.type === 'notfound' && <AlertCircle className="w-5 h-5 shrink-0" />}
                             <span>
-                                {feedback.type === 'added'    && `Hinzugefügt: ${feedback.name}`}
+                                {feedback.type === 'added'    && `Hinzugefügt: ${feedback.name} (${feedback.qty}×)`}
                                 {feedback.type === 'updated'  && `Aktualisiert: ${feedback.name} → ${feedback.qty}×`}
                                 {feedback.type === 'notfound' && `Nicht gefunden: ${feedback.name}`}
                             </span>
                         </div>
                     )}
 
-                    <Button
-                        onClick={() => setScannerOpen(true)}
-                        className="w-full h-16 text-base bg-amber-600 hover:bg-amber-700 gap-3"
-                    >
-                        <QrCode className="w-6 h-6" />
-                        Barcode / QR-Code scannen
-                    </Button>
+                    {/* Pending confirmation */}
+                    {pendingArticle ? (
+                        <div className="space-y-4 border border-border rounded-xl p-4">
+                            <div>
+                                <p className="font-semibold text-foreground">{pendingArticle.article.name}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    {pendingArticle.article.category}
+                                    {pendingArticle.article.current_stock != null && (
+                                        <span className="ml-2">Bestand: <strong>{pendingArticle.article.current_stock}</strong></span>
+                                    )}
+                                </p>
+                                {pendingArticle.existing && (
+                                    <Badge variant="outline" className="mt-1 text-xs border-amber-500/40 text-amber-400">
+                                        Bereits auf Liste ({pendingArticle.existing.quantity}×) – wird erhöht
+                                    </Badge>
+                                )}
+                            </div>
+
+                            <div>
+                                <Label className="text-xs mb-1.5 block">Menge</Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    step="1"
+                                    value={qty}
+                                    onChange={e => setQty(Math.max(1, parseInt(e.target.value) || 1))}
+                                    className="w-24"
+                                />
+                            </div>
+
+                            <div>
+                                <Label className="text-xs mb-1.5 block">Dringlichkeit</Label>
+                                <UrgencyPicker value={urgency} onChange={setUrgency} />
+                            </div>
+
+                            <div className="flex gap-2 pt-1">
+                                <Button variant="outline" className="flex-1" onClick={() => setPendingArticle(null)}>
+                                    Abbrechen
+                                </Button>
+                                <Button
+                                    className={cn('flex-1 gap-2', urgency === 'dringend' ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700')}
+                                    onClick={handleConfirm}
+                                    disabled={createMutation.isPending || updateMutation.isPending}
+                                >
+                                    {urgencyConfig && <urgencyConfig.icon className="w-4 h-4" />}
+                                    Bestätigen
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <Button
+                            onClick={() => setScannerOpen(true)}
+                            className="w-full h-16 text-base bg-amber-600 hover:bg-amber-700 gap-3"
+                        >
+                            <QrCode className="w-6 h-6" />
+                            Barcode / QR-Code scannen
+                        </Button>
+                    )}
 
                     {/* Session log */}
                     {sessionLog.length > 0 && (
                         <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Diese Sitzung</p>
-                            <div className="space-y-1 max-h-48 overflow-y-auto">
-                                {sessionLog.map((log, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-sm px-2 py-1.5 rounded-md bg-secondary/50">
-                                        {log.type === 'added'    && <PlusCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
-                                        {log.type === 'updated'  && <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
-                                        {log.type === 'notfound' && <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />}
-                                        <span className="flex-1 truncate">{log.name}</span>
-                                        {log.qty != null && <Badge variant="outline" className="text-xs shrink-0">{log.qty}×</Badge>}
-                                    </div>
-                                ))}
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                                Sitzungsprotokoll ({sessionLog.length})
+                            </p>
+                            <div className="space-y-1 max-h-44 overflow-y-auto">
+                                {sessionLog.map((log, i) => {
+                                    const urg = URGENCY.find(u => u.value === log.urgency);
+                                    return (
+                                        <div key={i} className="flex items-center gap-2 text-sm px-2 py-1.5 rounded-md bg-secondary/50">
+                                            {log.type === 'added'    && <PlusCircle className="w-3.5 h-3.5 text-green-500 shrink-0" />}
+                                            {log.type === 'updated'  && <RefreshCw className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
+                                            {log.type === 'notfound' && <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />}
+                                            <span className="flex-1 truncate">{log.name}</span>
+                                            {log.qty != null && <Badge variant="outline" className="text-xs shrink-0">{log.qty}×</Badge>}
+                                            <span className="text-xs text-muted-foreground shrink-0">{log.time}</span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

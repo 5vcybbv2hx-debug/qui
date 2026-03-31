@@ -21,6 +21,9 @@ const emptyItem = { barcode: '', article_name: '', article_image_url: '', quanti
 
 export default function WastageTemplates({ articles, currentUser, onApply }) {
     const queryClient = useQueryClient();
+    const [dateDialogOpen, setDateDialogOpen] = useState(false);
+    const [pendingTemplate, setPendingTemplate] = useState(null);
+    const [applyDate, setApplyDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState(null);
     const [templateName, setTemplateName] = useState('');
@@ -49,9 +52,8 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
     });
 
     const applyMutation = useMutation({
-        mutationFn: async (template) => {
+        mutationFn: async ({ template, date }) => {
             const templateItems = template.items?.length > 0 ? template.items : [];
-            // Legacy support: single article templates
             if (templateItems.length === 0 && template.article_name) {
                 templateItems.push({
                     barcode: template.barcode || '',
@@ -63,7 +65,6 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                     notes: template.notes || null
                 });
             }
-            const now = { date: format(new Date(), 'yyyy-MM-dd'), time: format(new Date(), 'HH:mm') };
             const noted_by = currentUser?.full_name || currentUser?.email || 'Unbekannt';
             await Promise.all(templateItems.map(item =>
                 base44.entities.Wastage.create({
@@ -73,7 +74,8 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                     quantity: item.quantity,
                     unit: item.unit || 'Stück',
                     type: item.type,
-                    ...now,
+                    date,
+                    time: format(new Date(), 'HH:mm'),
                     noted_by,
                     notes: item.notes || null
                 })
@@ -81,9 +83,17 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['wastage-items']);
+            setDateDialogOpen(false);
+            setPendingTemplate(null);
             onApply?.();
         }
     });
+
+    const handleApplyClick = (template) => {
+        setPendingTemplate(template);
+        setApplyDate(format(new Date(), 'yyyy-MM-dd'));
+        setDateDialogOpen(true);
+    };
 
     const openCreate = () => {
         setEditingTemplate(null);
@@ -195,7 +205,7 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                                 </div>
                                 <Button
                                     size="sm"
-                                    onClick={() => applyMutation.mutate(template)}
+                                    onClick={() => handleApplyClick(template)}
                                     disabled={applyMutation.isPending}
                                     className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-2 h-7"
                                 >
@@ -206,6 +216,36 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                     })}
                 </div>
             )}
+
+            {/* Date picker dialog for applying template */}
+            <Dialog open={dateDialogOpen} onOpenChange={setDateDialogOpen}>
+                <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Für welches Datum eintragen?</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2 py-2">
+                        <Label className="text-slate-300">Datum</Label>
+                        <Input
+                            type="date"
+                            value={applyDate}
+                            onChange={e => setApplyDate(e.target.value)}
+                            className="bg-slate-900 border-slate-600 text-white"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDateDialogOpen(false)} className="border-slate-600 text-slate-300">
+                            Abbrechen
+                        </Button>
+                        <Button
+                            onClick={() => applyMutation.mutate({ template: pendingTemplate, date: applyDate })}
+                            disabled={applyMutation.isPending || !applyDate}
+                            className="bg-amber-600 hover:bg-amber-700"
+                        >
+                            Eintragen
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">

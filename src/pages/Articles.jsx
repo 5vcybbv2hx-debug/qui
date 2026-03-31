@@ -42,7 +42,8 @@ export default function Articles() {
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState(null);
-    const [selectedArticles, setSelectedArticles] = useState([]);
+    const [selectedArticleIds, setSelectedArticleIds] = useState(new Set());
+    const [selectedArticlesData, setSelectedArticlesData] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
     const [filterSupplier, setFilterSupplier] = useState('all');
@@ -127,17 +128,17 @@ export default function Articles() {
         }
     });
 
-    const handleSave = (data, id) => {
+    const handleSave = useCallback((data, id) => {
         if (id) updateMutation.mutate({ id, data });
         else createMutation.mutate(data);
-    };
+    }, [updateMutation, createMutation]);
 
-    const handleDelete = (id) => {
+    const handleDelete = useCallback((id) => {
         confirm('Artikel löschen', 'Möchtest du diesen Artikel wirklich löschen?',
             () => deleteMutation.mutate(id), undefined, 'destructive');
-    };
+    }, [confirm, deleteMutation]);
 
-    const handleScan = (barcode) => {
+    const handleScan = useCallback((barcode) => {
         const existing = articles.find(a => a.barcode === barcode);
         if (isMobile) {
             navigate(createPageUrl('ArticleEdit'), { state: { article: existing || { barcode } } });
@@ -145,25 +146,31 @@ export default function Articles() {
             setSelectedArticle(existing || { barcode });
             setModalOpen(true);
         }
-    };
+    }, [articles, isMobile, navigate]);
 
-    const handleEdit = (article) => {
+    const handleEdit = useCallback((article) => {
         if (isMobile) navigate(createPageUrl('ArticleEdit'), { state: { article } });
         else { setSelectedArticle(article); setModalOpen(true); }
-    };
+    }, [isMobile, navigate]);
 
-    const handleAdd = () => {
+    const handleAdd = useCallback(() => {
         if (isMobile) navigate(createPageUrl('ArticleEdit'));
         else { setSelectedArticle(null); setModalOpen(true); }
-    };
+    }, [isMobile, navigate]);
 
-    const toggleSelectArticle = (article) => {
-        setSelectedArticles(prev =>
+    const toggleSelectArticle = useCallback((article) => {
+        setSelectedArticleIds(prev => {
+            const next = new Set(prev);
+            if (next.has(article.id)) next.delete(article.id);
+            else next.add(article.id);
+            return next;
+        });
+        setSelectedArticlesData(prev =>
             prev.find(a => a.id === article.id)
                 ? prev.filter(a => a.id !== article.id)
                 : [...prev, article]
         );
-    };
+    }, []);
 
     const allSuppliers = useMemo(() =>
         [...new Set(articles.flatMap(a => a.suppliers || []))].sort(), [articles]);
@@ -315,11 +322,11 @@ export default function Articles() {
                         )}
                         <LowStockAlert />
                         <CategoryManager />
-                        {selectedArticles.length > 0 && (
-                            <Button onClick={() => setBulkEditOpen(true)} variant="outline"
+                        {selectedArticlesData.length > 0 && (
+                           <Button onClick={() => setBulkEditOpen(true)} variant="outline"
                                 className="border-amber-600 text-white bg-amber-600 hover:bg-amber-700">
                                 <CheckSquare className="w-4 h-4 mr-2" />
-                                Bearbeiten ({selectedArticles.length})
+                                Bearbeiten ({selectedArticlesData.length})
                             </Button>
                         )}
                         <Button onClick={() => setScannerOpen(true)} variant="outline"
@@ -453,7 +460,7 @@ export default function Articles() {
                                                             }`}
                                                         >
                                                             {group.articles.map((article, artIdx) => {
-                                                                const isSelected = !!selectedArticles.find(a => a.id === article.id);
+                                                                const isSelected = selectedArticleIds.has(article.id);
                                                                 const isLowStock = article.min_stock && article.current_stock < article.min_stock;
                                                                 return (
                                                                     <Draggable key={article.id} draggableId={article.id} index={artIdx}>
@@ -511,7 +518,7 @@ export default function Articles() {
 
                 <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleScan} />
                 <BulkEditModal open={bulkEditOpen} onClose={() => setBulkEditOpen(false)}
-                    selectedArticles={selectedArticles} onClearSelection={() => setSelectedArticles([])} />
+                    selectedArticles={selectedArticlesData} onClearSelection={() => { setSelectedArticleIds(new Set()); setSelectedArticlesData([]); }} />
                 {alertDialog}
             </div>
         </div>

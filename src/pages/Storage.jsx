@@ -14,7 +14,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Plus, Pencil, Trash2, MapPin, Package, Search, ChevronRight, Wrench } from 'lucide-react';
+import { Plus, Pencil, Trash2, MapPin, Package, Search, ChevronRight, Wrench, ShoppingCart } from 'lucide-react';
 
 const CATEGORIES = ['Werkzeug', 'Reinigung', 'Geräte', 'Büro', 'Sonstiges'];
 const CONDITIONS = [
@@ -71,6 +71,17 @@ export default function Storage() {
             ? base44.entities.StorageLocation.update(editingLoc.id, data)
             : base44.entities.StorageLocation.create(data),
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['storage-locations'] }); setLocModalOpen(false); },
+    });
+
+    const addToShoppingMutation = useMutation({
+        mutationFn: ({ name, quantity }) => base44.entities.ShoppingList.create({
+            item_name: name,
+            category: 'Sonstiges',
+            quantity: quantity || 1,
+            unit: 'Stück',
+            status: 'offen',
+            notes: 'Aus Lagerplatzverwaltung',
+        }),
     });
 
     const deleteLocMutation = useMutation({
@@ -280,6 +291,17 @@ export default function Storage() {
                                                 <p className="text-xs text-muted-foreground mt-0.5">{item.category}</p>
                                             </div>
                                             <div className="flex gap-1 shrink-0">
+                                                <button
+                                                    onClick={() => addToShoppingMutation.mutate({ name: item.name, quantity: item.quantity })}
+                                                    title="Zur Einkaufsliste hinzufügen"
+                                                    className={`p-1.5 rounded-md transition-colors ${
+                                                        item.condition === 'defekt'
+                                                            ? 'text-red-400 hover:bg-red-500/20'
+                                                            : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                                    }`}
+                                                >
+                                                    <ShoppingCart className="w-3.5 h-3.5" />
+                                                </button>
                                                 <button onClick={() => openEditItem(item)} className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground">
                                                     <Pencil className="w-3.5 h-3.5" />
                                                 </button>

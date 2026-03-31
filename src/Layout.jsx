@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/components/utils/haptics';
-import { Menu, ArrowLeft, LogOut, Bell, Search, Home, Calendar } from 'lucide-react';
+import { Menu, ArrowLeft, LogOut, Bell, Search, Home, ScanLine, Package, Archive, ShoppingCart } from 'lucide-react';
+import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import { navigationSections, navigationFlat } from '@/components/navigation/navigationConfig';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
@@ -27,6 +28,12 @@ const navigation = navigationFlat;
 export default function Layout({ children, currentPageName }) {
      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
      const [searchOpen, setSearchOpen] = useState(false);
+     const [scannerOpen, setScannerOpen] = useState(false);
+
+     const handleScan = (code) => {
+         setScannerOpen(false);
+         navigate(createPageUrl('Shopping') + `?scan=${code}`);
+     };
      const permissions = usePermissions();
      const [currentUser, setCurrentUser] = React.useState(null);
      const navigate = useNavigate();
@@ -157,6 +164,15 @@ export default function Layout({ children, currentPageName }) {
             {/* Global Search */}
             <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
 
+            {/* Barcode Scanner */}
+            <BarcodeScanner
+                open={scannerOpen}
+                onClose={() => setScannerOpen(false)}
+                onScan={handleScan}
+                title="Artikel scannen"
+                mode="default"
+            />
+
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0">
                 <div className="flex flex-col flex-grow bg-card border-r border-border/50 pt-8 overflow-y-auto backdrop-blur-xl">
@@ -249,58 +265,56 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Mobile Bottom Navigation */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center justify-around px-1 py-3">
-                    <Link 
-                        to={createPageUrl(localStorage.getItem('lastPage_Dashboard') || 'Dashboard')}
-                        onClick={(e) => {
-                            haptics.selection();
-                            navigateToTab('Dashboard', e);
-                        }}
-                        className={cn(
-                            "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",
-                            getCurrentTab(currentPageName) === 'Dashboard' 
-                                ? "text-amber-500" 
-                                : "text-muted-foreground hover:text-amber-500"
+                <div className="flex items-center justify-around px-2 py-2">
+                    {/* Home */}
+                    <Link
+                        to={createPageUrl('Dashboard')}
+                        className={cn('flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all',
+                            currentPageName === 'Dashboard' ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'
                         )}
                     >
                         <Home className="w-6 h-6" />
-                        <span className="text-sm font-medium">Home</span>
+                        <span className="text-[10px] font-medium">Home</span>
                     </Link>
-                    <Link 
-                        to={createPageUrl(localStorage.getItem('lastPage_Calendar') || 'Calendar')}
-                        onClick={(e) => {
-                            haptics.selection();
-                            navigateToTab('Calendar', e);
-                        }}
-                        className={cn(
-                            "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",
-                            getCurrentTab(currentPageName) === 'Calendar' 
-                                ? "text-amber-500" 
-                                : "text-muted-foreground hover:text-amber-500"
+
+                    {/* Search */}
+                    <button
+                        onClick={() => setSearchOpen(true)}
+                        className="flex flex-col items-center gap-1 px-2 py-2 rounded-xl text-muted-foreground hover:text-blue-400 transition-all"
+                    >
+                        <Search className="w-6 h-6" />
+                        <span className="text-[10px] font-medium">Suche</span>
+                    </button>
+
+                    {/* Scan — center CTA */}
+                    <button
+                        onClick={() => setScannerOpen(true)}
+                        className="flex flex-col items-center gap-1 -mt-4 px-3 py-3 rounded-2xl bg-amber-500 shadow-lg shadow-amber-500/40 text-slate-900 active:scale-95 transition-all"
+                    >
+                        <ScanLine className="w-7 h-7" />
+                        <span className="text-[10px] font-bold">Scan</span>
+                    </button>
+
+                    {/* Inventory */}
+                    <Link
+                        to={createPageUrl('Articles')}
+                        className={cn('flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all',
+                            currentPageName === 'Articles' ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'
                         )}
                     >
-                        <Calendar className="w-6 h-6" />
-                        <span className="text-sm font-medium">Kalender</span>
+                        <Package className="w-6 h-6" />
+                        <span className="text-[10px] font-medium">Lager</span>
                     </Link>
-                    {permissions.isManager && currentUser && (
-                        <div className="flex flex-col items-center gap-1 px-3 py-2">
-                            <NotificationBell userEmail={currentUser.email} userRole={currentUser.role} />
-                        </div>
-                    )}
+
+                    {/* More / Drawer */}
                     <button
-                        onClick={() => {
-                            haptics.selection();
-                            setMobileMenuOpen(true);
-                        }}
-                        className={cn(
-                            "flex flex-col items-center gap-1.5 px-4 py-2 rounded-xl hover:bg-accent/50 active:bg-accent transition-all min-w-[72px]",
-                            getCurrentTab(currentPageName) === 'More' 
-                                ? "text-amber-500" 
-                                : "text-muted-foreground hover:text-amber-500"
+                        onClick={() => setMobileMenuOpen(true)}
+                        className={cn('flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all',
+                            getCurrentTab(currentPageName) === 'More' ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'
                         )}
                     >
                         <Menu className="w-6 h-6" />
-                        <span className="text-sm font-medium">Mehr</span>
+                        <span className="text-[10px] font-medium">Mehr</span>
                     </button>
                 </div>
 

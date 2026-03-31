@@ -1,0 +1,97 @@
+{
+  "name": "TodoItem",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Aufgabe"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch",
+        "dringend"
+      ],
+      "default": "mittel"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "in_bearbeitung",
+        "erledigt"
+      ],
+      "default": "offen"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Zugewiesen an (erster Name, R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
+    },
+    "assigned_to_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Alle zugewiesenen Personen"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Einkauf",
+        "Reparatur",
+        "Event",
+        "Sonstiges"
+      ],
+      "default": "Sonstiges"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Archiviert"
+    },
+    "completed_by": {
+      "type": "string",
+      "description": "Erledigt von"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Erledigt am"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Manuelle Reihenfolge"
+    },
+    "subtasks": {
+      "type": "array",
+      "description": "Unteraufgaben",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

@@ -1,15 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { loadCategories } from './TodoCategoryManager';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { haptics } from "@/components/utils/haptics";
 
-export default function TodoModal({ open, onClose, todo, employees, onSave }) {
+const PRIORITIES = [
+    { value: 'niedrig', label: 'Niedrig', color: 'bg-slate-500' },
+    { value: 'mittel',  label: 'Mittel',  color: 'bg-blue-500' },
+    { value: 'hoch',    label: 'Hoch',    color: 'bg-orange-500' },
+    { value: 'dringend',label: 'Dringend',color: 'bg-red-500' },
+];
+
+const STATUSES = [
+    { value: 'offen',          label: 'Offen' },
+    { value: 'in_bearbeitung', label: 'Aktiv' },
+    { value: 'erledigt',       label: 'Erledigt' },
+];
+
+function generateId() {
+    return Math.random().toString(36).slice(2, 10);
+}
+
+export default function TodoModal({ open, onClose, todo, employees, onSave, currentUser }) {
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -17,8 +34,12 @@ export default function TodoModal({ open, onClose, todo, employees, onSave }) {
         status: 'offen',
         due_date: '',
         assigned_to: '',
-        category: 'Sonstiges'
+        assigned_to_names: [],
+        category: 'Sonstiges',
+        subtasks: [],
     });
+    const [newSubtask, setNewSubtask] = useState('');
+    const categories = loadCategories();
 
     useEffect(() => {
         if (todo) {
@@ -29,20 +50,50 @@ export default function TodoModal({ open, onClose, todo, employees, onSave }) {
                 status: todo.status || 'offen',
                 due_date: todo.due_date || '',
                 assigned_to: todo.assigned_to || '',
-                category: todo.category || 'Sonstiges'
+                assigned_to_names: todo.assigned_to_names || (todo.assigned_to ? [todo.assigned_to] : []),
+                category: todo.category || 'Sonstiges',
+                subtasks: todo.subtasks || [],
             });
         } else {
+            const defaultAssignee = currentUser?.full_name || currentUser?.email || '';
             setFormData({
                 title: '',
                 description: '',
                 priority: 'mittel',
                 status: 'offen',
                 due_date: '',
-                assigned_to: '',
-                category: 'Sonstiges'
+                assigned_to: defaultAssignee,
+                assigned_to_names: defaultAssignee ? [defaultAssignee] : [],
+                category: 'Sonstiges',
+                subtasks: [],
             });
         }
-    }, [todo, open]);
+        setNewSubtask('');
+    }, [todo, open, currentUser]);
+
+    const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+    const toggleAssignee = (name) => {
+        const current = formData.assigned_to_names || [];
+        const updated = current.includes(name)
+            ? current.filter(n => n !== name)
+            : [...current, name];
+        setFormData(prev => ({
+            ...prev,
+            assigned_to_names: updated,
+            assigned_to: updated[0] || ''
+        }));
+    };
+
+    const addSubtask = () => {
+        if (!newSubtask.trim()) return;
+        set('subtasks', [...formData.subtasks, { id: generateId(), title: newSubtask.trim(), done: false }]);
+        setNewSubtask('');
+    };
+
+    const removeSubtask = (id) => {
+        set('subtasks', formData.subtasks.filter(s => s.id !== id));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -52,96 +103,171 @@ export default function TodoModal({ open, onClose, todo, employees, onSave }) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
                         {todo ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}
                     </DialogTitle>
                 </DialogHeader>
-                
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    <div className="space-y-2">
-                        <Label>Titel *</Label>
+
+                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                    {/* Title */}
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Titel *</Label>
                         <Input
                             value={formData.title}
-                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            onChange={e => set('title', e.target.value)}
                             placeholder="Aufgabe eingeben..."
                             required
+                            className="h-11 text-base"
+                            autoFocus
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Beschreibung</Label>
+                    {/* Description */}
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Beschreibung</Label>
                         <Textarea
                             value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            onChange={e => set('description', e.target.value)}
                             placeholder="Details zur Aufgabe..."
-                            rows={3}
+                            rows={2}
+                            className="text-sm"
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label>Kategorie</Label>
-                            <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {loadCategories().map(cat => (
-                                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label>Priorität</Label>
-                            <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="niedrig">Niedrig</SelectItem>
-                                    <SelectItem value="mittel">Mittel</SelectItem>
-                                    <SelectItem value="hoch">Hoch</SelectItem>
-                                    <SelectItem value="dringend">Dringend</SelectItem>
-                                </SelectContent>
-                            </Select>
+                    {/* Priority - visual chips */}
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Priorität</Label>
+                        <div className="flex gap-2 flex-wrap">
+                            {PRIORITIES.map(p => (
+                                <button
+                                    key={p.value}
+                                    type="button"
+                                    onClick={() => set('priority', p.value)}
+                                    className={cn(
+                                        "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-all",
+                                        formData.priority === p.value
+                                            ? "border-foreground text-foreground bg-accent"
+                                            : "border-border text-muted-foreground hover:text-foreground"
+                                    )}
+                                >
+                                    <span className={cn("w-2.5 h-2.5 rounded-full", p.color)} />
+                                    {p.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
+                    {/* Category + Status */}
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label>Fällig am</Label>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-medium">Kategorie</Label>
+                            <select
+                                value={formData.category}
+                                onChange={e => set('category', e.target.value)}
+                                className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-medium">Status</Label>
+                            <select
+                                value={formData.status}
+                                onChange={e => set('status', e.target.value)}
+                                className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                            >
+                                {STATUSES.map(s => (
+                                    <option key={s.value} value={s.value}>{s.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Due date */}
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Fällig am</Label>
+                        <Input
+                            type="date"
+                            value={formData.due_date}
+                            onChange={e => set('due_date', e.target.value)}
+                            className="h-11"
+                        />
+                    </div>
+
+                    {/* Assignees - multi-select checkboxes */}
+                    {employees?.length > 0 && (
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-medium">Zugewiesen an</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {employees.map(emp => {
+                                    const selected = formData.assigned_to_names?.includes(emp.name);
+                                    return (
+                                        <button
+                                            key={emp.id}
+                                            type="button"
+                                            onClick={() => toggleAssignee(emp.name)}
+                                            className={cn(
+                                                "px-3 py-1.5 rounded-lg border text-sm transition-all",
+                                                selected
+                                                    ? "bg-amber-500/20 border-amber-500/50 text-amber-300 font-medium"
+                                                    : "border-border text-muted-foreground hover:text-foreground"
+                                            )}
+                                        >
+                                            {selected && '✓ '}{emp.name}
+                                        </button>
+                                    );
+                                })}
+                                {formData.assigned_to_names?.length > 0 && (
+                                    <button type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, assigned_to_names: [], assigned_to: '' }))}
+                                        className="px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground">
+                                        Alle entfernen
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Subtasks */}
+                    <div className="space-y-1.5">
+                        <Label className="text-sm font-medium">Unteraufgaben</Label>
+                        {formData.subtasks.length > 0 && (
+                            <div className="space-y-1 mb-2">
+                                {formData.subtasks.map(sub => (
+                                    <div key={sub.id} className="flex items-center gap-2 px-3 py-2 bg-secondary/30 rounded-lg">
+                                        <span className="text-xs flex-1 text-foreground">{sub.title}</span>
+                                        <button type="button" onClick={() => removeSubtask(sub.id)}
+                                            className="text-muted-foreground hover:text-red-400 transition-colors">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="flex gap-2">
                             <Input
-                                type="date"
-                                value={formData.due_date}
-                                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                                value={newSubtask}
+                                onChange={e => setNewSubtask(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSubtask(); } }}
+                                placeholder="Unteraufgabe hinzufügen..."
+                                className="h-9 text-sm flex-1"
                             />
-                        </div>
-                        
-                        <div className="space-y-2">
-                            <Label>Zugewiesen an</Label>
-                            <Select value={formData.assigned_to} onValueChange={(v) => setFormData({ ...formData, assigned_to: v })}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Auswählen..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={null}>Niemand</SelectItem>
-                                    {employees.map(emp => (
-                                        <SelectItem key={emp.id} value={emp.name}>{emp.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Button type="button" size="sm" variant="outline" onClick={addSubtask} disabled={!newSubtask.trim()} className="h-9 px-3">
+                                <Plus className="w-4 h-4" />
+                            </Button>
                         </div>
                     </div>
 
-                    <div className="flex gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2">
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">
                             Abbrechen
                         </Button>
-                        <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
+                        <Button type="submit" className="flex-1 h-11 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold">
                             {todo ? 'Speichern' : 'Hinzufügen'}
                         </Button>
                     </div>

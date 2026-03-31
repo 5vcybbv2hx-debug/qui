@@ -25,7 +25,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
 
     const { data: shifts = [] } = useQuery({
         queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 100)
+        queryFn: () => base44.entities.Shift.list('date', 300)
     });
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries'],
@@ -131,14 +131,9 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
     const todayReservations = reservations.filter(r => r.date === today && r.status !== 'storniert');
 
     const myUpcomingShifts = shifts
-        .filter(s => s.employee_id === currentEmployee.id && (isFuture(parseISO(s.date)) || isToday(parseISO(s.date))))
+        .filter(s => s.employee_id === currentEmployee.id && s.date >= today)
         .sort((a, b) => {
-            const dateA = parseISO(a.date);
-            const dateB = parseISO(b.date);
-            if (dateA.getTime() !== dateB.getTime()) {
-                return dateA.getTime() - dateB.getTime();
-            }
-            // Falls Daten gleich sind, nach Startzeit sortieren
+            if (a.date !== b.date) return a.date.localeCompare(b.date);
             return (a.start_time || '').localeCompare(b.start_time || '');
         })
         .slice(0, 5);
@@ -386,9 +381,21 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                                                     <p className="font-semibold text-foreground">{format(parseISO(shift.date), 'EEEE', { locale: de })}</p>
                                                     <p className="text-sm text-muted-foreground">{shift.start_time} - {shift.end_time}</p>
                                                     {shift.notes && <p className="text-xs text-muted-foreground mt-1">{shift.notes}</p>}
-                                                </div>
-                                            </div>
-                                            <Badge className="bg-amber-600/20 text-amber-400">{shift.shift_type || 'Schicht'}</Badge>
+                                                    {(() => {
+                                                       const colleagues = shifts
+                                                           .filter(s => s.date === shift.date && s.employee_id !== currentEmployee.id && s.employee_name)
+                                                           .map(s => s.employee_name);
+                                                       const unique = [...new Set(colleagues)];
+                                                       return unique.length > 0 ? (
+                                                           <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                                               <Users className="w-3 h-3 text-muted-foreground shrink-0" />
+                                                               <p className="text-xs text-muted-foreground">{unique.join(', ')}</p>
+                                                           </div>
+                                                       ) : null;
+                                                    })()}
+                                                    </div>
+                                                    </div>
+                                                    <Badge className="bg-amber-600/20 text-amber-400">{shift.shift_type || 'Schicht'}</Badge>
                                         </div>
                                     </Card>
                                 ))}

@@ -469,22 +469,29 @@ export default function Closing() {
                 {categories.map(cat => {
                     const catTasks = filteredTasks.filter(t => t.category === cat);
                     const catDone = catTasks.filter(t => itemStates[t.id]?.done).length;
-                    const collapsed = collapsedCats[cat];
+                    const allDone = catDone === catTasks.length && catTasks.length > 0;
+                    const collapsed = collapsedCats[cat] !== undefined ? collapsedCats[cat] : allDone;
+                    const sortedCatTasks = [...catTasks].sort((a, b) => {
+                        const aDone = itemStates[a.id]?.done ? 1 : 0;
+                        const bDone = itemStates[b.id]?.done ? 1 : 0;
+                        return aDone - bDone;
+                    });
                     return (
                         <div key={cat} className="mb-4 border border-border rounded-xl overflow-hidden">
                             <button
-                                onClick={() => setCollapsedCats(p => ({ ...p, [cat]: !p[cat] }))}
+                                onClick={() => setCollapsedCats(p => ({ ...p, [cat]: !collapsed }))}
                                 className="w-full flex items-center justify-between px-4 py-3 bg-card hover:bg-accent/30 transition-colors"
                             >
                                 <div className="flex items-center gap-2">
                                     <Badge className={cn('text-xs border', CATEGORY_COLORS[cat] || CATEGORY_COLORS.Sonstiges)}>{cat}</Badge>
                                     <span className="text-sm text-muted-foreground">{catDone}/{catTasks.length}</span>
+                                    {allDone && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
                                 </div>
                                 {collapsed ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
                             </button>
                             {!collapsed && (
                                 <div className="divide-y divide-border/50">
-                                    {catTasks.map(task => {
+                                    {sortedCatTasks.map(task => {
                                         const state = itemStates[task.id] || {};
                                         const role = task.required_role || 'Alle';
                                         const sched = task.schedule || 'täglich';
@@ -547,22 +554,29 @@ export default function Closing() {
                             {areas.map(area => {
                                 const areaTasks = relevantCleaningTasks.filter(t => (t.area || 'Sonstiges') === area);
                                 const areaDone = areaTasks.filter(t => cleaningStates[t.id]?.done || t.is_completed).length;
-                                const collapsed = collapsedCats[`_cleaning_${area}`];
+                                const areaAllDone = areaDone === areaTasks.length && areaTasks.length > 0;
+                                const collapsed = collapsedCats[`_cleaning_${area}`] !== undefined ? collapsedCats[`_cleaning_${area}`] : areaAllDone;
+                                const sortedAreaTasks = [...areaTasks].sort((a, b) => {
+                                    const aDone = (cleaningStates[a.id]?.done || a.is_completed) ? 1 : 0;
+                                    const bDone = (cleaningStates[b.id]?.done || b.is_completed) ? 1 : 0;
+                                    return aDone - bDone;
+                                });
                                 return (
                                     <div key={area} className="mb-3 border border-green-500/30 rounded-xl overflow-hidden">
                                         <button
-                                            onClick={() => setCollapsedCats(p => ({ ...p, [`_cleaning_${area}`]: !p[`_cleaning_${area}`] }))}
+                                            onClick={() => setCollapsedCats(p => ({ ...p, [`_cleaning_${area}`]: !collapsed }))}
                                             className="w-full flex items-center justify-between px-4 py-3 bg-green-500/10 hover:bg-green-500/20 transition-colors"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-medium text-green-300">{area}</span>
                                                 <span className="text-xs text-muted-foreground">{areaDone}/{areaTasks.length}</span>
+                                                {areaAllDone && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
                                             </div>
                                             {collapsed ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
                                         </button>
                                         {!collapsed && (
                                             <div className="divide-y divide-border/50">
-                                                {areaTasks.map(task => {
+                                                {sortedAreaTasks.map(task => {
                                                     const isDone = cleaningStates[task.id]?.done || task.is_completed;
                                                     const doneBy = cleaningStates[task.id]?.done_by || task.completed_by;
                                                     return (

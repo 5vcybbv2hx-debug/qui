@@ -75,7 +75,7 @@ export default function Shopping() {
             return base44.entities.ShoppingList.create(data);
         },
         onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['shopping-list']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
             closeModal();
         }
     });
@@ -84,7 +84,7 @@ export default function Shopping() {
         mutationFn: async ({ id, data }) => {
             if (!navigator.onLine) {
                 await queueMutation({ entityName: 'ShoppingList', type: 'update', id, data });
-                queryClient.setQueryData(['shopping-list'], (old) => 
+                queryClient.setQueryData(['shopping-list'], (old) =>
                     old?.map(item => item.id === id ? { ...item, ...data } : item) || old
                 );
                 return { queued: true };
@@ -92,8 +92,11 @@ export default function Shopping() {
             return base44.entities.ShoppingList.update(id, data);
         },
         onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['shopping-list']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
             closeModal();
+        },
+        onError: () => {
+            queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
         }
     });
 
@@ -107,7 +110,10 @@ export default function Shopping() {
             return base44.entities.ShoppingList.delete(id);
         },
         onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['shopping-list']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
+        },
+        onError: () => {
+            queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
         }
     });
 
@@ -173,7 +179,12 @@ export default function Shopping() {
     const handleDeleteReceived = async () => {
         if (confirm(`${receivedItems.length} erledigte Artikel wirklich löschen?`)) {
             for (const item of receivedItems) {
-                await deleteMutation.mutateAsync(item.id);
+                try {
+                    await deleteMutation.mutateAsync(item.id);
+                } catch {
+                    // Already deleted or not found — refresh and continue
+                    queryClient.invalidateQueries({ queryKey: ['shopping-list'] });
+                }
             }
         }
     };

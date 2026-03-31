@@ -534,55 +534,68 @@ export default function Closing() {
                     );
                 })}
 
-                {/* Cleaning Tasks Section */}
-                {relevantCleaningTasks.length > 0 && (
-                    <div className="mb-4 border border-green-500/30 rounded-xl overflow-hidden">
-                        <button
-                            onClick={() => setCollapsedCats(p => ({ ...p, _cleaning: !p._cleaning }))}
-                            className="w-full flex items-center justify-between px-4 py-3 bg-green-500/10 hover:bg-green-500/20 transition-colors"
-                        >
-                            <div className="flex items-center gap-2">
+                {/* Cleaning Tasks Section — grouped by area */}
+                {relevantCleaningTasks.length > 0 && (() => {
+                    const areas = [...new Set(relevantCleaningTasks.map(t => t.area || 'Sonstiges'))];
+                    return (
+                        <div className="mb-4">
+                            <div className="flex items-center gap-2 px-1 mb-2">
                                 <Sparkles className="w-4 h-4 text-green-400" />
                                 <span className="text-sm font-semibold text-green-400">Reinigung</span>
                                 <span className="text-sm text-muted-foreground">{cleaningDoneCount}/{relevantCleaningTasks.length}</span>
                             </div>
-                            {collapsedCats._cleaning ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
-                        </button>
-                        {!collapsedCats._cleaning && (
-                            <div className="divide-y divide-border/50">
-                                {relevantCleaningTasks.map(task => {
-                                    const isDone = cleaningStates[task.id]?.done || task.is_completed;
-                                    const doneBy = cleaningStates[task.id]?.done_by || task.completed_by;
-                                    return (
-                                        <div key={task.id} className={cn('px-4 py-3 transition-colors', isDone ? 'bg-green-500/5' : 'bg-background')}>
-                                            <button
-                                                onClick={() => !isFinalized && toggleCleaningTask(task)}
-                                                disabled={isFinalized}
-                                                className="flex items-center gap-3 w-full text-left"
-                                            >
-                                                {isDone
-                                                    ? <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                                                    : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
-                                                }
-                                                <div className="flex-1">
-                                                    <p className={cn('text-sm font-medium', isDone ? 'line-through text-muted-foreground' : 'text-foreground')}>
-                                                        {task.title}
-                                                    </p>
-                                                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                                                        <span className="text-xs px-1.5 py-0.5 rounded-md bg-green-500/15 text-green-400">{task.area}</span>
-                                                        {isDone && doneBy && (
-                                                            <span className="text-xs text-muted-foreground">— {doneBy}</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                )}
+                            {areas.map(area => {
+                                const areaTasks = relevantCleaningTasks.filter(t => (t.area || 'Sonstiges') === area);
+                                const areaDone = areaTasks.filter(t => cleaningStates[t.id]?.done || t.is_completed).length;
+                                const collapsed = collapsedCats[`_cleaning_${area}`];
+                                return (
+                                    <div key={area} className="mb-3 border border-green-500/30 rounded-xl overflow-hidden">
+                                        <button
+                                            onClick={() => setCollapsedCats(p => ({ ...p, [`_cleaning_${area}`]: !p[`_cleaning_${area}`] }))}
+                                            className="w-full flex items-center justify-between px-4 py-3 bg-green-500/10 hover:bg-green-500/20 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium text-green-300">{area}</span>
+                                                <span className="text-xs text-muted-foreground">{areaDone}/{areaTasks.length}</span>
+                                            </div>
+                                            {collapsed ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronUp className="w-4 h-4 text-muted-foreground" />}
+                                        </button>
+                                        {!collapsed && (
+                                            <div className="divide-y divide-border/50">
+                                                {areaTasks.map(task => {
+                                                    const isDone = cleaningStates[task.id]?.done || task.is_completed;
+                                                    const doneBy = cleaningStates[task.id]?.done_by || task.completed_by;
+                                                    return (
+                                                        <div key={task.id} className={cn('px-4 py-3 transition-colors', isDone ? 'bg-green-500/5' : 'bg-background')}>
+                                                            <button
+                                                                onClick={() => !isFinalized && toggleCleaningTask(task)}
+                                                                disabled={isFinalized}
+                                                                className="flex items-center gap-3 w-full text-left"
+                                                            >
+                                                                {isDone
+                                                                    ? <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                                                    : <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
+                                                                }
+                                                                <div className="flex-1">
+                                                                    <p className={cn('text-sm font-medium', isDone ? 'line-through text-muted-foreground' : 'text-foreground')}>
+                                                                        {task.title}
+                                                                    </p>
+                                                                    {isDone && doneBy && (
+                                                                        <span className="text-xs text-muted-foreground">— {doneBy}</span>
+                                                                    )}
+                                                                </div>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
 
                 {filteredTasks.length === 0 && relevantCleaningTasks.length === 0 && (
                     <div className="text-center py-16 text-muted-foreground border border-dashed border-border rounded-xl">

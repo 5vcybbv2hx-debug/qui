@@ -1,0 +1,64 @@
+{
+  "name": "ProvisionalShiftRequest",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Gew\u00fcnschtes Datum"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Gew\u00fcnschte Startzeit (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Gew\u00fcnschte Endzeit (HH:MM)"
+    },
+    "shift_type": {
+      "type": "string",
+      "description": "Schichttyp"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Kommentar des Mitarbeiters"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ausstehend",
+        "best\u00e4tigt",
+        "abgelehnt"
+      ],
+      "default": "ausstehend",
+      "description": "Status der Anfrage"
+    },
+    "manager_note": {
+      "type": "string",
+      "description": "Notiz des Managers bei Genehmigung/Ablehnung"
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "Gepr\u00fcft von (Manager)"
+    },
+    "access_id": {
+      "type": "string",
+      "description": "Zugeh\u00f6rige ProvisionalShiftAccess ID"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "date",
+    "start_time",
+    "end_time"
+  ]
+}

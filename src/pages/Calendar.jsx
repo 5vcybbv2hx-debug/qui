@@ -24,6 +24,8 @@ import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import UnifiedCalendarView from '@/components/calendar/UnifiedCalendarView';
 import DayDetailModal from '@/components/calendar/DayDetailModal';
 import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
+import ProvisionalAccessManager from '@/components/provisional/ProvisionalAccessManager';
+import ProvisionalReviewPanel from '@/components/provisional/ProvisionalReviewPanel';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -31,6 +33,7 @@ import PermissionDenied from '@/components/auth/PermissionDenied';
 const VIEWS = [
     { id: 'schichtplan', label: 'Schichtplan', icon: CalendarDays },
     { id: 'team', label: 'Team-Übersicht', icon: Users },
+    { id: 'selbsteinplanung', label: 'Selbsteinplanung', icon: Users },
 ];
 
 export default function CalendarPage() {
@@ -382,6 +385,16 @@ export default function CalendarPage() {
                     </>
                 )}
 
+                {/* ======================== SELBSTEINPLANUNG ======================== */}
+                {view === 'selbsteinplanung' && permissions.isManager && (
+                    <div className="space-y-8">
+                        <ProvisionalReviewPanel />
+                        <div className="border-t border-border/50 pt-6">
+                            <ProvisionalAccessManager employees={employees} />
+                        </div>
+                    </div>
+                )}
+
                 {/* ======================== TEAM-ÜBERSICHT ======================== */}
                 {view === 'team' && (
                     <>
@@ -431,7 +444,6 @@ export default function CalendarPage() {
                             onSearchChange={setSearchQuery}
                         />
 
-                        {/* Day Detail Modal */}
                         <DayDetailModal
                             open={!!selectedDayDetail}
                             onClose={() => setSelectedDayDetail(null)}
@@ -445,7 +457,6 @@ export default function CalendarPage() {
                             onShiftSwap={(shift) => { setShiftSwapData(shift); setSelectedDayDetail(null); }}
                         />
 
-                        {/* Event Modal */}
                         <EventDetailsModal
                             event={selectedEvent}
                             open={showEventModal}

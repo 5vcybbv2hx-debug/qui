@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import ProvisionalShiftEntry from '@/components/provisional/ProvisionalShiftEntry';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,16 @@ export default function MyShiftsPage() {
         };
         loadUser();
     }, []);
+
+    const { data: provisionalAccess } = useQuery({
+        queryKey: ['my-provisional-access', employee?.id],
+        queryFn: async () => {
+            if (!employee) return null;
+            const all = await base44.entities.ProvisionalShiftAccess.filter({ employee_id: employee.id, is_active: true });
+            return all[0] || null;
+        },
+        enabled: !!employee
+    });
 
     const { data: shifts = [] } = useQuery({
         queryKey: ['my-shifts', employee?.id],
@@ -138,13 +149,21 @@ export default function MyShiftsPage() {
                 </div>
 
                 <Tabs defaultValue="week" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className={provisionalAccess ? 'grid w-full grid-cols-6' : 'grid w-full grid-cols-5'}>
+                        {provisionalAccess && <TabsTrigger value="wunsch" className="text-amber-400">Wunsch</TabsTrigger>}
                         <TabsTrigger value="week">Woche</TabsTrigger>
                         <TabsTrigger value="month">Monat</TabsTrigger>
                         <TabsTrigger value="list">Liste</TabsTrigger>
                         <TabsTrigger value="team">Team</TabsTrigger>
                         <TabsTrigger value="sync">Sync</TabsTrigger>
                     </TabsList>
+
+                    {/* Wunschschichten (Selbsteinplanung) */}
+                    {provisionalAccess && (
+                        <TabsContent value="wunsch">
+                            <ProvisionalShiftEntry employee={employee} access={provisionalAccess} />
+                        </TabsContent>
+                    )}
 
                     {/* Wochenansicht */}
                     <TabsContent value="week" className="space-y-4">

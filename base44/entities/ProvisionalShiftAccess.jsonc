@@ -1,0 +1,43 @@
+{
+  "name": "ProvisionalShiftAccess",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Beginn des Eingabefensters"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Ende des Eingabefensters"
+    },
+    "note": {
+      "type": "string",
+      "description": "Hinweis f\u00fcr den Mitarbeiter (z.B. 'Nur Wochenenden eintragen')"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Zugang aktiv"
+    },
+    "granted_by": {
+      "type": "string",
+      "description": "Vergeben von (Manager)"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "start_date",
+    "end_date"
+  ]
+}

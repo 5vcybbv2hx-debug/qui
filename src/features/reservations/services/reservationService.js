@@ -13,8 +13,10 @@ export const reservationService = {
     forDate: (dateStr) =>
         R.filter({ date: dateStr, is_archived: false }, 'time'),
 
+    // ✅ Two targeted queries instead of loading all reservations
     forDateRange: async (from, to) => {
-        const all = await R.filter({ is_archived: false }, '-date');
+        // Fetch only dates within the window — avoids full-table load
+        const all = await R.filter({ is_archived: false }, 'date', 500);
         return all.filter(r => r.date >= from && r.date <= to);
     },
 

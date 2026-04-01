@@ -4,6 +4,7 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { STALE, GC } from '@/lib/queryUtils';
 import {
     timeTrackingService,
     calcTotalHours,
@@ -21,10 +22,12 @@ export const TIME_KEYS = {
     clockActive:        (id) => ['clockEntries', 'active', id],
 };
 
-export function useTimeEntries() {
+export function useTimeEntries(limit = 200) {
     return useQuery({
-        queryKey: TIME_KEYS.allEntries,
-        queryFn:  timeTrackingService.listEntries,
+        queryKey: [...TIME_KEYS.allEntries, limit],
+        queryFn:  () => timeTrackingService.listEntries(limit),
+        staleTime: STALE.MEDIUM,
+        gcTime:    GC.DEFAULT,
     });
 }
 
@@ -41,6 +44,8 @@ export function useTimeEntriesForMonth(year, month) {
         queryKey: TIME_KEYS.byMonth(year, month),
         queryFn:  () => timeTrackingService.entriesForMonth(year, month),
         enabled:  !!year && !!month,
+        staleTime: STALE.MEDIUM,
+        gcTime:    GC.SHORT,   // month data not needed long-term
     });
 }
 
@@ -64,8 +69,15 @@ export function useCreateTimeEntry() {
             const warning = arbzgWarning(hours);
             return timeTrackingService.createEntry({ ...data, total_hours: hours, arbzg_warning: warning });
         },
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: TIME_KEYS.allEntries });
+        onSuccess: (_, data) => {
+            // ✅ Invalidate only the affected month + employee, not the entire list
+            if (data.date) {
+                const [y, m] = data.date.split('-');
+                qc.invalidateQueries({ queryKey: TIME_KEYS.byMonth(+y, +m) });
+            }
+            if (data.employee_id) {
+                qc.invalidateQueries({ queryKey: TIME_KEYS.byEmployee(data.employee_id) });
+            }
             toast.success('Zeiteintrag gespeichert');
         },
     });
@@ -79,8 +91,14 @@ export function useUpdateTimeEntry() {
             const warning = arbzgWarning(hours);
             return timeTrackingService.updateEntry(id, { ...data, total_hours: hours, arbzg_warning: warning });
         },
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: TIME_KEYS.allEntries });
+        onSuccess: (_, { data }) => {
+            if (data?.date) {
+                const [y, m] = data.date.split('-');
+                qc.invalidateQueries({ queryKey: TIME_KEYS.byMonth(+y, +m) });
+            }
+            if (data?.employee_id) {
+                qc.invalidateQueries({ queryKey: TIME_KEYS.byEmployee(data.employee_id) });
+            }
             toast.success('Zeiteintrag aktualisiert');
         },
     });
@@ -89,9 +107,16 @@ export function useUpdateTimeEntry() {
 export function useApproveTimeEntry() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, approvedBy }) => timeTrackingService.approveEntry(id, approvedBy),
-        onSuccess: () => {
-            qc.invalidateQueries({ queryKey: TIME_KEYS.allEntries });
+        mutationFn: ({ id, approvedBy, employeeId, date }) =>
+            timeTrackingService.approveEntry(id, approvedBy).then(res => ({ res, employeeId, date })),
+        onSuccess: (_, { employeeId, date }) => {
+            if (date) {
+                const [y, m] = date.split('-');
+                qc.invalidateQueries({ queryKey: TIME_KEYS.byMonth(+y, +m) });
+            }
+            if (employeeId) {
+                qc.invalidateQueries({ queryKey: TIME_KEYS.byEmployee(employeeId) });
+            }
             toast.success('Eintrag genehmigt');
         },
     });
@@ -103,6 +128,7 @@ export function useActiveClockEntry(employeeId) {
         queryKey: TIME_KEYS.clockActive(employeeId),
         queryFn:  () => timeTrackingService.activeClockEntry(employeeId),
         enabled:  !!employeeId,
+        staleTime: STALE.FAST,
         refetchInterval: 60_000,
     });
 }
@@ -122,10 +148,8 @@ export function useClockIn() {
 export function useClockOut() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ entryId, employeeId }) =>
-            timeTrackingService.clockOut(entryId).then(() =>
-                timeTrackingService.clockOut(entryId) // returns updated entry
-            ),
+        // ✅ Fixed: was calling clockOut TWICE (bug) — now only once
+        mutationFn: ({ entryId }) => timeTrackingService.clockOut(entryId),
         onSuccess: (_, { employeeId }) => {
             qc.invalidateQueries({ queryKey: TIME_KEYS.clockActive(employeeId) });
             toast.success('Ausgestempelt');
@@ -138,6 +162,8 @@ export function useVacationRequests() {
     return useQuery({
         queryKey: TIME_KEYS.allVacations,
         queryFn:  timeTrackingService.allVacationRequests,
+        staleTime: STALE.SLOW,    // vacation data changes infrequently
+        gcTime:    GC.DEFAULT,
     });
 }
 

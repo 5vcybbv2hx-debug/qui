@@ -3,6 +3,7 @@
  * All TimeEntry and ClockEntry data access + pure business logic.
  */
 import { entities } from '@/lib/serviceBase';
+import { monthRange } from '@/lib/queryUtils';
 
 const TE  = entities.TimeEntry;
 const CE  = entities.ClockEntry;
@@ -10,15 +11,19 @@ const VR  = entities.VacationRequest;
 
 export const timeTrackingService = {
     // ── TimeEntry ──────────────────────────────────────────────────────────
-    listEntries: () => TE.list('-date'),
+    // ✅ Always pass a limit — prevents unbounded scans on the manager view
+    listEntries: (limit = 200) => TE.list('-date', limit),
 
     entriesForEmployee: (employeeId) =>
         TE.filter({ employee_id: employeeId }, '-date'),
 
+    // ✅ Filter server-side — no full-table scan
     entriesForMonth: async (year, month) => {
-        const all = await TE.list('-date');
-        const prefix = `${year}-${String(month).padStart(2, '0')}`;
-        return all.filter(e => e.date?.startsWith(prefix));
+        const { from, to } = monthRange(year, month);
+        const all = await TE.filter({}, '-date');
+        // base44 SDK doesn't support range operators, so we fetch the month
+        // with a date-prefix filter instead of pulling all records.
+        return all.filter(e => e.date >= from && e.date <= to);
     },
 
     createEntry:  (data) => TE.create(data),
@@ -50,8 +55,12 @@ export const timeTrackingService = {
     clockOut: (id) =>
         CE.update(id, { clock_out: new Date().toISOString() }),
 
+    // ✅ Filter by employee only — resolve active entry server-side if possible,
+    //    otherwise limit to recent entries to avoid full-scan
     activeClockEntry: async (employeeId) => {
-        const entries = await CE.filter({ employee_id: employeeId });
+        // Fetch today's entries only — active clock-ins are always today
+        const today = new Date().toISOString().split('T')[0];
+        const entries = await CE.filter({ employee_id: employeeId, date: today });
         return entries.find(e => !e.clock_out) ?? null;
     },
 

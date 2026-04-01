@@ -1,74 +1,113 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// HIGH FIX 1: Token now uses crypto.randomUUID() — Math.random() is not cryptographically secure.
-// HIGH FIX 2: guest_token is no longer returned in the response to prevent token leakage.
-// HIGH FIX 3: Input validation added for guests count and date format.
+// ─── Input validation ─────────────────────────────────────────────────────────
+// SECURITY: Validate and sanitize all fields before writing to DB.
+// Without this, an attacker could inject oversized strings or invalid data.
+function validateReservation(body) {
+    const errors = [];
+
+    if (!body.customer_name?.trim()) errors.push('Name ist erforderlich');
+    if (!body.email?.includes('@'))  errors.push('Gültige E-Mail ist erforderlich');
+    if (!body.phone?.trim())         errors.push('Telefonnummer ist erforderlich');
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(body.date ?? '')) errors.push('Ungültiges Datumsformat (YYYY-MM-DD)');
+    if (!/^\d{2}:\d{2}$/.test(body.time ?? ''))        errors.push('Ungültiges Zeitformat (HH:MM)');
+
+    const guests = parseInt(body.guests);
+    if (isNaN(guests) || guests < 1 || guests > 100) errors.push('Personenanzahl muss zwischen 1 und 100 liegen');
+
+    if (errors.length) return { valid: false, errors };
+
+    // Return sanitized, typed values — only the fields we actually want to store
+    return {
+        valid: true,
+        data: {
+            customer_name: String(body.customer_name).trim().slice(0, 100),
+            email:         String(body.email).trim().toLowerCase().slice(0, 150),
+            phone:         String(body.phone).trim().slice(0, 30),
+            date:          body.date,
+            time:          body.time,
+            guests,
+            notes:         body.notes ? String(body.notes).trim().slice(0, 500) : '',
+            // Table may optionally be pre-set by the booking widget
+            ...(body.table ? { table: String(body.table).trim().slice(0, 20) } : {}),
+        }
+    };
+}
+
+// ─── Secure token generation ──────────────────────────────────────────────────
+// SECURITY: Math.random() is NOT cryptographically secure and must not be used
+// for tokens. crypto.randomUUID() uses the OS CSPRNG.
+function generateGuestToken() {
+    return crypto.randomUUID() + '-' + crypto.randomUUID();
+}
+
+// ─── Response shaping ─────────────────────────────────────────────────────────
+// SECURITY: Never return the guest_token, internal IDs beyond reservation ID,
+// or any field that wasn't submitted by the user.
+// The token is sent to the guest via email only — not in the API response.
+function publicReservationShape(r) {
+    return {
+        id:            r.id,
+        customer_name: r.customer_name,
+        date:          r.date,
+        time:          r.time,
+        guests:        r.guests,
+        status:        r.status,
+    };
+}
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        const formData = await req.json();
 
-        // Validierung
-        if (!formData.customer_name || !formData.phone || !formData.email || !formData.date || !formData.time || !formData.guests) {
-            return Response.json({ 
-                success: false,
-                error: 'Alle Pflichtfelder müssen ausgefüllt sein'
-            }, { status: 400 });
-        }
-
-        // Input validation
-        const guestCount = parseInt(formData.guests);
-        if (isNaN(guestCount) || guestCount < 1 || guestCount > 100) {
-            return Response.json({ success: false, error: 'Ungültige Personenanzahl' }, { status: 400 });
-        }
-
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-            return Response.json({ success: false, error: 'Ungültiges Datumsformat' }, { status: 400 });
-        }
-
-        // Cryptographically secure token
-        const token = crypto.randomUUID() + '-' + crypto.randomUUID();
-
-        // Only allow safe fields — prevent field injection
-        const reservation = await base44.asServiceRole.entities.Reservation.create({
-            customer_name: String(formData.customer_name).slice(0, 100),
-            phone: String(formData.phone).slice(0, 30),
-            email: String(formData.email).slice(0, 100),
-            date: formData.date,
-            time: String(formData.time).slice(0, 5),
-            guests: guestCount,
-            notes: formData.notes ? String(formData.notes).slice(0, 500) : '',
-            table: formData.table ? String(formData.table).slice(0, 20) : undefined,
-            guest_token: token,
-            status: 'vorgemerkt',
-            source: 'online'
-        });
-
+        // INPUT: parse and validate body
+        let body;
         try {
-            await base44.asServiceRole.functions.invoke('sendReservationConfirmation', {
-                reservationId: reservation.id
-            });
-        } catch (emailError) {
-            console.warn('Email konnte nicht gesendet werden:', emailError);
+            body = await req.json();
+        } catch {
+            return Response.json({ success: false, error: 'Ungültiges JSON' }, { status: 400 });
         }
 
-        // HIGH FIX: Return only non-sensitive fields — no guest_token, no internal IDs beyond id
-        return Response.json({ 
-            success: true,
-            reservation: {
-                id: reservation.id,
-                customer_name: reservation.customer_name,
-                date: reservation.date,
-                time: reservation.time,
-                guests: reservation.guests,
-                status: reservation.status
-            }
+        const validation = validateReservation(body);
+        if (!validation.valid) {
+            return Response.json(
+                { success: false, errors: validation.errors },
+                { status: 422 }
+            );
+        }
+
+        // Date must not be in the past
+        if (validation.data.date < new Date().toISOString().split('T')[0]) {
+            return Response.json(
+                { success: false, error: 'Datum liegt in der Vergangenheit' },
+                { status: 422 }
+            );
+        }
+
+        // WRITE: create reservation with secure token and fixed status/source
+        const reservation = await base44.asServiceRole.entities.Reservation.create({
+            ...validation.data,
+            guest_token: generateGuestToken(),
+            status:      'vorgemerkt',
+            source:      'online',
         });
+
+        // Trigger confirmation email in background — failure must not block the response
+        base44.asServiceRole.functions.invoke('sendReservationConfirmation', {
+            reservationId: reservation.id
+        }).catch(err => console.warn('Confirmation email failed:', err));
+
+        // RESPONSE: minimal public fields only — guest_token stays server-side
+        return Response.json({ success: true, reservation: publicReservationShape(reservation) });
+
     } catch (error) {
-        console.error('Fehler beim Erstellen der Reservierung:', error);
-        return Response.json({ 
-            success: false,
-            error: 'Reservierung konnte nicht erstellt werden'
-        }, { status: 500 });
+        console.error('createPublicReservation error:', error);
+        // SECURITY: No internal error details to the client
+        return Response.json(
+            { success: false, error: 'Reservierung konnte nicht erstellt werden' },
+            { status: 500 }
+        );
     }
 });

@@ -42,11 +42,10 @@ export default function Layout({ children, currentPageName }) {
 
      React.useEffect(() => {
          base44.auth.me().then(setCurrentUser).catch(() => {});
-         
-         // Beim App-Start immer zur Dashboard-Seite navigieren
-         navigate(createPageUrl('Dashboard'), { replace: true });
+         // NOTE: No forced redirect here — deep links and direct URLs must work.
+         // Navigation to a default page is the job of the auth layer, not the layout.
 
-         // Keyboard shortcut für Suche (Ctrl/Cmd + K)
+         // Keyboard shortcut für Suche (Strg+K)
          const handleKeyDown = (e) => {
              if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                  e.preventDefault();
@@ -105,20 +104,17 @@ export default function Layout({ children, currentPageName }) {
          }
      }, [currentPageName]);
 
-     // Navigate to tab with history
+     // Navigate to tab — if already in the same tab, go to its root page.
+     // Otherwise follow the <Link to=...> naturally (no e.preventDefault).
      const navigateToTab = (tabName, e) => {
          const currentTab = getCurrentTab(currentPageName);
-         const lastPage = localStorage.getItem(`lastPage_${tabName}`);
-         
          if (currentTab === tabName) {
-             // Already in this tab section, force navigate to root
+             // Tapping the active tab root resets to its root page
              e.preventDefault();
              navigate(createPageUrl(tabName));
-         } else if (lastPage && lastPage !== tabName) {
-             // Navigate to last visited page in this tab
-             e.preventDefault();
-             navigate(createPageUrl(lastPage));
          }
+         // No else: let React Router handle the Link normally for cross-tab navigation.
+         // Removed last-visited restore — it caused surprising redirects away from deep links.
      };
 
      // All main navigation sections are root pages (no back button)
@@ -266,7 +262,7 @@ export default function Layout({ children, currentPageName }) {
             {/* Mobile Bottom Navigation */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center justify-around px-2 py-2">
-                    {/* Home */}
+                    {/* Home — simple link, no tab-history override needed */}
                     <Link
                         to={createPageUrl('Dashboard')}
                         className={cn('flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all',

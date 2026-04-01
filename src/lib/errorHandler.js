@@ -1,78 +1,235 @@
 /**
- * errorHandler.js
- * Global error handling utilities.
- *
- * Rules:
- *  1. Never expose raw error.message to the user — map to friendly strings.
- *  2. Always log the original error to the console for debugging.
- *  3. Use toast for transient feedback, dialogs for decisions, StateDisplay for page-level errors.
+ * Centralized Error Handler
+ * Provides mobile-friendly error messages and categorization
  */
-import { toast } from 'sonner';
-
-// ── Known error → user-friendly message map ───────────────────────────────────
-const ERROR_MAP = [
-    { match: /network|fetch|failed to fetch/i,  msg: 'Netzwerkfehler – bitte Verbindung prüfen.' },
-    { match: /unauthorized|401/i,               msg: 'Sitzung abgelaufen – bitte neu anmelden.' },
-    { match: /forbidden|403/i,                  msg: 'Keine Berechtigung für diese Aktion.' },
-    { match: /not found|404/i,                  msg: 'Der Eintrag wurde nicht gefunden.' },
-    { match: /timeout/i,                        msg: 'Zeitüberschreitung – bitte erneut versuchen.' },
-    { match: /duplicate|already exists/i,       msg: 'Dieser Eintrag existiert bereits.' },
-];
 
 /**
- * Map any error to a safe, user-friendly string.
- * Falls back to a generic message so internal details are never shown.
+ * Categorize and normalize errors
+ * @param {Error|Object} error
+ * @returns {Object} Normalized error object with type, message, userMessage
  */
-export function friendlyMessage(error, fallback = 'Ein unerwarteter Fehler ist aufgetreten.') {
-    const raw = error?.message ?? String(error ?? '');
-    const found = ERROR_MAP.find(e => e.match.test(raw));
-    return found ? found.msg : fallback;
-}
+export function normalizeError(error) {
+  // Handle null/undefined
+  if (!error) {
+    return {
+      type: 'unknown',
+      message: 'Unknown error',
+      userMessage: 'Ein Fehler ist aufgetreten',
+      technical: false,
+      retriable: false
+    };
+  }
 
-/**
- * Show a toast for a caught error.
- * Always logs the original error; never shows raw messages to the user.
- *
- * @param {unknown}  error        - The caught error
- * @param {string}   [context]    - Short description of what failed (shown as toast title)
- * @param {string}   [fallback]   - Custom fallback message
- */
-export function toastError(error, context, fallback) {
-    console.error(`[${context ?? 'Error'}]`, error);
-    toast.error(context ?? 'Fehler', {
-        description: friendlyMessage(error, fallback),
-        duration: 5000,
-    });
-}
+  // Handle network errors
+  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    return {
+      type: 'network_error',
+      message: error.message,
+      userMessage: 'Netzwerkfehler – Internetverbindung prüfen',
+      technical: false,
+      retriable: true,
+      offline: true
+    };
+  }
 
-/**
- * Show a success toast.
- */
-export function toastSuccess(message, description) {
-    toast.success(message, { description, duration: 3000 });
-}
+  // Handle HTTP errors from SDK/API
+  if (error.status) {
+    const status = error.status;
 
-/**
- * Show an info toast.
- */
-export function toastInfo(message, description) {
-    toast.info(message, { description, duration: 4000 });
-}
-
-/**
- * Wraps an async action with automatic error toasting.
- * Returns [result, error] — never throws.
- *
- * Usage:
- *   const [data, err] = await safeAsync(() => myService.load(id), 'Laden fehlgeschlagen');
- *   if (err) return;
- */
-export async function safeAsync(fn, context, fallback) {
-    try {
-        const result = await fn();
-        return [result, null];
-    } catch (error) {
-        toastError(error, context, fallback);
-        return [null, error];
+    // 401 Unauthorized
+    if (status === 401) {
+      return {
+        type: 'auth_required',
+        message: 'Unauthorized',
+        userMessage: 'Anmeldung erforderlich',
+        technical: false,
+        retriable: false,
+        actionRequired: true
+      };
     }
+
+    // 403 Forbidden – check for special auth errors
+    if (status === 403) {
+      const reason = error.data?.extra_data?.reason;
+
+      if (reason === 'user_not_registered') {
+        return {
+          type: 'user_not_registered',
+          message: 'User not registered for this app',
+          userMessage: 'Dein Account hat keinen Zugriff auf diese App',
+          technical: false,
+          retriable: false,
+          actionRequired: true
+        };
+      }
+
+      if (reason === 'auth_required') {
+        return {
+          type: 'auth_required',
+          message: 'Authentication required',
+          userMessage: 'Anmeldung erforderlich',
+          technical: false,
+          retriable: false,
+          actionRequired: true
+        };
+      }
+
+      return {
+        type: 'forbidden',
+        message: error.message || 'Forbidden',
+        userMessage: 'Du hast keine Berechtigung für diese Aktion',
+        technical: false,
+        retriable: false
+      };
+    }
+
+    // 404 Not Found
+    if (status === 404) {
+      return {
+        type: 'not_found',
+        message: error.message || 'Not found',
+        userMessage: 'Diese Ressource existiert nicht',
+        technical: false,
+        retriable: false
+      };
+    }
+
+    // 409 Conflict
+    if (status === 409) {
+      return {
+        type: 'conflict',
+        message: error.message || 'Conflict',
+        userMessage: 'Diese Aktion konnte nicht ausgeführt werden – bitte versuche es erneut',
+        technical: false,
+        retriable: true
+      };
+    }
+
+    // 429 Too Many Requests
+    if (status === 429) {
+      return {
+        type: 'rate_limit',
+        message: 'Too many requests',
+        userMessage: 'Zu viele Anfragen – bitte warten und erneut versuchen',
+        technical: false,
+        retriable: true,
+        retryAfter: parseInt(error.headers?.['retry-after'] || '5', 10)
+      };
+    }
+
+    // 5xx Server errors
+    if (status >= 500) {
+      return {
+        type: 'server_error',
+        message: error.message || `Server error ${status}`,
+        userMessage: 'Server-Problem – versuche es später nochmal',
+        technical: false,
+        retriable: true
+      };
+    }
+
+    // Generic HTTP error
+    return {
+      type: 'http_error',
+      message: error.message || `HTTP ${status}`,
+      userMessage: `Fehler ${status} – bitte versuche es erneut`,
+      technical: false,
+      retriable: status >= 500
+    };
+  }
+
+  // Handle structured errors (e.g., from validation)
+  if (error.code) {
+    return {
+      type: error.code,
+      message: error.message,
+      userMessage: error.userMessage || error.message || 'Ein Fehler ist aufgetreten',
+      technical: !!error.technical,
+      retriable: !!error.retriable,
+      details: error.details
+    };
+  }
+
+  // Default fallback
+  return {
+    type: 'unknown',
+    message: error.message || String(error),
+    userMessage: 'Ein unbekannter Fehler ist aufgetreten',
+    technical: false,
+    retriable: false
+  };
 }
+
+/**
+ * Check if error is retriable
+ * @param {Object} normalizedError
+ * @returns {boolean}
+ */
+export function isRetriable(normalizedError) {
+  return normalizedError.retriable === true;
+}
+
+/**
+ * Check if error requires user action (e.g., login, new consent)
+ * @param {Object} normalizedError
+ * @returns {boolean}
+ */
+export function requiresAction(normalizedError) {
+  return normalizedError.actionRequired === true;
+}
+
+/**
+ * Get user-friendly message (never show technical details on mobile)
+ * @param {Object} normalizedError
+ * @returns {string}
+ */
+export function getUserMessage(normalizedError) {
+  return normalizedError.userMessage || normalizedError.message;
+}
+
+/**
+ * Alias for getUserMessage (backwards compatibility)
+ */
+export const friendlyMessage = getUserMessage;
+
+/**
+ * Handle offline detection
+ * @returns {boolean}
+ */
+export function isOffline() {
+  return typeof navigator !== 'undefined' && !navigator.onLine;
+}
+
+/**
+ * Log error safely (don't expose sensitive data)
+ * @param {string} context - Where error occurred
+ * @param {Error|Object} error
+ * @param {boolean} isDev - Include technical details only in dev
+ */
+export function logError(context, error, isDev = false) {
+  const normalized = normalizeError(error);
+
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    context,
+    type: normalized.type,
+    message: normalized.message
+  };
+
+  const isDevelopment = isDev || import.meta.env.MODE === 'development';
+  if (isDevelopment) {
+    logEntry.fullError = error;
+    logEntry.technical = normalized;
+  }
+
+  console.error(`[${context}]`, logEntry);
+}
+
+export default {
+  normalizeError,
+  isRetriable,
+  requiresAction,
+  getUserMessage,
+  isOffline,
+  logError
+};

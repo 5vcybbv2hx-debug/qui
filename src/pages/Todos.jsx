@@ -15,6 +15,28 @@ import { cn } from '@/lib/utils';
 
 const PRIORITY_ORDER = { dringend: 0, hoch: 1, mittel: 2, niedrig: 3 };
 
+/**
+ * TodoItem type
+ * @property {string} id
+ * @property {string} title
+ * @property {string} [description]
+ * @property {'offen'|'in_bearbeitung'|'erledigt'} status
+ * @property {'niedrig'|'mittel'|'hoch'|'dringend'} priority
+ * @property {string} [category]
+ * @property {string} [due_date] - ISO date string
+ * @property {string} [assigned_to]
+ * @property {string[]} [assigned_to_names]
+ * @property {boolean} [is_archived]
+ * @property {string} [completed_by]
+ * @property {string} [completed_at] - ISO datetime
+ */
+
+/**
+ * @typedef {Object} HandleSaveParams
+ * @property {Partial<TodoItem>} data - Data to save
+ * @property {string} [id] - If provided, updates; else creates
+ */
+
 export default function Todos() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
@@ -53,87 +75,20 @@ export default function Todos() {
         queryFn: () => base44.entities.TodoItem.list('-created_date', 200)
     });
 
+    /**
+     * @type {import('@tanstack/react-query').UseMutationResult<TodoItem, Error, Partial<TodoItem>>}
+     */
     const createMutation = useMutation({
-        mutationFn: async (data) => {
-            if (!navigator.onLine) {
-                await queueMutation({ entityName: 'TodoItem', type: 'create', data });
-                return { ...data, id: `offline-${Date.now()}`, _offline: true };
-            }
-            return base44.entities.TodoItem.create(data);
-        },
-        onSuccess: (newTodo) => {
-            queryClient.setQueryData(['todos'], (old) => old ? [newTodo, ...old] : [newTodo]);
-            if (!newTodo._offline) queryClient.invalidateQueries(['todos']);
-            setModalOpen(false);
-            setSelectedTodo(null);
-        }
-    });
 
     const updateMutation = useMutation({
-        mutationFn: async ({ id, data }) => {
-            if (!navigator.onLine) {
-                await queueMutation({ entityName: 'TodoItem', type: 'update', id, data });
-                return { queued: true };
-            }
-            return base44.entities.TodoItem.update(id, data);
-        },
-        onMutate: async ({ id, data }) => {
-            await queryClient.cancelQueries(['todos']);
-            const previous = queryClient.getQueryData(['todos']);
-            queryClient.setQueryData(['todos'], (old) =>
-                old.map(todo => todo.id === id ? { ...todo, ...data } : todo)
-            );
-            return { previous };
-        },
-        onError: (err, variables, context) => {
-            queryClient.setQueryData(['todos'], context.previous);
-        },
-        onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['todos']);
-            setModalOpen(false);
-            setSelectedTodo(null);
-        }
-    });
 
     const deleteMutation = useMutation({
-        mutationFn: async (id) => {
-            if (!navigator.onLine) {
-                await queueMutation({ entityName: 'TodoItem', type: 'delete', id });
-                return { queued: true };
-            }
-            return base44.entities.TodoItem.delete(id);
-        },
-        onMutate: async (id) => {
-            await queryClient.cancelQueries(['todos']);
-            const previous = queryClient.getQueryData(['todos']);
-            queryClient.setQueryData(['todos'], (old) => old.filter(todo => todo.id !== id));
-            return { previous };
-        },
-        onError: (err, variables, context) => {
-            queryClient.setQueryData(['todos'], context.previous);
-        },
-        onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['todos']);
-        }
-    });
 
     const handleSave = (data, id) => {
-        if (id) updateMutation.mutate({ id, data });
-        else createMutation.mutate(data);
-    };
 
     const handleQuickUpdate = (todo, changes) => {
-        updateMutation.mutate({ id: todo.id, data: { ...todo, ...changes } });
-    };
 
     const handleStatusChange = (todo, newStatus) => {
-        const updates = { ...todo, status: newStatus };
-        if (newStatus === 'erledigt' && todo.status !== 'erledigt') {
-            updates.completed_by = user?.full_name || user?.email;
-            updates.completed_at = new Date().toISOString();
-        }
-        updateMutation.mutate({ id: todo.id, data: updates });
-    };
 
     const handleArchive = (id) => {
         if (confirm('Aufgabe archivieren?')) {
@@ -142,13 +97,8 @@ export default function Todos() {
     };
 
     const handleEdit = (todo) => {
-        setSelectedTodo(todo);
-        setModalOpen(true);
-    };
 
     const handleDelete = (id) => {
-        if (confirm('Aufgabe wirklich löschen?')) deleteMutation.mutate(id);
-    };
 
     // Permission filter: if task is assigned, only show to that person or admin
     const currentUserName = user?.full_name || user?.email || '';

@@ -148,6 +148,14 @@ export default function Opening() {
         await sessionMutation.mutateAsync({ id: activeSession.id, data: { is_complete: false, completed_at: null } });
     };
 
+    const createTaskMutation = useMutation({
+        mutationFn: (data) => base44.entities.OpeningTask.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['opening-tasks'] });
+            setTaskModalOpen(false);
+        }
+    });
+
     const categories = [...new Set(filteredTasks.map(t => t.category))];
     const doneCount = tasks.filter(t => itemStates[t.id]?.done).length;
     const progress = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0;

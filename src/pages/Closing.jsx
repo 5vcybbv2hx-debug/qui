@@ -203,6 +203,72 @@ export default function Closing() {
         }
     });
 
+    const cleaningMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
+        onMutate: ({ id, data }) => {
+            queryClient.setQueryData(['cleaning-tasks-for-closing'], (old) =>
+                old?.map(t => t.id === id ? { ...t, ...data } : t) || old
+            );
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cleaning-tasks-for-closing'] })
+    });
+
+    const createTaskMutation = useMutation({
+        mutationFn: (data) => base44.entities.ClosingTask.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['closing-tasks'] });
+            setTaskModalOpen(false);
+        }
+    });
+
+    const saveSession = async (states, isComplete = false, notes, cleanStates) => {
+        const statesData = states || itemStates;
+        const cleanData = cleanStates || cleaningStates;
+        const items = filteredTasks.map(t => ({
+            task_id: t.id,
+            title: t.title,
+            category: t.category,
+            done: statesData[t.id]?.done || false,
+            value: statesData[t.id]?.value || '',
+            done_by: statesData[t.id]?.done ? currentUser?.full_name || currentUser?.email : null
+        }));
+        items.push(...relevantCleaningTasks.map(t => ({
+            task_id: t.id,
+            title: t.title,
+            _type: 'cleaning',
+            done: cleanData[t.id]?.done || false,
+            done_by: cleanData[t.id]?.done_by
+        })));
+        const doneCount = items.filter(i => i.done).length;
+        const rate = items.length > 0 ? Math.round((doneCount / items.length) * 100) : 0;
+        const data = {
+            date: todayStr,
+            items,
+            notes: notes !== undefined ? notes : notes,
+            completion_rate: rate,
+            is_complete: isComplete,
+            started_by: activeSession?.started_by || currentUser?.full_name || currentUser?.email,
+            ...(isComplete ? {
+                completed_by: currentUser?.full_name || currentUser?.email,
+                completed_at: new Date().toISOString()
+            } : {})
+        };
+        await sessionMutation.mutateAsync({ id: activeSession?.id, data });
+    };
+
+    const setValue = (taskId, value) => {
+        setItemStates(prev => ({ ...prev, [taskId]: { ...prev[taskId], value } }));
+    };
+
+    const toggleTask = async (task) => {
+        const newStates = {
+            ...itemStates,
+            [task.id]: { done: !itemStates[task.id]?.done, value: itemStates[task.id]?.value || '' }
+        };
+        setItemStates(newStates);
+        await saveSession(newStates);
+    };
+
     const toggleCleaningTask = async (task) => {
         const isDone = !cleaningStates[task.id]?.done && !task.is_completed;
         const newCleanStates = {

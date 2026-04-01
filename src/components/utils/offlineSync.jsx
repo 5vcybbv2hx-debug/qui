@@ -7,6 +7,25 @@ const DB_NAME = 'BarManagerOfflineCache';
 const SYNC_QUEUE_STORE = 'SyncQueue';
 const DB_VERSION = 2;
 
+/**
+ * @typedef {Object} SyncQueueItem
+ * @property {string} entityName - Name of the entity (e.g. 'TodoItem', 'Article')
+ * @property {'create'|'update'|'delete'} type
+ * @property {Partial<any>} data - Data payload
+ * @property {string} [id] - Record ID (required for update/delete)
+ * @property {'pending'|'completed'|'failed'} status
+ * @property {number} timestamp
+ * @property {number} retries
+ * @property {string} [lastError]
+ */
+
+/**
+ * @typedef {Object} SyncResult
+ * @property {number} synced - Number of mutations synced successfully
+ * @property {number} failed - Number of mutations that failed
+ * @property {string} [error] - Overall error message if applicable
+ */
+
 // Initialize IndexedDB with SyncQueue store
 const initDB = () => {
   return new Promise((resolve, reject) => {
@@ -41,7 +60,15 @@ const initDB = () => {
   });
 };
 
-// Add mutation to sync queue
+/**
+ * Queue a mutation (create/update/delete) to be synced when back online
+ * @param {Object} operation
+ * @param {string} operation.entityName - Entity type name
+ * @param {'create'|'update'|'delete'} operation.type
+ * @param {Partial<any>} operation.data
+ * @param {string} [operation.id]
+ * @returns {Promise<boolean>} Success status
+ */
 export const queueMutation = async (operation) => {
   try {
     const db = await initDB();
@@ -115,7 +142,11 @@ export const updateMutationStatus = async (queueId, status, error = null) => {
   }
 };
 
-// Sync mutations to server
+/**
+ * Sync all pending mutations to the server
+ * @param {Object} base44Instance - Base44 SDK instance
+ * @returns {Promise<SyncResult>}
+ */
 export const syncMutations = async (base44Instance) => {
   if (!navigator.onLine) return { synced: 0, failed: 0 };
   

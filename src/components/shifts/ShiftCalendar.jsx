@@ -332,7 +332,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             )}
                             
                             {/* Content Area */}
-                            <div className={`p-1.5 h-full flex flex-col gap-0.5 overflow-y-auto max-h-[200px] ${(holidayName || birthdays.length > 0) ? 'pt-9' : 'pt-8'}`}>
+                            <div className={`p-1.5 h-full flex flex-col gap-0.5 overflow-y-auto max-h-[400px] ${(holidayName || birthdays.length > 0) ? 'pt-9' : 'pt-8'}`}>
                                 {/* Confirmed Shifts */}
                                 {dayShifts.map((shift) => (
                                     <div

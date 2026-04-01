@@ -46,6 +46,11 @@ export default function LegalStatusPanel() {
   const completion = getCompletionPercentage(companyInfo);
   const isIncomplete = missing.required.length > 0 || missing.recommended.length > 0;
 
+  // Hide panel if legal info is complete
+  if (!isIncomplete) {
+    return null;
+  }
+
   return (
     <>
       <Card className={`bg-card border-border ${isIncomplete ? 'border-amber-500/50 bg-amber-500/5' : 'border-green-500/50 bg-green-500/5'}`}>

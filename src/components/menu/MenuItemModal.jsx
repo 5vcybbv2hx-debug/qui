@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/mobile-select";
 import { Switch } from "@/components/ui/switch";
 import { Calculator, ExternalLink, Trash2, X, ChevronRight } from "lucide-react";
-import { toastError, toastSuccess } from '@/lib/errorHandler';
+import { toast } from 'sonner';
 import InlineError from '@/components/ui/InlineError';
 import AllergenSelector from './AllergenSelector';
 import ArticleLinker from './ArticleLinker';
@@ -118,22 +118,22 @@ export default function MenuItemModal({ item, open, onClose }) {
             : base44.entities.MenuItem.create(data),
         onSuccess: () => {
             haptics.light();
-            toastSuccess(item ? 'Getränk aktualisiert' : 'Getränk gespeichert');
+            toast.success(item ? 'Getränk aktualisiert' : 'Getränk gespeichert');
             queryClient.invalidateQueries(['menu-items']);
             onClose();
         },
-        onError: (error) => toastError(error, 'Speichern fehlgeschlagen')
+        onError: (error) => toast.error('Speichern fehlgeschlagen')
     });
 
     const deleteMutation = useMutation({
         mutationFn: () => base44.entities.MenuItem.delete(item.id),
         onSuccess: () => {
             haptics.light();
-            toastSuccess('Getränk gelöscht');
+            toast.success('Getränk gelöscht');
             queryClient.invalidateQueries(['menu-items']);
             onClose();
         },
-        onError: (error) => toastError(error, 'Löschen fehlgeschlagen')
+        onError: (error) => toast.error('Löschen fehlgeschlagen')
     });
 
     const handleSubmit = async (e) => {

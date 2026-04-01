@@ -1,0 +1,45 @@
+{
+  "name": "TodoCategory",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Kategoriename (z.B. 'Einkauf', 'Reparatur')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optionale Beschreibung"
+    },
+    "visible_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Rollen die diese Kategorie sehen d\u00fcrfen (z.B. ['admin', 'manager', 'team'])",
+      "default": [
+        "admin"
+      ]
+    },
+    "visible_employee_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Spezifische Mitarbeiter-IDs mit Zugriff (optional, zus\u00e4tzlich zu Rollen)",
+      "default": []
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Kategorie aktiv"
+    },
+    "color": {
+      "type": "string",
+      "description": "Farb-ID f\u00fcr UI (optional, z.B. 'emerald', 'orange', 'purple')",
+      "default": "slate"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

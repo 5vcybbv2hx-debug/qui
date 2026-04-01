@@ -68,6 +68,15 @@
       "format": "date-time",
       "description": "Erledigt am"
     },
+    "created_by": {
+      "type": "string",
+      "description": "Ersteller (Name oder Email)"
+    },
+    "created_at_time": {
+      "type": "string",
+      "format": "time",
+      "description": "Erstellungsuhrzeit (HH:MM)"
+    },
     "sort_order": {
       "type": "number",
       "description": "Manuelle Reihenfolge"

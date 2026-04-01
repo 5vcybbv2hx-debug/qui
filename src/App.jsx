@@ -10,6 +10,10 @@ import Stationsplan from './pages/Stationsplan';
 import OperatorDashboard from './pages/OperatorDashboard';
 import NotificationSettings from './pages/NotificationSettings';
 import DataProtection from './pages/DataProtection';
+import Impressum from './pages/Impressum';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import ConsentDialog from '@/components/legal/ConsentDialog';
+import { useConsent } from '@/components/legal/useConsent';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -29,6 +33,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { needsNewConsent, saveConsent, isLoading: isConsentLoading } = useConsent();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -81,10 +86,19 @@ const AuthenticatedApp = () => {
       <Route path="/EmployeeProfile/:id" element={<LayoutWrapper currentPageName="EmployeeProfile"><EmployeeProfile /></LayoutWrapper>} />
       <Route path="/EmployeesImproved" element={<LayoutWrapper currentPageName="EmployeesImproved"><EmployeesImproved /></LayoutWrapper>} />
       <Route path="/DataProtection" element={<LayoutWrapper currentPageName="DataProtection"><DataProtection /></LayoutWrapper>} />
+      <Route path="/Impressum" element={<LayoutWrapper currentPageName="Impressum"><Impressum /></LayoutWrapper>} />
+      <Route path="/PrivacyPolicy" element={<LayoutWrapper currentPageName="PrivacyPolicy"><PrivacyPolicy /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
-  );
-};
+
+    {/* Consent Dialog */}
+    <ConsentDialog
+      open={needsNewConsent}
+      onConsent={saveConsent}
+      isLoading={isConsentLoading}
+    />
+    );
+    };
 
 
 function App() {

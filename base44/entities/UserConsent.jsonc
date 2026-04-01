@@ -1,0 +1,51 @@
+{
+  "name": "UserConsent",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Nutzers"
+    },
+    "privacy_policy_version": {
+      "type": "string",
+      "description": "Version der Datenschutzerkl\u00e4rung (z.B. '1.0')"
+    },
+    "imprint_version": {
+      "type": "string",
+      "description": "Version des Impressums"
+    },
+    "privacy_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hat Datenschutzerkl\u00e4rung akzeptiert"
+    },
+    "imprint_accepted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Hat Impressum zur Kenntnis genommen"
+    },
+    "accepted_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der Zustimmung"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "IP-Adresse bei Zustimmung (optional)"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "Browser-Info bei Zustimmung (optional)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen (z.B. 'Erneuerte Zustimmung nach Update')"
+    }
+  },
+  "required": [
+    "user_email",
+    "privacy_policy_version",
+    "privacy_accepted",
+    "accepted_date"
+  ]
+}

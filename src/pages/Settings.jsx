@@ -17,6 +17,7 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import CalendarExport from '@/components/calendar/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import PushNotificationManager from '@/components/notifications/PushNotificationManager';
+import LegalSettingsPanel from '@/components/legal/LegalSettingsPanel';
 
 const notificationTypes = [
     { key: 'tasks_assigned', icon: CheckSquare, title: 'Aufgaben zugewiesen', description: 'Benachrichtigung wenn dir eine neue Aufgabe zugewiesen wurde', color: 'text-blue-400' },
@@ -192,7 +193,7 @@ export default function Settings() {
 
                  {/* Tabs */}
                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                     <TabsList className="grid w-full grid-cols-3 bg-card border border-border h-auto p-1">
+                     <TabsList className="grid w-full grid-cols-4 bg-card border border-border h-auto p-1">
                          <TabsTrigger value="appearance" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <SettingsIcon className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Allgemein</span>
@@ -204,6 +205,10 @@ export default function Settings() {
                          <TabsTrigger value="notifications" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <Bell className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Benachrichtigungen</span>
+                         </TabsTrigger>
+                         <TabsTrigger value="legal" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                             <Info className="w-5 h-5 sm:w-4 sm:h-4" />
+                             <span>Rechtliches</span>
                          </TabsTrigger>
                      </TabsList>
 
@@ -632,6 +637,11 @@ export default function Settings() {
                                 <strong>Hinweis:</strong> Benachrichtigungen werden nur an dich gesendet, wenn du die entsprechenden Berechtigungen hast.
                             </p>
                         </Card>
+                    </TabsContent>
+
+                    {/* Legal Tab */}
+                    <TabsContent value="legal" className="space-y-6">
+                        <LegalSettingsPanel />
                     </TabsContent>
 
                     </Tabs>

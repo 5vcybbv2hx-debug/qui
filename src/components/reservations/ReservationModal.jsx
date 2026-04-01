@@ -3,9 +3,10 @@ import { X, Trash2, AlertCircle, RepeatIcon, MapPin } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/mobile-select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/mobile-dialog";
+import { MobileModalHeader, MobileModalContent, MobileModalFooter } from "@/components/modals/MobileModalWrapper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format, isSameDay } from 'date-fns';
 import { base44 } from '@/api/base44Client';
@@ -98,14 +99,13 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">
-                        {reservation ? 'Reservierung bearbeiten' : 'Neue Reservierung'}
-                    </DialogTitle>
-                </DialogHeader>
-                
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+            <DialogContent>
+                <MobileModalHeader onClose={onClose}>
+                    {reservation ? 'Reservierung bearbeiten' : 'Neue Reservierung'}
+                </MobileModalHeader>
+
+                <MobileModalContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {hasEventOnDate && (
                         <Alert className="bg-red-50 border-red-200">
                             <AlertCircle className="w-4 h-4 text-red-600" />
@@ -273,26 +273,31 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                         </div>
                     )}
 
-                    <div className="flex gap-2 pt-4">
-                        {reservation && canDelete && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={() => {
-                                    haptics.light();
-                                    onDelete(reservation.id);
-                                }}
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </Button>
-                        )}
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+                </form>
+                </MobileModalContent>
+
+                <MobileModalFooter>
+                    {reservation && canDelete && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="text-red-600 hover:text-red-700"
+                            onClick={() => {
+                                haptics.light();
+                                onDelete(reservation.id);
+                            }}
+                        >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Löschen
+                        </Button>
+                    )}
+                    <div className="flex gap-2">
+                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">
                             Abbrechen
                         </Button>
                         <Button 
                             type="submit" 
-                            className="flex-1 bg-slate-800 hover:bg-slate-900"
+                            className="flex-1 h-11 bg-amber-600 hover:bg-amber-700"
                             disabled={hasEventOnDate}
                         >
                             {reservation
@@ -302,7 +307,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                                     : 'Hinzufügen'}
                         </Button>
                     </div>
-                </form>
+                </MobileModalFooter>
             </DialogContent>
 
             {showFloorPlan && (

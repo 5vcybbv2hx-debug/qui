@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/mobile-dialog";
+import { MobileModalHeader, MobileModalContent, MobileModalFooter, MobileModalForm } from "@/components/modals/MobileModalWrapper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/mobile-select";
 import { Switch } from "@/components/ui/switch";
 import { Calculator, ExternalLink, Trash2, X, ChevronRight } from "lucide-react";
 import { toastError, toastSuccess } from '@/lib/errorHandler';
@@ -203,28 +204,16 @@ export default function MenuItemModal({ item, open, onClose }) {
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="w-full max-w-lg sm:max-w-2xl h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col p-0 gap-0 rounded-none sm:rounded-2xl overflow-hidden">
+            <DialogContent>
+                <MobileModalHeader onClose={onClose}>
+                    {item ? 'Getränk bearbeiten' : 'Neues Getränk'}
+                </MobileModalHeader>
 
-                {/* ── Header ── */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-border/50 shrink-0">
-                    <DialogTitle className="text-lg font-bold text-foreground">
-                        {item ? 'Getränk bearbeiten' : 'Neues Getränk'}
-                    </DialogTitle>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                <MobileModalContent>
+                    <MobileModalForm
+                        id="menu-item-form"
+                        onSubmit={handleSubmit}
                     >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {/* ── Scrollable form body ── */}
-                <form
-                    id="menu-item-form"
-                    onSubmit={handleSubmit}
-                    className="flex-1 overflow-y-auto px-4 py-5 space-y-4"
-                >
                     {formError && <InlineError message={formError} onDismiss={() => setFormError(null)} />}
 
                     {/* — Grunddaten — */}
@@ -436,10 +425,10 @@ export default function MenuItemModal({ item, open, onClose }) {
                             onChange={ids => setFormData(prev => ({ ...prev, linked_article_ids: ids }))}
                         />
                     </Section>
-                </form>
+                    </MobileModalForm>
+                </MobileModalContent>
 
-                {/* ── Sticky footer actions ── */}
-                <div className="shrink-0 px-4 py-4 border-t border-border/50 bg-card flex flex-col gap-3">
+                <MobileModalFooter>
                     <Button
                         form="menu-item-form"
                         type="submit"
@@ -449,31 +438,28 @@ export default function MenuItemModal({ item, open, onClose }) {
                         {saveMutation.isPending ? 'Speichern…' : 'Speichern'}
                     </Button>
 
-                    <div className="flex gap-3">
+                    {item && (
                         <Button
                             type="button"
-                            variant="outline"
-                            onClick={onClose}
+                            variant="destructive"
                             disabled={isBusy}
-                            className="flex-1 h-11 rounded-xl"
+                            onClick={() => deleteMutation.mutate()}
+                            className="w-full h-11 gap-2"
                         >
-                            Abbrechen
+                            <Trash2 className="w-4 h-4" />
+                            {deleteMutation.isPending ? 'Löschen…' : 'Löschen'}
                         </Button>
-
-                        {item && (
-                            <Button
-                                type="button"
-                                variant="destructive"
-                                disabled={isBusy}
-                                onClick={() => deleteMutation.mutate()}
-                                className="flex-1 h-11 rounded-xl gap-2"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                {deleteMutation.isPending ? 'Löschen…' : 'Löschen'}
-                            </Button>
-                        )}
-                    </div>
-                </div>
+                    )}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onClose}
+                        disabled={isBusy}
+                        className="w-full h-11"
+                    >
+                        Abbrechen
+                    </Button>
+                </MobileModalFooter>
 
             </DialogContent>
         </Dialog>

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/mobile-dialog";
+import { MobileModalHeader, MobileModalContent, MobileModalFooter, MobileModalForm } from "@/components/modals/MobileModalWrapper";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/components/utils/haptics";
 
@@ -111,14 +112,13 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-lg max-h-[95dvh] overflow-y-auto p-4 sm:p-6">
-                <DialogHeader>
-                    <DialogTitle className="text-lg font-semibold">
-                        {todo ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}
-                    </DialogTitle>
-                </DialogHeader>
+            <DialogContent>
+                <MobileModalHeader onClose={onClose}>
+                    {todo ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}
+                </MobileModalHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+                <MobileModalContent>
+                    <MobileModalForm id="todo-form" onSubmit={handleSubmit}>
                     {/* Title */}
                     <div className="space-y-1.5">
                         <Label className="text-base font-semibold">Titel *</Label>
@@ -276,17 +276,17 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                             </Button>
                         </div>
                     </div>
+                    </MobileModalForm>
+                </MobileModalContent>
 
-                    {/* Actions */}
-                    <div className="flex gap-2 pt-2">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-12 text-base">
-                            Abbrechen
-                        </Button>
-                        <Button type="submit" className="flex-1 h-12 text-base bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold">
-                            {todo ? 'Speichern' : 'Hinzufügen'}
-                        </Button>
-                    </div>
-                </form>
+                <MobileModalFooter>
+                    <Button type="button" variant="outline" onClick={onClose} className="h-12 text-base">
+                        Abbrechen
+                    </Button>
+                    <Button type="submit" form="todo-form" className="h-12 text-base bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold">
+                        {todo ? 'Speichern' : 'Hinzufügen'}
+                    </Button>
+                </MobileModalFooter>
             </DialogContent>
         </Dialog>
     );

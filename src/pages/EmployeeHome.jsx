@@ -8,7 +8,7 @@ import { createPageUrl } from '@/utils';
 import {
     CheckSquare, AlertTriangle, Sparkles, ClipboardCheck,
     Sun, ScanLine, Search, ChevronRight, Circle, CheckCircle2,
-    Clock, CalendarClock, Zap
+    Clock, CalendarClock, Zap, MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +51,23 @@ export default function EmployeeHome() {
         queryKey: ['employee-home-opening'],
         queryFn: () => base44.entities.OpeningSession.filter({ date: todayStr })
     });
+
+    // Today's Stationsplan
+    const { data: stationPlans = [] } = useQuery({
+        queryKey: ['employee-home-stationsplan', todayStr],
+        queryFn: () => base44.entities.Stationsplan.filter({ date: todayStr })
+    });
+    const todayPlanId = stationPlans[0]?.id;
+
+    const { data: stationAssignments = [] } = useQuery({
+        queryKey: ['employee-home-assignments', todayPlanId],
+        queryFn: () => base44.entities.StationAssignment.filter({ stationsplan_id: todayPlanId }),
+        enabled: !!todayPlanId
+    });
+
+    const myAssignment = currentUser
+        ? stationAssignments.find(a => a.employee_name === currentUser.full_name)
+        : null;
 
     const urgentTodos = todos.filter(t => t.status !== 'erledigt' && t.priority === 'dringend');
     const highTodos = todos.filter(t => t.status !== 'erledigt' && t.priority === 'hoch');
@@ -107,35 +124,28 @@ export default function EmployeeHome() {
                     </Link>
                 </div>
 
-                {/* Opening / Closing Status */}
-                <div className="grid grid-cols-2 gap-3">
-                    <Link to={createPageUrl('Opening')} className={cn(
-                        'rounded-2xl border p-4 flex items-center gap-3 transition-all hover:opacity-80',
-                        openingSession?.is_complete ? 'bg-green-500/10 border-green-500/30' : 'bg-card border-border'
-                    )}>
-                        <Sun className={cn('w-8 h-8 shrink-0', openingSession?.is_complete ? 'text-green-400' : 'text-amber-400')} />
-                        <div className="min-w-0">
-                            <p className="text-xs text-muted-foreground">Eröffnung</p>
-                            <p className="text-sm font-bold text-foreground truncate">
-                                {!openingSession ? 'Nicht gestartet' : openingSession.is_complete ? 'Abgeschlossen' : `${openingProgress ?? 0}%`}
-                            </p>
+                {/* Mein Stationsplan */}
+                {myAssignment && (myAssignment.area || myAssignment.role) && (
+                    <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                            <MapPin className="w-5 h-5 text-amber-400" />
                         </div>
-                    </Link>
-                    <Link to={createPageUrl('Closing')} className={cn(
-                        'rounded-2xl border p-4 flex items-center gap-3 transition-all hover:opacity-80',
-                        closingSession?.is_complete ? 'bg-green-500/10 border-green-500/30' : 'bg-card border-border'
-                    )}>
-                        <ClipboardCheck className={cn('w-8 h-8 shrink-0', closingSession?.is_complete ? 'text-green-400' : 'text-violet-400')} />
-                        <div className="min-w-0">
-                            <p className="text-xs text-muted-foreground">Abschluss</p>
-                            <p className="text-sm font-bold text-foreground truncate">
-                                {!closingSession ? 'Nicht gestartet' : closingSession.is_complete ? 'Abgeschlossen' : `${closingProgress ?? 0}%`}
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-amber-400/70 font-medium uppercase tracking-wide">Dein Bereich heute</p>
+                            <p className="text-base font-bold text-amber-300 truncate">
+                                {[myAssignment.area, myAssignment.role].filter(Boolean).join(' – ')}
                             </p>
+                            {myAssignment.secondary_role && (
+                                <p className="text-xs text-amber-400/60">Zusatz: {myAssignment.secondary_role}</p>
+                            )}
+                            {myAssignment.note && (
+                                <p className="text-xs text-amber-400/60 italic">{myAssignment.note}</p>
+                            )}
                         </div>
-                    </Link>
-                </div>
+                    </div>
+                )}
 
-                {/* Urgent Items */}
+                {/* Opening / Closing Status */}
                 {(urgentTodos.length > 0 || highTodos.length > 0) && (
                     <section>
                         <div className="flex items-center gap-2 mb-3">

@@ -24,7 +24,12 @@ export const AuthProvider = ({ children }) => {
       // Fetch app public settings via stable adapter
       try {
         const appId = import.meta.env.VITE_BASE44_APP_ID;
-        const token = localStorage.getItem('base44_token');
+        let token = null;
+        try {
+          token = localStorage.getItem('base44_token');
+        } catch (e) {
+          console.warn('localStorage not available:', e);
+        }
         
         const publicSettings = await fetchAppPublicSettings(appId, token);
         setAppPublicSettings(publicSettings);

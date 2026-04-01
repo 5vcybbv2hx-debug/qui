@@ -1,0 +1,80 @@
+{
+  "name": "CompanyInfo",
+  "type": "object",
+  "properties": {
+    "company_name": {
+      "type": "string",
+      "description": "Firmenname (Pflichtfeld)"
+    },
+    "street": {
+      "type": "string",
+      "description": "Stra\u00dfe und Hausnummer"
+    },
+    "postal_code": {
+      "type": "string",
+      "description": "Postleitzahl"
+    },
+    "city": {
+      "type": "string",
+      "description": "Stadt"
+    },
+    "email": {
+      "type": "string",
+      "description": "Kontakt-E-Mail"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefonnummer"
+    },
+    "owner_name": {
+      "type": "string",
+      "description": "Name des Betreibers/Verantwortlichen"
+    },
+    "legal_form": {
+      "type": "string",
+      "enum": [
+        "Einzelunternehmer",
+        "GbR",
+        "oHG",
+        "KG",
+        "GmbH",
+        "AG",
+        "Ltd.",
+        "Sonstiges"
+      ],
+      "description": "Rechtsform"
+    },
+    "data_protection_contact": {
+      "type": "string",
+      "description": "Datenschutz-Kontakt (optional, falls abweichend)"
+    },
+    "datenschutz_version": {
+      "type": "string",
+      "default": "1.0",
+      "description": "Versionsnummer der Datenschutzerkl\u00e4rung"
+    },
+    "agb_version": {
+      "type": "string",
+      "default": "1.0",
+      "description": "Versionsnummer der AGB"
+    },
+    "impressum_version": {
+      "type": "string",
+      "default": "1.0",
+      "description": "Versionsnummer des Impressums"
+    },
+    "setup_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ist das Legal-Setup abgeschlossen?"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Letzte Aktualisierung"
+    }
+  },
+  "required": [
+    "company_name"
+  ]
+}

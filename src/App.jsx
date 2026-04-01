@@ -14,6 +14,9 @@ import Impressum from './pages/Impressum';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AGB from './pages/AGB';
 import AuditLog from './pages/AuditLog';
+import LegalImprint from './pages/LegalImprint';
+import LegalPrivacy from './pages/LegalPrivacy';
+import LegalAGB from './pages/LegalAGB';
 import ConsentDialog from '@/components/legal/ConsentDialog';
 import { useConsent } from '@/components/legal/useConsent';
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -92,6 +95,9 @@ const AuthenticatedApp = () => {
       <Route path="/PrivacyPolicy" element={<LayoutWrapper currentPageName="PrivacyPolicy"><PrivacyPolicy /></LayoutWrapper>} />
       <Route path="/AGB" element={<LayoutWrapper currentPageName="AGB"><AGB /></LayoutWrapper>} />
       <Route path="/AuditLog" element={<LayoutWrapper currentPageName="AuditLog"><AuditLog /></LayoutWrapper>} />
+      <Route path="/LegalImprint" element={<LegalImprint />} />
+      <Route path="/LegalPrivacy" element={<LegalPrivacy />} />
+      <Route path="/LegalAGB" element={<LegalAGB />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
 
@@ -101,7 +107,7 @@ const AuthenticatedApp = () => {
       onConsent={saveConsent}
       isLoading={isConsentLoading}
     />
-    );
+    </>;
     };
 
 

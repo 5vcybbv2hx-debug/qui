@@ -1,259 +1,190 @@
 /**
- * Zentrale Legal-Content Verwaltung
- * Versionierung ermöglicht einfaches Update & Tracking
+ * Zentrale Legal-Textvorlagen mit Placeholder-System
+ * Alle Texte werden dynamisch mit CompanyInfo-Daten befüllt
  */
 
-export const LEGAL_VERSIONS = {
-  PRIVACY_POLICY: '1.0',
-  IMPRINT: '1.0'
+export const LEGAL_PLACEHOLDERS = {
+  COMPANY_NAME: '[COMPANY_NAME]',
+  STREET: '[STREET]',
+  POSTAL_CODE: '[POSTAL_CODE]',
+  CITY: '[CITY]',
+  EMAIL: '[EMAIL]',
+  PHONE: '[PHONE]',
+  OWNER_NAME: '[OWNER_NAME]',
+  LEGAL_FORM: '[LEGAL_FORM]',
+  DP_CONTACT: '[DP_CONTACT]',
 };
 
-/**
- * IMPRESSUM - Strukturierte Inhalte
- * Anpassbar: Ersetze [PLACEHOLDER] mit echten Daten
- */
-export const IMPRINT_CONTENT = {
-  version: LEGAL_VERSIONS.IMPRINT,
-  lastUpdated: '2026-04-01',
-  sections: {
-    operator: {
-      title: 'Betreiber der App',
-      content: `
-        BarManager GmbH
-        Musterstraße 123
-        10115 Berlin
-        Deutschland
-      `.trim()
-    },
-    contact: {
-      title: 'Kontaktdaten',
-      items: [
-        { label: 'E-Mail', value: 'info@barmanager-app.de' },
-        { label: 'Telefon', value: '+49 (0) 30 123456789' },
-        { label: 'Geschäftszeiten', value: 'Mo-Fr 09:00-17:00 Uhr' }
-      ]
-    },
-    registration: {
-      title: 'Registrierung & Vertretung',
-      content: `
-        Registereintrag: Handelsregister Berlin-Charlottenburg, HR-Nr. HRB 12345
-        
-        Geschäftsführung:
-        Max Müller
-        Anna Schmidt
-      `.trim()
-    },
-    responsible: {
-      title: 'Verantwortliche Person für Inhalte',
-      content: `
-        Max Müller
-        E-Mail: max.mueller@barmanager-app.de
-        Tel: +49 (0) 30 123456789
-      `.trim()
-    },
-    vat: {
-      title: 'Steuernummer & USt-ID',
-      content: `
-        Steuernummer: 12 345 678 901
-        Umsatzsteuer-ID: DE123456789
-      `.trim()
-    },
-    liability: {
-      title: 'Haftungsausschluss',
-      content: `
-        Die Inhalte unserer App werden mit großer Sorgfalt erstellt. 
-        Dennoch übernehmen wir keine Gewähr für Richtigkeit, Vollständigkeit 
-        und Aktualität der bereitgestellten Inhalte.
-        
-        Für externe Links ist der jeweilige Anbieter verantwortlich. 
-        Eine ständige Überwachung aller Links ist ohne konkrete Anhaltspunkte 
-        auf Rechtsverstoß nicht zumutbar.
-      `.trim()
-    }
-  }
-};
+export const PRIVACY_POLICY_TEMPLATE = `DATENSCHUTZERKLÄRUNG
 
-/**
- * DATENSCHUTZERKLÄRUNG - Strukturierte Inhalte
- * DSGVO-konform
- */
-export const PRIVACY_POLICY_CONTENT = {
-  version: LEGAL_VERSIONS.PRIVACY_POLICY,
-  lastUpdated: '2026-04-01',
-  sections: {
-    intro: {
-      title: 'Datenschutzerklärung',
-      subtitle: 'BarManager GmbH',
-      content: `
-        Wir nehmen den Datenschutz ernst. Diese Erklärung informiert Sie darüber, 
-        wie wir Ihre personenbezogenen Daten verarbeiten.
-      `.trim()
-    },
-    controller: {
-      title: '1. Verantwortlicher',
-      content: `
-        BarManager GmbH
-        Musterstraße 123
-        10115 Berlin
-        E-Mail: datenschutz@barmanager-app.de
-      `.trim()
-    },
-    dataCollected: {
-      title: '2. Welche Daten erfassen wir?',
-      subsections: [
-        {
-          title: 'Bei der Anmeldung:',
-          items: [
-            'Vollständiger Name',
-            'E-Mail-Adresse',
-            'Telefonnummer',
-            'Passwort (verschlüsselt)'
-          ]
-        },
-        {
-          title: 'Beim Betrieb der App:',
-          items: [
-            'Arbeitszeitstempel',
-            'Schichtinformationen',
-            'Dokumentationen (Schichten, Aufgaben)',
-            'Technische Logs (IP-Adresse, Browser-Info)'
-          ]
-        },
-        {
-          title: 'Sensible Daten (optional):',
-          items: [
-            'Steuernummer (verschlüsselt)',
-            'IBAN (verschlüsselt)',
-            'Geburtsdatum',
-            'Adressdaten'
-          ]
-        }
-      ]
-    },
-    purposes: {
-      title: '3. Wofür nutzen wir Ihre Daten?',
-      items: [
-        'Betrieb der App und Benutzerverwaltung',
-        'Abwicklung von Arbeitsverträgen',
-        'Lohnabrechnung und Steuererklärungen',
-        'Sicherheit und Fraud-Prevention',
-        'Erfüllung gesetzlicher Verpflichtungen',
-        'Verbesserung der App (nur anonymisiert)'
-      ]
-    },
-    recipients: {
-      title: '4. Wer erhält Zugriff auf Ihre Daten?',
-      items: [
-        'App-Administratoren (verschlüsselte Verbindung)',
-        'Ihre Schichtmanager (nur Ihre Schichten)',
-        'Externe Dienstleister (Zahlungsanbieter, Backup)',
-        'Behörden (nur bei rechtlicher Verpflichtung)'
-      ]
-    },
-    retention: {
-      title: '5. Wie lange speichern wir Ihre Daten?',
-      content: `
-        Arbeitszeitdaten: 3 Jahre nach Ende des Arbeitsverhältnisses
-        Abrechnungsdaten: 6 Jahre (gesetzliche Aufbewahrungspflicht)
-        Adressdaten: Bis zu ihrer Löschung oder Ende des Nutzung
-        Logs: 90 Tage (automatisch gelöscht)
-        Deleted Accounts: Sofort gelöscht (außer Aufbewahrungspflichten)
-      `.trim()
-    },
-    rights: {
-      title: '6. Ihre Rechte',
-      subsections: [
-        {
-          title: 'Sie haben folgende Rechte:',
-          items: [
-            'Recht auf Auskunft (Art. 15 DSGVO)',
-            'Recht auf Berichtigung (Art. 16)',
-            'Recht auf Löschung (Art. 17)',
-            'Recht auf Einschränkung (Art. 18)',
-            'Recht auf Datenportabilität (Art. 20)',
-            'Widerspruchsrecht (Art. 21)'
-          ]
-        },
-        {
-          title: 'So üben Sie Ihre Rechte aus:',
-          content: `
-            Senden Sie eine E-Mail an: datenschutz@barmanager-app.de
-            Oder nutzen Sie die "Datenschutz-Anfrage" in der App.
-            Antwortzeit: Innerhalb von 30 Tagen.
-          `.trim()
-        }
-      ]
-    },
-    security: {
-      title: '7. Sicherheit Ihrer Daten',
-      content: `
-        Ihre Daten werden verschlüsselt übertragen (TLS/SSL).
-        Sensitive Felder (IBAN, Steuernummer) sind verschlüsselt.
-        Zugriff ist rollen-basiert und protokolliert.
-        Regelmäßige Sicherheits-Audits durchgeführt.
-      `.trim()
-    },
-    cookies: {
-      title: '8. Cookies & Tracking',
-      content: `
-        Wir verwenden minimal Cookies:
-        - Session-Cookie (für Anmeldung, wird gelöscht nach Logout)
-        - Keine Tracking-Cookies
-        - Keine Third-Party-Cookies
-        
-        Sie können Cookies in Ihren Browser-Einstellungen deaktivieren.
-      `.trim()
-    },
-    changes: {
-      title: '9. Änderungen dieser Datenschutzerklärung',
-      content: `
-        Wir können diese Erklärung jederzeit anpassen. 
-        Bei wesentlichen Änderungen benachrichtigen wir Sie per E-Mail.
-        Ihre fortgesetzte Nutzung bedeutet Akzeptanz.
-      `.trim()
-    },
-    contact: {
-      title: '10. Kontakt & Datenschutzbeauftragte',
-      content: `
-        Datenschutz-Anfragen:
-        E-Mail: datenschutz@barmanager-app.de
-        
-        Beschwerde bei Aufsichtsbehörde:
-        Berliner Beauftragte für Datenschutz und Informationsfreiheit
-        www.datenschutz-berlin.de
-      `.trim()
-    }
-  }
-};
+1. Verantwortlicher
+Verantwortlich für die Datenverarbeitung in dieser App ist:
+
+${LEGAL_PLACEHOLDERS.COMPANY_NAME}
+${LEGAL_PLACEHOLDERS.STREET}
+${LEGAL_PLACEHOLDERS.POSTAL_CODE} ${LEGAL_PLACEHOLDERS.CITY}
+
+E-Mail: ${LEGAL_PLACEHOLDERS.EMAIL}
+Telefon: ${LEGAL_PLACEHOLDERS.PHONE}
+
+2. Allgemeine Hinweise zur Datenverarbeitung
+Wir nehmen den Schutz Ihrer personenbezogenen Daten sehr ernst. Die Verarbeitung Ihrer Daten erfolgt im Einklang mit den geltenden Datenschutzgesetzen, insbesondere der DSGVO.
+
+3. Erhebung und Verarbeitung personenbezogener Daten
+Im Rahmen der Nutzung dieser App werden folgende Daten verarbeitet:
+- Mitarbeiterdaten (Name, Adresse, Kontaktdaten)
+- Arbeitszeiten und Zeiterfassung
+- Personalbogendaten (z. B. Bankverbindung, Steuerdaten, sofern eingegeben)
+- Dokumente (z. B. PDFs, Personalunterlagen)
+- Reservierungsdaten (Name, Kontaktinformationen von Gästen)
+- Aufgaben- und To-do-Daten
+- Wartungs- und Betriebsdaten
+- Nutzerdaten (Login, Rollen, Zugriffe)
+
+Die Daten werden ausschließlich zur Organisation des Betriebs und zur Durchführung arbeitsbezogener Prozesse verwendet.
+
+4. Zweck der Verarbeitung
+Die Verarbeitung erfolgt zu folgenden Zwecken:
+- Verwaltung von Mitarbeitern
+- Organisation von Schichten und Arbeitszeiten
+- Durchführung von betrieblichen Abläufen
+- Dokumentation (z. B. Hygiene, HACCP, Wartung)
+- Kommunikation innerhalb des Teams
+
+5. Rechtsgrundlagen
+Die Verarbeitung erfolgt auf Grundlage von:
+- Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)
+- Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Verpflichtungen)
+- Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am Betrieb der App)
+
+6. Zugriff auf Daten
+Der Zugriff auf personenbezogene Daten erfolgt rollenbasiert:
+- Mitarbeiter: Zugriff nur auf eigene Daten
+- Manager: Zugriff auf relevante Teamdaten
+- Administratoren: erweiterter Zugriff
+
+7. Speicherung und Speicherdauer
+Personenbezogene Daten werden nur so lange gespeichert, wie dies für die jeweiligen Zwecke erforderlich ist oder gesetzliche Aufbewahrungsfristen bestehen.
+
+8. Dokumente und Uploads
+Hochgeladene Dokumente (z. B. Personalbögen) werden sicher gespeichert und sind nur für berechtigte Nutzer zugänglich.
+
+9. Weitergabe von Daten
+Eine Weitergabe an Dritte erfolgt nicht, es sei denn, dies ist gesetzlich erforderlich oder zur Vertragserfüllung notwendig.
+
+10. Rechte der Nutzer
+Nutzer haben das Recht auf:
+- Auskunft über ihre Daten
+- Berichtigung
+- Löschung
+- Einschränkung der Verarbeitung
+- Datenübertragbarkeit
+
+Anfragen können an die oben genannten Kontaktdaten gerichtet werden.
+
+11. Sicherheit
+Wir setzen technische und organisatorische Maßnahmen ein, um Ihre Daten vor Verlust, Missbrauch oder unbefugtem Zugriff zu schützen.
+
+12. Änderungen
+Diese Datenschutzerklärung kann aktualisiert werden. Nutzer werden über wesentliche Änderungen informiert.`;
+
+export const CONSENT_TEXT_TEMPLATE = `Datenschutz & Nutzung
+
+Ich habe die Datenschutzerklärung gelesen und bin damit einverstanden, dass meine personenbezogenen Daten im Rahmen der Nutzung dieser App verarbeitet werden.`;
+
+export const PRIVACY_SHORT_TEMPLATE = `Datenschutz
+
+Diese App verarbeitet personenbezogene Daten (z. B. Mitarbeiterdaten, Arbeitszeiten und Dokumente), um den Betrieb zu organisieren.
+
+Bitte bestätige, dass du die Datenschutzerklärung gelesen hast.`;
+
+export const IMPRINT_TEMPLATE = `IMPRESSUM
+
+Angaben gemäß § 5 TMG
+
+${LEGAL_PLACEHOLDERS.COMPANY_NAME}
+${LEGAL_PLACEHOLDERS.STREET}
+${LEGAL_PLACEHOLDERS.POSTAL_CODE} ${LEGAL_PLACEHOLDERS.CITY}
+
+Vertreten durch:
+${LEGAL_PLACEHOLDERS.OWNER_NAME}
+
+Kontakt:
+E-Mail: ${LEGAL_PLACEHOLDERS.EMAIL}
+Telefon: ${LEGAL_PLACEHOLDERS.PHONE}
+
+Verantwortlich für den Inhalt:
+${LEGAL_PLACEHOLDERS.OWNER_NAME}`;
+
+export const AGB_TEMPLATE = `ALLGEMEINE GESCHÄFTSBEDINGUNGEN
+
+1. Geltungsbereich
+Diese App dient der Organisation von Betriebsabläufen in Gastronomiebetrieben. Betreiber: ${LEGAL_PLACEHOLDERS.COMPANY_NAME}.
+
+2. Nutzung
+Die Nutzung erfolgt auf eigene Verantwortung des Betreibers. Alle Nutzer müssen die Datenschutzerklärung akzeptiert haben.
+
+3. Datenverarbeitung
+Die Verarbeitung personenbezogener Daten erfolgt gemäß Datenschutzerklärung. Für die Datenverarbeitung verantwortlich: ${LEGAL_PLACEHOLDERS.OWNER_NAME}.
+
+4. Haftung
+Für Schäden durch fehlerhafte Nutzung wird keine Haftung übernommen, soweit gesetzlich zulässig.
+
+5. Änderungen
+Der Anbieter behält sich vor, Funktionen und Inhalte der App anzupassen. Wesentliche Änderungen der AGB werden den Nutzern mitgeteilt.
+
+6. Gültigkeitsbereich
+Diese AGB gelten für die Nutzung der App durch autorisierte Mitarbeiter und Manager des Betreibers.`;
 
 /**
- * CONSENT DIALOG - Text
+ * Platzhalter in Text mit realen Daten ersetzen
  */
-export const CONSENT_DIALOG_TEXT = {
-  title: '📋 Willkommen zu BarManager',
-  subtitle: 'Bitte akzeptieren Sie unsere Datenschutzrichtlinie',
-  description: `
-    Damit Sie die App nutzen können, müssen Sie den folgenden Dokumenten zustimmen:
-  `,
-  items: [
-    {
-      id: 'privacy',
-      label: 'Datenschutzerklärung',
-      description: 'Ich habe die Datenschutzerklärung zur Kenntnis genommen und akzeptiert'
-    },
-    {
-      id: 'imprint',
-      label: 'Impressum',
-      description: 'Ich habe das Impressum zur Kenntnis genommen'
-    }
-  ],
-  buttons: {
-    accept: '✅ Akzeptieren & Fortfahren',
-    decline: 'Ablehnen',
-    viewPrivacy: '📄 Datenschutz anschauen',
-    viewImprint: '📄 Impressum anschauen'
-  },
-  footer: `
-    Sie können diese Einstellungen später in "Einstellungen > Rechtliches" ändern.
-  `
-};
+export function fillLegalTemplate(template, companyInfo) {
+  if (!template) return 'Rechtstexte nicht verfügbar.';
+
+  let filled = template;
+  const ph = LEGAL_PLACEHOLDERS;
+
+  // Sichere Ersetzung: nur wenn Daten vorhanden, sonst Hinweis lassen
+  const replacements = {
+    [ph.COMPANY_NAME]: companyInfo?.company_name || '❌ Firmenname nicht angegeben',
+    [ph.STREET]: companyInfo?.street || '',
+    [ph.POSTAL_CODE]: companyInfo?.postal_code || '',
+    [ph.CITY]: companyInfo?.city || '',
+    [ph.EMAIL]: companyInfo?.email || '❌ E-Mail nicht angegeben',
+    [ph.PHONE]: companyInfo?.phone || '',
+    [ph.OWNER_NAME]: companyInfo?.owner_name || '❌ Name des Betreibers nicht angegeben',
+    [ph.LEGAL_FORM]: companyInfo?.legal_form || '',
+    [ph.DP_CONTACT]: companyInfo?.data_protection_contact || companyInfo?.email || '',
+  };
+
+  Object.entries(replacements).forEach(([placeholder, value]) => {
+    filled = filled.replace(new RegExp(placeholder, 'g'), value?.trim() || '');
+  });
+
+  return filled;
+}
+
+/**
+ * Prüfe, welche Pflichtangaben fehlen
+ */
+export function getMissingRequiredFields(companyInfo) {
+  const required = ['company_name', 'email', 'owner_name'];
+  const recommended = ['street', 'postal_code', 'city', 'phone'];
+
+  const missing = {
+    required: required.filter(field => !companyInfo?.[field]),
+    recommended: recommended.filter(field => !companyInfo?.[field]),
+  };
+
+  return missing;
+}
+
+/**
+ * Berechne Completeness-Prozentsatz
+ */
+export function getCompletionPercentage(companyInfo) {
+  const allFields = ['company_name', 'street', 'postal_code', 'city', 'email', 'phone', 'owner_name', 'legal_form'];
+  const filledFields = allFields.filter(field => companyInfo?.[field]);
+  return Math.round((filledFields.length / allFields.length) * 100);
+}

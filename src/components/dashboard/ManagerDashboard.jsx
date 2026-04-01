@@ -17,6 +17,7 @@ import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import TodayOverview from '@/components/dashboard/TodayOverview';
 import ShiftSwapApprovalCard from '@/components/dashboard/ShiftSwapApprovalCard';
 import TeamMeetingReminder from '@/components/dashboard/TeamMeetingReminder';
+import LegalStatusPanel from '@/components/legal/LegalStatusPanel';
 
 export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts }) {
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -175,6 +176,9 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                         </Link>
                     ))}
                 </div>
+
+                {/* Legal Status Panel */}
+                <LegalStatusPanel />
 
                 {/* Team Meeting Reminder */}
                 <TeamMeetingReminder />

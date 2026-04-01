@@ -17,7 +17,9 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import CalendarExport from '@/components/calendar/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import PushNotificationManager from '@/components/notifications/PushNotificationManager';
-import LegalSettingsPanel from '@/components/legal/LegalSettingsPanel';
+import LegalStatusPanel from '@/components/legal/LegalStatusPanel';
+import { FileText } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const notificationTypes = [
     { key: 'tasks_assigned', icon: CheckSquare, title: 'Aufgaben zugewiesen', description: 'Benachrichtigung wenn dir eine neue Aufgabe zugewiesen wurde', color: 'text-blue-400' },
@@ -641,7 +643,36 @@ export default function Settings() {
 
                     {/* Legal Tab */}
                     <TabsContent value="legal" className="space-y-6">
-                        <LegalSettingsPanel />
+                        {/* Status Panel */}
+                        <LegalStatusPanel />
+
+                        {/* Links zu Rechtstexten */}
+                        <div className="space-y-3 mt-6">
+                          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                            <FileText className="w-5 h-5" />
+                            Rechtstexte
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <Link to="/LegalPrivacy">
+                              <Card className="p-4 bg-card border-border cursor-pointer hover:border-amber-500 hover:bg-accent transition-all">
+                                <h4 className="font-medium text-foreground mb-1">Datenschutzerklärung</h4>
+                                <p className="text-xs text-muted-foreground">Weitere Informationen</p>
+                              </Card>
+                            </Link>
+                            <Link to="/LegalImprint">
+                              <Card className="p-4 bg-card border-border cursor-pointer hover:border-amber-500 hover:bg-accent transition-all">
+                                <h4 className="font-medium text-foreground mb-1">Impressum</h4>
+                                <p className="text-xs text-muted-foreground">Kontaktdaten & Angaben</p>
+                              </Card>
+                            </Link>
+                            <Link to="/LegalAGB">
+                              <Card className="p-4 bg-card border-border cursor-pointer hover:border-amber-500 hover:bg-accent transition-all">
+                                <h4 className="font-medium text-foreground mb-1">AGB</h4>
+                                <p className="text-xs text-muted-foreground">Allgemeine Geschäftsbedingungen</p>
+                              </Card>
+                            </Link>
+                          </div>
+                        </div>
                     </TabsContent>
 
                     </Tabs>

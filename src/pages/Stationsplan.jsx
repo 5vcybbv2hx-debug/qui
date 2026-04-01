@@ -219,37 +219,10 @@ export default function Stationsplan() {
             return pid;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['stationsplan', selectedDate, selectedShiftId]);
-            queryClient.invalidateQueries(['station-assignments', planId]);
+            queryClient.invalidateQueries({ queryKey: ['stationsplan', selectedDate, selectedShiftId] });
+            queryClient.invalidateQueries({ queryKey: ['station-assignments', planId] });
             toast.success('Stationsplan gespeichert');
         }
-    });
-
-    const resetMutation = useMutation({
-        mutationFn: async () => {
-            setAssignments({});
-            setNotes({});
-        }
-    });
-
-    // Load template from last same weekday
-    const loadTemplateMutation = useMutation({
-        mutationFn: async () => {
-            const date = parseISO(selectedDate);
-            const lastWeek = subWeeks(date, 1);
-            const lastWeekStr = format(lastWeek, 'yyyy-MM-dd');
-            const plans = await base44.entities.Stationsplan.filter({ date: lastWeekStr });
-            if (plans.length === 0) throw new Error('Keine Vorlage gefunden');
-            const templatePlan = plans[0];
-            const templateAssignments = await base44.entities.StationAssignment.filter({ stationsplan_id: templatePlan.id });
-            const a = {};
-            templateAssignments.forEach(d => {
-                a[d.employee_id] = { area: d.area || '', role: d.role || '', secondary_role: d.secondary_role || '' };
-            });
-            setAssignments(a);
-            toast.success(`Vorlage vom ${format(lastWeek, 'EEEE, dd.MM.', { locale: de })} geladen`);
-        },
-        onError: (e) => toast.error(e.message)
     });
 
     // Build slot map: { "area||role": [empId, ...] }
@@ -305,6 +278,11 @@ export default function Stationsplan() {
         }));
     }, []);
 
+    const handleReset = () => {
+        setAssignments({});
+        setNotes({});
+    };
+
     const setSecondaryRole = (empId, val) => {
         setAssignments(prev => ({ ...prev, [empId]: { ...(prev[empId] || {}), secondary_role: val } }));
     };
@@ -342,11 +320,8 @@ export default function Stationsplan() {
                     )}
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                    <Button variant="outline" size="sm" onClick={() => resetMutation.mutate()} className="gap-1.5">
+                    <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5">
                         <RotateCcw className="w-3.5 h-3.5" /> Zurücksetzen
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => loadTemplateMutation.mutate()} disabled={loadTemplateMutation.isPending} className="gap-1.5">
-                        <Copy className="w-3.5 h-3.5" /> Vorlage laden
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => saveMutation.mutate('draft')} disabled={saveMutation.isPending} className="gap-1.5">
                         <Save className="w-3.5 h-3.5" /> Speichern

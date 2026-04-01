@@ -62,7 +62,8 @@ export default function EmployeeHome() {
     const { data: stationAssignments = [] } = useQuery({
         queryKey: ['employee-home-assignments', todayPlanId],
         queryFn: () => base44.entities.StationAssignment.filter({ stationsplan_id: todayPlanId }),
-        enabled: !!todayPlanId
+        enabled: !!todayPlanId,
+        staleTime: 5 * 60 * 1000
     });
 
     const myAssignment = currentUser

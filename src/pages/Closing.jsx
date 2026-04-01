@@ -199,82 +199,9 @@ export default function Closing() {
             : base44.entities.ClosingSession.create(data),
         onSuccess: (result) => {
             if (!activeSession) setActiveSession(result);
-            queryClient.invalidateQueries(['closing-sessions']);
+            queryClient.invalidateQueries({ queryKey: ['closing-sessions'] });
         }
     });
-
-    const createTaskMutation = useMutation({
-        mutationFn: (data) => base44.entities.ClosingTask.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['closing-tasks']); setTaskModalOpen(false); }
-    });
-
-    const cleaningMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
-        onMutate: ({ id, data }) => {
-            queryClient.setQueryData(['cleaning-tasks-for-closing'], (old) =>
-                old?.map(t => t.id === id ? { ...t, ...data } : t) || old
-            );
-        },
-        onSuccess: () => queryClient.invalidateQueries(['cleaning-tasks-for-closing'])
-    });
-
-    const buildItems = (states, cleanStates) => [
-        ...relevantTasks.map(t => ({
-            task_id: t.id,
-            title: t.title,
-            category: t.category,
-            required_role: t.required_role,
-            done: states[t.id]?.done || false,
-            value: states[t.id]?.value || '',
-            done_by: states[t.id]?.done ? (currentUser?.full_name || currentUser?.email || '') : null,
-            done_at: states[t.id]?.done ? new Date().toISOString() : null,
-        })),
-        ...relevantCleaningTasks.map(t => ({
-            task_id: t.id,
-            title: t.title,
-            category: `Reinigung: ${t.area || ''}`,
-            _type: 'cleaning',
-            done: cleanStates[t.id]?.done || t.is_completed || false,
-            done_by: cleanStates[t.id]?.done_by || t.completed_by || null,
-            done_at: t.completed_at || null,
-        }))
-    ];
-
-    const saveSession = async (states, isComplete = false, notesVal, cleanStates) => {
-        const effectiveCleanStates = cleanStates ?? cleaningStates;
-        const items = buildItems(states, effectiveCleanStates);
-        const totalTasks = relevantTasks.length + relevantCleaningTasks.length;
-        const done = items.filter(i => i.done).length;
-        const rate = totalTasks > 0 ? Math.round((done / totalTasks) * 100) : 0;
-        const data = {
-            date: todayStr,
-            items,
-            notes: notesVal !== undefined ? notesVal : notes,
-            completion_rate: rate,
-            is_complete: isComplete,
-            started_by: activeSession?.started_by || currentUser?.full_name || currentUser?.email,
-            started_at: activeSession?.started_at || new Date().toISOString(),
-            ...(isComplete ? {
-                completed_by: currentUser?.full_name || currentUser?.email,
-                completed_at: new Date().toISOString()
-            } : {})
-        };
-        const result = await sessionMutation.mutateAsync({ id: activeSession?.id, data });
-        if (!activeSession?.id && result?.id) setActiveSession(result);
-    };
-
-    const toggleTask = async (task) => {
-        const newStates = {
-            ...itemStates,
-            [task.id]: { done: !itemStates[task.id]?.done, value: itemStates[task.id]?.value || '' }
-        };
-        setItemStates(newStates);
-        await saveSession(newStates, false, undefined, cleaningStates);
-    };
-
-    const setValue = (taskId, value) => {
-        setItemStates(prev => ({ ...prev, [taskId]: { ...prev[taskId], value } }));
-    };
 
     const toggleCleaningTask = async (task) => {
         const isDone = !cleaningStates[task.id]?.done && !task.is_completed;
@@ -313,7 +240,7 @@ export default function Closing() {
         const toCreate = template.tasks.filter(t => !existing.includes(t.title.toLowerCase()));
         if (toCreate.length === 0) { alert('Alle Aufgaben aus diesem Template sind bereits vorhanden.'); setShowTemplates(false); return; }
         await Promise.all(toCreate.map(t => base44.entities.ClosingTask.create({ ...t, is_active: true, template_tag: templateKey })));
-        queryClient.invalidateQueries(['closing-tasks']);
+        queryClient.invalidateQueries({ queryKey: ['closing-tasks'] });
         setShowTemplates(false);
     };
 

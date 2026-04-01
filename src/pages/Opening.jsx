@@ -84,13 +84,8 @@ export default function Opening() {
             : base44.entities.OpeningSession.create(data),
         onSuccess: (result) => {
             if (!activeSession?.id && result?.id) setActiveSession(result);
-            queryClient.invalidateQueries(['opening-sessions']);
+            queryClient.invalidateQueries({ queryKey: ['opening-sessions'] });
         }
-    });
-
-    const createTaskMutation = useMutation({
-        mutationFn: (data) => base44.entities.OpeningTask.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['opening-tasks']); setTaskModalOpen(false); }
     });
 
     const buildItems = (states) => tasks.map(t => ({
@@ -140,7 +135,7 @@ export default function Opening() {
     };
 
     const setValue = (taskId, value) => {
-        setItemStates(prev => ({ ...prev, [prev[taskId] ? taskId : taskId]: { ...prev[taskId], value } }));
+        setItemStates(prev => ({ ...prev, [taskId]: { ...prev[taskId], value } }));
     };
 
     const handleFinalize = async () => {

@@ -280,13 +280,14 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                     onChange={(e) => setEmployeeSearch(e.target.value)}
                                     className="mb-2"
                                 />
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-2 bg-secondary rounded-lg">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-2 bg-secondary rounded-lg">
                                     {[...employees]
                                         .filter(emp => emp.is_active !== false)
                                         .sort((a, b) => a.name?.localeCompare(b.name, 'de'))
                                         .filter(emp => emp.name?.toLowerCase().includes(employeeSearch.toLowerCase()))
                                         .map(emp => {
                                         const isSelected = selectedEmployees.some(e => e.employee_id === emp.id);
+                                        const skills = emp.skills || [];
                                         return (
                                             <button
                                                 key={emp.id}
@@ -301,14 +302,23 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                             >
                                                 <div 
                                                     className={cn(
-                                                        "w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0",
+                                                        "w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0",
                                                         isSelected && "ring-2 ring-amber-500 ring-offset-2"
                                                     )}
                                                     style={{ backgroundColor: emp.color }}
                                                 >
                                                     {emp.name?.charAt(0)}
                                                 </div>
-                                                <span className="text-sm font-medium text-foreground truncate">{emp.name}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-foreground truncate">{emp.name}</p>
+                                                    {skills.length > 0 && (
+                                                        <div className="flex gap-1 flex-wrap mt-0.5">
+                                                            {skills.map(s => (
+                                                                <span key={s} className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 font-medium">{s}</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </button>
                                         );
                                     })}

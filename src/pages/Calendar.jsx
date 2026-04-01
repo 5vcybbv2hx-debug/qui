@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
-    CalendarDays, Users, Plus, Download, Filter, X
+    CalendarDays, Users, Plus, Download, Filter, X, CalendarOff
 } from 'lucide-react';
+import UnavailabilityForm from '@/components/availability/UnavailabilityForm';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,9 @@ export default function CalendarPage() {
     const [showEventModal, setShowEventModal] = useState(false);
     const [shiftSwapData, setShiftSwapData] = useState(null);
     const [selectedDayDetail, setSelectedDayDetail] = useState(null);
+    const [unavailFormOpen, setUnavailFormOpen] = useState(false);
+    const [currentUser, setCurrentUser] = React.useState(null);
+    React.useEffect(() => { base44.auth.me().then(setCurrentUser).catch(() => {}); }, []);
 
     // --- Shared data ---
     const { data: employees = [] } = useQuery({
@@ -83,6 +87,11 @@ export default function CalendarPage() {
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('-date', 200)
+    });
+
+    const { data: unavailabilityRequests = [] } = useQuery({
+        queryKey: ['unavailability-requests-all'],
+        queryFn: () => base44.entities.UnavailabilityRequest.list('-date', 500)
     });
 
     const approvedVacations = vacationRequests.filter(v => v.status === 'genehmigt');
@@ -215,6 +224,11 @@ export default function CalendarPage() {
                                 <Filter className="w-4 h-4 mr-2" />
                                 Filter
                             </Button>
+                            <Button variant="outline" onClick={() => setUnavailFormOpen(true)}
+                                className="text-orange-400 border-orange-400/30 hover:bg-orange-500/10">
+                                <CalendarOff className="w-4 h-4 mr-2" />
+                                Nicht verfügbar
+                            </Button>
                             <ShiftSwapManager />
                             {permissions.isAdmin && <MonthlyStaffingCheck />}
                             {permissions.isAdmin && <DefaultShiftRulesManager />}
@@ -285,6 +299,7 @@ export default function CalendarPage() {
                             employees={employees}
                             requirements={requirements}
                             vacationRequests={vacationRequests}
+                            unavailabilityRequests={unavailabilityRequests}
                             onAddShift={handleAddShift}
                             onSelectShift={handleSelectShift}
                             onShiftMove={handleShiftMove}
@@ -345,6 +360,13 @@ export default function CalendarPage() {
                                 )}
                             </Card>
                         )}
+
+                        {/* Unavailability Form */}
+                        <UnavailabilityForm
+                            open={unavailFormOpen}
+                            onClose={() => setUnavailFormOpen(false)}
+                            currentUser={currentUser}
+                        />
 
                         {/* Shift Modal */}
                         <ShiftModal

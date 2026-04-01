@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { format, startOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, isSameDay, isSameMonth, startOfDay } from 'date-fns';
+import { format, startOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, isSameDay, isSameMonth, startOfDay, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Palmtree, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { getHolidaysBW, getHolidayName } from './getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 
-export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
+export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
     const permissions = usePermissions();
     const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -42,6 +42,24 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
             return days;
         })();
     
+    // Birthday check: compare MM-dd
+    const getBirthdaysForDay = (date) => {
+        const mmdd = format(date, 'MM-dd');
+        return employees.filter(emp => {
+            if (!emp.birthday) return false;
+            try { return format(parseISO(emp.birthday), 'MM-dd') === mmdd; } catch { return false; }
+        });
+    };
+
+    const getUnavailableForDay = (date) => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        return unavailabilityRequests.filter(r =>
+            r.status !== 'abgelehnt' &&
+            dateStr >= r.date &&
+            dateStr <= (r.end_date || r.date)
+        );
+    };
+
     const getShiftsForDay = (date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
         return shifts
@@ -184,6 +202,8 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                     );
                     
                     const holidayName = getHolidayName(day, holidays);
+                    const birthdays = getBirthdaysForDay(day);
+                    const unavailables = getUnavailableForDay(day);
                     
                     return (
                         <div 
@@ -225,6 +245,18 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 </div>
                             </div>
                             
+                            {/* Geburtstag Indikator */}
+                            {birthdays.length > 0 && (
+                                <div className="absolute top-1.5 left-1.5 z-10 flex gap-0.5">
+                                    {birthdays.map(emp => (
+                                        <div key={emp.id} title={`🎂 ${emp.name}`}
+                                            className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] bg-pink-500/80 text-white font-bold shadow-sm">
+                                            🎂
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {/* Feiertag Banner */}
                             {holidayName && (
                                 <div className="absolute top-1.5 left-1.5 right-16 z-10">
@@ -235,7 +267,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             )}
                             
                             {/* Content Area */}
-                            <div className="p-1.5 pt-8 h-full flex flex-col gap-0.5 overflow-y-auto max-h-[200px]">
+                            <div className={`p-1.5 h-full flex flex-col gap-0.5 overflow-y-auto max-h-[200px] ${(holidayName || birthdays.length > 0) ? 'pt-9' : 'pt-8'}`}>
                                 {/* Shifts */}
                                 {dayShifts.map((shift) => (
                                     <div
@@ -275,6 +307,18 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                     </div>
                                 ))}
                                 
+                                {/* Unavailability indicators */}
+                                {unavailables.length > 0 && (
+                                    <div className="px-1.5 py-0.5 bg-orange-500/15 border border-orange-500/30 rounded text-[9px] text-orange-300 flex items-center gap-1 flex-shrink-0">
+                                        <span>⚠</span>
+                                        <span className="truncate">
+                                            {unavailables.length === 1
+                                                ? unavailables[0].employee_name.split(' ')[0]
+                                                : `${unavailables.length} N.verf.`}
+                                        </span>
+                                    </div>
+                                )}
+
                                 {/* Vacations */}
                                 {dayVacations.length > 0 && (
                                     <Link

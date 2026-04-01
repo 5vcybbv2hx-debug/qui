@@ -1,0 +1,92 @@
+{
+  "name": "MaintenanceTask",
+  "type": "object",
+  "properties": {
+    "equipment_name": {
+      "type": "string",
+      "description": "Name des Ger\u00e4ts/Bereichs"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Sicherheit",
+        "Technik",
+        "Hygiene",
+        "Elektrik",
+        "Sonstiges"
+      ],
+      "default": "Technik",
+      "description": "Kategorie"
+    },
+    "task_description": {
+      "type": "string",
+      "description": "Was muss gewartet werden"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "t\u00e4glich",
+        "w\u00f6chentlich",
+        "monatlich",
+        "quartalsweise",
+        "halbj\u00e4hrlich",
+        "j\u00e4hrlich",
+        "alle zwei Jahre"
+      ],
+      "description": "Wartungsintervall"
+    },
+    "last_maintenance": {
+      "type": "string",
+      "format": "date",
+      "description": "Letzte Wartung"
+    },
+    "next_maintenance": {
+      "type": "string",
+      "format": "date",
+      "description": "N\u00e4chste Wartung"
+    },
+    "responsible": {
+      "type": "string",
+      "description": "Verantwortliche Person"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "\u00fcberf\u00e4llig",
+        "bald f\u00e4llig",
+        "erledigt"
+      ],
+      "default": "erledigt",
+      "description": "Status (wird automatisch berechnet)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zur letzten Wartung"
+    },
+    "enable_reminders": {
+      "type": "boolean",
+      "default": true,
+      "description": "Erinnerungen aktivieren"
+    },
+    "reminder_days_before": {
+      "type": "number",
+      "default": 7,
+      "description": "Erinnerung X Tage vor Wartungstermin"
+    },
+    "sync_to_calendar": {
+      "type": "boolean",
+      "default": true,
+      "description": "Mit Kalender synchronisieren"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "equipment_name",
+    "task_description",
+    "frequency"
+  ]
+}

@@ -16,7 +16,7 @@ import {
 } from "@/lib/maintenanceUtils";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/components/utils/haptics";
-import { toastSuccess, toastError } from "@/lib/errorHandler";
+import { toast } from "sonner";
 
 // ── Filter tabs ──────────────────────────────────────────────────────────────
 const FILTERS = [
@@ -151,10 +151,10 @@ export default function MaintenancePage() {
         },
         onSuccess: () => {
             haptics.success();
-            toastSuccess('Wartung als erledigt markiert');
+            toast.success('Wartung als erledigt markiert');
             queryClient.invalidateQueries(['maintenance-tasks']);
         },
-        onError: (err) => toastError(err, 'Fehler beim Speichern'),
+        onError: (err) => toast.error('Fehler beim Speichern'),
     });
 
     // Derived data

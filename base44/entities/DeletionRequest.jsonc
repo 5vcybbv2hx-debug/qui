@@ -1,0 +1,49 @@
+{
+  "name": "DeletionRequest",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Nutzers, der L\u00f6schung anfordert"
+    },
+    "requested_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der L\u00f6schanfrage"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "denied"
+      ],
+      "default": "pending",
+      "description": "Status der L\u00f6schanfrage"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Grund f\u00fcr L\u00f6schanfrage (z.B. Art. 17 DSGVO)"
+    },
+    "processed_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der Verarbeitung"
+    },
+    "processed_by": {
+      "type": "string",
+      "description": "Admin, der die L\u00f6schung verarbeitet hat"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zur Verarbeitung (z.B. Aufbewahrungsfristen)"
+    }
+  },
+  "required": [
+    "user_email",
+    "requested_date",
+    "status",
+    "reason"
+  ]
+}

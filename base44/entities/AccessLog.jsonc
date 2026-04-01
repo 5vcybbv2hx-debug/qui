@@ -1,0 +1,69 @@
+{
+  "name": "AccessLog",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Nutzers, der auf Daten zugegriffen hat"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "view_document",
+        "view_employee",
+        "view_timeentry",
+        "export_data",
+        "update_employee",
+        "delete_document"
+      ],
+      "description": "Art des Zugriffs oder der Aktion"
+    },
+    "resource_id": {
+      "type": "string",
+      "description": "ID der Ressource (z.B. EmployeeDocument ID)"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "EmployeeDocument",
+        "Employee",
+        "TimeEntry",
+        "PersonalData"
+      ],
+      "description": "Typ der Ressource"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "denied",
+        "error"
+      ],
+      "default": "success",
+      "description": "War der Zugriff erfolgreich?"
+    },
+    "ip_address": {
+      "type": "string",
+      "description": "IP-Adresse des Zugriffs (optional, f\u00fcr Sicherheit)"
+    },
+    "user_agent": {
+      "type": "string",
+      "description": "Browser/Device Info (optional)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Zugriffs"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Zus\u00e4tzliche Notizen (z.B. Grund f\u00fcr Ablehnung)"
+    }
+  },
+  "required": [
+    "user_email",
+    "action",
+    "resource_type",
+    "timestamp"
+  ]
+}

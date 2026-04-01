@@ -9,6 +9,7 @@ import EmployeesImproved from './pages/EmployeesImproved';
 import Stationsplan from './pages/Stationsplan';
 import OperatorDashboard from './pages/OperatorDashboard';
 import NotificationSettings from './pages/NotificationSettings';
+import DataProtection from './pages/DataProtection';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
       <Route path="/EmployeeProfile" element={<LayoutWrapper currentPageName="EmployeeProfile"><EmployeeProfile /></LayoutWrapper>} />
       <Route path="/EmployeeProfile/:id" element={<LayoutWrapper currentPageName="EmployeeProfile"><EmployeeProfile /></LayoutWrapper>} />
       <Route path="/EmployeesImproved" element={<LayoutWrapper currentPageName="EmployeesImproved"><EmployeesImproved /></LayoutWrapper>} />
+      <Route path="/DataProtection" element={<LayoutWrapper currentPageName="DataProtection"><DataProtection /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

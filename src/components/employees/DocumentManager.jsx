@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -225,15 +225,27 @@ export default function DocumentManager({ employeeId, employeeName, canEdit = tr
                   </div>
 
                   <div className="flex gap-2 shrink-0">
-                    <a
-                      href={doc.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={async () => {
+                        try {
+                          // Use secure document access function
+                          const response = await base44.functions.invoke('getSecureDocument', {
+                            documentId: doc.id
+                          });
+                          if (response.data.access_granted) {
+                            window.open(doc.file_url, '_blank');
+                          } else {
+                            toast.error('Zugriff verweigert');
+                          }
+                        } catch (error) {
+                          toast.error('Fehler beim Abrufen: ' + error.message);
+                        }
+                      }}
                       className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       title="Öffnen"
                     >
                       <Download className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    </a>
+                    </button>
                     {canEdit && (
                       <button
                         onClick={() => {

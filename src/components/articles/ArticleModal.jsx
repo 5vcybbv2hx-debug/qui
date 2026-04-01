@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import ImageEditor from '@/components/articles/ImageEditor';
 import AllergenEditor from '@/components/articles/AllergenEditor';
+import AllergenSelector from '@/components/menu/AllergenSelector';
 import { haptics } from "@/components/utils/haptics";
 import { toast } from 'sonner';
 
@@ -46,6 +47,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         storage_location: '',
         image_url: '',
         allergens: '',
+        allergens_list: [],
+        additives: [],
         notes: '',
         unit: '',
         quantity: '',
@@ -72,6 +75,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 storage_location: article.storage_location || '',
                 image_url: article.image_url || '',
                 allergens: article.allergens || '',
+                allergens_list: article.allergens_list || [],
+                additives: article.additives || [],
                 notes: article.notes || ''
             });
         } else {
@@ -92,6 +97,8 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                 storage_location: '',
                 image_url: '',
                 allergens: '',
+                allergens_list: [],
+                additives: [],
                 notes: ''
             });
         }
@@ -405,6 +412,12 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                         value={formData.allergens}
                         onChange={(val) => setFormData({ ...formData, allergens: val })}
                         articleName={formData.name}
+                    />
+                    <AllergenSelector
+                        allergensList={formData.allergens_list}
+                        additives={formData.additives}
+                        category={formData.category}
+                        onChange={(key, val) => setFormData(prev => ({ ...prev, [key]: val }))}
                     />
 
                     <div className="grid grid-cols-2 gap-3">

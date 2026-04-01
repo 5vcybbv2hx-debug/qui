@@ -94,7 +94,21 @@
     },
     "allergens": {
       "type": "string",
-      "description": "Allergene"
+      "description": "Allergene (Freitext, Legacy)"
+    },
+    "allergens_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Allergene (strukturiert)"
+    },
+    "additives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Zusatzstoffe"
     },
     "notes": {
       "type": "string",

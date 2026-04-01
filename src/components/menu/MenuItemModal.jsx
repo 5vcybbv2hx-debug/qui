@@ -91,7 +91,23 @@ export default function MenuItemModal({ item, open, onClose }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
+        let effectiveFormData = { ...formData };
         let calculatedPurchasePrice = formData.purchase_price ? parseFloat(formData.purchase_price) : undefined;
+
+        // Allergene aus Rezept aggregieren
+        if (formData.use_recipe_calculation && formData.linked_recipe_id) {
+            const recipe = recipes.find(r => r.id === formData.linked_recipe_id);
+            if (recipe?.ingredients) {
+                const mergedAllergens = new Set(formData.allergens_list || []);
+                const mergedAdditives = new Set(formData.additives || []);
+                recipe.ingredients.forEach(ingredient => {
+                    const article = articles.find(a => a.id === ingredient.article_id);
+                    (article?.allergens_list || []).forEach(a => mergedAllergens.add(a));
+                    (article?.additives || []).forEach(d => mergedAdditives.add(d));
+                });
+                effectiveFormData = { ...effectiveFormData, allergens_list: [...mergedAllergens], additives: [...mergedAdditives] };
+            }
+        }
 
         // EK aus Rezept berechnen wenn aktiviert
         if (formData.use_recipe_calculation && formData.linked_recipe_id) {
@@ -158,7 +174,7 @@ export default function MenuItemModal({ item, open, onClose }) {
         }
 
         const submitData = {
-            ...formData,
+            ...effectiveFormData,
             price: parseFloat(formData.price),
             purchase_price: calculatedPurchasePrice,
             alcohol_content: formData.alcohol_content ? parseFloat(formData.alcohol_content) : undefined,
@@ -368,14 +384,16 @@ export default function MenuItemModal({ item, open, onClose }) {
                             <Select
                                 value={formData.linked_article_id || ""}
                                 onValueChange={(value) => {
-                                    const article = articles.find(a => a.id === value);
-                                    setFormData({ 
-                                        ...formData, 
-                                        linked_article_id: value,
-                                        linked_article_name: article?.name || "",
-                                        allergens: article?.allergens ? article.allergens : formData.allergens
-                                    });
-                                }}
+                                                     const article = articles.find(a => a.id === value);
+                                                     setFormData(prev => ({ 
+                                                         ...prev, 
+                                                         linked_article_id: value,
+                                                         linked_article_name: article?.name || "",
+                                                         allergens: article?.allergens ? article.allergens : prev.allergens,
+                                                         allergens_list: article?.allergens_list?.length ? article.allergens_list : prev.allergens_list,
+                                                         additives: article?.additives?.length ? article.additives : prev.additives,
+                                                     }));
+                                                 }}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Artikel auswählen..." />

@@ -97,6 +97,11 @@ export default function CalendarPage() {
         queryFn: () => base44.entities.UnavailabilityRequest.list('-date', 500)
     });
 
+    const { data: provisionalRequests = [] } = useQuery({
+        queryKey: ['provisional-shift-requests'],
+        queryFn: () => base44.entities.ProvisionalShiftRequest.list('-date', 500)
+    });
+
     const approvedVacations = vacationRequests.filter(v => v.status === 'genehmigt');
 
     const currentYear = new Date().getFullYear();
@@ -298,6 +303,7 @@ export default function CalendarPage() {
                         {/* Calendar */}
                         <ShiftCalendar
                             shifts={filteredShifts}
+                            provisionalRequests={provisionalRequests}
                             allShifts={shifts}
                             employees={employees}
                             requirements={requirements}

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { getHolidaysBW, getHolidayName } from './getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 
-export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
+export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], provisionalRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
     const permissions = usePermissions();
     const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -70,6 +70,11 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
     const getEmployeeColor = (employeeId) => {
         const employee = employees.find(e => e.id === employeeId);
         return employee?.color || '#64748b';
+    };
+
+    const getProvisionalForDay = (date) => {
+        const dateStr = format(date, 'yyyy-MM-dd');
+        return provisionalRequests.filter(r => r.date === dateStr);
     };
 
     const getDayRequirement = (date) => {
@@ -173,13 +178,27 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                 </Button>
             </div>
 
+            {/* Legend */}
+            <div className="flex flex-wrap gap-3 px-3 py-2 bg-slate-900/40 border-b border-slate-700 text-[10px]">
+                <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-green-500"></div>
+                    <span className="text-slate-400">Bestätigt</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded border-2 border-dashed border-yellow-400 bg-yellow-400/20"></div>
+                    <span className="text-slate-400">Vorläufig</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded bg-slate-600 opacity-50"></div>
+                    <span className="text-slate-400">Abgelehnt</span>
+                </div>
+            </div>
+
             {/* Weekday Headers */}
             <div className="grid grid-cols-7 border-b border-slate-700 bg-slate-900/30">
                 {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, idx) => (
                     <div key={idx} className="py-2 text-center border-r border-slate-700 last:border-r-0">
-                        <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
-                            {day}
-                        </span>
+                        <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{day}</span>
                     </div>
                 ))}
             </div>
@@ -188,6 +207,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
             <div className="grid grid-cols-7 divide-x divide-y divide-slate-700">
                 {calendarDays.map((day, idx) => {
                     const dayShifts = getShiftsForDay(day);
+                    const dayProvisional = getProvisionalForDay(day);
                     const isToday = isSameDay(day, new Date());
                     const isSelected = selectedDate && isSameDay(day, selectedDate);
                     const required = getDayRequirement(day);
@@ -269,7 +289,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             
                             {/* Content Area */}
                             <div className={`p-1.5 h-full flex flex-col gap-0.5 overflow-y-auto max-h-[200px] ${(holidayName || birthdays.length > 0) ? 'pt-9' : 'pt-8'}`}>
-                                {/* Shifts */}
+                                {/* Confirmed Shifts */}
                                 {dayShifts.map((shift) => (
                                     <div
                                         key={shift.id}
@@ -278,36 +298,49 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                         onDragEnd={handleDragEnd}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (permissions.canEditShifts) {
-                                                onSelectShift(shift);
-                                            }
+                                            if (permissions.canEditShifts) onSelectShift(shift);
                                         }}
                                         className={cn(
                                             "px-1.5 py-1 rounded text-[10px] font-medium transition-transform flex items-center gap-1 flex-shrink-0",
                                             permissions.canEditShifts ? "cursor-move hover:scale-105" : "cursor-default",
                                             draggedShift?.id === shift.id && "opacity-50 scale-95"
                                         )}
-                                        style={{ 
-                                            backgroundColor: getEmployeeColor(shift.employee_id),
-                                            color: '#ffffff'
-                                        }}
+                                        style={{ backgroundColor: getEmployeeColor(shift.employee_id), color: '#fff' }}
                                     >
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[10px] truncate font-semibold leading-tight">
-                                                {shift.employee_name.split(' ')[0]}
-                                            </p>
-                                            <p className="text-[9px] opacity-80 leading-tight">
-                                                {shift.start_time.slice(0,5)}-{shift.end_time.slice(0,5)}
-                                            </p>
+                                            <p className="text-[10px] truncate font-semibold leading-tight">{shift.employee_name.split(' ')[0]}</p>
+                                            <p className="text-[9px] opacity-80 leading-tight">{shift.start_time.slice(0,5)}-{shift.end_time.slice(0,5)}</p>
                                         </div>
                                         {shift.shift_type && (
-                                            <Badge className="text-[8px] h-3.5 px-1 bg-white/20 border-0 text-white">
-                                                {shift.shift_type.slice(0,3)}
-                                            </Badge>
+                                            <Badge className="text-[8px] h-3.5 px-1 bg-white/20 border-0 text-white">{shift.shift_type.slice(0,3)}</Badge>
                                         )}
                                     </div>
                                 ))}
-                                
+
+                                {/* Provisional Shift Requests */}
+                                {dayProvisional.map((req) => (
+                                    <div
+                                        key={req.id}
+                                        className={cn(
+                                            "px-1.5 py-1 rounded text-[10px] font-medium flex items-center gap-1 flex-shrink-0 border-2 border-dashed",
+                                            req.status === 'abgelehnt'
+                                                ? "bg-slate-700/40 border-slate-500 text-slate-400 opacity-60"
+                                                : req.status === 'bestätigt'
+                                                ? "bg-green-600/30 border-green-500 text-green-300"
+                                                : "bg-yellow-500/15 border-yellow-400 text-yellow-300"
+                                        )}
+                                        title={`${req.employee_name} – ${req.status}`}
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] truncate font-semibold leading-tight">{req.employee_name.split(' ')[0]}</p>
+                                            <p className="text-[9px] opacity-80 leading-tight">{req.start_time?.slice(0,5)}-{req.end_time?.slice(0,5)}</p>
+                                        </div>
+                                        <span className="text-[8px] flex-shrink-0">
+                                            {req.status === 'abgelehnt' ? '✗' : req.status === 'bestätigt' ? '✓' : '?'}
+                                        </span>
+                                    </div>
+                                ))}
+
                                 {/* Unavailability indicators */}
                                 {unavailables.length > 0 && (
                                     <div className="px-1.5 py-0.5 bg-orange-500/15 border border-orange-500/30 rounded text-[9px] text-orange-300 flex items-center gap-1 flex-shrink-0">

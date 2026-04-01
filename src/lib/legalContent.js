@@ -188,3 +188,69 @@ export function getCompletionPercentage(companyInfo) {
   const filledFields = allFields.filter(field => companyInfo?.[field]);
   return Math.round((filledFields.length / allFields.length) * 100);
 }
+
+/**
+ * Exported content objects for ConsentDialog and legal pages
+ */
+export const CONSENT_DIALOG_TEXT = {
+  title: 'Zustimmung erforderlich',
+  subtitle: 'Bitte akzeptieren Sie die folgenden Dokumente',
+  description: 'Um diese App nutzen zu können, müssen Sie unseren Datenschutzerklärung und dem Impressum zustimmen.',
+  items: [
+    {
+      id: 'privacy',
+      label: 'Datenschutzerklärung',
+      description: 'Ich habe die Datenschutzerklärung gelesen und akzeptiert'
+    },
+    {
+      id: 'imprint',
+      label: 'Impressum',
+      description: 'Ich habe das Impressum zur Kenntnis genommen'
+    }
+  ],
+  buttons: {
+    viewPrivacy: 'Datenschutz ansehen',
+    viewImprint: 'Impressum ansehen',
+    accept: 'Zustimmen'
+  },
+  footer: 'Sie können Ihre Einstellungen jederzeit ändern.'
+};
+
+export const PRIVACY_POLICY_CONTENT = {
+  sections: {
+    intro: {
+      title: 'Datenschutzerklärung',
+      content: 'Diese App verarbeitet personenbezogene Daten zum Betrieb.'
+    },
+    purposes: {
+      title: '1. Zweck der Verarbeitung',
+      content: 'Die Verarbeitung erfolgt zur Organisation von Betriebsabläufen.'
+    },
+    rights: {
+      title: '2. Ihre Rechte',
+      items: [
+        'Auskunft über Ihre Daten',
+        'Berichtigung und Löschung',
+        'Einschränkung der Verarbeitung',
+        'Datenübertragbarkeit'
+      ]
+    }
+  }
+};
+
+export const IMPRINT_CONTENT = {
+  lastUpdated: new Date().toLocaleDateString('de-DE'),
+  sections: {
+    responsible: {
+      title: 'Verantwortlicher',
+      items: [
+        { label: 'Anbieter', value: 'BarManager' },
+        { label: 'Kontakt', value: 'info@barmanager.de' }
+      ]
+    },
+    legal: {
+      title: 'Angaben gemäß § 5 TMG',
+      content: 'Die genauen Angaben werden aus den Unternehmenseinstellungen übernommen.'
+    }
+  }
+};

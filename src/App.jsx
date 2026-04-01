@@ -110,7 +110,7 @@ const AuthenticatedApp = () => {
     />
     </>
   );
-
+}
 
 function App() {
 

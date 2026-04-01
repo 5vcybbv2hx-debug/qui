@@ -163,17 +163,21 @@ export default function TerminalClock() {
             if (!activeEntry) {
                 alert(`${employeeToProcess.name} ist nicht eingestempelt!`);
             } else {
-                // Toggle between clocked_in and on_break
+                // PAUSE TOGGLE: clocked_in → on_break → clocked_in
                 const newStatus = activeEntry.status === 'clocked_in' ? 'on_break' : 'clocked_in';
                 const timestamp = new Date().toISOString();
-                const field = newStatus === 'on_break' ? 'pause_start' : 'pause_end';
+                const updateData = { status: newStatus };
+                
+                // Speichere Pause Start/End Zeitstempel
+                if (newStatus === 'on_break') {
+                    updateData.pause_start = timestamp;
+                } else {
+                    updateData.pause_end = timestamp;
+                }
                 
                 await updateMutation.mutateAsync({
                     id: activeEntry.id,
-                    data: {
-                        status: newStatus,
-                        [field]: timestamp
-                    }
+                    data: updateData
                 });
                 
                 const message = newStatus === 'on_break' 
@@ -188,13 +192,16 @@ export default function TerminalClock() {
                 const clockIn = new Date(activeEntry.clock_in);
                 const clockOut = new Date();
                 
-                // Berechne Arbeitszeit ohne Pausen
+                // BERECHNE ARBEITSZEIT: Total minus Pausenzeiten
                 let workingMinutes = (clockOut - clockIn) / (1000 * 60);
+                
+                // Abgeschlossene Pausen: pause_start → pause_end
                 if (activeEntry.pause_start && activeEntry.pause_end) {
                     const pauseDuration = (new Date(activeEntry.pause_end) - new Date(activeEntry.pause_start)) / (1000 * 60);
                     workingMinutes -= pauseDuration;
-                } else if (activeEntry.pause_start && !activeEntry.pause_end) {
-                    // Pause läuft noch - ziehe sie ab
+                } 
+                // Laufende Pause: pause_start → jetzt
+                else if (activeEntry.pause_start && !activeEntry.pause_end) {
                     const currentPauseDuration = (clockOut - new Date(activeEntry.pause_start)) / (1000 * 60);
                     workingMinutes -= currentPauseDuration;
                 }
@@ -249,8 +256,9 @@ export default function TerminalClock() {
     };
 
     const getEmployeeStatus = (employee) => {
+        // Prüfe für aktive Einstempelung ODER aktive Pause
         const activeEntry = clockEntries.find(
-            e => e.employee_id === employee.id && e.status === 'clocked_in'
+            e => e.employee_id === employee.id && (e.status === 'clocked_in' || e.status === 'on_break')
         );
         return activeEntry;
     };
@@ -403,11 +411,24 @@ export default function TerminalClock() {
                                     </Button>
                                     <Button
                                     onClick={() => handleClockAction(employee, 'pause')}
-                                    className="flex-1 bg-amber-600 hover:bg-amber-700"
+                                    className={`flex-1 ${
+                                      status?.status === 'on_break'
+                                        ? 'bg-green-600 hover:bg-green-700'
+                                        : 'bg-amber-600 hover:bg-amber-700'
+                                    }`}
                                     disabled={!isActive}
                                     >
-                                    <Pause className="w-4 h-4 mr-2" />
-                                    Pause
+                                    {status?.status === 'on_break' ? (
+                                      <>
+                                        <Play className="w-4 h-4 mr-2" />
+                                        Pause beenden
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Pause className="w-4 h-4 mr-2" />
+                                        Pause starten
+                                      </>
+                                    )}
                                     </Button>
                                     <Button
                                     onClick={() => handleClockAction(employee, 'out')}

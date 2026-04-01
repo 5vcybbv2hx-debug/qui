@@ -430,28 +430,46 @@ export default function TimeTracking() {
                             <div className="flex gap-2 flex-wrap">
                                 {activeClockEntry ? (
                                     <>
-                                        <Button 
-                                            onClick={() => {
-                                                if (confirm('Pause starten?')) {
-                                                    updateMutation.mutate({
-                                                        id: activeClockEntry.id,
-                                                        data: {
-                                                            status: 'on_break',
-                                                            pause_start: new Date().toISOString()
-                                                        }
+                                        {/* PAUSE BUTTON — Start/End Toggle */}
+                                        {activeClockEntry.status === 'clocked_in' ? (
+                                            <Button
+                                                onClick={async () => {
+                                                    // Pause starten
+                                                    await base44.entities.ClockEntry.update(activeClockEntry.id, {
+                                                        status: 'on_break',
+                                                        pause_start: new Date().toISOString()
                                                     });
-                                                }
-                                            }}
-                                            size="lg"
-                                            className="bg-amber-600 hover:bg-amber-700"
-                                        >
-                                            <Pause className="w-5 h-5 mr-2" />
-                                            Pause
-                                        </Button>
+                                                    queryClient.invalidateQueries(['clockEntries']);
+                                                }}
+                                                size="lg"
+                                                className="bg-amber-600 hover:bg-amber-700"
+                                                disabled={updateMutation.isPending}
+                                            >
+                                                <Pause className="w-5 h-5 mr-2" />
+                                                {updateMutation.isPending ? 'Wird gespeichert...' : 'Pause starten'}
+                                            </Button>
+                                        ) : activeClockEntry.status === 'on_break' ? (
+                                            <Button
+                                                onClick={async () => {
+                                                    // Pause beenden
+                                                    await base44.entities.ClockEntry.update(activeClockEntry.id, {
+                                                        status: 'clocked_in',
+                                                        pause_end: new Date().toISOString()
+                                                    });
+                                                    queryClient.invalidateQueries(['clockEntries']);
+                                                }}
+                                                size="lg"
+                                                className="bg-green-600 hover:bg-green-700"
+                                                disabled={updateMutation.isPending}
+                                            >
+                                                <Play className="w-5 h-5 mr-2" />
+                                                {updateMutation.isPending ? 'Wird gespeichert...' : 'Pause beenden'}
+                                            </Button>
+                                        ) : null}
                                         <Button 
                                             onClick={() => handleClockOut(activeClockEntry)}
                                             size="lg"
-                                            className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
+                                            className="bg-red-600 hover:bg-red-700"
                                         >
                                             <LogOut className="w-5 h-5 mr-2" />
                                             Ausstempeln

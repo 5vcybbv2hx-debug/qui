@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, ExternalLink } from "lucide-react";
+import { toastError, toastSuccess } from '@/lib/errorHandler';
+import InlineError from '@/components/ui/InlineError';
 import AllergenSelector from './AllergenSelector';
 import { haptics } from "@/components/utils/haptics";
 import { useNavigate } from "react-router-dom";
@@ -24,6 +26,7 @@ import { createPageUrl } from "@/utils";
 export default function MenuItemModal({ item, open, onClose }) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
+    const [formError, setFormError] = useState(null);
     const [formData, setFormData] = useState({
         name: "",
         category: "Cocktails",
@@ -74,8 +77,12 @@ export default function MenuItemModal({ item, open, onClose }) {
         },
         onSuccess: () => {
             haptics.light();
+            toastSuccess(item ? 'Getränk aktualisiert' : 'Getränk gespeichert');
             queryClient.invalidateQueries(['menu-items']);
             onClose();
+        },
+        onError: (error) => {
+            toastError(error, 'Speichern fehlgeschlagen');
         }
     });
 
@@ -83,13 +90,22 @@ export default function MenuItemModal({ item, open, onClose }) {
         mutationFn: () => base44.entities.MenuItem.delete(item.id),
         onSuccess: () => {
             haptics.light();
+            toastSuccess('Getränk gelöscht');
             queryClient.invalidateQueries(['menu-items']);
             onClose();
+        },
+        onError: (error) => {
+            toastError(error, 'Löschen fehlgeschlagen');
         }
     });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setFormError(null);
+
+        // Basic validation
+        if (!formData.name?.trim()) { setFormError('Name ist erforderlich.'); return; }
+        if (!formData.price || isNaN(parseFloat(formData.price))) { setFormError('Bitte einen gültigen Preis eingeben.'); return; }
         
         let effectiveFormData = { ...formData };
         let calculatedPurchasePrice = formData.purchase_price ? parseFloat(formData.purchase_price) : undefined;
@@ -191,6 +207,7 @@ export default function MenuItemModal({ item, open, onClose }) {
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {formError && <InlineError message={formError} onDismiss={() => setFormError(null)} />}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                             <Label>Name *</Label>
@@ -449,16 +466,17 @@ export default function MenuItemModal({ item, open, onClose }) {
                             <Button
                                 type="button"
                                 variant="destructive"
+                                disabled={deleteMutation.isPending}
                                 onClick={() => deleteMutation.mutate()}
                             >
-                                Löschen
+                                {deleteMutation.isPending ? 'Löschen…' : 'Löschen'}
                             </Button>
                         )}
                         <Button type="button" variant="outline" onClick={onClose}>
                             Abbrechen
                         </Button>
-                        <Button type="submit">
-                            Speichern
+                        <Button type="submit" disabled={saveMutation.isPending}>
+                            {saveMutation.isPending ? 'Speichern…' : 'Speichern'}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -4,6 +4,7 @@ import Closing from './pages/Closing';
 import ClosingDisplay from './pages/ClosingDisplay';
 import Opening from './pages/Opening';
 import EmployeeHome from './pages/EmployeeHome';
+import Stationsplan from './pages/Stationsplan';
 import OperatorDashboard from './pages/OperatorDashboard';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
       <Route path="/EmployeeHome" element={<LayoutWrapper currentPageName="EmployeeHome"><EmployeeHome /></LayoutWrapper>} />
       <Route path="/OperatorDashboard" element={<LayoutWrapper currentPageName="OperatorDashboard"><OperatorDashboard /></LayoutWrapper>} />
       <Route path="/ClosingDisplay" element={<ClosingDisplay />} />
+      <Route path="/Stationsplan" element={<LayoutWrapper currentPageName="Stationsplan"><Stationsplan /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -1,0 +1,67 @@
+{
+  "name": "AppSetup",
+  "type": "object",
+  "properties": {
+    "setup_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "company_name": {
+      "type": "string"
+    },
+    "opening_hours_note": {
+      "type": "string"
+    },
+    "feature_inventory": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_kanban": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_qr_scan": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_cleaning": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_closing": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_opening": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_storage": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_dashboard": {
+      "type": "boolean",
+      "default": true
+    },
+    "feature_employee_home": {
+      "type": "boolean",
+      "default": true
+    },
+    "data_setup_choice": {
+      "type": "string",
+      "enum": [
+        "demo",
+        "manual",
+        "csv"
+      ]
+    },
+    "areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": []
+}

@@ -2,7 +2,7 @@ import {
     Home, Calendar, Users, Package, Wine, BookOpen,
     CalendarCheck, CheckSquare, Sparkles, Wrench, TrendingUp,
     Bell, Shield, GraduationCap, Clock, Settings, QrCode,
-    RepeatIcon, BarChart2, FileText, Building2, BellRing, ShoppingCart, RefreshCw, Archive, ClipboardCheck, Sun, LayoutDashboard, Gauge
+    RepeatIcon, BarChart2, FileText, Building2, BellRing, ShoppingCart, RefreshCw, Archive, ClipboardCheck, Sun, LayoutDashboard, Gauge, MapPin
 } from 'lucide-react';
 
 export const navigationSections = [
@@ -19,6 +19,7 @@ export const navigationSections = [
         title: 'Team',
         items: [
             { name: 'Kalender', page: 'Calendar', icon: Calendar, permission: 'canViewShifts', color: 'from-blue-500 to-indigo-600' },
+            { name: 'Stationsplan', page: 'Stationsplan', icon: MapPin, permission: 'canViewShifts', color: 'from-amber-500 to-orange-600' },
             { name: 'Meine Schichten', page: 'MyShifts', icon: CalendarCheck, permission: 'canViewShifts', color: 'from-violet-500 to-purple-600' },
             { name: 'Zeit', page: 'TimeManagement', icon: Clock, permission: 'canViewDashboard', color: 'from-cyan-500 to-blue-600' },
             { name: 'Mein Bereich', page: 'MyArea', icon: Users, permission: 'canViewDashboard', color: 'from-teal-500 to-emerald-600' },

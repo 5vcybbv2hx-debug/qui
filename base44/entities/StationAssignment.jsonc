@@ -1,0 +1,38 @@
+{
+  "name": "StationAssignment",
+  "type": "object",
+  "properties": {
+    "stationsplan_id": {
+      "type": "string",
+      "description": "Stationsplan-ID"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "Mitarbeiter-ID"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Mitarbeitername"
+    },
+    "area": {
+      "type": "string",
+      "description": "Bereich (z.B. Nichtraucher)"
+    },
+    "role": {
+      "type": "string",
+      "description": "T\u00e4tigkeit (z.B. Service)"
+    },
+    "secondary_role": {
+      "type": "string",
+      "description": "Zusatzt\u00e4tigkeit"
+    },
+    "note": {
+      "type": "string",
+      "description": "Notiz"
+    }
+  },
+  "required": [
+    "stationsplan_id",
+    "employee_id"
+  ]
+}

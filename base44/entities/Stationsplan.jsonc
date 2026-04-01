@@ -1,0 +1,31 @@
+{
+  "name": "Stationsplan",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum"
+    },
+    "shift_id": {
+      "type": "string",
+      "description": "Schicht-ID"
+    },
+    "shift_name": {
+      "type": "string",
+      "description": "Schichtname"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published"
+      ],
+      "default": "draft",
+      "description": "Status"
+    }
+  },
+  "required": [
+    "date"
+  ]
+}

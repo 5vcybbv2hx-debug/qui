@@ -55,6 +55,12 @@ export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDe
     const doneSubtasks = subtasks.filter(s => s.done).length;
 
     const handleSubtaskToggle = (subId) => {
+        // Toggle subtask completion
+        const updated = todo.subtasks.map(s => 
+            s.id === subId ? { ...s, done: !s.done } : s
+        );
+        onQuickUpdate(todo, { subtasks: updated });
+    };
 
     const handleMoveUp = () => {
         if (!allTodos || idx === 0) return;

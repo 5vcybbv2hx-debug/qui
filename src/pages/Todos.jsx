@@ -15,28 +15,6 @@ import { cn } from '@/lib/utils';
 
 const PRIORITY_ORDER = { dringend: 0, hoch: 1, mittel: 2, niedrig: 3 };
 
-/**
- * TodoItem type
- * @property {string} id
- * @property {string} title
- * @property {string} [description]
- * @property {'offen'|'in_bearbeitung'|'erledigt'} status
- * @property {'niedrig'|'mittel'|'hoch'|'dringend'} priority
- * @property {string} [category]
- * @property {string} [due_date] - ISO date string
- * @property {string} [assigned_to]
- * @property {string[]} [assigned_to_names]
- * @property {boolean} [is_archived]
- * @property {string} [completed_by]
- * @property {string} [completed_at] - ISO datetime
- */
-
-/**
- * @typedef {Object} HandleSaveParams
- * @property {Partial<TodoItem>} data - Data to save
- * @property {string} [id] - If provided, updates; else creates
- */
-
 export default function Todos() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
@@ -57,7 +35,7 @@ export default function Todos() {
     const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
     const [categories, setCategories] = useState(() => loadCategories());
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState('priority'); // 'priority' | 'date' | 'manual'
+    const [sortBy, setSortBy] = useState('priority');
     const [filtersOpen, setFiltersOpen] = useState(false);
 
     const { data: employees = [] } = useQuery({
@@ -75,20 +53,38 @@ export default function Todos() {
         queryFn: () => base44.entities.TodoItem.list('-created_date', 200)
     });
 
-    /**
-     * @type {import('@tanstack/react-query').UseMutationResult<TodoItem, Error, Partial<TodoItem>>}
-     */
     const createMutation = useMutation({
+        mutationFn: (data) => base44.entities.TodoItem.create(data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] })
+    });
 
     const updateMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.TodoItem.update(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] })
+    });
 
     const deleteMutation = useMutation({
+        mutationFn: (id) => base44.entities.TodoItem.delete(id),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] })
+    });
 
     const handleSave = (data, id) => {
+        if (id) updateMutation.mutate({ id, data });
+        else createMutation.mutate(data);
+    };
 
     const handleQuickUpdate = (todo, changes) => {
+        updateMutation.mutate({ id: todo.id, data: changes });
+    };
 
     const handleStatusChange = (todo, newStatus) => {
+        const updates = { status: newStatus };
+        if (newStatus === 'erledigt') {
+            updates.completed_by = user?.full_name || user?.email;
+            updates.completed_at = new Date().toISOString();
+        }
+        updateMutation.mutate({ id: todo.id, data: updates });
+    };
 
     const handleArchive = (id) => {
         if (confirm('Aufgabe archivieren?')) {
@@ -97,10 +93,16 @@ export default function Todos() {
     };
 
     const handleEdit = (todo) => {
+        setSelectedTodo(todo);
+        setModalOpen(true);
+    };
 
     const handleDelete = (id) => {
+        if (confirm('Aufgabe löschen?')) {
+            deleteMutation.mutate(id);
+        }
+    };
 
-    // Permission filter: if task is assigned, only show to that person or admin
     const currentUserName = user?.full_name || user?.email || '';
     const isAdmin = permissions.isAdmin || permissions.isManager;
 
@@ -150,7 +152,6 @@ export default function Todos() {
             return statusMatch && categoryMatch && priorityMatch && personMatch && searchMatch;
         });
 
-        // Sort
         if (sortBy === 'priority') {
             result = [...result].sort((a, b) => {
                 const pa = PRIORITY_ORDER[a.priority] ?? 2;
@@ -196,7 +197,6 @@ export default function Todos() {
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-0">
             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
-                {/* Header */}
                 <div className="flex items-center justify-between gap-2 mb-4">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold text-foreground">Aufgaben</h1>
@@ -220,7 +220,6 @@ export default function Todos() {
                     </div>
                 </div>
 
-                {/* Search */}
                 <div className="relative mb-3">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -236,7 +235,6 @@ export default function Todos() {
                     )}
                 </div>
 
-                {/* Tabs + Filters */}
                 <div className="flex flex-col gap-2 mb-5">
                     <div className="flex gap-2 items-center">
                         <Tabs value={showArchived ? 'archiv' : 'aktiv'} onValueChange={(v) => setShowArchived(v === 'archiv')} className="flex-1">
@@ -268,7 +266,6 @@ export default function Todos() {
 
                     {filtersOpen && !showArchived && (
                         <div className="rounded-xl border border-border bg-card p-3 space-y-3">
-                            {/* Status */}
                             <div>
                                 <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Status</p>
                                 <div className="flex gap-2 flex-wrap">
@@ -283,7 +280,6 @@ export default function Todos() {
                                     ))}
                                 </div>
                             </div>
-                            {/* Priority */}
                             <div>
                                 <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Priorität</p>
                                 <div className="flex gap-2 flex-wrap">
@@ -298,7 +294,6 @@ export default function Todos() {
                                     ))}
                                 </div>
                             </div>
-                            {/* Category */}
                             {allCategories.length > 0 && (
                                 <div>
                                     <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Kategorie</p>
@@ -315,7 +310,6 @@ export default function Todos() {
                                     </div>
                                 </div>
                             )}
-                            {/* Person */}
                             {allAssignees.length > 0 && (
                                 <div>
                                     <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Person</p>
@@ -341,7 +335,6 @@ export default function Todos() {
                     )}
                 </div>
 
-                {/* Todo List */}
                 {!showArchived ? (
                     <div className="space-y-6">
                         {['offen', 'in_bearbeitung', 'erledigt'].map(status => {

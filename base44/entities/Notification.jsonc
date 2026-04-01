@@ -1,0 +1,74 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "general",
+        "alert",
+        "success",
+        "task"
+      ],
+      "description": "Art der Benachrichtigung"
+    },
+    "title": {
+      "type": "string",
+      "description": "Titel der Benachrichtigung"
+    },
+    "message": {
+      "type": "string",
+      "description": "Nachricht"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "schicht",
+        "aufgabe",
+        "wartung",
+        "reservierung",
+        "system",
+        "admin"
+      ],
+      "description": "Kategorie der Benachrichtigung"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "kritisch",
+        "wichtig",
+        "info"
+      ],
+      "default": "info",
+      "description": "Priorit\u00e4tsstufe"
+    },
+    "related_id": {
+      "type": "string",
+      "description": "ID des zugeh\u00f6rigen Objekts"
+    },
+    "target_roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Zielrollen (admin, manager, mitarbeiter, aushilfe)"
+    },
+    "read_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "E-Mails der Nutzer die gelesen haben"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "E-Mail des Erstellers"
+    }
+  },
+  "required": [
+    "type",
+    "title",
+    "message",
+    "category"
+  ]
+}

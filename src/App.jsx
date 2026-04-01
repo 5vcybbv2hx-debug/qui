@@ -6,6 +6,7 @@ import Opening from './pages/Opening';
 import EmployeeHome from './pages/EmployeeHome';
 import Stationsplan from './pages/Stationsplan';
 import OperatorDashboard from './pages/OperatorDashboard';
+import NotificationSettings from './pages/NotificationSettings';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
@@ -72,6 +73,7 @@ const AuthenticatedApp = () => {
       <Route path="/OperatorDashboard" element={<LayoutWrapper currentPageName="OperatorDashboard"><OperatorDashboard /></LayoutWrapper>} />
       <Route path="/ClosingDisplay" element={<ClosingDisplay />} />
       <Route path="/Stationsplan" element={<LayoutWrapper currentPageName="Stationsplan"><Stationsplan /></LayoutWrapper>} />
+      <Route path="/NotificationSettings" element={<LayoutWrapper currentPageName="NotificationSettings"><NotificationSettings /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Bell, CheckCircle2, Trash2, Eye, Filter, AlertCircle, Info, CheckSquare } from 'lucide-react';
+import { Bell, CheckCircle2, Trash2, Eye, Filter, AlertCircle, Settings, Link as LinkIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,23 +12,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import SendNotificationModal from '@/components/notifications/SendNotificationModal';
+import { getVisibleNotifications, sortByPriorityAndDate, DEFAULT_SETTINGS, CATEGORY_LABELS, CATEGORY_COLORS } from '@/lib/notificationUtils';
+import { useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 
-const typeIcons = {
-    'general': Info,
-    'alert': AlertCircle,
-    'success': CheckCircle2,
-    'task': CheckSquare
+const PRIORITY_COLORS = {
+    'kritisch': 'bg-red-600 dark:bg-red-600',
+    'wichtig': 'bg-amber-600 dark:bg-amber-600',
+    'info': 'bg-blue-600 dark:bg-blue-600'
 };
 
-const typeColors = {
-    'general': 'bg-blue-100 text-blue-700',
-    'alert': 'bg-red-100 text-red-700',
-    'success': 'bg-green-100 text-green-700',
-    'task': 'bg-amber-100 text-amber-700'
+const PRIORITY_BADGES = {
+    'kritisch': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+    'wichtig': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+    'info': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
 };
 
 export default function Notifications() {
      const queryClient = useQueryClient();
+     const navigate = useNavigate();
      const permissions = usePermissions();
      const [filter, setFilter] = useState('all');
      const [currentUser, setCurrentUser] = useState(null);
@@ -38,14 +40,34 @@ export default function Notifications() {
         base44.auth.me().then(setCurrentUser).catch(() => {});
     }, []);
 
-    const { data: notifications = [] } = useQuery({
+    const { data: allNotifications = [] } = useQuery({
         queryKey: ['notifications'],
-        queryFn: () => base44.entities.Notification.list('-created_date')
+        queryFn: () => base44.entities.Notification.list('-created_date', 200)
     });
+
+    const { data: userSettings } = useQuery({
+        queryKey: ['notificationSettings', currentUser?.email],
+        queryFn: async () => {
+            if (!currentUser?.email) return null;
+            const found = await base44.entities.NotificationSettings.filter({
+                user_email: currentUser.email
+            });
+            return found.length > 0 ? found[0] : null;
+        },
+        enabled: !!currentUser?.email
+    });
+
+    const settings = userSettings || DEFAULT_SETTINGS;
+    const notifications = getVisibleNotifications(
+        allNotifications,
+        permissions.role || 'mitarbeiter',
+        currentUser?.email,
+        settings
+    );
 
     const markAsReadMutation = useMutation({
         mutationFn: async (notificationId) => {
-            const notification = notifications.find(n => n.id === notificationId);
+            const notification = allNotifications.find(n => n.id === notificationId);
             const readBy = notification.read_by || [];
             if (!readBy.includes(currentUser.email)) {
                 await base44.entities.Notification.update(notificationId, {
@@ -131,18 +153,7 @@ export default function Notifications() {
 
     if (!currentUser) return null;
 
-    // Filter notifications based on user role and permissions
-     const visibleNotifications = notifications.filter(notification => {
-         // If target_roles is empty or undefined, show to everyone
-         if (!notification.target_roles || notification.target_roles.length === 0) {
-             return true;
-         }
-         // Otherwise check if user's role matches exactly
-         const userRole = permissions.isManager ? 'Manager' : 'user';
-         return notification.target_roles.includes(userRole);
-     });
-
-    const filteredNotifications = visibleNotifications.filter(notification => {
+    const filteredNotifications = notifications.filter(notification => {
         if (filter === 'unread') {
             return !notification.read_by?.includes(currentUser.email);
         }
@@ -152,46 +163,53 @@ export default function Notifications() {
         return true;
     });
 
-    const unreadCount = visibleNotifications.filter(n => !n.read_by?.includes(currentUser.email)).length;
+    const sortedFiltered = sortByPriorityAndDate(filteredNotifications);
+    const unreadCount = notifications.filter(n => !n.read_by?.includes(currentUser.email)).length;
 
     return (
-        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
-            <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
+        <div className="min-h-screen bg-background pb-24 md:pb-0">
+            <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                         <div className="flex items-center gap-3">
-                            <Bell className="w-8 h-8 text-amber-400" />
+                            <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20">
+                                <Bell className="w-6 h-6 text-amber-500" />
+                            </div>
                             <div>
-                                     <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Benachrichtigungen</h1>
-                                <p className="text-slate-400 text-sm">
-                                    Alle wichtigen Updates an einem Ort
+                                <h1 className="text-xl sm:text-2xl font-bold text-foreground">Benachrichtigungen</h1>
+                                <p className="text-sm text-muted-foreground">
+                                    {unreadCount > 0 ? `${unreadCount} neue Benachrichtigung${unreadCount > 1 ? 'en' : ''}` : 'Alle aktuell'}
                                 </p>
                             </div>
-                            {unreadCount > 0 && (
-                                <Badge className="bg-red-600 text-white">
-                                    {unreadCount} neu
-                                </Badge>
-                            )}
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            <Button
+                                onClick={() => navigate(createPageUrl('NotificationSettings'))}
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                            >
+                                <Settings className="w-4 h-4" />
+                                <span className="hidden sm:inline">Einstellungen</span>
+                            </Button>
                             {permissions.isManager && <SendNotificationModal />}
                         </div>
                     </div>
                 </div>
 
-                {/* Filters & Actions */}
+                {/* Filters */}
                 <div className="mb-6 space-y-4">
                     <Tabs value={filter} onValueChange={setFilter}>
-                         <TabsList className="grid grid-cols-3 w-full bg-slate-800 border-slate-700">
-                             <TabsTrigger value="all" className="data-[state=active]:bg-amber-600 data-[state=active]:text-black text-slate-300">
-                                 Alle ({visibleNotifications.length})
+                         <TabsList className="grid grid-cols-3 w-full">
+                             <TabsTrigger value="all">
+                                 Alle ({notifications.length})
                              </TabsTrigger>
-                             <TabsTrigger value="unread" className="data-[state=active]:bg-amber-600 data-[state=active]:text-black text-slate-300">
-                                 Ungelesen ({unreadCount})
+                             <TabsTrigger value="unread">
+                                 Neu ({unreadCount})
                              </TabsTrigger>
-                             <TabsTrigger value="read" className="data-[state=active]:bg-amber-600 data-[state=active]:text-black text-slate-300">
-                                 Gelesen ({visibleNotifications.length - unreadCount})
+                             <TabsTrigger value="read">
+                                 Gelesen ({notifications.length - unreadCount})
                              </TabsTrigger>
                          </TabsList>
                      </Tabs>
@@ -261,72 +279,65 @@ export default function Notifications() {
 
                 {/* Notifications List */}
                 <div className="space-y-3">
-                    {filteredNotifications.length > 0 ? (
-                        filteredNotifications.map(notification => {
+                    {sortedFiltered.length > 0 ? (
+                        sortedFiltered.map(notification => {
                             const isRead = notification.read_by?.includes(currentUser.email);
-                            const TypeIcon = typeIcons[notification.type] || Info;
+                            const isUnread = !isRead;
                             
                             return (
                                 <Card 
                                     key={notification.id} 
                                     className={cn(
-                                        "p-4 border-slate-700 transition-all cursor-pointer",
-                                        selectedIds.has(notification.id) ? "bg-amber-900/30 border-amber-500 border-l-4" : (isRead ? "bg-slate-800/50" : "bg-slate-800 border-l-4 border-l-amber-500")
+                                        "p-4 border-l-4 transition-all cursor-pointer",
+                                        selectedIds.has(notification.id) && "bg-accent/30 border-accent",
+                                        !selectedIds.has(notification.id) && (isRead ? "bg-card/50 border-l-transparent" : `bg-card border-l-${PRIORITY_COLORS[notification.priority]}`)
                                     )}
                                     onClick={() => toggleSelection(notification.id)}
                                 >
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <Checkbox 
-                                                checked={selectedIds.has(notification.id)}
-                                                onCheckedChange={() => toggleSelection(notification.id)}
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="mt-1"
-                                            />
-                                            <div className={cn(
-                                                "p-2 rounded-lg shrink-0",
-                                                isRead ? "bg-slate-700" : "bg-amber-900/30"
-                                            )}>
-                                                <TypeIcon className={cn(
-                                                    "w-5 h-5",
-                                                    isRead ? "text-slate-400" : "text-amber-400"
-                                                )} />
-                                            </div>
-                                        </div>
+                                    <div className="flex items-start gap-3">
+                                        <Checkbox 
+                                            checked={selectedIds.has(notification.id)}
+                                            onCheckedChange={() => toggleSelection(notification.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="mt-1"
+                                        />
                                         
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between gap-2 mb-1">
+                                            <div className="flex items-center justify-between gap-2 mb-2">
                                                 <h3 className={cn(
-                                                    "font-semibold text-sm",
-                                                    isRead ? "text-slate-400" : "text-white"
+                                                    "font-semibold text-sm sm:text-base",
+                                                    isRead ? "text-muted-foreground" : "text-foreground"
                                                 )}>
                                                     {notification.title}
                                                 </h3>
-                                                {notification.type && (
-                                                    <Badge className={cn(
-                                                        "text-xs shrink-0",
-                                                        typeColors[notification.type]
-                                                    )}>
-                                                        {notification.type}
-                                                    </Badge>
+                                                {isUnread && (
+                                                    <div className={cn("w-2 h-2 rounded-full shrink-0", PRIORITY_COLORS[notification.priority])} />
                                                 )}
                                             </div>
                                             
+                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                <Badge variant="outline" className={cn("text-xs", CATEGORY_COLORS[notification.category])}>
+                                                    {CATEGORY_LABELS[notification.category]}
+                                                </Badge>
+                                                <Badge className={cn("text-xs", PRIORITY_BADGES[notification.priority])}>
+                                                    {notification.priority}
+                                                </Badge>
+                                            </div>
+                                            
                                             <p className={cn(
-                                                "text-sm mb-2",
-                                                isRead ? "text-slate-500" : "text-slate-300"
+                                                "text-sm mb-2 line-clamp-2",
+                                                isRead ? "text-muted-foreground" : "text-foreground"
                                             )}>
                                                 {notification.message}
                                             </p>
                                             
-                                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <span>
-                                                    {format(parseISO(notification.created_date), 'dd. MMM yyyy, HH:mm', { locale: de })}
+                                                    {format(parseISO(notification.created_date), 'dd. MMM HH:mm', { locale: de })}
                                                 </span>
                                                 {isRead && (
                                                     <span className="flex items-center gap-1">
-                                                        <CheckCircle2 className="w-3 h-3" />
-                                                        Gelesen
+                                                        ✓ Gelesen
                                                     </span>
                                                 )}
                                             </div>
@@ -337,8 +348,11 @@ export default function Notifications() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    onClick={() => markAsReadMutation.mutate(notification.id)}
-                                                    className="text-slate-400 hover:text-white h-8 w-8"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        markAsReadMutation.mutate(notification.id);
+                                                    }}
+                                                    className="text-muted-foreground hover:text-foreground h-8 w-8"
                                                     title="Als gelesen markieren"
                                                 >
                                                     <Eye className="w-4 h-4" />
@@ -347,7 +361,8 @@ export default function Notifications() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     if (confirm('Benachrichtigung löschen?')) {
                                                         deleteMutation.mutate(notification.id);
                                                     }
@@ -363,18 +378,16 @@ export default function Notifications() {
                             );
                         })
                     ) : (
-                        <Card className="p-12 bg-slate-800 border-slate-700">
-                            <div className="text-center text-slate-400">
-                                <Bell className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                                <p className="text-lg font-medium mb-1">
-                                    {filter === 'unread' ? 'Keine ungelesenen Benachrichtigungen' :
-                                     filter === 'read' ? 'Keine gelesenen Benachrichtigungen' :
-                                     'Keine Benachrichtigungen'}
-                                </p>
-                                <p className="text-sm">
-                                    Hier werden wichtige Updates und Ereignisse angezeigt
-                                </p>
-                            </div>
+                        <Card className="p-12 bg-card border-border text-center">
+                            <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                            <p className="text-lg font-medium text-foreground mb-1">
+                                {filter === 'unread' ? 'Keine neuen Benachrichtigungen' :
+                                 filter === 'read' ? 'Keine gelesenen Benachrichtigungen' :
+                                 'Keine Benachrichtigungen'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                                {notifications.length === 0 ? 'Aktiviere Kategorien in den Einstellungen' : 'Schön, dass du auf dem neuesten Stand bist!'}
+                            </p>
                         </Card>
                     )}
                 </div>

@@ -1,0 +1,55 @@
+{
+  "name": "NotificationSettings",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "E-Mail des Nutzers"
+    },
+    "categories": {
+      "type": "object",
+      "description": "Aktivierte Kategorien",
+      "properties": {
+        "schicht": {
+          "type": "boolean",
+          "default": true
+        },
+        "aufgabe": {
+          "type": "boolean",
+          "default": true
+        },
+        "wartung": {
+          "type": "boolean",
+          "default": true
+        },
+        "reservierung": {
+          "type": "boolean",
+          "default": true
+        },
+        "system": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "min_priority": {
+      "type": "string",
+      "enum": [
+        "info",
+        "wichtig",
+        "kritisch"
+      ],
+      "default": "info",
+      "description": "Minimale Priorit\u00e4t anzeigen"
+    },
+    "only_assigned_tasks": {
+      "type": "boolean",
+      "default": true,
+      "description": "Nur eigene zugewiesene Aufgaben"
+    }
+  },
+  "required": [
+    "user_email"
+  ]
+}

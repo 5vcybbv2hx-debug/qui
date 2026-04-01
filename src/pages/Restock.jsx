@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
 import { Scan, Camera, Check, Trash2, CheckCheck, Plus, Pencil } from 'lucide-react';
+import QuantityInputModal from '../components/restock/QuantityInputModal';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,9 @@ export default function Restock() {
     // IDs der kürzlich hinzugefügten Items (werden oben angezeigt)
     const [recentIds, setRecentIds] = useState([]);
     const recentTimers = useRef({});
+    // Quantity modal state
+    const [pendingArticle, setPendingArticle] = useState(null); // { article, existingItem }
+    const [qtyModalOpen, setQtyModalOpen] = useState(false);
 
     const { data: restockItems = [] } = useQuery({
         queryKey: ['restock-items'],
@@ -95,46 +99,45 @@ export default function Restock() {
         }
     });
 
-    const handleScan = async (scannedBarcode) => {
+    const handleScan = (scannedBarcode) => {
         const article = articles.find(a => a.barcode === scannedBarcode);
         if (!article) {
             alert('Artikel nicht in der Datenbank gefunden');
             return;
         }
-
         const today = format(new Date(), 'yyyy-MM-dd');
         const existingItem = restockItems.find(
             item => item.barcode === scannedBarcode && item.date === today && !item.is_completed
         );
+        // Always open quantity modal
+        setPendingArticle({ article, existingItem: existingItem || null });
+        setQtyModalOpen(true);
+        setBarcode('');
+    };
+
+    const handleQtyConfirm = async (qty) => {
+        setQtyModalOpen(false);
+        if (!pendingArticle) return;
+        const { article, existingItem } = pendingArticle;
+        setPendingArticle(null);
 
         if (existingItem) {
-            // Erhöhe die Menge
-            updateMutation.mutate({
-                id: existingItem.id,
-                data: {
-                    ...existingItem,
-                    quantity: existingItem.quantity + 1
-                }
-            });
+            updateMutation.mutate({ id: existingItem.id, data: { ...existingItem, quantity: qty } });
         } else {
-            // Erstelle neuen Eintrag
             const user = await base44.auth.me();
             createMutation.mutate({
-                barcode: scannedBarcode,
+                barcode: article.barcode,
                 article_name: article.name,
                 article_image_url: article.image_url || null,
-                quantity: 1,
+                quantity: qty,
                 restocked_by: user?.full_name || user?.email || 'Unbekannt',
-                date: today,
+                date: format(new Date(), 'yyyy-MM-dd'),
                 time: format(new Date(), 'HH:mm'),
                 is_completed: false
             });
         }
 
-        setBarcode('');
-        if (barcodeInputRef.current) {
-            barcodeInputRef.current.focus();
-        }
+        if (barcodeInputRef.current) barcodeInputRef.current.focus();
     };
 
     const handleBarcodeSubmit = async (e) => {
@@ -188,8 +191,9 @@ export default function Restock() {
     };
 
     const handleQuantityEdit = (item) => {
-        setEditingItem(item);
-        setEditQuantity(String(item.quantity));
+        const article = articles.find(a => a.barcode === item.barcode) || { name: item.article_name, barcode: item.barcode };
+        setPendingArticle({ article, existingItem: item });
+        setQtyModalOpen(true);
     };
 
     const saveQuantityEdit = () => {
@@ -461,50 +465,14 @@ export default function Restock() {
                     onScan={handleCameraScan}
                 />
 
-                {/* Edit Quantity Dialog */}
-                <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Menge ändern</DialogTitle>
-                        </DialogHeader>
-                        {editingItem && (
-                            <div className="space-y-4 mt-4">
-                                <div className="p-3 bg-slate-800 rounded-lg">
-                                    <p className="font-medium text-white">{editingItem.article_name}</p>
-                                    <p className="text-xs text-slate-400 mt-1">Barcode: {editingItem.barcode}</p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Neue Menge</Label>
-                                    <Input
-                                        type="number"
-                                        min="1"
-                                        value={editQuantity}
-                                        onChange={(e) => setEditQuantity(e.target.value)}
-                                        autoFocus
-                                        onKeyDown={(e) => e.key === 'Enter' && saveQuantityEdit()}
-                                    />
-                                </div>
-
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setEditingItem(null)}
-                                        className="flex-1"
-                                    >
-                                        Abbrechen
-                                    </Button>
-                                    <Button
-                                        onClick={saveQuantityEdit}
-                                        className="flex-1 bg-amber-600 hover:bg-amber-700"
-                                    >
-                                        Speichern
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </DialogContent>
-                </Dialog>
+                {/* Quantity Input Modal */}
+                <QuantityInputModal
+                    open={qtyModalOpen}
+                    onClose={() => { setQtyModalOpen(false); setPendingArticle(null); }}
+                    onConfirm={handleQtyConfirm}
+                    articleName={pendingArticle?.article?.name || ''}
+                    existingQuantity={pendingArticle?.existingItem?.quantity ?? null}
+                />
             </div>
         </div>
     );

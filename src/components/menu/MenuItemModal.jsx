@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Calculator, ExternalLink } from "lucide-react";
+import { Calculator, ExternalLink, Trash2, X, ChevronRight } from "lucide-react";
 import { toastError, toastSuccess } from '@/lib/errorHandler';
 import InlineError from '@/components/ui/InlineError';
 import AllergenSelector from './AllergenSelector';
@@ -24,40 +17,72 @@ import { haptics } from "@/components/utils/haptics";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
+// ── Shared field styling ────────────────────────────────────────────────────
+const fieldClass = "h-12 text-base rounded-xl border-border/70 bg-background focus:border-primary";
+const labelClass = "text-sm font-semibold text-foreground mb-1.5 block";
+const hintClass  = "text-xs text-muted-foreground mt-1.5 leading-snug";
+
+function Field({ label, hint, children, className = "" }) {
+    return (
+        <div className={`flex flex-col ${className}`}>
+            {label && <label className={labelClass}>{label}</label>}
+            {children}
+            {hint && <p className={hintClass}>{hint}</p>}
+        </div>
+    );
+}
+
+function Section({ title, icon, children, className = "" }) {
+    return (
+        <div className={`rounded-2xl border border-border/60 bg-card overflow-hidden ${className}`}>
+            {title && (
+                <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/40 bg-muted/30">
+                    {icon && <span className="text-muted-foreground">{icon}</span>}
+                    <span className="text-sm font-bold text-foreground uppercase tracking-wide">{title}</span>
+                </div>
+            )}
+            <div className="p-4 space-y-4">
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function SwitchRow({ label, description, checked, onCheckedChange }) {
+    return (
+        <div className="flex items-center justify-between gap-3 py-1">
+            <div>
+                <p className="text-sm font-semibold text-foreground">{label}</p>
+                {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+            </div>
+            <Switch checked={checked} onCheckedChange={onCheckedChange} />
+        </div>
+    );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+
 export default function MenuItemModal({ item, open, onClose }) {
     const queryClient = useQueryClient();
-    const navigate = useNavigate();
+    const navigate    = useNavigate();
     const [formError, setFormError] = useState(null);
-    const [formData, setFormData] = useState({
-        name: "",
-        category: "Cocktails",
-        subcategory: "",
-        description: "",
-        price: "",
-        size: "",
-        purchase_price: "",
-        use_recipe_calculation: false,
-        linked_recipe_id: "",
-        is_available: true,
-        is_seasonal: false,
-        is_special: false,
-        order_position: "",
-        allergens: "",
-        allergens_list: [],
-        additives: [],
-        alcohol_content: "",
-        image_url: "",
-        linked_article_id: "",
-        linked_article_name: "",
-        linked_article_ids: []
+    const [formData, setFormData]   = useState({
+        name: "", category: "Cocktails", subcategory: "", description: "",
+        price: "", size: "", purchase_price: "",
+        use_recipe_calculation: false, linked_recipe_id: "",
+        is_available: true, is_seasonal: false, is_special: false,
+        order_position: "", allergens: "", allergens_list: [], additives: [],
+        alcohol_content: "", image_url: "",
+        linked_article_id: "", linked_article_name: "", linked_article_ids: []
     });
+
+    const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles-for-linking'],
         queryFn: () => base44.entities.Article.list('-name', 500),
         initialData: []
     });
-
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes-for-linking'],
         queryFn: () => base44.entities.Recipe.list('-name', 500),
@@ -66,32 +91,37 @@ export default function MenuItemModal({ item, open, onClose }) {
 
     useEffect(() => {
         if (item) {
-            // Migrate legacy single-link to array if needed
             setFormData({
                 ...item,
                 linked_article_ids: item.linked_article_ids?.length
                     ? item.linked_article_ids
                     : item.linked_article_id ? [item.linked_article_id] : []
             });
+        } else {
+            // reset for new item
+            setFormData({
+                name: "", category: "Cocktails", subcategory: "", description: "",
+                price: "", size: "", purchase_price: "",
+                use_recipe_calculation: false, linked_recipe_id: "",
+                is_available: true, is_seasonal: false, is_special: false,
+                order_position: "", allergens: "", allergens_list: [], additives: [],
+                alcohol_content: "", image_url: "",
+                linked_article_id: "", linked_article_name: "", linked_article_ids: []
+            });
         }
-    }, [item]);
+    }, [item, open]);
 
     const saveMutation = useMutation({
-        mutationFn: async (data) => {
-            if (item) {
-                return base44.entities.MenuItem.update(item.id, data);
-            }
-            return base44.entities.MenuItem.create(data);
-        },
+        mutationFn: async (data) => item
+            ? base44.entities.MenuItem.update(item.id, data)
+            : base44.entities.MenuItem.create(data),
         onSuccess: () => {
             haptics.light();
             toastSuccess(item ? 'Getränk aktualisiert' : 'Getränk gespeichert');
             queryClient.invalidateQueries(['menu-items']);
             onClose();
         },
-        onError: (error) => {
-            toastError(error, 'Speichern fehlgeschlagen');
-        }
+        onError: (error) => toastError(error, 'Speichern fehlgeschlagen')
     });
 
     const deleteMutation = useMutation({
@@ -102,359 +132,349 @@ export default function MenuItemModal({ item, open, onClose }) {
             queryClient.invalidateQueries(['menu-items']);
             onClose();
         },
-        onError: (error) => {
-            toastError(error, 'Löschen fehlgeschlagen');
-        }
+        onError: (error) => toastError(error, 'Löschen fehlgeschlagen')
     });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setFormError(null);
-
-        // Basic validation
         if (!formData.name?.trim()) { setFormError('Name ist erforderlich.'); return; }
         if (!formData.price || isNaN(parseFloat(formData.price))) { setFormError('Bitte einen gültigen Preis eingeben.'); return; }
-        
+
         let effectiveFormData = { ...formData };
         let calculatedPurchasePrice = formData.purchase_price ? parseFloat(formData.purchase_price) : undefined;
 
-        // Allergene aus Rezept aggregieren
         if (formData.use_recipe_calculation && formData.linked_recipe_id) {
             const recipe = recipes.find(r => r.id === formData.linked_recipe_id);
             if (recipe?.ingredients) {
                 const mergedAllergens = new Set(formData.allergens_list || []);
                 const mergedAdditives = new Set(formData.additives || []);
+                let totalCost = 0;
                 recipe.ingredients.forEach(ingredient => {
                     const article = articles.find(a => a.id === ingredient.article_id);
                     (article?.allergens_list || []).forEach(a => mergedAllergens.add(a));
                     (article?.additives || []).forEach(d => mergedAdditives.add(d));
-                });
-                effectiveFormData = { ...effectiveFormData, allergens_list: [...mergedAllergens], additives: [...mergedAdditives] };
-            }
-        }
-
-        // EK aus Rezept berechnen wenn aktiviert
-        if (formData.use_recipe_calculation && formData.linked_recipe_id) {
-            const recipe = recipes.find(r => r.id === formData.linked_recipe_id);
-            if (recipe?.ingredients) {
-                let totalCost = 0;
-                recipe.ingredients.forEach(ingredient => {
-                    const article = articles.find(a => a.id === ingredient.article_id);
                     if (article?.price_per_liter && ingredient.amount) {
-                        // Fallback für alte Rezepte ohne unit: nehme ml an
                         const unit = ingredient.unit || 'ml';
-                        let amountInLiters = 0;
+                        let liters = 0;
                         switch (unit.toLowerCase()) {
-                            case 'ml':
-                                amountInLiters = ingredient.amount / 1000;
-                                break;
-                            case 'cl':
-                                amountInLiters = ingredient.amount / 100;
-                                break;
-                            case 'l':
-                                amountInLiters = ingredient.amount;
-                                break;
-                            case 'g':
-                                amountInLiters = ingredient.amount / 1000;
-                                break;
-                            case 'kg':
-                                amountInLiters = ingredient.amount;
-                                break;
-                            case 'stk':
-                            case 'stück':
-                                totalCost += article.purchase_price ? article.purchase_price * ingredient.amount : 0;
-                                return;
+                            case 'ml':  liters = ingredient.amount / 1000; break;
+                            case 'cl':  liters = ingredient.amount / 100;  break;
+                            case 'l':   liters = ingredient.amount;        break;
+                            case 'g':   liters = ingredient.amount / 1000; break;
+                            case 'kg':  liters = ingredient.amount;        break;
+                            case 'stk': case 'stück':
+                                totalCost += (article.purchase_price || 0) * ingredient.amount; return;
                         }
-                        if (amountInLiters > 0) {
-                            totalCost += amountInLiters * article.price_per_liter;
-                        }
+                        if (liters > 0) totalCost += liters * article.price_per_liter;
                     }
                 });
                 calculatedPurchasePrice = totalCost;
+                effectiveFormData = { ...effectiveFormData, allergens_list: [...mergedAllergens], additives: [...mergedAdditives] };
             }
-        }
-        // EK aus Artikel berechnen wenn verknüpft
-        else if (formData.linked_article_id && !formData.use_recipe_calculation) {
+        } else if (formData.linked_article_id && !formData.use_recipe_calculation) {
             const linkedArticle = articles.find(a => a.id === formData.linked_article_id);
             if (linkedArticle?.purchase_price) {
-                const parseServingSize = (sizeString) => {
-                    if (!sizeString) return 0;
-                    const size = sizeString.toLowerCase().replace(',', '.');
-                    if (size.includes('l')) return parseFloat(size.replace('l', '').trim()) || 0;
-                    if (size.includes('cl')) return (parseFloat(size.replace('cl', '').trim()) || 0) / 100;
-                    if (size.includes('ml')) return (parseFloat(size.replace('ml', '').trim()) || 0) / 1000;
+                const parseServingSize = (s) => {
+                    if (!s) return 0;
+                    const v = s.toLowerCase().replace(',', '.');
+                    if (v.includes('ml')) return (parseFloat(v) || 0) / 1000;
+                    if (v.includes('cl')) return (parseFloat(v) || 0) / 100;
+                    if (v.includes('l'))  return parseFloat(v) || 0;
                     return 0;
                 };
-                
-                const articleSize = linkedArticle.unit_size || 1;
-                const servingSize = parseServingSize(formData.size);
-                
-                if (servingSize > 0) {
-                    calculatedPurchasePrice = (linkedArticle.purchase_price / articleSize) * servingSize;
-                } else {
-                    calculatedPurchasePrice = linkedArticle.purchase_price;
-                }
+                const serving = parseServingSize(formData.size);
+                calculatedPurchasePrice = serving > 0
+                    ? (linkedArticle.purchase_price / (linkedArticle.unit_size || 1)) * serving
+                    : linkedArticle.purchase_price;
             }
         }
 
-        const submitData = {
+        saveMutation.mutate({
             ...effectiveFormData,
-            price: parseFloat(formData.price),
+            price:          parseFloat(formData.price),
             purchase_price: calculatedPurchasePrice,
             alcohol_content: formData.alcohol_content ? parseFloat(formData.alcohol_content) : undefined,
-            order_position: formData.order_position ? parseInt(formData.order_position) : undefined
-        };
-        saveMutation.mutate(submitData);
+            order_position:  formData.order_position  ? parseInt(formData.order_position)    : undefined,
+        });
     };
+
+    const isBusy = saveMutation.isPending || deleteMutation.isPending;
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{item ? 'Getränk bearbeiten' : 'Neues Getränk'}</DialogTitle>
-                </DialogHeader>
+            <DialogContent className="w-full max-w-lg sm:max-w-2xl h-[100dvh] sm:h-auto sm:max-h-[92vh] flex flex-col p-0 gap-0 rounded-none sm:rounded-2xl overflow-hidden">
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                {/* ── Header ── */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-border/50 shrink-0">
+                    <DialogTitle className="text-lg font-bold text-foreground">
+                        {item ? 'Getränk bearbeiten' : 'Neues Getränk'}
+                    </DialogTitle>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* ── Scrollable form body ── */}
+                <form
+                    id="menu-item-form"
+                    onSubmit={handleSubmit}
+                    className="flex-1 overflow-y-auto px-4 py-5 space-y-4"
+                >
                     {formError && <InlineError message={formError} onDismiss={() => setFormError(null)} />}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                            <Label>Name *</Label>
+
+                    {/* — Grunddaten — */}
+                    <Section title="Grunddaten">
+                        <Field label="Name *">
                             <Input
+                                className={fieldClass}
                                 value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                onChange={e => set('name', e.target.value)}
                                 placeholder="z.B. Mojito"
                                 required
                             />
-                        </div>
+                        </Field>
 
-                        <div>
-                            <Label>Kategorie *</Label>
-                            <Select
-                                value={formData.category}
-                                onValueChange={(value) => setFormData({ ...formData, category: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Bier">Bier</SelectItem>
-                                    <SelectItem value="Wein">Wein</SelectItem>
-                                    <SelectItem value="Sekt & Champagner">Sekt & Champagner</SelectItem>
-                                    <SelectItem value="Spirituosen">Spirituosen</SelectItem>
-                                    <SelectItem value="Longdrinks">Longdrinks</SelectItem>
-                                    <SelectItem value="Cocktails">Cocktails</SelectItem>
-                                    <SelectItem value="Shots">Shots</SelectItem>
-                                    <SelectItem value="Softdrinks">Softdrinks</SelectItem>
-                                    <SelectItem value="Heißgetränke">Heißgetränke</SelectItem>
-                                    <SelectItem value="Moonshiner-Cocktails">Moonshiner-Cocktails</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Field label="Kategorie *">
+                                <Select value={formData.category} onValueChange={v => set('category', v)}>
+                                    <SelectTrigger className={fieldClass}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {['Bier','Wein','Sekt & Champagner','Spirituosen','Longdrinks','Cocktails','Shots','Softdrinks','Heißgetränke','Moonshiner-Cocktails'].map(c => (
+                                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </Field>
 
-                        <div>
-                            <Label>Unterkategorie</Label>
-                            <Input
-                                value={formData.subcategory}
-                                onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                                placeholder="z.B. Rum, IPA"
-                            />
-                        </div>
-
-                        <div>
-                            <Label>Verkaufspreis (€) *</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                placeholder="7.50"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <Label>Größe</Label>
-                            <Input
-                                value={formData.size}
-                                onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                                placeholder="z.B. 0,3l, 4cl"
-                            />
-                        </div>
-
-                        {/* Margin Calculation Section */}
-                        <div className="col-span-2 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                            <div className="flex items-center gap-2 mb-3 justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Calculator className="w-5 h-5 text-amber-700" />
-                                    <Label className="text-amber-900 font-semibold">Margenberechnung</Label>
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                        onClose();
-                                        navigate(createPageUrl('PriceCalculator') + (formData.linked_recipe_id ? '?recipe=' + formData.linked_recipe_id : ''));
-                                    }}
-                                    className="h-7 text-xs text-amber-700 hover:text-amber-900 hover:bg-amber-100"
-                                >
-                                    <ExternalLink className="w-3 h-3 mr-1" />
-                                    Zum Preisrechner
-                                </Button>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 mb-4">
-                                <Switch
-                                    checked={formData.use_recipe_calculation}
-                                    onCheckedChange={(checked) => setFormData({ 
-                                        ...formData, 
-                                        use_recipe_calculation: checked,
-                                        purchase_price: checked ? "" : formData.purchase_price 
-                                    })}
+                            <Field label="Unterkategorie">
+                                <Input
+                                    className={fieldClass}
+                                    value={formData.subcategory}
+                                    onChange={e => set('subcategory', e.target.value)}
+                                    placeholder="z.B. Rum, IPA"
                                 />
-                                <Label className="text-sm">EK automatisch aus Rezept berechnen</Label>
-                            </div>
+                            </Field>
 
-                            {formData.use_recipe_calculation ? (
-                                <div>
-                                    <Label className="text-amber-900">Rezept verknüpfen</Label>
-                                    <Select
-                                        value={formData.linked_recipe_id || ""}
-                                        onValueChange={(value) => setFormData({ ...formData, linked_recipe_id: value })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Rezept auswählen..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-60">
-                                            <SelectItem value={null}>Kein Rezept</SelectItem>
-                                            {recipes.map(recipe => (
-                                                <SelectItem key={recipe.id} value={recipe.id}>
-                                                    {recipe.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-amber-700 mt-2">
-                                        ℹ️ EK wird automatisch aus Artikelpreisen berechnet
-                                    </p>
-                                </div>
-                            ) : (
-                                <div>
-                                    <Label className="text-amber-900">Einkaufspreis (€)</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={formData.purchase_price}
-                                        onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
-                                        placeholder="2.50"
-                                    />
-                                    <p className="text-xs text-amber-700 mt-2">
-                                        ℹ️ Manueller Einkaufspreis für einfache Getränke
-                                    </p>
-                                </div>
-                            )}
+                            <Field label="Verkaufspreis (€) *">
+                                <Input
+                                    className={fieldClass}
+                                    type="number" step="0.01"
+                                    value={formData.price}
+                                    onChange={e => set('price', e.target.value)}
+                                    placeholder="7.50"
+                                    required
+                                />
+                            </Field>
+
+                            <Field label="Größe / Menge">
+                                <Input
+                                    className={fieldClass}
+                                    value={formData.size}
+                                    onChange={e => set('size', e.target.value)}
+                                    placeholder="z.B. 0,3l · 4cl"
+                                />
+                            </Field>
+
+                            <Field label="Alkoholgehalt (%)">
+                                <Input
+                                    className={fieldClass}
+                                    type="number" step="0.1"
+                                    value={formData.alcohol_content}
+                                    onChange={e => set('alcohol_content', e.target.value)}
+                                    placeholder="z.B. 5.2"
+                                />
+                            </Field>
+
+                            <Field label="Reihenfolge">
+                                <Input
+                                    className={fieldClass}
+                                    type="number"
+                                    value={formData.order_position}
+                                    onChange={e => set('order_position', e.target.value)}
+                                    placeholder="1 · 2 · 3 …"
+                                />
+                            </Field>
                         </div>
 
-                        <div>
-                            <Label>Alkoholgehalt (%)</Label>
-                            <Input
-                                type="number"
-                                step="0.1"
-                                value={formData.alcohol_content}
-                                onChange={(e) => setFormData({ ...formData, alcohol_content: e.target.value })}
-                                placeholder="z.B. 5.2"
-                            />
-                        </div>
-
-                        <div>
-                            <Label>Reihenfolge</Label>
-                            <Input
-                                type="number"
-                                value={formData.order_position}
-                                onChange={(e) => setFormData({ ...formData, order_position: e.target.value })}
-                                placeholder="1, 2, 3..."
-                            />
-                        </div>
-
-                        <div className="col-span-2">
-                            <Label>Beschreibung</Label>
+                        <Field label="Beschreibung / Zutaten">
                             <Textarea
+                                className="text-base rounded-xl border-border/70 min-h-[80px] resize-none"
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                placeholder="Zutaten und Beschreibung"
+                                onChange={e => set('description', e.target.value)}
+                                placeholder="Kurze Beschreibung oder Zutatenliste"
                             />
-                        </div>
+                        </Field>
 
-                        <div className="col-span-2">
-                            <AllergenSelector
-                                allergensList={formData.allergens_list || []}
-                                additives={formData.additives || []}
-                                category={formData.category}
-                                onChange={(key, val) => setFormData(prev => ({ ...prev, [key]: val }))}
-                            />
-                        </div>
-
-                        <div className="col-span-2">
-                            <Label>Bild-URL</Label>
+                        <Field label="Bild-URL">
                             <Input
+                                className={fieldClass}
                                 value={formData.image_url}
-                                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                onChange={e => set('image_url', e.target.value)}
                                 placeholder="https://..."
                             />
+                        </Field>
+                    </Section>
+
+                    {/* — Margenberechnung — */}
+                    <Section title="Margenberechnung" icon={<Calculator className="w-4 h-4" />}>
+                        <div className="flex items-center justify-between">
+                            <SwitchRow
+                                label="EK aus Rezept berechnen"
+                                description="Einkaufspreis automatisch aus verknüpftem Rezept ermitteln"
+                                checked={formData.use_recipe_calculation}
+                                onCheckedChange={checked => setFormData(prev => ({
+                                    ...prev,
+                                    use_recipe_calculation: checked,
+                                    purchase_price: checked ? "" : prev.purchase_price
+                                }))}
+                            />
                         </div>
 
+                        {formData.use_recipe_calculation ? (
+                            <Field
+                                label="Rezept verknüpfen"
+                                hint="EK wird automatisch aus den Artikelpreisen berechnet."
+                            >
+                                <Select
+                                    value={formData.linked_recipe_id || ""}
+                                    onValueChange={v => set('linked_recipe_id', v)}
+                                >
+                                    <SelectTrigger className={fieldClass}>
+                                        <SelectValue placeholder="Rezept auswählen…" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-60">
+                                        <SelectItem value={null}>Kein Rezept</SelectItem>
+                                        {recipes.map(r => (
+                                            <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+                        ) : (
+                            <Field
+                                label="Einkaufspreis (€)"
+                                hint="Manueller EK — für einfache Getränke ohne Rezept."
+                            >
+                                <Input
+                                    className={fieldClass}
+                                    type="number" step="0.01"
+                                    value={formData.purchase_price}
+                                    onChange={e => set('purchase_price', e.target.value)}
+                                    placeholder="2.50"
+                                />
+                            </Field>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onClose();
+                                navigate(createPageUrl('PriceCalculator') + (formData.linked_recipe_id ? '?recipe=' + formData.linked_recipe_id : ''));
+                            }}
+                            className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-muted/50 hover:bg-muted text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border border-border/40"
+                        >
+                            <span className="flex items-center gap-2">
+                                <ExternalLink className="w-4 h-4" />
+                                Zum Preisrechner
+                            </span>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </Section>
+
+                    {/* — Status — */}
+                    <Section title="Status & Anzeige">
+                        <div className="divide-y divide-border/40">
+                            <div className="pb-3">
+                                <SwitchRow
+                                    label="Verfügbar"
+                                    description="Getränk wird in der Karte angezeigt"
+                                    checked={formData.is_available}
+                                    onCheckedChange={v => set('is_available', v)}
+                                />
+                            </div>
+                            <div className="py-3">
+                                <SwitchRow
+                                    label="Saisonales Angebot"
+                                    description="Nur zu bestimmten Zeiten verfügbar"
+                                    checked={formData.is_seasonal}
+                                    onCheckedChange={v => set('is_seasonal', v)}
+                                />
+                            </div>
+                            <div className="pt-3">
+                                <SwitchRow
+                                    label="Special / Tagesangebot"
+                                    description="Als Highlight hervorgehoben"
+                                    checked={formData.is_special}
+                                    onCheckedChange={v => set('is_special', v)}
+                                />
+                            </div>
+                        </div>
+                    </Section>
+
+                    {/* — Allergene — */}
+                    <Section title="Allergene & Zusatzstoffe">
+                        <AllergenSelector
+                            allergensList={formData.allergens_list || []}
+                            additives={formData.additives || []}
+                            category={formData.category}
+                            onChange={(key, val) => setFormData(prev => ({ ...prev, [key]: val }))}
+                        />
+                    </Section>
+
+                    {/* — Artikel verknüpfen — */}
+                    <Section title="Lagerbestand verknüpfen">
                         <ArticleLinker
                             articles={articles}
                             linkedIds={formData.linked_article_ids || []}
-                            onChange={(ids) => setFormData(prev => ({ ...prev, linked_article_ids: ids }))}
+                            onChange={ids => setFormData(prev => ({ ...prev, linked_article_ids: ids }))}
                         />
-                    </div>
+                    </Section>
+                </form>
 
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                checked={formData.is_available}
-                                onCheckedChange={(checked) => setFormData({ ...formData, is_available: checked })}
-                            />
-                            <Label>Verfügbar</Label>
-                        </div>
+                {/* ── Sticky footer actions ── */}
+                <div className="shrink-0 px-4 py-4 border-t border-border/50 bg-card flex flex-col gap-3">
+                    <Button
+                        form="menu-item-form"
+                        type="submit"
+                        disabled={isBusy}
+                        className="h-12 text-base font-semibold w-full rounded-xl"
+                    >
+                        {saveMutation.isPending ? 'Speichern…' : 'Speichern'}
+                    </Button>
 
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                checked={formData.is_seasonal}
-                                onCheckedChange={(checked) => setFormData({ ...formData, is_seasonal: checked })}
-                            />
-                            <Label>Saisonales Angebot</Label>
-                        </div>
+                    <div className="flex gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onClose}
+                            disabled={isBusy}
+                            className="flex-1 h-11 rounded-xl"
+                        >
+                            Abbrechen
+                        </Button>
 
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                checked={formData.is_special}
-                                onCheckedChange={(checked) => setFormData({ ...formData, is_special: checked })}
-                            />
-                            <Label>Special/Tagesangebot</Label>
-                        </div>
-                    </div>
-
-                    <DialogFooter>
                         {item && (
                             <Button
                                 type="button"
                                 variant="destructive"
-                                disabled={deleteMutation.isPending}
+                                disabled={isBusy}
                                 onClick={() => deleteMutation.mutate()}
+                                className="flex-1 h-11 rounded-xl gap-2"
                             >
+                                <Trash2 className="w-4 h-4" />
                                 {deleteMutation.isPending ? 'Löschen…' : 'Löschen'}
                             </Button>
                         )}
-                        <Button type="button" variant="outline" onClick={onClose}>
-                            Abbrechen
-                        </Button>
-                        <Button type="submit" disabled={saveMutation.isPending}>
-                            {saveMutation.isPending ? 'Speichern…' : 'Speichern'}
-                        </Button>
-                    </DialogFooter>
-                </form>
+                    </div>
+                </div>
+
             </DialogContent>
         </Dialog>
     );

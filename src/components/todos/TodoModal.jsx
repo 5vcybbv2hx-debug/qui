@@ -131,7 +131,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                             value={formData.description}
                             onChange={e => set('description', e.target.value)}
                             placeholder="Details zur Aufgabe..."
-                            rows={2}
+                            rows={5}
                             className="text-sm"
                         />
                     </div>

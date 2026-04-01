@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { X, Trash2, Wrench } from "lucide-react";
+import ContactsList from "./ContactsList";
 import { haptics } from "@/components/utils/haptics";
 import { toastSuccess, toastError } from "@/lib/errorHandler";
 import { calculateNextMaintenance } from "@/lib/maintenanceUtils";
@@ -67,6 +68,7 @@ const EMPTY = {
     reminder_days_before: 7,
     sync_to_calendar: true,
     is_active: true,
+    contacts: [],
 };
 
 export default function MaintenanceModal({ task, open, onClose }) {
@@ -232,6 +234,14 @@ export default function MaintenanceModal({ task, open, onClose }) {
                         </div>
                     </Section>
 
+                    {/* Kontakte */}
+                    <Section title="Wartungsfirma & Kontakte">
+                        <ContactsList
+                            contacts={formData.contacts || []}
+                            onChange={newContacts => set('contacts', newContacts)}
+                        />
+                    </Section>
+
                     {/* Notizen */}
                     <Section title="Notizen">
                         <Field>
@@ -239,7 +249,7 @@ export default function MaintenanceModal({ task, open, onClose }) {
                                 className="text-base rounded-xl border-border/70 min-h-[72px] resize-none"
                                 value={formData.notes}
                                 onChange={e => set('notes', e.target.value)}
-                                placeholder="Zusätzliche Infos, Prüfberichte, Kontakte…"
+                                placeholder="Zusätzliche Infos, Prüfberichte…"
                             />
                         </Field>
                     </Section>

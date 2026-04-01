@@ -82,6 +82,62 @@
       "type": "boolean",
       "default": true,
       "description": "Aktiv"
+    },
+    "contacts": {
+      "type": "array",
+      "description": "Wartungsfirma / Ansprechpartner (optional, mehrere m\u00f6glich)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Eindeutige ID des Kontakts (z.B. UUID)"
+          },
+          "company_name": {
+            "type": "string",
+            "description": "Firmenname"
+          },
+          "contact_person": {
+            "type": "string",
+            "description": "Name des Ansprechpartners"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefonnummer"
+          },
+          "mobile": {
+            "type": "string",
+            "description": "Mobilnummer (optional)"
+          },
+          "email": {
+            "type": "string",
+            "description": "E-Mail-Adresse (optional)"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Service",
+              "Notdienst",
+              "Vertrieb",
+              "Wartung",
+              "Sonstiges"
+            ],
+            "description": "Funktion / Rolle (optional)"
+          },
+          "note": {
+            "type": "string",
+            "description": "Notiz zu diesem Kontakt (optional)"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "default": false,
+            "description": "Hauptkontakt"
+          }
+        },
+        "required": [
+          "company_name"
+        ]
+      }
     }
   },
   "required": [

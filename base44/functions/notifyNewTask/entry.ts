@@ -1,22 +1,29 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+// MEDIUM FIX: This function is called by an entity automation (no user context).
+// It validates the payload structure to prevent misuse when called directly.
+// No auth check is possible here as entity automations don't have a user context,
+// but we validate the expected payload shape to prevent abuse.
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         
-        const { event, data } = await req.json();
+        const body = await req.json();
+        const { event, data } = body;
 
-        // Only process create events
+        // Validate expected automation payload structure
+        if (!event || !event.type || !data) {
+            return Response.json({ message: 'Invalid automation payload' }, { status: 400 });
+        }
+
         if (event.type !== 'create') {
             return Response.json({ message: 'Not a create event' });
         }
 
-        // Check if task is assigned
         if (!data.assigned_to) {
             return Response.json({ message: 'Task not assigned to anyone' });
         }
 
-        // Get the assigned user
         const users = await base44.asServiceRole.entities.User.list();
         const assignedUser = users.find(u => 
             u.email === data.assigned_to || u.full_name === data.assigned_to
@@ -26,13 +33,11 @@ Deno.serve(async (req) => {
             return Response.json({ message: 'Assigned user not found' });
         }
 
-        // Check notification preferences
         const prefs = assignedUser.notification_preferences || {};
         if (prefs.tasks_assigned === false) {
             return Response.json({ message: 'User has disabled task notifications' });
         }
 
-        // Create notification
         await base44.asServiceRole.entities.Notification.create({
             type: 'task',
             title: 'Neue Aufgabe zugewiesen',
@@ -41,7 +46,6 @@ Deno.serve(async (req) => {
             read_by: []
         });
 
-        // Send push notification if user has subscription
         if (assignedUser.push_subscription) {
             try {
                 await base44.asServiceRole.functions.invoke('sendPushNotification', {
@@ -55,10 +59,7 @@ Deno.serve(async (req) => {
             }
         }
 
-        return Response.json({
-            success: true,
-            message: 'Notification sent'
-        });
+        return Response.json({ success: true, message: 'Notification sent' });
     } catch (error) {
         console.error('Error:', error);
         return Response.json({ error: error.message }, { status: 500 });

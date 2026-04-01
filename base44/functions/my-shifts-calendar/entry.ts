@@ -1,27 +1,42 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+// CRITICAL FIX: IDOR vulnerability — previously anyone could pass any employee_id
+// and retrieve all their shifts without authentication.
+// Now requires auth + the requester must either be an admin or the employee themselves.
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
+        const user = await base44.auth.me();
+
+        if (!user) {
+            return Response.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const url = new URL(req.url);
         const employeeId = url.searchParams.get('employee_id');
         
         if (!employeeId) {
             return Response.json({ error: 'employee_id parameter is required' }, { status: 400 });
         }
-        
-        // Fetch employee to verify access
+
+        // Fetch employee record
         const employee = await base44.asServiceRole.entities.Employee.get(employeeId);
         if (!employee) {
             return Response.json({ error: 'Employee not found' }, { status: 404 });
         }
+
+        // Access control: admin can view any employee, regular users only their own
+        const isAdmin = user.role === 'admin';
+        const isOwnEmployee = employee.email && employee.email.toLowerCase() === user.email.toLowerCase();
+
+        if (!isAdmin && !isOwnEmployee) {
+            return Response.json({ error: 'Forbidden: You can only view your own shifts' }, { status: 403 });
+        }
         
-        // Fetch all shifts for this employee
         const shifts = await base44.asServiceRole.entities.Shift.filter({ 
             employee_id: employeeId 
         }, '-date', 500);
         
-        // Generate ICS content
         const lines = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
@@ -34,7 +49,6 @@ Deno.serve(async (req) => {
             'X-PUBLISHED-TTL:PT1H'
         ];
 
-        // Add shifts
         shifts.forEach(shift => {
             const date = shift.date.replace(/-/g, '');
             const startTime = shift.start_time.replace(':', '') + '00';
@@ -44,7 +58,6 @@ Deno.serve(async (req) => {
             const endHour = parseInt(shift.end_time.split(':')[0]);
             let endDate = date;
             
-            // Handle overnight shifts
             if (endHour < startHour) {
                 const dateObj = new Date(shift.date);
                 dateObj.setDate(dateObj.getDate() + 1);
@@ -57,13 +70,10 @@ Deno.serve(async (req) => {
             lines.push(`DTSTART:${date}T${startTime}`);
             lines.push(`DTEND:${endDate}T${endTime}`);
             
-            let summary = `Schicht`;
-            if (shift.shift_type) {
-                summary = `${shift.shift_type}`;
-            }
+            let summary = shift.shift_type || 'Schicht';
             lines.push(`SUMMARY:${summary}`);
             
-            let description = `Schicht bei Bar Manager`;
+            let description = 'Schicht bei Bar Manager';
             if (shift.shift_type) description += `\\nTyp: ${shift.shift_type}`;
             if (shift.notes) description += `\\nNotizen: ${shift.notes.replace(/\n/g, '\\n')}`;
             lines.push(`DESCRIPTION:${description}`);
@@ -81,12 +91,12 @@ Deno.serve(async (req) => {
             headers: {
                 'Content-Type': 'text/calendar; charset=utf-8',
                 'Content-Disposition': 'inline; filename="my-shifts.ics"',
-                'Cache-Control': 'public, max-age=3600'
+                'Cache-Control': 'private, max-age=3600'
             }
         });
         
     } catch (error) {
         console.error('My shifts calendar error:', error);
-        return Response.json({ error: 'Failed to generate calendar feed' }, { status: 500 });
+        return new Response('Failed to generate calendar feed', { status: 500 });
     }
 });

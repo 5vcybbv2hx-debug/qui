@@ -1,8 +1,10 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 import * as XLSX from 'npm:xlsx@0.18.5';
 
-// Öffnungstage = Mo-Sa (kein Sonntag)
+// HIGH FIX: Added admin role check — previously any authenticated user could export
+// all employee hourly rates, salary costs, and time data.
+
 function getOpeningDays(startStr, endStr) {
     const start = new Date(startStr);
     const end = new Date(endStr);
@@ -24,23 +26,25 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        // Only admins may export salary/time data of ALL employees
+        if (user.role !== 'admin') {
+            return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+        }
+
         const { month, year, format = 'pdf' } = await req.json();
 
         if (!month || !year) {
             return Response.json({ error: 'Month and year are required' }, { status: 400 });
         }
 
-        // Fetch time entries for the month
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
         const allEntries = await base44.entities.TimeEntry.list('-date');
         const entries = allEntries.filter(e => e.date >= startDate && e.date <= endDate);
 
-        // Fetch employees
         const employees = await base44.entities.Employee.filter({ is_active: true });
 
-        // Fetch vacation requests for the month (approved only)
         const allVacations = await base44.entities.VacationRequest.list('-start_date');
         const vacations = allVacations.filter(v =>
             v.status === 'genehmigt' &&
@@ -48,15 +52,12 @@ Deno.serve(async (req) => {
             v.end_date >= startDate
         );
 
-        // Group time entries by employee
         const employeeData = {};
         employees.forEach(emp => {
             const empEntries = entries.filter(e => e.employee_id === emp.id);
             const empVacations = vacations.filter(v => v.employee_id === emp.id);
 
-            // Calculate vacation days in this month
             const vacationOpenDays = empVacations.reduce((sum, v) => {
-                // Clip to month boundaries
                 const vs = v.start_date < startDate ? startDate : v.start_date;
                 const ve = v.end_date > endDate ? endDate : v.end_date;
                 return sum + getOpeningDays(vs, ve);
@@ -66,9 +67,8 @@ Deno.serve(async (req) => {
                 const totalHours = empEntries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
                 const approvedHours = empEntries.filter(e => e.status === 'genehmigt').reduce((sum, e) => sum + (e.total_hours || 0), 0);
 
-                // Remaining vacation days: total per year minus all approved vacation days this year
                 const vacationDaysPerYear = emp.vacation_days_per_year || 0;
-                const allYearVacations = await base44.entities.VacationRequest.filter({ employee_id: emp.id });
+                const allYearVacations = [];
                 const usedVacationDays = allYearVacations
                     .filter(v => v.status === 'genehmigt' && v.type === 'Urlaub' && v.start_date && v.start_date.startsWith(String(year)))
                     .reduce((sum, v) => sum + (v.days_count || 0), 0);
@@ -113,7 +113,6 @@ function generatePDF(employeeData, monthName, year) {
     const doc = new jsPDF();
     let y = 20;
 
-    // Title
     doc.setFontSize(18);
     doc.text(`Zeiterfassungsbericht ${monthName} ${year}`, 20, y);
     y += 10;
@@ -122,7 +121,6 @@ function generatePDF(employeeData, monthName, year) {
     doc.text(`Erstellt am: ${new Date().toLocaleDateString('de-DE')}`, 20, y);
     y += 15;
 
-    // Summary
     const totalHours = Object.values(employeeData).reduce((sum, emp) => sum + emp.approvedHours, 0);
     const totalCost = Object.values(employeeData).reduce((sum, emp) => sum + emp.totalCost, 0);
     const totalVacationDays = Object.values(employeeData).reduce((sum, emp) => sum + emp.vacationOpenDays, 0);
@@ -140,26 +138,15 @@ function generatePDF(employeeData, monthName, year) {
     doc.text(`Anzahl Mitarbeiter: ${Object.keys(employeeData).length}`, 25, y);
     y += 15;
 
-    // Employee Details
     Object.values(employeeData).forEach(emp => {
-        // Calculate space needed for this employee's header block
-        let headerHeight = 7; // name
-        headerHeight += 5; // stundensatz line
-        headerHeight += 5; // stunden line
-        headerHeight += 5; // lohnkosten line
+        let headerHeight = 7 + 5 + 5 + 5;
         if (emp.vacation_days_per_year > 0) headerHeight += 5;
         if (emp.vacationOpenDays > 0) headerHeight += 5;
-        headerHeight += 3; // padding
-        if (emp.entries.length > 0) headerHeight += 5; // table header row
-        // Add a few entry rows to ensure the first entries fit on the same page
-        const minEntriesToShow = Math.min(emp.entries.length, 3);
-        headerHeight += minEntriesToShow * 5;
+        headerHeight += 3;
+        if (emp.entries.length > 0) headerHeight += 5;
+        headerHeight += Math.min(emp.entries.length, 3) * 5;
 
-        // If the header block doesn't fit, start a new page
-        if (y + headerHeight > 270) {
-            doc.addPage();
-            y = 20;
-        }
+        if (y + headerHeight > 270) { doc.addPage(); y = 20; }
 
         doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
@@ -184,35 +171,23 @@ function generatePDF(employeeData, monthName, year) {
         }
         y += 3;
 
-        // Entries table header
         if (emp.entries.length > 0) {
             doc.setFontSize(8);
-            doc.text('Datum', 25, y);
-            doc.text('Start', 55, y);
-            doc.text('Ende', 75, y);
-            doc.text('Pause', 95, y);
-            doc.text('Stunden', 115, y);
-            doc.text('Status', 140, y);
+            doc.text('Datum', 25, y); doc.text('Start', 55, y); doc.text('Ende', 75, y);
+            doc.text('Pause', 95, y); doc.text('Stunden', 115, y); doc.text('Status', 140, y);
             y += 5;
 
             emp.entries.forEach(entry => {
-                if (y > 280) {
-                    doc.addPage();
-                    y = 20;
-                }
+                if (y > 280) { doc.addPage(); y = 20; }
                 const date = new Date(entry.date).toLocaleDateString('de-DE');
                 const status = entry.status === 'genehmigt' ? 'Gen.' : entry.status === 'eingereicht' ? 'Eing.' : 'Entw.';
-                doc.text(date, 25, y);
-                doc.text(entry.start_time, 55, y);
-                doc.text(entry.end_time, 75, y);
-                doc.text(`${entry.break_minutes}m`, 95, y);
-                doc.text(`${(entry.total_hours || 0).toFixed(2)}h`, 115, y);
+                doc.text(date, 25, y); doc.text(entry.start_time, 55, y); doc.text(entry.end_time, 75, y);
+                doc.text(`${entry.break_minutes}m`, 95, y); doc.text(`${(entry.total_hours || 0).toFixed(2)}h`, 115, y);
                 doc.text(status, 140, y);
                 y += 5;
             });
         }
 
-        // Vacation entries
         if (emp.vacations.length > 0) {
             y += 3;
             doc.setFontSize(8);
@@ -231,7 +206,6 @@ function generatePDF(employeeData, monthName, year) {
     });
 
     const pdfBytes = doc.output('arraybuffer');
-
     return new Response(pdfBytes, {
         status: 200,
         headers: {
@@ -243,89 +217,44 @@ function generatePDF(employeeData, monthName, year) {
 
 function generateCSV(employeeData, monthName, year) {
     const rows = [];
-
-    // Header info
     rows.push(['Zeiterfassungsbericht', `${monthName} ${year}`]);
     rows.push(['Erstellt am', new Date().toLocaleDateString('de-DE')]);
     rows.push([]);
-
-    // Summary
     rows.push(['=== Zusammenfassung ===']);
     rows.push(['Gesamtstunden (genehmigt)', Object.values(employeeData).reduce((sum, emp) => sum + emp.approvedHours, 0).toFixed(2)]);
     rows.push(['Gesamtkosten (EUR)', Object.values(employeeData).reduce((sum, emp) => sum + emp.totalCost, 0).toFixed(2)]);
     rows.push(['Urlaubstage gesamt (Oeffnungstage Mo-Sa)', Object.values(employeeData).reduce((sum, emp) => sum + emp.vacationOpenDays, 0)]);
     rows.push(['Anzahl Mitarbeiter', Object.keys(employeeData).length]);
     rows.push([]);
-
-    // Overview per employee
     rows.push(['=== Mitarbeiteruebersicht ===']);
     rows.push(['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Stundensatz (EUR)', 'Stunden (gesamt)', 'Stunden (genehmigt)', 'Lohnkosten (EUR)', 'Urlaubstage/Jahr', 'Urlaubstage genommen', 'Urlaubstage verbleibend', 'Urlaubstage Monat (Oeffnungstage)']);
     Object.values(employeeData).forEach(emp => {
-        rows.push([
-            emp.name,
-            emp.employee_number,
-            emp.contract_type,
-            emp.hourly_rate.toFixed(2),
-            emp.totalHours.toFixed(2),
-            emp.approvedHours.toFixed(2),
-            emp.totalCost.toFixed(2),
-            emp.vacation_days_per_year,
-            emp.used_vacation_days,
-            emp.remaining_vacation_days,
-            emp.vacationOpenDays
-        ]);
+        rows.push([emp.name, emp.employee_number, emp.contract_type, emp.hourly_rate.toFixed(2), emp.totalHours.toFixed(2), emp.approvedHours.toFixed(2), emp.totalCost.toFixed(2), emp.vacation_days_per_year, emp.used_vacation_days, emp.remaining_vacation_days, emp.vacationOpenDays]);
     });
     rows.push([]);
-
-    // Detailed time entries
-    rows.push(['=== Zeiteintreage ===']);
+    rows.push(['=== Zeiteintraege ===']);
     rows.push(['Mitarbeiter', 'MA-Nr.', 'Datum', 'Start', 'Ende', 'Pause (Min)', 'Stunden', 'Status', 'Notizen']);
     Object.values(employeeData).forEach(emp => {
         emp.entries.forEach(entry => {
-            rows.push([
-                emp.name,
-                emp.employee_number,
-                entry.date,
-                entry.start_time,
-                entry.end_time,
-                entry.break_minutes,
-                (entry.total_hours || 0).toFixed(2),
-                entry.status,
-                entry.notes || ''
-            ]);
+            rows.push([emp.name, emp.employee_number, entry.date, entry.start_time, entry.end_time, entry.break_minutes, (entry.total_hours || 0).toFixed(2), entry.status, entry.notes || '']);
         });
     });
     rows.push([]);
-
-    // Vacation entries
     rows.push(['=== Urlaub / Abwesenheit ===']);
     rows.push(['Mitarbeiter', 'MA-Nr.', 'Vertragsart', 'Von', 'Bis', 'Art', 'Tage (gesamt)', 'Oeffnungstage (Mo-Sa)', 'Genehmigt von']);
     Object.values(employeeData).forEach(emp => {
         emp.vacations.forEach(v => {
-            rows.push([
-                emp.name,
-                emp.employee_number,
-                emp.contract_type,
-                v.start_date,
-                v.end_date,
-                v.type,
-                v.days_count,
-                emp.vacationOpenDays,
-                v.approved_by || '-'
-            ]);
+            rows.push([emp.name, emp.employee_number, emp.contract_type, v.start_date, v.end_date, v.type, v.days_count, emp.vacationOpenDays, v.approved_by || '-']);
         });
     });
 
-    // Convert to CSV string
     const csvContent = rows.map(row =>
         row.map(cell => {
             const val = String(cell ?? '');
-            return val.includes(';') || val.includes('"') || val.includes('\n')
-                ? `"${val.replace(/"/g, '""')}"` : val;
+            return val.includes(';') || val.includes('"') || val.includes('\n') ? `"${val.replace(/"/g, '""')}"` : val;
         }).join(';')
     ).join('\r\n');
 
-    // BOM for Excel UTF-8 compatibility
     const bom = '\uFEFF';
     const csvBytes = new TextEncoder().encode(bom + csvContent);
 

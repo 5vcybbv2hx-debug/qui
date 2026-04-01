@@ -1,14 +1,19 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+// CRITICAL FIX: Added admin auth check — previously callable without any authentication,
+// leaking all admin email addresses and sending emails to them.
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        
-        // Get all admin users
+        const user = await base44.auth.me();
+
+        if (!user || user.role !== 'admin') {
+            return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+        }
+
         const users = await base44.asServiceRole.entities.User.list();
-        const admins = users.filter(user => user.role === 'admin');
+        const admins = users.filter(u => u.role === 'admin');
         
-        // Get all managers
         const employees = await base44.asServiceRole.entities.Employee.filter({
             role: 'Manager',
             is_active: true
@@ -21,12 +26,11 @@ Deno.serve(async (req) => {
         
         const uniqueRecipients = [...new Set(recipients)];
         
-        // Send notifications
-        const results = [];
+        let sentCount = 0;
+        let failCount = 0;
         
         for (const email of uniqueRecipients) {
             try {
-                // Create notification
                 await base44.asServiceRole.entities.Notification.create({
                     recipient_email: email,
                     title: 'Backup-Erinnerung',
@@ -36,7 +40,6 @@ Deno.serve(async (req) => {
                     is_read: false
                 });
                 
-                // Send email
                 await base44.asServiceRole.integrations.Core.SendEmail({
                     to: email,
                     subject: '🔔 BarManager - Backup-Erinnerung',
@@ -51,28 +54,25 @@ Deno.serve(async (req) => {
                             <li>Klicke auf "Backup Manager"</li>
                             <li>Erstelle ein neues Backup</li>
                         </ol>
-                        <p>Das Backup wird alle wichtigen Daten sichern: Mitarbeiter, Schichten, Artikel, Verkäufe und mehr.</p>
                         <p>Viele Grüße,<br>Dein BarManager Team</p>
                     `
                 });
                 
-                results.push({ email, sent: true });
+                sentCount++;
             } catch (error) {
-                results.push({ email, sent: false, error: error.message });
+                failCount++;
             }
         }
         
+        // MEDIUM FIX: Don't return email addresses in response
         return Response.json({
             success: true,
             recipients: uniqueRecipients.length,
-            sent: results.filter(r => r.sent).length,
-            details: results
+            sent: sentCount,
+            failed: failCount
         });
     } catch (error) {
         console.error('Backup reminder error:', error);
-        return Response.json({ 
-            success: false, 
-            error: error.message 
-        }, { status: 500 });
+        return Response.json({ success: false, error: error.message }, { status: 500 });
     }
 });

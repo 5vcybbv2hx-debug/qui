@@ -1,8 +1,14 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
+// CRITICAL FIX: Added admin auth check — previously callable without any authentication
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
+        const user = await base44.auth.me();
+
+        if (!user || user.role !== 'admin') {
+            return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+        }
         
         // Get shifts starting in the next 1-2 hours
         const now = new Date();
@@ -19,11 +25,9 @@ Deno.serve(async (req) => {
             const [hours, minutes] = shift.start_time.split(':');
             const shiftDate = new Date(shift.date);
             shiftDate.setHours(parseInt(hours), parseInt(minutes), 0);
-            
             return shiftDate >= oneHourFromNow && shiftDate <= twoHoursFromNow;
         });
         
-        // Get employees
         const employees = await base44.asServiceRole.entities.Employee.filter({
             is_active: true
         });
@@ -33,7 +37,6 @@ Deno.serve(async (req) => {
             employeeMap[emp.id] = emp;
         });
         
-        // Send reminders
         const notifications = [];
         
         for (const shift of upcomingShifts) {
@@ -41,7 +44,6 @@ Deno.serve(async (req) => {
             if (!employee || !employee.email) continue;
             
             try {
-                // Create notification
                 await base44.asServiceRole.entities.Notification.create({
                     recipient_email: employee.email,
                     title: 'Schicht-Erinnerung',
@@ -51,33 +53,20 @@ Deno.serve(async (req) => {
                     is_read: false
                 });
                 
-                // Send push notification if available
                 try {
                     await base44.asServiceRole.functions.invoke('sendPushNotification', {
                         userEmail: employee.email,
                         title: 'Schicht-Erinnerung 🔔',
                         body: `Deine Schicht beginnt um ${shift.start_time} Uhr`,
-                        data: {
-                            type: 'shift_reminder',
-                            shift_id: shift.id
-                        }
+                        data: { type: 'shift_reminder', shift_id: shift.id }
                     });
                 } catch (pushError) {
                     console.log('Push notification not available:', pushError.message);
                 }
                 
-                notifications.push({
-                    employee: employee.name,
-                    shift_time: shift.start_time,
-                    sent: true
-                });
+                notifications.push({ employee: employee.name, shift_time: shift.start_time, sent: true });
             } catch (error) {
-                notifications.push({
-                    employee: employee.name,
-                    shift_time: shift.start_time,
-                    sent: false,
-                    error: error.message
-                });
+                notifications.push({ employee: employee.name, shift_time: shift.start_time, sent: false });
             }
         }
         
@@ -85,14 +74,11 @@ Deno.serve(async (req) => {
             success: true,
             checked_shifts: shifts.length,
             upcoming_shifts: upcomingShifts.length,
-            notifications_sent: notifications.filter(n => n.sent).length,
-            details: notifications
+            notifications_sent: notifications.filter(n => n.sent).length
+            // HIGH FIX: Removed detailed employee data from response
         });
     } catch (error) {
         console.error('Shift reminder error:', error);
-        return Response.json({ 
-            success: false, 
-            error: error.message 
-        }, { status: 500 });
+        return Response.json({ success: false, error: error.message }, { status: 500 });
     }
 });

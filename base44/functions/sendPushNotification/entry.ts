@@ -1,18 +1,12 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import webpush from 'npm:web-push';
 
 const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
 const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
 
-if (!vapidPublicKey || !vapidPrivateKey) {
-    throw new Error('VAPID_PUBLIC_KEY und VAPID_PRIVATE_KEY müssen als Secrets gesetzt werden');
+if (vapidPublicKey && vapidPrivateKey) {
+    webpush.setVapidDetails('mailto:admin@barmanager.de', vapidPublicKey, vapidPrivateKey);
 }
-
-webpush.setVapidDetails(
-    'mailto:admin@barmanager.de',
-    vapidPublicKey,
-    vapidPrivateKey
-);
 
 Deno.serve(async (req) => {
     try {
@@ -23,54 +17,46 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const { title, message, targetRoles } = await req.json();
+        if (!vapidPublicKey || !vapidPrivateKey) {
+            return Response.json({ error: 'Push notifications not configured' }, { status: 503 });
+        }
 
-        // Hole alle User mit Push-Subscriptions
+        const { title, message, targetRoles, targetEmails } = await req.json();
+
         const users = await base44.asServiceRole.entities.User.list();
         
         const targetUsers = users.filter(u => {
             if (!u.push_subscription) return false;
-            
-            // Wenn targetRoles angegeben, nur an diese Rollen senden
-            if (targetRoles && targetRoles.length > 0) {
-                // Hole Employee-Daten für Rolle
-                return targetRoles.includes(u.role);
-            }
+            if (targetEmails && targetEmails.length > 0) return targetEmails.includes(u.email);
+            if (targetRoles && targetRoles.length > 0) return targetRoles.includes(u.role);
             return true;
         });
 
-        const pushPromises = targetUsers.map(async (targetUser) => {
+        const results = await Promise.all(targetUsers.map(async (targetUser) => {
             try {
                 const subscription = JSON.parse(targetUser.push_subscription);
-                
-                await webpush.sendNotification(
-                    subscription,
-                    JSON.stringify({
-                        title: title || 'Neue Benachrichtigung',
-                        body: message,
-                        icon: '/icon-192.png',
-                        badge: '/icon-192.png',
-                        data: {
-                            url: '/Notifications'
-                        }
-                    })
-                );
-                
-                return { success: true, user: targetUser.email };
+                await webpush.sendNotification(subscription, JSON.stringify({
+                    title: title || 'Neue Benachrichtigung',
+                    body: message,
+                    icon: '/icon-192.png',
+                    badge: '/icon-192.png',
+                    data: { url: '/Notifications' }
+                }));
+                return { success: true };
             } catch (error) {
-                console.error('Push failed for user:', targetUser.email, error);
-                return { success: false, user: targetUser.email, error: error.message };
+                console.error('Push failed for user:', error.message);
+                return { success: false };
             }
-        });
+        }));
 
-        const results = await Promise.all(pushPromises);
         const successCount = results.filter(r => r.success).length;
 
+        // MEDIUM FIX: Don't return email addresses in response
         return Response.json({
             success: true,
             sent: successCount,
             total: targetUsers.length,
-            results
+            failed: results.filter(r => !r.success).length
         });
     } catch (error) {
         console.error('Error:', error);

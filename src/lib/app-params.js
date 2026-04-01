@@ -20,14 +20,17 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 		window.history.replaceState({}, document.title, newUrl);
 	}
 	if (searchParam) {
-		storage.setItem(storageKey, searchParam);
+		try { storage.setItem(storageKey, searchParam); } catch (e) {}
 		return searchParam;
 	}
 	if (defaultValue) {
-		storage.setItem(storageKey, defaultValue);
+		try { storage.setItem(storageKey, defaultValue); } catch (e) {}
 		return defaultValue;
 	}
-	const storedValue = storage.getItem(storageKey);
+	let storedValue = null;
+	try {
+		storedValue = storage.getItem(storageKey);
+	} catch (e) {}
 	if (storedValue) {
 		return storedValue;
 	}
@@ -36,8 +39,8 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 
 const getAppParams = () => {
 	if (getAppParamValue("clear_access_token") === 'true') {
-		storage.removeItem('base44_access_token');
-		storage.removeItem('token');
+		try { storage.removeItem('base44_access_token'); } catch (e) {}
+		try { storage.removeItem('token'); } catch (e) {}
 	}
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),

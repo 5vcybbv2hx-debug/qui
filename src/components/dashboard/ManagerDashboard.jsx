@@ -7,8 +7,9 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
     Calendar, Clock, CheckSquare, AlertCircle, ArrowRight, Users, ShoppingCart,
-    Sparkles, Package, AlertTriangle, CalendarCheck, Umbrella, TrendingUp
+    Sparkles, Package, AlertTriangle, CalendarCheck, Umbrella, TrendingUp, Wrench
 } from 'lucide-react';
+import { getTaskStatus } from '@/lib/maintenanceUtils';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +61,10 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
         queryKey: ['cleaning-tasks'],
         queryFn: () => base44.entities.CleaningTask.list()
     });
+    const { data: maintenanceTasks = [] } = useQuery({
+        queryKey: ['maintenance-tasks'],
+        queryFn: () => base44.entities.MaintenanceTask.filter({ is_active: true })
+    });
 
     const todayShifts = shifts.filter(s => s.date === today);
     const todayEvents = events.filter(e => e.date === today && e.status !== 'abgesagt');
@@ -70,6 +75,10 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
     const lowStockArticles = articles.filter(a => a.min_stock && a.current_stock <= a.min_stock);
     const pendingTimeEntries = timeEntries.filter(e => e.status === 'eingereicht');
     const pendingVacationRequests = vacationRequests.filter(r => r.status === 'beantragt');
+    const urgentMaintenance = maintenanceTasks.filter(t => getTaskStatus(t) === 'überfällig');
+    const soonMaintenance   = maintenanceTasks.filter(t => getTaskStatus(t) === 'bald fällig');
+    const maintenanceAlert  = urgentMaintenance.length + soonMaintenance.length;
+
     const cleaningProgress = cleaningTasks.length > 0
         ? Math.round((cleaningTasks.filter(t => t.is_completed).length / cleaningTasks.length) * 100)
         : 0;
@@ -215,6 +224,26 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                                             <p className="text-xs text-red-300">{lowStockArticles.length} Artikel</p>
                                         </div>
                                         <ArrowRight className="w-5 h-5 text-red-400" />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                    )}
+                    {maintenanceAlert > 0 && (
+                        <Link to={createPageUrl('Maintenance')}>
+                            <Card className={urgentMaintenance.length > 0 ? "bg-red-900/20 border-red-800/30 hover:bg-red-900/30 transition-colors" : "bg-yellow-900/20 border-yellow-800/30 hover:bg-yellow-900/30 transition-colors"}>
+                                <CardContent className="p-4">
+                                    <div className="flex items-center gap-3">
+                                        <Wrench className={`w-8 h-8 ${urgentMaintenance.length > 0 ? 'text-red-400' : 'text-yellow-400'}`} />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-foreground">Wartung</p>
+                                            <p className={`text-xs ${urgentMaintenance.length > 0 ? 'text-red-300' : 'text-yellow-300'}`}>
+                                                {urgentMaintenance.length > 0 && `${urgentMaintenance.length} überfällig`}
+                                                {urgentMaintenance.length > 0 && soonMaintenance.length > 0 && ' · '}
+                                                {soonMaintenance.length > 0 && `${soonMaintenance.length} bald fällig`}
+                                            </p>
+                                        </div>
+                                        <ArrowRight className={`w-5 h-5 ${urgentMaintenance.length > 0 ? 'text-red-400' : 'text-yellow-400'}`} />
                                     </div>
                                 </CardContent>
                             </Card>

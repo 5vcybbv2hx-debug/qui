@@ -184,6 +184,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
 
     return (
         <>
+        <div className="bg-slate-800 rounded-xl shadow-sm border border-slate-700 overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-3 sm:p-4 bg-slate-900/50 border-b border-slate-700">
                 <Button 

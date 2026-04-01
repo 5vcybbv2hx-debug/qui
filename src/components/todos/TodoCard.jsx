@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Check, Calendar, Pencil, Trash2, Archive, User, MoreVertical, Circle, Loader, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Calendar, Pencil, Trash2, Archive, User, MoreVertical, Circle, Loader, CheckCircle, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import AttachmentGallery from './AttachmentGallery';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { format, isToday, isTomorrow, isPast } from 'date-fns';
@@ -38,6 +39,7 @@ function formatDueDate(dateStr) {
 
 export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDelete, onArchive, onQuickUpdate, showArchiveButton, sortBy, allTodos, idx }) {
     const [showSubtasks, setShowSubtasks] = useState(false);
+    const [showAttachments, setShowAttachments] = useState(false);
 
     const isCompleted = todo.status === 'erledigt';
     const isInProgress = todo.status === 'in_bearbeitung';
@@ -230,27 +232,46 @@ export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDe
                             )}
                         </div>
 
+                        {/* Attachment count indicator - clickable */}
+                        {todo.attachments && todo.attachments.length > 0 && (
+                            <button
+                                onClick={() => setShowAttachments(!showAttachments)}
+                                className="mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-secondary/30 border border-border/40 text-xs text-muted-foreground hover:text-foreground hover:border-border transition-all"
+                            >
+                                <ImageIcon className="w-3.5 h-3.5" />
+                                {todo.attachments.length} {todo.attachments.length === 1 ? 'Anhang' : 'Anhänge'}
+                                {showAttachments ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
+                            </button>
+                        )}
+
+                        {/* Attachments Gallery */}
+                        {todo.attachments && todo.attachments.length > 0 && showAttachments && (
+                            <div className="mt-3 pt-3 border-t border-border/40">
+                                <AttachmentGallery attachments={todo.attachments} readOnly={true} />
+                            </div>
+                        )}
+
                         {/* Subtasks */}
                         {showSubtasks && subtasks.length > 0 && (
                             <div className="mt-3 space-y-2 pl-2 border-l-2 border-border ml-1">
                                 {subtasks.map(sub => (
-                                    <button
+                                     <button
                                         key={sub.id}
                                         onClick={() => handleSubtaskToggle(sub.id)}
                                         className="flex items-center gap-2.5 w-full text-left group py-0.5"
-                                    >
-                                        <div className={cn("w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-all",
-                                            sub.done
-                                                ? "bg-green-500 border-green-500"
-                                                : "border-border group-hover:border-foreground"
-                                        )}>
-                                            {sub.done && <Check className="w-3 h-3 text-white" />}
-                                        </div>
-                                        <span className={cn("text-sm", sub.done ? "line-through text-muted-foreground" : "text-foreground")}>
-                                            {sub.title}
-                                        </span>
-                                    </button>
-                                ))}
+                                     >
+                                         <div className={cn("w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-all",
+                                             sub.done
+                                                 ? "bg-green-500 border-green-500"
+                                                 : "border-border group-hover:border-foreground"
+                                         )}>
+                                             {sub.done && <Check className="w-3 h-3 text-white" />}
+                                         </div>
+                                         <span className={cn("text-sm", sub.done ? "line-through text-muted-foreground" : "text-foreground")}>
+                                             {sub.title}
+                                         </span>
+                                     </button>
+                                 ))}
                             </div>
                         )}
                     </div>

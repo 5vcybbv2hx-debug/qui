@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { loadCategories } from './TodoCategoryManager';
+import AttachmentManager from './AttachmentManager';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,10 @@ function generateId() {
     return Math.random().toString(36).slice(2, 10);
 }
 
+function generateAttachmentId() {
+    return 'att_' + Math.random().toString(36).slice(2, 10);
+}
+
 export default function TodoModal({ open, onClose, todo, employees, onSave, currentUser }) {
     const [formData, setFormData] = useState({
         title: '',
@@ -37,6 +42,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
         assigned_to_names: [],
         category: 'Sonstiges',
         subtasks: [],
+        attachments: [],
     });
     const [newSubtask, setNewSubtask] = useState('');
     const categories = loadCategories();
@@ -53,6 +59,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                 assigned_to_names: todo.assigned_to_names || (todo.assigned_to ? [todo.assigned_to] : []),
                 category: todo.category || 'Sonstiges',
                 subtasks: todo.subtasks || [],
+                attachments: todo.attachments || [],
             });
         } else {
             const defaultAssignee = currentUser?.full_name || currentUser?.email || '';
@@ -66,6 +73,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                 assigned_to_names: defaultAssignee ? [defaultAssignee] : [],
                 category: 'Sonstiges',
                 subtasks: [],
+                attachments: [],
             });
         }
         setNewSubtask('');
@@ -231,6 +239,13 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                             </div>
                         </div>
                     )}
+
+                    {/* Attachments Manager */}
+                    <AttachmentManager
+                        attachments={formData.attachments}
+                        onChange={(attachments) => set('attachments', attachments)}
+                        isLoading={false}
+                    />
 
                     {/* Subtasks */}
                     <div className="space-y-1.5">

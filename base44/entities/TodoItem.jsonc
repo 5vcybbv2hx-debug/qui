@@ -89,6 +89,38 @@
           }
         }
       }
+    },
+    "attachments": {
+      "type": "array",
+      "description": "Anh\u00e4nge (Fotos, Skizzen)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "photo",
+              "sketch"
+            ]
+          },
+          "url": {
+            "type": "string"
+          },
+          "thumbnail_url": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_by": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

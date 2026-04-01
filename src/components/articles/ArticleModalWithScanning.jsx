@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Camera, X, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { MobileModalWrapper, MobileModalHeader, MobileModalContent, MobileModalFooter } from '../modals/MobileModalWrapper';
 import BarcodeScannerEnhanced from '../restock/BarcodeScanner.enhanced';
 import { cn } from '@/lib/utils';
 

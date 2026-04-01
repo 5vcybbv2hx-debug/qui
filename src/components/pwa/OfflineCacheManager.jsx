@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { cacheData } from '@/components/utils/useOfflineCache';
+import { cacheData } from '@/components/utils/offlineSync';
 import { base44 } from '@/api/base44Client';
 
 export function OfflineCacheManager() {

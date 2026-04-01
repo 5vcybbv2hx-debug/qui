@@ -1,0 +1,121 @@
+{
+  "name": "MenuItem",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Getr\u00e4nks"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Bier",
+        "Wein",
+        "Sekt & Champagner",
+        "Spirituosen",
+        "Longdrinks",
+        "Cocktails",
+        "Shots",
+        "Softdrinks",
+        "Hei\u00dfgetr\u00e4nke",
+        "Moonshiner-Cocktails"
+      ],
+      "description": "Kategorie"
+    },
+    "subcategory": {
+      "type": "string",
+      "description": "Unterkategorie (z.B. Rum, Vodka, IPA)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung/Zutaten"
+    },
+    "price": {
+      "type": "number",
+      "description": "Preis in Euro"
+    },
+    "size": {
+      "type": "string",
+      "description": "Gr\u00f6\u00dfe (z.B. 0,3l, 4cl, 0,1l)"
+    },
+    "purchase_price": {
+      "type": "number",
+      "description": "Einkaufspreis (manuell oder berechnet)"
+    },
+    "use_recipe_calculation": {
+      "type": "boolean",
+      "default": false,
+      "description": "EK automatisch aus Rezept berechnen"
+    },
+    "linked_recipe_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpftes Rezept f\u00fcr automatische Berechnung"
+    },
+    "margin_percentage": {
+      "type": "number",
+      "description": "Marge in Prozent (berechnet)"
+    },
+    "margin_absolute": {
+      "type": "number",
+      "description": "Marge absolut in Euro (berechnet)"
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktuell verf\u00fcgbar"
+    },
+    "is_seasonal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Saisonales Angebot"
+    },
+    "is_special": {
+      "type": "boolean",
+      "default": false,
+      "description": "Tagesangebot/Special"
+    },
+    "order_position": {
+      "type": "number",
+      "description": "Reihenfolge in der Karte"
+    },
+    "allergens": {
+      "type": "string",
+      "description": "Allergene (Freitext, Legacy)"
+    },
+    "allergens_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Allergene (strukturiert)"
+    },
+    "additives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Zusatzstoffe"
+    },
+    "alcohol_content": {
+      "type": "number",
+      "description": "Alkoholgehalt in %"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Bild-URL"
+    },
+    "linked_article_id": {
+      "type": "string",
+      "description": "ID des verkn\u00fcpften Artikels aus der Artikeldatenbank"
+    },
+    "linked_article_name": {
+      "type": "string",
+      "description": "Name des verkn\u00fcpften Artikels (f\u00fcr schnelle Anzeige)"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "price"
+  ]
+}

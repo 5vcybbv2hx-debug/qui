@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, ExternalLink } from "lucide-react";
+import AllergenSelector from './AllergenSelector';
 import { haptics } from "@/components/utils/haptics";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -38,6 +39,8 @@ export default function MenuItemModal({ item, open, onClose }) {
         is_special: false,
         order_position: "",
         allergens: "",
+        allergens_list: [],
+        additives: [],
         alcohol_content: "",
         image_url: "",
         linked_article_id: "",
@@ -342,11 +345,11 @@ export default function MenuItemModal({ item, open, onClose }) {
                         </div>
 
                         <div className="col-span-2">
-                            <Label>Allergene</Label>
-                            <Input
-                                value={formData.allergens}
-                                onChange={(e) => setFormData({ ...formData, allergens: e.target.value })}
-                                placeholder="z.B. Laktose, Nüsse"
+                            <AllergenSelector
+                                allergensList={formData.allergens_list || []}
+                                additives={formData.additives || []}
+                                category={formData.category}
+                                onChange={(key, val) => setFormData(prev => ({ ...prev, [key]: val }))}
                             />
                         </div>
 

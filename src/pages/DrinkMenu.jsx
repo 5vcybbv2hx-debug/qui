@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Wine, Search, Eye, EyeOff, Link2, TrendingUp, Calculator, ExternalLink, Copy, QrCode } from "lucide-react";
+import { Plus, Wine, Search, Eye, EyeOff, Link2, TrendingUp, Calculator, ExternalLink, Copy, QrCode, Info } from "lucide-react";
+import { ALLERGENS, ADDITIVES } from '../components/menu/AllergenSelector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import MenuItemModal from "../components/menu/MenuItemModal";
 import MarginCalculator from "../components/menu/MarginCalculator";
@@ -213,18 +214,23 @@ export default function DrinkMenuPage() {
                                                             )}
                                                             </div>
 
-                                                            {/* Allergene anzeigen */}
-                                                            {(() => {
-                                                             const allergens = item.allergens || 
-                                                                (item.linked_article_id && articles.find(a => a.id === item.linked_article_id)?.allergens);
-                                                             return allergens ? (
-                                                                <div className="mt-2 text-xs text-muted-foreground">
-                                                                   <span className="font-semibold">Allergene:</span> {allergens}
-                                                               </div>
-                                                            ) : null;
-                                                            })()}
+                                                            {/* Allergene & Zusatzstoffe */}
+                                                            {((item.allergens_list?.length > 0) || (item.additives?.length > 0)) && (
+                                                                <div className="mt-2 flex flex-wrap gap-1">
+                                                                    {(item.allergens_list || []).map(a => (
+                                                                        <span key={a} className="px-1.5 py-0.5 rounded text-[10px] bg-red-500/10 border border-red-500/20 text-red-300">{a}</span>
+                                                                    ))}
+                                                                    {(item.additives || []).map(d => (
+                                                                        <span key={d} className="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/10 border border-blue-500/20 text-blue-300">{d}</span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                            {/* Legacy allergens text */}
+                                                            {item.allergens && !(item.allergens_list?.length > 0) && (
+                                                                <div className="mt-1 text-xs text-muted-foreground"><span className="font-semibold">Allergene:</span> {item.allergens}</div>
+                                                            )}
 
-                                                        {/* Margin Indicator & Price Calculator - Admin Only */}
+                                                            {/* Margin Indicator & Price Calculator - Admin Only */}
                                                         {permissions.isAdmin && (
                                                             <div className="flex gap-2 mt-2">
                                                                 {(item.purchase_price || item.use_recipe_calculation || item.linked_article_id) && (
@@ -314,6 +320,50 @@ export default function DrinkMenuPage() {
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Legende */}
+                {(() => {
+                    const usedAllergens = [...new Set(filteredItems.flatMap(i => i.allergens_list || []))];
+                    const usedAdditives = [...new Set(filteredItems.flatMap(i => i.additives || []))];
+                    if (usedAllergens.length === 0 && usedAdditives.length === 0) return null;
+                    return (
+                        <Card className="bg-card border-border mt-6">
+                            <CardContent className="p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Info className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-sm font-semibold text-foreground">Legende</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {usedAllergens.length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-red-300 mb-1.5">Allergene</p>
+                                            <div className="space-y-0.5">
+                                                {usedAllergens.map((a, i) => (
+                                                    <p key={a} className="text-xs text-muted-foreground">
+                                                        <span className="text-red-300 font-mono mr-1">{String.fromCharCode(65 + i)}</span> = {a}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {usedAdditives.length > 0 && (
+                                        <div>
+                                            <p className="text-xs font-semibold text-blue-300 mb-1.5">Zusatzstoffe</p>
+                                            <div className="space-y-0.5">
+                                                {usedAdditives.map((d, i) => (
+                                                    <p key={d} className="text-xs text-muted-foreground">
+                                                        <span className="text-blue-300 font-mono mr-1">{i + 1}</span> = {d}
+                                                    </p>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-3 italic">Alle Angaben ohne Gewähr. Bei Allergien bitte Personal ansprechen.</p>
+                            </CardContent>
+                        </Card>
+                    );
+                })()}
             </div>
 
             {showModal && (

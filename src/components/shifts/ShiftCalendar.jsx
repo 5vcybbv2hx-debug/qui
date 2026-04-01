@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { format, startOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, isSameDay, isSameMonth, startOfDay, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Palmtree, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Palmtree, CheckCircle2, XCircle, Pencil } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
@@ -12,9 +14,50 @@ import { usePermissions } from '@/components/auth/usePermissions';
 
 export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], provisionalRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
     const permissions = usePermissions();
-    const [viewMode, setViewMode] = useState('week'); // 'week' or 'month'
+    const queryClient = useQueryClient();
+    const [viewMode, setViewMode] = useState('week');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [draggedShift, setDraggedShift] = useState(null);
+    const [provisionalPopup, setProvisionalPopup] = useState(null); // { req, x, y }
+    const popupRef = useRef(null);
+
+    // Close popup on outside click
+    useEffect(() => {
+        if (!provisionalPopup) return;
+        const handler = (e) => {
+            if (popupRef.current && !popupRef.current.contains(e.target)) {
+                setProvisionalPopup(null);
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [provisionalPopup]);
+
+    const provisionalMutation = useMutation({
+        mutationFn: async ({ req, action }) => {
+            if (action === 'bestätigt') {
+                await base44.entities.Shift.create({
+                    employee_id: req.employee_id,
+                    employee_name: req.employee_name,
+                    date: req.date,
+                    start_time: req.start_time,
+                    end_time: req.end_time,
+                    shift_type: req.shift_type,
+                    notes: 'Selbsteinplanung bestätigt',
+                });
+            }
+            return base44.entities.ProvisionalShiftRequest.update(req.id, {
+                status: action,
+                reviewed_by: 'Manager',
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['provisional-shift-requests']);
+            queryClient.invalidateQueries(['all-provisional-requests']);
+            queryClient.invalidateQueries(['shifts']);
+            setProvisionalPopup(null);
+        }
+    });
 
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     
@@ -140,7 +183,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
     };
 
     return (
-        <div className="bg-slate-800 rounded-xl shadow-sm border border-slate-700 overflow-hidden">
+        <>
             {/* Header */}
             <div className="flex items-center justify-between p-3 sm:p-4 bg-slate-900/50 border-b border-slate-700">
                 <Button 
@@ -321,22 +364,30 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 {dayProvisional.map((req) => (
                                     <div
                                         key={req.id}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (permissions.isManager && req.status === 'ausstehend') {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setProvisionalPopup({ req, x: rect.left, y: rect.bottom + 4 });
+                                            }
+                                        }}
                                         className={cn(
                                             "px-1.5 py-1 rounded text-[10px] font-medium flex items-center gap-1 flex-shrink-0 border-2 border-dashed",
+                                            permissions.isManager && req.status === 'ausstehend' ? 'cursor-pointer hover:brightness-125' : 'cursor-default',
                                             req.status === 'abgelehnt'
                                                 ? "bg-slate-700/40 border-slate-500 text-slate-400 opacity-60"
                                                 : req.status === 'bestätigt'
                                                 ? "bg-green-600/30 border-green-500 text-green-300"
                                                 : "bg-yellow-500/15 border-yellow-400 text-yellow-300"
                                         )}
-                                        title={`${req.employee_name} – ${req.status}`}
+                                        title={permissions.isManager && req.status === 'ausstehend' ? 'Klicken zum Bestätigen/Ablehnen' : `${req.employee_name} – ${req.status}`}
                                     >
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[10px] truncate font-semibold leading-tight">{req.employee_name.split(' ')[0]}</p>
                                             <p className="text-[9px] opacity-80 leading-tight">{req.start_time?.slice(0,5)}-{req.end_time?.slice(0,5)}</p>
                                         </div>
                                         <span className="text-[8px] flex-shrink-0">
-                                            {req.status === 'abgelehnt' ? '✗' : req.status === 'bestätigt' ? '✓' : '?'}
+                                            {req.status === 'abgelehnt' ? '✗' : req.status === 'bestätigt' ? '✓' : '!'}
                                         </span>
                                     </div>
                                 ))}
@@ -393,5 +444,39 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                 })}
             </div>
         </div>
+
+        {/* Provisional Quick-Action Popup */}
+        {provisionalPopup && (
+            <div
+                ref={popupRef}
+                className="fixed z-50 bg-slate-800 border border-yellow-500/40 rounded-xl shadow-2xl p-3 min-w-[220px]"
+                style={{ top: Math.min(provisionalPopup.y, window.innerHeight - 160), left: Math.min(provisionalPopup.x, window.innerWidth - 240) }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="mb-2.5">
+                    <p className="font-bold text-white text-sm">{provisionalPopup.req.employee_name}</p>
+                    <p className="text-yellow-300 text-xs">{provisionalPopup.req.date} · {provisionalPopup.req.start_time}–{provisionalPopup.req.end_time}</p>
+                    {provisionalPopup.req.shift_type && <p className="text-slate-400 text-xs">{provisionalPopup.req.shift_type}</p>}
+                    {provisionalPopup.req.comment && <p className="text-slate-400 text-[10px] italic mt-1">"{provisionalPopup.req.comment}"</p>}
+                </div>
+                <div className="flex gap-2">
+                    <button
+                        disabled={provisionalMutation.isPending}
+                        onClick={() => provisionalMutation.mutate({ req: provisionalPopup.req, action: 'abgelehnt' })}
+                        className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-red-600/80 hover:bg-red-600 text-white text-xs font-medium transition-colors"
+                    >
+                        <XCircle className="w-3.5 h-3.5" /> Ablehnen
+                    </button>
+                    <button
+                        disabled={provisionalMutation.isPending}
+                        onClick={() => provisionalMutation.mutate({ req: provisionalPopup.req, action: 'bestätigt' })}
+                        className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors"
+                    >
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Bestätigen
+                    </button>
+                </div>
+            </div>
+        )}
+        </>
     );
 }

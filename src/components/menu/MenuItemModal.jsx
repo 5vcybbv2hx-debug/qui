@@ -19,6 +19,7 @@ import { Calculator, ExternalLink } from "lucide-react";
 import { toastError, toastSuccess } from '@/lib/errorHandler';
 import InlineError from '@/components/ui/InlineError';
 import AllergenSelector from './AllergenSelector';
+import ArticleLinker from './ArticleLinker';
 import { haptics } from "@/components/utils/haptics";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -47,7 +48,8 @@ export default function MenuItemModal({ item, open, onClose }) {
         alcohol_content: "",
         image_url: "",
         linked_article_id: "",
-        linked_article_name: ""
+        linked_article_name: "",
+        linked_article_ids: []
     });
 
     const { data: articles = [] } = useQuery({
@@ -64,7 +66,13 @@ export default function MenuItemModal({ item, open, onClose }) {
 
     useEffect(() => {
         if (item) {
-            setFormData(item);
+            // Migrate legacy single-link to array if needed
+            setFormData({
+                ...item,
+                linked_article_ids: item.linked_article_ids?.length
+                    ? item.linked_article_ids
+                    : item.linked_article_id ? [item.linked_article_id] : []
+            });
         }
     }, [item]);
 
@@ -395,44 +403,11 @@ export default function MenuItemModal({ item, open, onClose }) {
                             />
                         </div>
 
-                        <div className="col-span-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <Label className="text-blue-900">🔗 Artikel verknüpfen (optional)</Label>
-                            <p className="text-xs text-blue-700 mb-2 mt-1">Verknüpfung mit Lagerbestand + automatische EK-Übernahme</p>
-                            <Select
-                                value={formData.linked_article_id || ""}
-                                onValueChange={(value) => {
-                                                     const article = articles.find(a => a.id === value);
-                                                     setFormData(prev => ({ 
-                                                         ...prev, 
-                                                         linked_article_id: value,
-                                                         linked_article_name: article?.name || "",
-                                                         allergens: article?.allergens ? article.allergens : prev.allergens,
-                                                         allergens_list: article?.allergens_list?.length ? article.allergens_list : prev.allergens_list,
-                                                         additives: article?.additives?.length ? article.additives : prev.additives,
-                                                     }));
-                                                 }}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Artikel auswählen..." />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-60">
-                                    <SelectItem value={null}>Keine Verknüpfung</SelectItem>
-                                    {articles.map(article => (
-                                        <SelectItem key={article.id} value={article.id}>
-                                            {article.name} {article.barcode ? `(${article.barcode})` : ''}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {formData.linked_article_name && (
-                                <p className="text-xs text-green-700 mt-2">
-                                    ✓ Verknüpft mit: {formData.linked_article_name}
-                                    {articles.find(a => a.id === formData.linked_article_id)?.allergens && (
-                                        <span className="block text-amber-700 mt-0.5">⚠️ Allergene übernommen: {articles.find(a => a.id === formData.linked_article_id)?.allergens}</span>
-                                    )}
-                                </p>
-                            )}
-                        </div>
+                        <ArticleLinker
+                            articles={articles}
+                            linkedIds={formData.linked_article_ids || []}
+                            onChange={(ids) => setFormData(prev => ({ ...prev, linked_article_ids: ids }))}
+                        />
                     </div>
 
                     <div className="flex flex-col gap-3">

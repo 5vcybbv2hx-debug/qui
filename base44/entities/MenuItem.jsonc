@@ -106,11 +106,18 @@
     },
     "linked_article_id": {
       "type": "string",
-      "description": "ID des verkn\u00fcpften Artikels aus der Artikeldatenbank"
+      "description": "ID des verkn\u00fcpften Artikels (Legacy, einzeln)"
     },
     "linked_article_name": {
       "type": "string",
-      "description": "Name des verkn\u00fcpften Artikels (f\u00fcr schnelle Anzeige)"
+      "description": "Name des verkn\u00fcpften Artikels (Legacy)"
+    },
+    "linked_article_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der verkn\u00fcpften Artikel (mehrere m\u00f6glich)"
     }
   },
   "required": [

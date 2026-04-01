@@ -14,6 +14,14 @@ import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import ShiftMarketplaceModal from '@/components/shifts/ShiftMarketplaceModal';
+import DirectSwapModal from '@/components/shifts/DirectSwapModal';
+import { 
+  sortBidsByTimestamp, 
+  groupBidsByStatus, 
+  formatBidTime, 
+  getStatusLabel, 
+  getStatusColor 
+} from '@/lib/shiftSwapHelpers';
 
 export default function ShiftSwaps() {
     const permissions = usePermissions();
@@ -23,6 +31,7 @@ export default function ShiftSwaps() {
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
     const [marketplaceOpen, setMarketplaceOpen] = useState(false);
+    const [directSwapOpen, setDirectSwapOpen] = useState(false);
 
     const { data: swapRequests = [], isLoading: loadingRequests } = useQuery({
         queryKey: ['shift-swap-requests'],
@@ -272,13 +281,20 @@ export default function ShiftSwaps() {
                     </div>
                 </div>
 
-                <div className="flex gap-2 mb-6">
+                <div className="flex flex-col sm:flex-row gap-2 mb-6">
                     <Button
                         onClick={() => setMarketplaceOpen(true)}
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white gap-2"
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white gap-2 flex-1 sm:flex-none"
                     >
                         <Users className="w-4 h-4" />
                         Marketplace
+                    </Button>
+                    <Button
+                        onClick={() => setDirectSwapOpen(true)}
+                        className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white gap-2 flex-1 sm:flex-none"
+                    >
+                        <RepeatIcon className="w-4 h-4" />
+                        Direkt tauschen
                     </Button>
                 </div>
 
@@ -494,33 +510,77 @@ export default function ShiftSwaps() {
 
                                                      {/* Show bids for marketplace requests */}
                                                      {request.marketplace && (() => {
-                                                        const requestBids = bids.filter(b => b.swap_request_id === request.id && b.status === 'ausstehend');
-                                                        if (requestBids.length === 0) return (
+                                                        const requestBids = bids.filter(b => b.swap_request_id === request.id);
+                                                        const sortedBids = sortBidsByTimestamp(requestBids);
+                                                        const groupedBids = groupBidsByStatus(sortedBids);
+
+                                                        if (sortedBids.length === 0) return (
                                                             <div className="p-3 bg-secondary rounded-lg border border-border">
-                                                                <p className="text-xs text-muted-foreground">Noch keine Bewerber</p>
+                                                                <p className="text-xs text-muted-foreground">Noch keine Reaktionen</p>
                                                             </div>
                                                         );
+
                                                         return (
-                                                            <div className="p-3 bg-secondary rounded-lg border border-border">
-                                                                <p className="text-xs text-muted-foreground font-medium mb-2">Bewerber ({requestBids.length}):</p>
-                                                                <div className="space-y-2">
-                                                                    {requestBids.map(bid => (
-                                                                        <div key={bid.id} className="flex items-center justify-between">
-                                                                            <span className="text-sm text-foreground">{bid.bidding_employee_name}</span>
-                                                                           <Button
-                                                                               size="sm"
-                                                                               onClick={() => handleApprove(request, bid.bidding_employee_id, bid.bidding_employee_name)}
-                                                                               className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
-                                                                           >
-                                                                               <Check className="w-3 h-3 mr-1" />
-                                                                               Auswählen
-                                                                           </Button>
-                                                                       </div>
-                                                                   ))}
-                                                               </div>
-                                                           </div>
+                                                            <div className="p-3 bg-secondary rounded-lg border border-border space-y-3">
+                                                                <p className="text-xs text-muted-foreground font-medium">Reaktionen ({sortedBids.length}):</p>
+
+                                                                {groupedBids.annehmen.length > 0 && (
+                                                                    <div>
+                                                                        <p className="text-xs font-medium text-green-400 mb-1 flex items-center gap-1">
+                                                                            <Check className="w-3 h-3" />
+                                                                            Möchte übernehmen ({groupedBids.annehmen.length})
+                                                                        </p>
+                                                                        <div className="space-y-1 ml-3">
+                                                                            {groupedBids.annehmen.map((bid, idx) => (
+                                                                                <div key={bid.id} className="flex items-center justify-between gap-2">
+                                                                                    <span className="text-sm text-foreground">
+                                                                                        {bid.bidding_employee_name}
+                                                                                        {idx === 0 && <span className="ml-2 text-green-400 font-medium">⭐ Erste</span>}
+                                                                                    </span>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        onClick={() => handleApprove(request, bid.bidding_employee_id, bid.bidding_employee_name)}
+                                                                                        className="bg-green-600 hover:bg-green-700 text-white text-xs h-6 px-2"
+                                                                                    >
+                                                                                        <Check className="w-3 h-3 mr-1" />
+                                                                                        Auswählen
+                                                                                    </Button>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {groupedBids.unter_umständen.length > 0 && (
+                                                                    <div>
+                                                                        <p className="text-xs font-medium text-yellow-400 mb-1">Vielleicht interessiert ({groupedBids.unter_umständen.length})</p>
+                                                                        <div className="space-y-1 ml-3">
+                                                                            {groupedBids.unter_umständen.map(bid => (
+                                                                                <div key={bid.id} className="text-xs text-foreground flex items-center justify-between">
+                                                                                    <span>{bid.bidding_employee_name}</span>
+                                                                                    <span className="text-xs text-muted-foreground">{formatBidTime(bid.created_at)}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {groupedBids.ablehnen.length > 0 && (
+                                                                    <div>
+                                                                        <p className="text-xs font-medium text-red-400 mb-1">Kein Interesse ({groupedBids.ablehnen.length})</p>
+                                                                        <div className="space-y-1 ml-3">
+                                                                            {groupedBids.ablehnen.map(bid => (
+                                                                                <div key={bid.id} className="text-xs text-foreground flex items-center justify-between">
+                                                                                    <span>{bid.bidding_employee_name}</span>
+                                                                                    <span className="text-xs text-muted-foreground">{formatBidTime(bid.created_at)}</span>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                        );
-                                                    })()}
+                                                     })()}
                                                     </div>
 
                                                     <div className="flex lg:flex-col gap-2">
@@ -580,6 +640,13 @@ export default function ShiftSwaps() {
                  open={marketplaceOpen}
                  onOpenChange={setMarketplaceOpen}
              />
-            </div>
-            );
+
+             {/* Direct Swap Modal */}
+             <DirectSwapModal
+                 open={directSwapOpen}
+                 onOpenChange={setDirectSwapOpen}
+                 myShifts={myUpcomingShifts}
+             />
+             </div>
+             );
             }

@@ -1,0 +1,43 @@
+{
+  "name": "ShiftSwapBid",
+  "type": "object",
+  "properties": {
+    "swap_request_id": {
+      "type": "string",
+      "description": "ID der Schichttausch-Anfrage"
+    },
+    "bidding_employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters, der sich bewirbt"
+    },
+    "bidding_employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters, der sich bewirbt"
+    },
+    "shift_id": {
+      "type": "string",
+      "description": "ID der Schicht"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "annehmen",
+        "ablehnen",
+        "unter_umst\u00e4nden"
+      ],
+      "default": "annehmen",
+      "description": "Reaktionsstatus des Mitarbeiters"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Erstellt am"
+    }
+  },
+  "required": [
+    "swap_request_id",
+    "bidding_employee_id",
+    "bidding_employee_name",
+    "shift_id"
+  ]
+}

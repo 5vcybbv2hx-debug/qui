@@ -40,18 +40,23 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 const getAppParams = () => {
 	if (getAppParamValue("clear_access_token") === 'true') {
 		try { storage.removeItem('base44_access_token'); } catch (e) {}
-		try { storage.removeItem('token'); } catch (e) {}
+		try { storage.removeItem('base44_token'); } catch (e) {}
+	}
+	const token = getAppParamValue("access_token", { removeFromUrl: true });
+	// Speichere Token sowohl als access_token als auch als base44_token
+	if (token) {
+		try { storage.setItem('base44_token', token); } catch (e) {}
+		try { storage.setItem('base44_access_token', token); } catch (e) {}
 	}
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),
-		token: getAppParamValue("access_token", { removeFromUrl: true }),
+		token: token,
 		fromUrl: getAppParamValue("from_url", { defaultValue: window.location.href }),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: import.meta.env.VITE_BASE44_FUNCTIONS_VERSION }),
 		appBaseUrl: getAppParamValue("app_base_url", { defaultValue: import.meta.env.VITE_BASE44_APP_BASE_URL }),
 	}
-}
+	}
 
-
-export const appParams = {
+	export const appParams = {
 	...getAppParams()
 }

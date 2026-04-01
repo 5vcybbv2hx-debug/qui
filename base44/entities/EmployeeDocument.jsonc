@@ -1,0 +1,59 @@
+{
+  "name": "EmployeeDocument",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "Personalbogen",
+        "Arbeitsvertrag",
+        "Steuerunterlagen",
+        "Versicherung",
+        "Ausbildung",
+        "Bescheinigung",
+        "Sonstiges"
+      ],
+      "description": "Dokumenttyp"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Originalname der Datei"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL der hochgeladenen Datei"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "MIME-Type (z.B. application/pdf)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optionale Beschreibung"
+    },
+    "uploaded_by": {
+      "type": "string",
+      "description": "E-Mail der Person, die das Dokument hochgeladen hat"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Archiviert"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "document_type",
+    "file_name",
+    "file_url"
+  ]
+}

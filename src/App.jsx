@@ -4,6 +4,8 @@ import Closing from './pages/Closing';
 import ClosingDisplay from './pages/ClosingDisplay';
 import Opening from './pages/Opening';
 import EmployeeHome from './pages/EmployeeHome';
+import EmployeeProfile from './pages/EmployeeProfile';
+import EmployeesImproved from './pages/EmployeesImproved';
 import Stationsplan from './pages/Stationsplan';
 import OperatorDashboard from './pages/OperatorDashboard';
 import NotificationSettings from './pages/NotificationSettings';
@@ -74,6 +76,9 @@ const AuthenticatedApp = () => {
       <Route path="/ClosingDisplay" element={<ClosingDisplay />} />
       <Route path="/Stationsplan" element={<LayoutWrapper currentPageName="Stationsplan"><Stationsplan /></LayoutWrapper>} />
       <Route path="/NotificationSettings" element={<LayoutWrapper currentPageName="NotificationSettings"><NotificationSettings /></LayoutWrapper>} />
+      <Route path="/EmployeeProfile" element={<LayoutWrapper currentPageName="EmployeeProfile"><EmployeeProfile /></LayoutWrapper>} />
+      <Route path="/EmployeeProfile/:id" element={<LayoutWrapper currentPageName="EmployeeProfile"><EmployeeProfile /></LayoutWrapper>} />
+      <Route path="/EmployeesImproved" element={<LayoutWrapper currentPageName="EmployeesImproved"><EmployeesImproved /></LayoutWrapper>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

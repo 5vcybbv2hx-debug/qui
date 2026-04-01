@@ -1,0 +1,293 @@
+{
+  "name": "Employee",
+  "type": "object",
+  "properties": {
+    "employee_number": {
+      "type": "string",
+      "description": "Mitarbeiternummer"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "Aushilfe",
+        "Vollzeit",
+        "Manager"
+      ],
+      "description": "Position in der Bar"
+    },
+    "pin": {
+      "type": "string",
+      "description": "4-stellige PIN f\u00fcr Terminal-Aktionen"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Barkeeper",
+          "Service",
+          "Sonderaufgaben"
+        ]
+      },
+      "description": "Spezielle F\u00e4higkeiten"
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Individuelle Berechtigungen f\u00fcr den Mitarbeiter",
+      "properties": {
+        "canViewDashboard": {
+          "type": "boolean",
+          "default": true
+        },
+        "canViewShifts": {
+          "type": "boolean",
+          "default": true
+        },
+        "canEditShifts": {
+          "type": "boolean",
+          "default": false
+        },
+        "canViewReservations": {
+          "type": "boolean",
+          "default": true
+        },
+        "canEditReservations": {
+          "type": "boolean",
+          "default": true
+        },
+        "canViewShopping": {
+          "type": "boolean",
+          "default": true
+        },
+        "canEditShopping": {
+          "type": "boolean",
+          "default": true
+        },
+        "canViewRestock": {
+          "type": "boolean",
+          "default": true
+        },
+        "canEditRestock": {
+          "type": "boolean",
+          "default": true
+        },
+        "canViewCleaning": {
+          "type": "boolean",
+          "default": true
+        },
+        "canEditCleaning": {
+          "type": "boolean",
+          "default": true
+        },
+        "canViewTodos": {
+          "type": "boolean",
+          "default": true
+        },
+        "canEditTodos": {
+          "type": "boolean",
+          "default": true
+        },
+        "canViewEmployees": {
+          "type": "boolean",
+          "default": true
+        },
+        "canEditEmployees": {
+          "type": "boolean",
+          "default": false
+        },
+        "canViewAnalytics": {
+          "type": "boolean",
+          "default": false
+        },
+        "canViewPriceCalculator": {
+          "type": "boolean",
+          "default": false
+        },
+        "canClockOutOthers": {
+          "type": "boolean",
+          "default": false
+        },
+        "canViewOnboarding": {
+          "type": "boolean",
+          "default": false
+        },
+        "canViewInventory": {
+          "type": "boolean",
+          "default": false
+        },
+        "canViewWastage": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "contract_type": {
+      "type": "string",
+      "enum": [
+        "Vollzeit",
+        "Teilzeit",
+        "Minijob"
+      ],
+      "description": "Vertragsart"
+    },
+    "hourly_rate": {
+      "type": "number",
+      "description": "Stundensatz in Euro"
+    },
+    "vacation_days_per_year": {
+      "type": "number",
+      "description": "Urlaubstage pro Jahr"
+    },
+    "color": {
+      "type": "string",
+      "description": "Farbe f\u00fcr Kalendarstellung"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefonnummer"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-Mail Adresse"
+    },
+    "birthday": {
+      "type": "string",
+      "format": "date",
+      "description": "Geburtsdatum"
+    },
+    "birth_name": {
+      "type": "string",
+      "description": "Geburtsname"
+    },
+    "birth_place": {
+      "type": "string",
+      "description": "Geburtsort"
+    },
+    "nationality": {
+      "type": "string",
+      "description": "Nationalit\u00e4t"
+    },
+    "entry_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Eintrittsdatum"
+    },
+    "tshirt_size": {
+      "type": "string",
+      "enum": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL"
+      ],
+      "description": "T-Shirt Gr\u00f6\u00dfe"
+    },
+    "pullover_size": {
+      "type": "string",
+      "enum": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "XXXL"
+      ],
+      "description": "Pullover Gr\u00f6\u00dfe"
+    },
+    "street": {
+      "type": "string",
+      "description": "Stra\u00dfe und Hausnummer"
+    },
+    "postal_code": {
+      "type": "string",
+      "description": "Postleitzahl"
+    },
+    "city": {
+      "type": "string",
+      "description": "Wohnort"
+    },
+    "activity": {
+      "type": "string",
+      "description": "T\u00e4tigkeit / Position"
+    },
+    "education": {
+      "type": "string",
+      "description": "Schul- und Berufsausbildung"
+    },
+    "weekly_hours": {
+      "type": "number",
+      "description": "W\u00f6chentliche Arbeitszeit in Stunden"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Steuer-Identifikationsnummer"
+    },
+    "pension_number": {
+      "type": "string",
+      "description": "Rentenversicherungsnummer"
+    },
+    "health_insurance": {
+      "type": "string",
+      "description": "Krankenkasse"
+    },
+    "pension_exemption": {
+      "type": "boolean",
+      "default": false,
+      "description": "Befreiungsantrag Rentenversicherung"
+    },
+    "has_main_job": {
+      "type": "boolean",
+      "default": false,
+      "description": "Versicherungspflichtige Hauptbesch\u00e4ftigung"
+    },
+    "has_other_minijob": {
+      "type": "boolean",
+      "default": false,
+      "description": "Weitere geringf\u00fcgige Besch\u00e4ftigung"
+    },
+    "other_minijob_details": {
+      "type": "string",
+      "description": "Details zur weiteren geringf\u00fcgigen Besch\u00e4ftigung"
+    },
+    "bank_name": {
+      "type": "string",
+      "description": "Kreditinstitut"
+    },
+    "iban": {
+      "type": "string",
+      "description": "IBAN"
+    },
+    "bic": {
+      "type": "string",
+      "description": "BIC"
+    },
+    "emergency_contact_name": {
+      "type": "string",
+      "description": "Notfallkontakt - Name"
+    },
+    "emergency_contact_phone": {
+      "type": "string",
+      "description": "Notfallkontakt - Telefon"
+    },
+    "emergency_contact_relation": {
+      "type": "string",
+      "description": "Notfallkontakt - Beziehung (z.B. Ehepartner, Eltern)"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "role"
+  ]
+}

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { format, isSameDay, addWeeks, addMonths } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch } from "@/components/ui/switch";
@@ -38,39 +38,9 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
         enabled: open
     });
 
-    const createRecurringMutation = useMutation({
-        mutationFn: async (data) => {
-            const seriesId = `series_${Date.now()}`;
-            const reservations = [];
-            let currentDate = new Date(data.date);
-            const endDate = data.recurring_end_date ? new Date(data.recurring_end_date) : addMonths(currentDate, 6);
-            
-            while (currentDate <= endDate) {
-                const resData = {
-                    ...data,
-                    date: format(currentDate, 'yyyy-MM-dd'),
-                    is_recurring: true,
-                    recurring_series_id: seriesId
-                };
-                delete resData.recurring_end_date;
-                reservations.push(resData);
-                
-                if (data.recurring_pattern === 'weekly') {
-                    currentDate = addWeeks(currentDate, 1);
-                } else if (data.recurring_pattern === 'biweekly') {
-                    currentDate = addWeeks(currentDate, 2);
-                } else if (data.recurring_pattern === 'monthly') {
-                    currentDate = addMonths(currentDate, 1);
-                }
-            }
-            
-            return await base44.entities.Reservation.bulkCreate(reservations);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['reservations']);
-            onClose();
-        }
-    });
+    // Single-record recurring: the lifecycle hook advances the date automatically.
+    // No bulk-create needed — one record per series, always the next future date.
+    // The series_id links history together in the archive.
 
     const hasEventOnDate = formData.date && events.some(e => 
         isSameDay(new Date(e.date), new Date(formData.date)) && e.status !== 'abgesagt'
@@ -117,11 +87,13 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
         }
         
         haptics.light();
+        // Always save a single record. For new recurring reservations, the lifecycle
+        // hook will create the next occurrence when this one expires.
+        const dataToSave = { ...formData };
         if (formData.is_recurring && !reservation) {
-            createRecurringMutation.mutate(formData);
-        } else {
-            onSave(formData, reservation?.id);
+            dataToSave.recurring_series_id = `series_${crypto.randomUUID()}`;
         }
+        onSave(dataToSave, reservation?.id);
     };
 
     return (
@@ -323,13 +295,11 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                             className="flex-1 bg-slate-800 hover:bg-slate-900"
                             disabled={hasEventOnDate || createRecurringMutation.isPending}
                         >
-                            {createRecurringMutation.isPending 
-                                ? 'Erstelle Serie...' 
-                                : reservation 
-                                    ? 'Speichern' 
-                                    : formData.is_recurring 
-                                        ? 'Serie erstellen' 
-                                        : 'Hinzufügen'}
+                            {reservation
+                                ? 'Speichern'
+                                : formData.is_recurring
+                                    ? 'Wiederk. anlegen'
+                                    : 'Hinzufügen'}
                         </Button>
                     </div>
                 </form>

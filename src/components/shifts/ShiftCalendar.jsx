@@ -247,11 +247,12 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             
                             {/* Geburtstag Indikator */}
                             {birthdays.length > 0 && (
-                                <div className="absolute top-1.5 left-1.5 z-10 flex gap-0.5">
+                                <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-0.5">
                                     {birthdays.map(emp => (
-                                        <div key={emp.id} title={`🎂 ${emp.name}`}
-                                            className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] bg-pink-500/80 text-white font-bold shadow-sm">
-                                            🎂
+                                        <div key={emp.id}
+                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-pink-500/80 text-white shadow-sm max-w-[90px]">
+                                            <span className="text-[9px]">🎂</span>
+                                            <span className="text-[9px] font-semibold truncate leading-tight">{emp.name.split(' ')[0]}</span>
                                         </div>
                                     ))}
                                 </div>

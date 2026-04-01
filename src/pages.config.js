@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+// Core pages (auto-generated alphabetically)
 import ArticleEdit from './pages/ArticleEdit';
 import Articles from './pages/Articles';
 import Calendar from './pages/Calendar';
@@ -101,10 +102,31 @@ import Storage from './pages/Storage';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
+
+// Special pages (manual imports — non-standard routing)
+import CleaningChecklist from './pages/CleaningChecklist';
+import Closing from './pages/Closing';
+import ClosingDisplay from './pages/ClosingDisplay';
+import Opening from './pages/Opening';
+import EmployeeHome from './pages/EmployeeHome';
+import EmployeeProfile from './pages/EmployeeProfile';
+import EmployeesImproved from './pages/EmployeesImproved';
+import Stationsplan from './pages/Stationsplan';
+import OperatorDashboard from './pages/OperatorDashboard';
+import DataProtection from './pages/DataProtection';
+import Impressum from './pages/Impressum';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import AGB from './pages/AGB';
+import AuditLog from './pages/AuditLog';
+import LegalImprint from './pages/LegalImprint';
+import LegalPrivacy from './pages/LegalPrivacy';
+import LegalAGB from './pages/LegalAGB';
+
 import __Layout from './Layout.jsx';
 
 
-export const PAGES = {
+// Page categories for layout and navigation
+const CORE_PAGES = {
     "ArticleEdit": ArticleEdit,
     "Articles": Articles,
     "Calendar": Calendar,
@@ -159,10 +181,45 @@ export const PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "WeeklyTasks": WeeklyTasks,
+};
+
+// Special pages: with Layout wrapper
+const SPECIAL_PAGES_WITH_LAYOUT = {
+    "CleaningChecklist": CleaningChecklist,
+    "Closing": Closing,
+    "Opening": Opening,
+    "EmployeeHome": EmployeeHome,
+    "EmployeeProfile": EmployeeProfile,
+    "EmployeesImproved": EmployeesImproved,
+    "Stationsplan": Stationsplan,
+    "OperatorDashboard": OperatorDashboard,
+    "DataProtection": DataProtection,
+    "Impressum": Impressum,
+    "PrivacyPolicy": PrivacyPolicy,
+    "AGB": AGB,
+    "AuditLog": AuditLog,
+};
+
+// Public pages: NO layout wrapper (guest/public access)
+const PUBLIC_PAGES = {
+    "ClosingDisplay": ClosingDisplay,
+    "LegalImprint": LegalImprint,
+    "LegalPrivacy": LegalPrivacy,
+    "LegalAGB": LegalAGB,
+};
+
+// Combined pages object (all accessible pages)
+export const PAGES = {
+    ...CORE_PAGES,
+    ...SPECIAL_PAGES_WITH_LAYOUT,
+    ...PUBLIC_PAGES,
 }
 
 export const pagesConfig = {
     mainPage: "Articles",
     Pages: PAGES,
+    CorePages: CORE_PAGES,
+    SpecialPagesWithLayout: SPECIAL_PAGES_WITH_LAYOUT,
+    PublicPages: PUBLIC_PAGES,
     Layout: __Layout,
 };

@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { X, Trash2, Wrench } from "lucide-react";
 import ContactsList from "./ContactsList";
 import { haptics } from "@/components/utils/haptics";
-import { toastSuccess, toastError } from "@/lib/errorHandler";
+import { toast } from "sonner";
 import { calculateNextMaintenance } from "@/lib/maintenanceUtils";
 
 // ── Shared field style ───────────────────────────────────────────────────────
@@ -99,22 +99,22 @@ export default function MaintenanceModal({ task, open, onClose }) {
             : base44.entities.MaintenanceTask.create(data),
         onSuccess: () => {
             haptics.light();
-            toastSuccess(task ? 'Wartung aktualisiert' : 'Wartung erstellt');
+            toast.success(task ? 'Wartung aktualisiert' : 'Wartung erstellt');
             queryClient.invalidateQueries(['maintenance-tasks']);
             onClose();
         },
-        onError: (err) => toastError(err, 'Speichern fehlgeschlagen'),
+        onError: (err) => toast.error('Speichern fehlgeschlagen'),
     });
 
     const deleteMutation = useMutation({
         mutationFn: () => base44.entities.MaintenanceTask.delete(task.id),
         onSuccess: () => {
             haptics.light();
-            toastSuccess('Wartung gelöscht');
+            toast.success('Wartung gelöscht');
             queryClient.invalidateQueries(['maintenance-tasks']);
             onClose();
         },
-        onError: (err) => toastError(err, 'Löschen fehlgeschlagen'),
+        onError: (err) => toast.error('Löschen fehlgeschlagen'),
     });
 
     const handleSubmit = (e) => {

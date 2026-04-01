@@ -1,22 +1,4 @@
 import { Toaster } from "@/components/ui/toaster"
-import CleaningChecklist from './pages/CleaningChecklist';
-import Closing from './pages/Closing';
-import ClosingDisplay from './pages/ClosingDisplay';
-import Opening from './pages/Opening';
-import EmployeeHome from './pages/EmployeeHome';
-import EmployeeProfile from './pages/EmployeeProfile';
-import EmployeesImproved from './pages/EmployeesImproved';
-import Stationsplan from './pages/Stationsplan';
-import OperatorDashboard from './pages/OperatorDashboard';
-import NotificationSettings from './pages/NotificationSettings';
-import DataProtection from './pages/DataProtection';
-import Impressum from './pages/Impressum';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import AGB from './pages/AGB';
-import AuditLog from './pages/AuditLog';
-import LegalImprint from './pages/LegalImprint';
-import LegalPrivacy from './pages/LegalPrivacy';
-import LegalAGB from './pages/LegalAGB';
 import ConsentDialog from '@/components/legal/ConsentDialog';
 import { useConsent } from '@/components/legal/useConsent';
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -28,7 +10,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
-const { Pages, Layout, mainPage } = pagesConfig;
+const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
@@ -64,12 +46,15 @@ const AuthenticatedApp = () => {
   return (
     <>
     <Routes>
+      {/* Main landing page */}
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
           <MainPage />
         </LayoutWrapper>
       } />
-      {Object.entries(Pages).map(([path, Page]) => (
+
+      {/* Core pages: all with layout */}
+      {Object.entries(CorePages).map(([path, Page]) => (
         <Route
           key={path}
           path={`/${path}`}
@@ -80,25 +65,33 @@ const AuthenticatedApp = () => {
           }
         />
       ))}
-      <Route path="/CleaningChecklist" element={<CleaningChecklist />} />
-      <Route path="/Closing" element={<LayoutWrapper currentPageName="Closing"><Closing /></LayoutWrapper>} />
-      <Route path="/Opening" element={<LayoutWrapper currentPageName="Opening"><Opening /></LayoutWrapper>} />
-      <Route path="/EmployeeHome" element={<LayoutWrapper currentPageName="EmployeeHome"><EmployeeHome /></LayoutWrapper>} />
-      <Route path="/OperatorDashboard" element={<LayoutWrapper currentPageName="OperatorDashboard"><OperatorDashboard /></LayoutWrapper>} />
-      <Route path="/ClosingDisplay" element={<ClosingDisplay />} />
-      <Route path="/Stationsplan" element={<LayoutWrapper currentPageName="Stationsplan"><Stationsplan /></LayoutWrapper>} />
-      <Route path="/NotificationSettings" element={<LayoutWrapper currentPageName="NotificationSettings"><NotificationSettings /></LayoutWrapper>} />
-      <Route path="/EmployeeProfile" element={<LayoutWrapper currentPageName="EmployeeProfile"><EmployeeProfile /></LayoutWrapper>} />
-      <Route path="/EmployeeProfile/:id" element={<LayoutWrapper currentPageName="EmployeeProfile"><EmployeeProfile /></LayoutWrapper>} />
-      <Route path="/EmployeesImproved" element={<LayoutWrapper currentPageName="EmployeesImproved"><EmployeesImproved /></LayoutWrapper>} />
-      <Route path="/DataProtection" element={<LayoutWrapper currentPageName="DataProtection"><DataProtection /></LayoutWrapper>} />
-      <Route path="/Impressum" element={<LayoutWrapper currentPageName="Impressum"><Impressum /></LayoutWrapper>} />
-      <Route path="/PrivacyPolicy" element={<LayoutWrapper currentPageName="PrivacyPolicy"><PrivacyPolicy /></LayoutWrapper>} />
-      <Route path="/AGB" element={<LayoutWrapper currentPageName="AGB"><AGB /></LayoutWrapper>} />
-      <Route path="/AuditLog" element={<LayoutWrapper currentPageName="AuditLog"><AuditLog /></LayoutWrapper>} />
-      <Route path="/LegalImprint" element={<LegalImprint />} />
-      <Route path="/LegalPrivacy" element={<LegalPrivacy />} />
-      <Route path="/LegalAGB" element={<LegalAGB />} />
+
+      {/* Special pages: all with layout */}
+      {Object.entries(SpecialPagesWithLayout).map(([path, Page]) => (
+        <Route
+          key={path}
+          path={`/${path}`}
+          element={
+            <LayoutWrapper currentPageName={path}>
+              <Page />
+            </LayoutWrapper>
+          }
+        />
+      ))}
+
+      {/* Dynamic employee profile route */}
+      <Route path="/EmployeeProfile/:id" element={
+        <LayoutWrapper currentPageName="EmployeeProfile">
+          <SpecialPagesWithLayout.EmployeeProfile />
+        </LayoutWrapper>
+      } />
+
+      {/* Public pages: NO layout wrapper */}
+      {Object.entries(PublicPages).map(([path, Page]) => (
+        <Route key={path} path={`/${path}`} element={<Page />} />
+      ))}
+
+      {/* Catch-all */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
 

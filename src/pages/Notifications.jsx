@@ -82,7 +82,7 @@ export default function Notifications() {
 
     const markAllAsReadMutation = useMutation({
         mutationFn: async () => {
-            const unreadNotifications = visibleNotifications.filter(n => 
+            const unreadNotifications = notifications.filter(n => 
                 !n.read_by?.includes(currentUser.email)
             );
             const promises = unreadNotifications.map(n => {
@@ -107,7 +107,7 @@ export default function Notifications() {
 
     const deleteAllReadMutation = useMutation({
          mutationFn: async () => {
-             const readNotifications = visibleNotifications.filter(n => 
+             const readNotifications = notifications.filter(n => 
                  n.read_by?.includes(currentUser.email)
              );
              const promises = readNotifications.map(n => 

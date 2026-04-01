@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Barcode/EAN"
     },
+    "qr_code": {
+      "type": "string",
+      "description": "QR-Code (optional, f\u00fcr interne Kennzeichnung)"
+    },
     "name": {
       "type": "string",
       "description": "Artikelname"

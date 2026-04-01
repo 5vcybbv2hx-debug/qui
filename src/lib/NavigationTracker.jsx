@@ -32,9 +32,14 @@ export default function NavigationTracker() {
         }
 
         if (isAuthenticated && pageName) {
-            base44.appLogs.logUserInApp(pageName).catch(() => {
+            try {
+                base44.analytics?.track({
+                    eventName: 'page_view',
+                    properties: { page: pageName }
+                }).catch(() => {});
+            } catch (e) {
                 // Silently fail - logging shouldn't break the app
-            });
+            }
         }
     }, [location, isAuthenticated, Pages, mainPageKey]);
 

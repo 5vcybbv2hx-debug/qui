@@ -6,12 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PrivacyContent, ImprintContent } from '@/components/legal/ConsentDialog';
 import { useConsent } from '@/components/legal/useConsent';
-import { FileText, Clock, AlertCircle } from 'lucide-react';
+import { usePermissions } from '@/components/auth/usePermissions';
+import { FileText, Clock, AlertCircle, Shield } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 export default function LegalSettingsPanel() {
   const { userConsent, needsNewConsent } = useConsent();
+  const permissions = usePermissions();
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showImprint, setShowImprint] = useState(false);
 
@@ -139,7 +141,7 @@ export default function LegalSettingsPanel() {
 
       {/* Full Page Links */}
       <div className="space-y-2 pt-4 border-t border-border/50">
-        <p className="text-xs text-muted-foreground font-medium">Oder ansehen als vollständige Seite:</p>
+        <p className="text-xs text-muted-foreground font-medium">Vollständige Seiten:</p>
         <div className="grid gap-2 sm:grid-cols-2">
           <Button
             variant="outline"
@@ -147,7 +149,7 @@ export default function LegalSettingsPanel() {
             onClick={() => window.location.href = '/PrivacyPolicy'}
             className="text-xs h-9"
           >
-            → Datenschutz (Seite)
+            → Datenschutz
           </Button>
           <Button
             variant="outline"
@@ -155,10 +157,40 @@ export default function LegalSettingsPanel() {
             onClick={() => window.location.href = '/Impressum'}
             className="text-xs h-9"
           >
-            → Impressum (Seite)
+            → Impressum
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.href = '/AGB'}
+            className="text-xs h-9"
+          >
+            → AGB
           </Button>
         </div>
       </div>
+
+      {/* Admin: Audit Log */}
+      {(permissions.isAdmin || permissions.isManager) && (
+        <div className="pt-6 border-t border-border/50 space-y-3">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-4 h-4 text-amber-500" />
+            <h3 className="text-sm font-semibold text-foreground">Admin-Bereich</h3>
+          </div>
+          <Card className="bg-amber-500/10 border-amber-500/20 p-4">
+            <p className="text-xs text-amber-200 mb-3">
+              Zugriffs- und Änderungsprotokoll für Compliance & Audits
+            </p>
+            <Button
+              size="sm"
+              onClick={() => window.location.href = '/AuditLog'}
+              className="w-full"
+            >
+              → Audit-Log ansehen
+            </Button>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

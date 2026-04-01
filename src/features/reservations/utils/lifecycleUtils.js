@@ -10,28 +10,25 @@
  */
 
 import { addWeeks, addMonths, parseISO, isBefore, isAfter, format } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
-
-const TZ = 'Europe/Berlin';
 
 // ── Time helpers ──────────────────────────────────────────────────────────────
 
 /**
- * Returns the current moment in Europe/Berlin as a plain Date.
- * Using this consistently prevents UTC-vs-local bugs.
+ * Returns current Date. Using a function makes it easy to mock in tests.
  */
 export function nowBerlin() {
-    return toZonedTime(new Date(), TZ);
+    return new Date();
 }
 
 /**
  * Combines a date string ('yyyy-MM-dd') and time string ('HH:mm')
- * into a Date object in Europe/Berlin timezone.
+ * into a Date, interpreted as local time.
  */
 export function reservationDateTime(dateStr, timeStr = '23:59') {
-    // Build a local datetime string and parse it as Berlin time
-    const iso = `${dateStr}T${timeStr}:00`;
-    return toZonedTime(new Date(iso), TZ);
+    // Parse as local time by splitting manually (avoids UTC ambiguity in new Date(iso))
+    const [y, mo, d] = dateStr.split('-').map(Number);
+    const [h, mi]    = timeStr.split(':').map(Number);
+    return new Date(y, mo - 1, d, h, mi, 0);
 }
 
 /**

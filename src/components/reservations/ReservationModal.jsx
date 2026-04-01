@@ -293,7 +293,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                         <Button 
                             type="submit" 
                             className="flex-1 bg-slate-800 hover:bg-slate-900"
-                            disabled={hasEventOnDate || createRecurringMutation.isPending}
+                            disabled={hasEventOnDate}
                         >
                             {reservation
                                 ? 'Speichern'

@@ -190,6 +190,15 @@ export function getCompletionPercentage(companyInfo) {
 }
 
 /**
+ * Legal document versions for tracking
+ */
+export const LEGAL_VERSIONS = {
+  privacy_policy: '1.0',
+  imprint: '1.0',
+  agb: '1.0'
+};
+
+/**
  * Exported content objects for ConsentDialog and legal pages
  */
 export const CONSENT_DIALOG_TEXT = {

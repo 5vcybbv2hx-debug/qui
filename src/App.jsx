@@ -62,6 +62,7 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <>
     <Routes>
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
@@ -107,8 +108,8 @@ const AuthenticatedApp = () => {
       onConsent={saveConsent}
       isLoading={isConsentLoading}
     />
-    </>;
-    };
+    </>
+  );
 
 
 function App() {

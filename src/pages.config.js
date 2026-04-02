@@ -108,7 +108,7 @@ import CleaningChecklist from './pages/CleaningChecklist';
 import Closing from './pages/Closing';
 import ClosingDisplay from './pages/ClosingDisplay';
 import Opening from './pages/Opening';
-import EmployeeHome from './pages/EmployeeHome';
+// EmployeeHome removed — Dashboard is now the central entry point
 import EmployeeProfile from './pages/EmployeeProfile';
 import EmployeesImproved from './pages/EmployeesImproved';
 import Stationsplan from './pages/Stationsplan';
@@ -188,7 +188,7 @@ const SPECIAL_PAGES_WITH_LAYOUT = {
     "CleaningChecklist": CleaningChecklist,
     "Closing": Closing,
     "Opening": Opening,
-    "EmployeeHome": EmployeeHome,
+
     "EmployeeProfile": EmployeeProfile,
     "EmployeesImproved": EmployeesImproved,
     "Stationsplan": Stationsplan,

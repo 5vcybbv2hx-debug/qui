@@ -10,7 +10,6 @@ export const navigationSections = [
         title: 'Übersicht',
         items: [
             { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard', color: 'from-amber-500 to-orange-500' },
-            { name: 'Mein Start', page: 'EmployeeHome', icon: LayoutDashboard, permission: 'canViewDashboard', color: 'from-sky-500 to-blue-600' },
             { name: 'Benachrichtigungen', page: 'Notifications', icon: Bell, permission: 'isManager', color: 'from-red-500 to-rose-600' },
         ]
     },

@@ -5,7 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -90,6 +90,9 @@ const AuthenticatedApp = () => {
       {Object.entries(PublicPages).map(([path, Page]) => (
         <Route key={path} path={`/${path}`} element={<Page />} />
       ))}
+
+      {/* Redirect old EmployeeHome links to Dashboard */}
+      <Route path="/EmployeeHome" element={<Navigate to="/" replace />} />
 
       {/* Catch-all */}
       <Route path="*" element={<PageNotFound />} />

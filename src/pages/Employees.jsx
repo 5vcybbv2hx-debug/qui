@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive } from 'lucide-react';
+import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import PDFExportButton from '@/components/export/PDFExportButton';
@@ -87,6 +88,7 @@ export default function Employees() {
     });
     const [skillsFilter, setSkillsFilter] = useState([]);
     const [showInactive, setShowInactive] = useState(false);
+    const [deleteDialogEmployee, setDeleteDialogEmployee] = useState(null);
     
     const [whatsappGroupLink, setWhatsappGroupLink] = useState('https://chat.whatsapp.com/FrOmvmQFvvBJvqo4CJaBPA');
 
@@ -269,10 +271,8 @@ export default function Employees() {
         }
     };
 
-    const handleDelete = (id) => {
-        if (confirm('Mitarbeiter wirklich löschen?')) {
-            deleteMutation.mutate(id);
-        }
+    const handleDelete = (employee) => {
+        setDeleteDialogEmployee(employee);
     };
 
     const handleInvite = async (employee) => {
@@ -642,7 +642,7 @@ export default function Employees() {
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => handleDelete(employee.id)}
+                                                onClick={() => handleDelete(employee)}
                                                 className="border-red-500/50 text-red-400 hover:bg-red-500/10 hover:border-red-500"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -698,6 +698,15 @@ export default function Employees() {
                             </div>
                         )}
                     </div>
+                )}
+
+                {/* Delete Dialog */}
+                {deleteDialogEmployee && (
+                    <EmployeeDeleteDialog
+                        employee={deleteDialogEmployee}
+                        currentUser={currentUser}
+                        onClose={() => setDeleteDialogEmployee(null)}
+                    />
                 )}
 
                 {/* Modal */}

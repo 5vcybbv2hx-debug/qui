@@ -4,6 +4,11 @@
 
 @layer base {
   :root {
+    /* Brand gradient tokens — updated by theme system */
+    --brand-from: #f59e0b;
+    --brand-via: #f97316;
+    --brand-fg: #1a0a00;
+
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;

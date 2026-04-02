@@ -220,10 +220,13 @@ export default function Layout({ children, currentPageName }) {
                                                     className={cn(
                                                         "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
                                                         isActive 
-                                                            ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20" 
+                                                            ? "shadow-lg" 
                                                             : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                                                     )}
-                                                >
+                                                    style={isActive ? {
+                                                        background: 'linear-gradient(to right, var(--brand-from), var(--brand-via))',
+                                                        color: 'var(--brand-fg)'
+                                                    } : {}}>
                                                     <item.icon className="w-5 h-5" />
                                                     {item.name}
                                                 </Link>
@@ -266,8 +269,9 @@ export default function Layout({ children, currentPageName }) {
                     <Link
                         to={createPageUrl('Dashboard')}
                         className={cn('flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all',
-                            currentPageName === 'Dashboard' ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'
+                            currentPageName === 'Dashboard' ? '' : 'text-muted-foreground'
                         )}
+                        style={currentPageName === 'Dashboard' ? { color: 'var(--brand-from)' } : {}}
                     >
                         <Home className="w-6 h-6" />
                         <span className="text-[10px] font-medium">Home</span>
@@ -285,7 +289,8 @@ export default function Layout({ children, currentPageName }) {
                     {/* Scan — center CTA */}
                     <button
                         onClick={() => setScannerOpen(true)}
-                        className="flex flex-col items-center gap-1 -mt-4 px-3 py-3 rounded-2xl bg-amber-500 shadow-lg shadow-amber-500/40 text-slate-900 active:scale-95 transition-all"
+                        className="flex flex-col items-center gap-1 -mt-4 px-3 py-3 rounded-2xl shadow-lg active:scale-95 transition-all"
+                        style={{ background: 'linear-gradient(135deg, var(--brand-from), var(--brand-via))', color: 'var(--brand-fg)' }}
                     >
                         <ScanLine className="w-7 h-7" />
                         <span className="text-[10px] font-bold">Scan</span>
@@ -295,8 +300,9 @@ export default function Layout({ children, currentPageName }) {
                     <Link
                         to={createPageUrl('Articles')}
                         className={cn('flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all',
-                            currentPageName === 'Articles' ? 'text-amber-500' : 'text-muted-foreground hover:text-amber-500'
+                            currentPageName === 'Articles' ? '' : 'text-muted-foreground'
                         )}
+                        style={currentPageName === 'Articles' ? { color: 'var(--brand-from)' } : {}}
                     >
                         <Package className="w-6 h-6" />
                         <span className="text-[10px] font-medium">Lager</span>

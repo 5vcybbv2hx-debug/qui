@@ -216,7 +216,7 @@ export const PAGES = {
 }
 
 export const pagesConfig = {
-    mainPage: "Articles",
+    mainPage: "Dashboard",
     Pages: PAGES,
     CorePages: CORE_PAGES,
     SpecialPagesWithLayout: SPECIAL_PAGES_WITH_LAYOUT,

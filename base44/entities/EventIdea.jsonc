@@ -1,0 +1,70 @@
+{
+  "name": "EventIdea",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titel der Eventidee"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Party",
+        "Livemusik",
+        "DJ-Night",
+        "Special Event",
+        "Private Feier",
+        "Sonstiges"
+      ],
+      "default": "Party",
+      "description": "Kategorie der Idee"
+    },
+    "description": {
+      "type": "string",
+      "description": "Kurze Beschreibung"
+    },
+    "estimated_effort": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch"
+      ],
+      "default": "mittel",
+      "description": "Gesch\u00e4tzter Aufwand"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch",
+        "sehr_hoch"
+      ],
+      "default": "mittel",
+      "description": "Priorit\u00e4t der Idee"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Idee",
+        "geplant",
+        "verworfen",
+        "umgesetzt"
+      ],
+      "default": "Idee",
+      "description": "Status der Idee"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Zus\u00e4tzliche Notizen"
+    },
+    "related_event_id": {
+      "type": "string",
+      "description": "ID des Events, wenn aus dieser Idee ein Event geworden ist"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}

@@ -2,24 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import {
-    format, parseISO, startOfWeek, endOfWeek, differenceInMinutes, isToday
-} from 'date-fns';
-import { de } from 'date-fns/locale';
-import {
-    Calendar, Clock, CheckSquare, Users, Sparkles, AlertTriangle,
-    ArrowRight, TrendingDown, Sun, ClipboardCheck, Wrench,
-    MessageSquare, CalendarCheck, ShoppingCart, Package,
-    Zap, Circle, LogIn, LogOut, Pause, Lightbulb
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { getTaskStatus } from '@/lib/maintenanceUtils';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamNotes from '@/components/dashboard/TeamNotes';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import TimeEntryReview from '@/components/dashboard/TimeEntryReview';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -360,7 +345,7 @@ function PlanningTab({ upcomingEvents, upcomingShifts }) {
 
 // ─── Tab: MANAGER ────────────────────────────────────────────────────────────
 
-function ManagerTab({ stats, alerts, employees, todos, shopping, articles }) {
+function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries }) {
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const lowStock = articles.filter(a => a.min_stock != null && a.current_stock <= a.min_stock);
     const openShopping = shopping.filter(s => s.status === 'offen');
@@ -374,6 +359,9 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles }) {
 
     return (
         <div className="space-y-5">
+            {/* Offene Zeiterfassungen – ganz oben als kritisch */}
+            <TimeEntryReview entries={pendingTimeEntries} />
+
             {/* KPIs */}
             <section>
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">KPIs & Übersicht</h3>
@@ -394,7 +382,7 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles }) {
                 </div>
             </section>
 
-            {/* Alerts */}
+            {/* Wichtige Hinweise */}
             {alerts.length > 0 && (
                 <section>
                     <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">Wichtige Hinweise</h3>
@@ -579,6 +567,11 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
         queryFn: () => base44.entities.TimeEntry.list('-date', 100),
         enabled: !!currentEmployee
     });
+    const { data: pendingTimeEntries = [] } = useQuery({
+        queryKey: ['pending-time-entries'],
+        queryFn: () => base44.entities.TimeEntry.filter({ status: 'eingereicht' }),
+        enabled: isManager
+    });
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
         queryFn: () => base44.entities.VacationRequest.list('-created_date', 50),
@@ -619,7 +612,6 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
     // Alerts
     const lowStockArticles = articles.filter(a => a.min_stock && a.current_stock <= a.min_stock);
     const pendingVacationRequests = vacationRequests.filter(r => r.status === 'beantragt');
-    const pendingTimeEntries = timeEntries.filter(e => e.status === 'eingereicht');
     const urgentMaintenance = maintenanceTasks.filter(t => getTaskStatus(t) === 'überfällig');
     const todayEvents_count = todayEvents.length;
 
@@ -631,10 +623,8 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
             list.push({ icon: TrendingDown, title: 'Lager niedrig', sub: `${lowStockArticles.length} Artikel`, to: 'Articles', cardClass: 'border-amber-500/30 bg-amber-500/5', iconClass: 'text-amber-400', textClass: 'text-amber-300' });
         if (pendingVacationRequests.length > 0)
             list.push({ icon: Calendar, title: 'Urlaubsanträge', sub: `${pendingVacationRequests.length} ausstehend`, to: 'MyArea', cardClass: 'border-blue-500/30 bg-blue-500/5', iconClass: 'text-blue-400', textClass: 'text-blue-300' });
-        if (pendingTimeEntries.length > 0)
-            list.push({ icon: Clock, title: 'Zeiterfassungen', sub: `${pendingTimeEntries.length} zu genehmigen`, to: 'TimeManagement', cardClass: 'border-amber-500/30 bg-amber-500/5', iconClass: 'text-amber-400', textClass: 'text-amber-300' });
         return list;
-    }, [urgentMaintenance, lowStockArticles, pendingVacationRequests, pendingTimeEntries]);
+    }, [urgentMaintenance, lowStockArticles, pendingVacationRequests]);
 
     const tabs = [
         { id: 'heute', label: 'Heute' },
@@ -708,13 +698,18 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                'flex-1 py-2.5 px-2 rounded-lg text-sm font-semibold transition-all',
+                                'flex-1 py-2.5 px-2 rounded-lg text-sm font-semibold transition-all relative',
                                 activeTab === tab.id
                                     ? 'bg-primary text-primary-foreground shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground'
                             )}
                         >
                             {tab.label}
+                            {tab.id === 'manager' && isManager && pendingTimeEntries.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">
+                                    {pendingTimeEntries.length}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -754,6 +749,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             todos={openTodos}
                             shopping={shopping}
                             articles={articles}
+                            pendingTimeEntries={pendingTimeEntries}
                         />
                     )}
                 </div>

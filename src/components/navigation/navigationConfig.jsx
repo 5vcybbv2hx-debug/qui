@@ -11,7 +11,6 @@ export const navigationSections = [
         items: [
             { name: 'Dashboard', page: 'Dashboard', icon: Home, permission: 'canViewDashboard', color: 'from-amber-500 to-orange-500' },
             { name: 'Mein Start', page: 'EmployeeHome', icon: LayoutDashboard, permission: 'canViewDashboard', color: 'from-sky-500 to-blue-600' },
-            { name: 'Operator', page: 'OperatorDashboard', icon: Gauge, permission: 'isManager', color: 'from-rose-500 to-red-600' },
             { name: 'Benachrichtigungen', page: 'Notifications', icon: Bell, permission: 'isManager', color: 'from-red-500 to-rose-600' },
         ]
     },

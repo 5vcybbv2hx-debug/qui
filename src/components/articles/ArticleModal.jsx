@@ -23,6 +23,13 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         queryFn: () => base44.entities.ArticleCategory.list('order')
     });
 
+    const { data: allArticles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list('order'),
+        staleTime: 5 * 60 * 1000
+    });
+    const manufacturerSuggestions = [...new Set(allArticles.map(a => a.manufacturer).filter(Boolean))].sort();
+
     const [scannerOpen, setScannerOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [imageEditorOpen, setImageEditorOpen] = useState(false);
@@ -37,6 +44,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
+        manufacturer: '',
         category: '',
         suppliers: [],
         supplier_details: [],
@@ -61,6 +69,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
             setFormData({
                 barcode: article.barcode || '',
                 name: article.name || '',
+                manufacturer: article.manufacturer || '',
                 category: article.category || '',
                 suppliers: article.suppliers || [],
                 supplier_details: article.supplier_details || [],
@@ -83,6 +92,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
             setFormData({
                 barcode: '',
                 name: '',
+                manufacturer: '',
                 category: '',
                 suppliers: [],
                 supplier_details: [],
@@ -242,6 +252,19 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                             placeholder="z.B. Jägermeister 0,7L"
                             required
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Hersteller / Marke</Label>
+                        <Input
+                            list="manufacturer-suggestions"
+                            value={formData.manufacturer}
+                            onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                            placeholder="z.B. Mast-Jägermeister SE"
+                        />
+                        <datalist id="manufacturer-suggestions">
+                            {manufacturerSuggestions.map(m => <option key={m} value={m} />)}
+                        </datalist>
                     </div>
 
                     <div className="space-y-2">

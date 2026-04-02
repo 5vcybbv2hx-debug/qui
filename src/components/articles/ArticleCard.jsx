@@ -57,7 +57,10 @@ const ArticleCard = memo(function ArticleCard({
                             />
                         )}
                         <h3 className="font-semibold text-white text-sm mb-1">{article.name}</h3>
-                        <p className="text-xs text-slate-400 font-mono">{article.barcode}</p>
+                        {article.manufacturer && (
+                            <p className="text-xs text-slate-400 mb-0.5">🏭 {article.manufacturer}</p>
+                        )}
+                        <p className="text-xs text-slate-500 font-mono">{article.barcode}</p>
                     </div>
                 </div>
                 <div className="flex gap-1">

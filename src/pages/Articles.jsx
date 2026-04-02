@@ -48,6 +48,7 @@ export default function Articles() {
     const [filterCategory, setFilterCategory] = useState('all');
     const [filterSupplier, setFilterSupplier] = useState('all');
     const [filterStock, setFilterStock] = useState('all');
+    const [filterManufacturer, setFilterManufacturer] = useState('all');
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -175,16 +176,21 @@ export default function Articles() {
     const allSuppliers = useMemo(() =>
         [...new Set(articles.flatMap(a => a.suppliers || []))].sort(), [articles]);
 
+    const allManufacturers = useMemo(() =>
+        [...new Set(articles.map(a => a.manufacturer).filter(Boolean))].sort(), [articles]);
+
     const baseFilteredArticles = useMemo(() =>
         articles.filter(a => {
-            const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) || a.barcode?.includes(searchTerm);
+            const q = searchTerm.toLowerCase();
+            const matchesSearch = a.name.toLowerCase().includes(q) || a.barcode?.includes(searchTerm) || (a.manufacturer || '').toLowerCase().includes(q);
             const matchesSupplier = filterSupplier === 'all' || a.suppliers?.includes(filterSupplier);
+            const matchesManufacturer = filterManufacturer === 'all' || a.manufacturer === filterManufacturer;
             const matchesStock = filterStock === 'all' ||
                 (filterStock === 'niedrig' && a.current_stock <= (a.min_stock || 0)) ||
                 (filterStock === 'leer' && a.current_stock === 0);
-            return matchesSearch && matchesSupplier && matchesStock;
+            return matchesSearch && matchesSupplier && matchesManufacturer && matchesStock;
         }),
-        [articles, searchTerm, filterSupplier, filterStock]
+        [articles, searchTerm, filterSupplier, filterManufacturer, filterStock]
     );
 
     // Grouped by category (respects category order)
@@ -386,15 +392,22 @@ export default function Articles() {
                             ))}
                         </div>
 
-                        {/* Lieferant & Bestand */}
-                        <div className="flex gap-2">
+                        {/* Lieferant, Hersteller & Bestand */}
+                        <div className="flex gap-2 flex-wrap">
                             <select value={filterSupplier} onChange={(e) => setFilterSupplier(e.target.value)}
-                                className="flex-1 h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                                className="flex-1 min-w-[120px] h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
                                 <option value="all">Alle Lieferanten</option>
                                 {allSuppliers.map(sup => <option key={sup} value={sup}>{sup}</option>)}
                             </select>
+                            {allManufacturers.length > 0 && (
+                                <select value={filterManufacturer} onChange={(e) => setFilterManufacturer(e.target.value)}
+                                    className="flex-1 min-w-[120px] h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                                    <option value="all">Alle Hersteller</option>
+                                    {allManufacturers.map(m => <option key={m} value={m}>{m}</option>)}
+                                </select>
+                            )}
                             <select value={filterStock} onChange={(e) => setFilterStock(e.target.value)}
-                                className="flex-1 h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                                className="flex-1 min-w-[100px] h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
                                 <option value="all">Alle Bestände</option>
                                 <option value="niedrig">Niedrig</option>
                                 <option value="leer">Leer</option>
@@ -403,11 +416,12 @@ export default function Articles() {
 
                         <SavedFilters
                             storageKey="articles_saved_filters"
-                            currentFilters={{ searchTerm, filterCategory, filterSupplier, filterStock }}
+                            currentFilters={{ searchTerm, filterCategory, filterSupplier, filterManufacturer, filterStock }}
                             onApplyFilter={(filters) => {
                                 setSearchTerm(filters.searchTerm || '');
                                 setFilterCategory(filters.filterCategory || 'all');
                                 setFilterSupplier(filters.filterSupplier || 'all');
+                                setFilterManufacturer(filters.filterManufacturer || 'all');
                                 setFilterStock(filters.filterStock || 'all');
                             }}
                         />

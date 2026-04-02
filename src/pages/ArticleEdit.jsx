@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,15 @@ export default function ArticleEditPage() {
         queryFn: () => base44.entities.ArticleCategory.list('order')
     });
 
+    const { data: allArticles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list('order'),
+        staleTime: 5 * 60 * 1000
+    });
+    const manufacturerSuggestions = useMemo(() =>
+        [...new Set(allArticles.map(a => a.manufacturer).filter(Boolean))].sort()
+    , [allArticles]);
+
     const [scannerOpen, setScannerOpen] = useState(false);
     const [newSupplier, setNewSupplier] = useState('');
     const [uploading, setUploading] = useState(false);
@@ -34,6 +43,7 @@ export default function ArticleEditPage() {
     const [formData, setFormData] = useState({
         barcode: '',
         name: '',
+        manufacturer: '',
         category: '',
         suppliers: [],
         unit: '',
@@ -53,6 +63,7 @@ export default function ArticleEditPage() {
             setFormData({
                 barcode: articleData.barcode || '',
                 name: articleData.name || '',
+                manufacturer: articleData.manufacturer || '',
                 category: articleData.category || '',
                 suppliers: articleData.suppliers || [],
                 unit: articleData.unit || '',
@@ -245,6 +256,20 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                                 required
                                 className="bg-slate-800 border-slate-700 text-white"
                             />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-white">Hersteller / Marke</Label>
+                            <Input
+                                list="manufacturer-suggestions-edit"
+                                value={formData.manufacturer}
+                                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                                placeholder="z.B. Mast-Jägermeister SE"
+                                className="bg-slate-800 border-slate-700 text-white"
+                            />
+                            <datalist id="manufacturer-suggestions-edit">
+                                {manufacturerSuggestions.map(m => <option key={m} value={m} />)}
+                            </datalist>
                         </div>
 
                         <div className="space-y-2">

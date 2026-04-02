@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Artikelname"
     },
+    "manufacturer": {
+      "type": "string",
+      "description": "Hersteller / Marke (optional)"
+    },
     "category": {
       "type": "string",
       "description": "Kategorie"

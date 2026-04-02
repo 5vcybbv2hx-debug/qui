@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import SmartCombobox from '@/components/ui/SmartCombobox';
 import { Camera, X, Upload, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
 import SupplierDetailsEditor from './SupplierDetailsEditor';
 import { Button } from "@/components/ui/button";
@@ -256,15 +257,13 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
 
                     <div className="space-y-2">
                         <Label>Hersteller / Marke</Label>
-                        <Input
-                            list="manufacturer-suggestions"
+                        <SmartCombobox
                             value={formData.manufacturer}
-                            onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                            onChange={(val) => setFormData({ ...formData, manufacturer: val })}
+                            options={manufacturerSuggestions}
                             placeholder="z.B. Mast-Jägermeister SE"
+                            allowCreate={true}
                         />
-                        <datalist id="manufacturer-suggestions">
-                            {manufacturerSuggestions.map(m => <option key={m} value={m} />)}
-                        </datalist>
                     </div>
 
                     <div className="space-y-2">

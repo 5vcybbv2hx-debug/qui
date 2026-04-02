@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import BarcodeScanner from '../components/restock/BarcodeScanner';
 import KanbanScanModal from '../components/shopping/KanbanScanModal';
+import SmartCombobox from '@/components/ui/SmartCombobox';
 
 const getSupplierColor = (index) => {
     const colors = [
@@ -303,22 +304,19 @@ export default function Shopping() {
                         )}
                     </div>
 
-                    {/* EAN Input */}
+                    {/* EAN / Artikel Schnelleingabe */}
                     {permissions.canEditShopping && (
                         <form onSubmit={handleEanSubmit} className="flex gap-2">
-                            <Input
-                                value={eanInput}
-                                onChange={(e) => setEanInput(e.target.value)}
-                                placeholder="EAN-Code oder Artikelname eingeben..."
-                                className="bg-slate-800 border-slate-700 text-white"
-                                list="quick-articles-list"
-                            />
-                            <datalist id="quick-articles-list">
-                                {articles.slice(0, 50).map(article => (
-                                    <option key={article.id} value={article.name} />
-                                ))}
-                            </datalist>
-                            <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
+                            <div className="flex-1">
+                                <SmartCombobox
+                                    value={eanInput}
+                                    onChange={(val) => setEanInput(val)}
+                                    options={articles.map(a => a.name)}
+                                    placeholder="EAN-Code oder Artikelname..."
+                                    allowCreate={false}
+                                />
+                            </div>
+                            <Button type="submit" className="bg-amber-600 hover:bg-amber-700 h-11 shrink-0">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Hinzufügen
                             </Button>
@@ -535,74 +533,24 @@ export default function Shopping() {
                         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                             <div className="space-y-2">
                                 <Label>Artikelname *</Label>
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                    <Input
-                                        value={searchQuery}
-                                        onChange={(e) => {
-                                            setSearchQuery(e.target.value);
-                                            setFormData({ ...formData, item_name: e.target.value });
-                                        }}
-                                        placeholder="Artikel suchen..."
-                                        className="pl-10"
-                                        list="articles-list"
-                                        autoComplete="off"
-                                    />
-                                </div>
-                                {searchQuery && (
-                                    <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-md bg-white">
-                                        {articles
-                                            .filter(a => 
-                                                a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                a.barcode?.includes(searchQuery)
-                                            )
-                                            .slice(0, 10)
-                                            .map(article => (
-                                                <button
-                                                    key={article.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFormData({
-                                                            ...formData,
-                                                            item_name: article.name,
-                                                            category: article.suppliers?.[0] || formData.category,
-                                                            quantity: article.quantity || formData.quantity,
-                                                            unit: article.unit || formData.unit
-                                                        });
-                                                        setSearchQuery('');
-                                                    }}
-                                                    className="w-full px-3 py-2 text-left hover:bg-slate-50 border-b border-slate-100 last:border-0"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        {article.image_url && (
-                                                            <img 
-                                                                src={article.image_url} 
-                                                                alt={article.name}
-                                                                className="w-10 h-10 object-cover rounded"
-                                                            />
-                                                        )}
-                                                        <div className="flex-1">
-                                                            <div className="font-medium text-sm text-slate-800">
-                                                                {article.name}
-                                                            </div>
-                                                            <div className="text-xs text-slate-500">
-                                                                {article.barcode}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </button>
-                                            ))
-                                        }
-                                        {articles.filter(a => 
-                                            a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                            a.barcode?.includes(searchQuery)
-                                        ).length === 0 && (
-                                            <div className="px-3 py-4 text-sm text-slate-500 text-center">
-                                                Kein Artikel gefunden
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                <SmartCombobox
+                                    value={formData.item_name}
+                                    onChange={(val) => {
+                                        setFormData(prev => {
+                                            const article = articles.find(a => a.name === val);
+                                            return {
+                                                ...prev,
+                                                item_name: val,
+                                                category: article?.suppliers?.[0] || prev.category,
+                                                quantity: article?.quantity || prev.quantity,
+                                                unit: article?.unit || prev.unit,
+                                            };
+                                        });
+                                    }}
+                                    options={articles.map(a => a.name)}
+                                    placeholder="Artikel suchen..."
+                                    allowCreate={true}
+                                />
                             </div>
 
                             <div className="space-y-2">

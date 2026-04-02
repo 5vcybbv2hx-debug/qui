@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { loadCategories } from './TodoCategoryManager';
+import SmartCombobox from '@/components/ui/SmartCombobox';
 import AttachmentManager from './AttachmentManager';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -171,15 +172,13 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                             <Label className="text-sm font-semibold">Kategorie</Label>
-                            <select
+                            <SmartCombobox
                                 value={formData.category}
-                                onChange={e => set('category', e.target.value)}
-                                className="w-full h-12 rounded-xl border border-input bg-background px-3 text-base text-foreground"
-                            >
-                                {categories.map(cat => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
+                                onChange={(val) => set('category', val)}
+                                options={categories}
+                                placeholder="Kategorie..."
+                                allowCreate={true}
+                            />
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-sm font-semibold">Status</Label>

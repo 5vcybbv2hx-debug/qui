@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import SmartCombobox from '@/components/ui/SmartCombobox';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, X, Image as ImageIcon, Crop, Save } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -210,15 +211,13 @@ export default function ArticleEditPage() {
                         {/* Hersteller */}
                         <div className="space-y-2">
                             <Label>Hersteller / Marke</Label>
-                            <Input
-                                list="manufacturer-suggestions-edit"
+                            <SmartCombobox
                                 value={formData.manufacturer}
-                                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                                onChange={(val) => setFormData({ ...formData, manufacturer: val })}
+                                options={manufacturerSuggestions}
                                 placeholder="z.B. Mast-Jägermeister SE"
+                                allowCreate={true}
                             />
-                            <datalist id="manufacturer-suggestions-edit">
-                                {manufacturerSuggestions.map(m => <option key={m} value={m} />)}
-                            </datalist>
                         </div>
 
                         {/* Kategorie */}

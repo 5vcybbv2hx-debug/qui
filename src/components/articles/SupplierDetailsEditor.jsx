@@ -3,6 +3,7 @@ import { Plus, Trash2, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import SmartCombobox from '@/components/ui/SmartCombobox';
 import { cn } from '@/lib/utils';
 
 const emptySupplier = () => ({
@@ -162,40 +163,26 @@ export default function SupplierDetailsEditor({ value = [], onChange, availableS
                 </p>
             )}
 
-            {/* Add supplier */}
-            <div className="space-y-2">
-                <div className="flex gap-2">
-                    <Input
-                        value={newName}
-                        onChange={e => setNewName(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(newName); } }}
-                        placeholder="Lieferant hinzufügen..."
-                        className="h-11 text-base flex-1"
-                        list="supplier-suggestions"
-                    />
-                    <datalist id="supplier-suggestions">
-                        {suggestions.map(s => <option key={s} value={s} />)}
-                    </datalist>
-                    <Button type="button" variant="outline" onClick={() => add(newName)} disabled={!newName.trim()} className="h-11 px-4">
-                        <Plus className="w-4 h-4" />
-                    </Button>
-                </div>
-                {/* Quick add from known suppliers — show all when empty, filter when typing */}
-                {suggestions.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                        {suggestions.slice(0, 8).map(s => (
-                            <button
-                                key={s}
-                                type="button"
-                                onClick={() => add(s)}
-                                className="text-sm px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-amber-500/50 active:scale-95 transition-all"
-                            >
-                                + {s}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
+            {/* Add supplier via SmartCombobox */}
+            <SmartCombobox
+                value={newName}
+                onChange={(val) => {
+                    setNewName(val);
+                    // If user selected an existing option directly, add it immediately
+                    if (availableSuppliers.includes(val)) {
+                        add(val);
+                    }
+                }}
+                options={availableSuppliers.filter(s => !value.find(v => v.supplier_name === s))}
+                placeholder="Lieferant hinzufügen..."
+                allowCreate={true}
+            />
+            {newName.trim() && !availableSuppliers.includes(newName.trim()) && (
+                <Button type="button" variant="outline" size="sm" onClick={() => add(newName)} className="w-full">
+                    <Plus className="w-4 h-4 mr-2" />
+                    &quot;{newName.trim()}&quot; als neuen Lieferanten hinzufügen
+                </Button>
+            )}
         </div>
     );
 }

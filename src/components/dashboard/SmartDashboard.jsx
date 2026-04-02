@@ -357,7 +357,7 @@ function PlanningTab({ upcomingEvents, upcomingShifts }) {
 
 // ─── Tab: MANAGER ────────────────────────────────────────────────────────────
 
-function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries, maintenanceTasks, todayShifts, todayEvents }) {
+function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries, maintenanceTasks, todayShifts, todayEvents, isManager, currentUser }) {
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const lowStock = articles.filter(a => a.min_stock != null && a.current_stock <= a.min_stock);
     const openShopping = shopping.filter(s => s.status === 'offen');
@@ -378,6 +378,8 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                 todayShifts={todayShifts}
                 employees={employees}
                 todayEvents={todayEvents}
+                isManager={isManager}
+                currentUser={currentUser}
             />
 
             {/* Wichtige Hinweise */}
@@ -751,6 +753,8 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             maintenanceTasks={maintenanceTasks}
                             todayShifts={todayShifts}
                             todayEvents={todayEvents}
+                            isManager={isManager}
+                            currentUser={currentUser}
                         />
                     )}
                 </div>

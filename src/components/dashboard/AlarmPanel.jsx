@@ -12,6 +12,7 @@ import {
     ChevronDown, ChevronUp, Check, ArrowRight, Pin, Wrench, ShieldAlert
 } from 'lucide-react';
 import { format, parseISO, isToday, isTomorrow, isPast, differenceInHours } from 'date-fns';
+import BulkClockInPanel from './BulkClockInPanel';
 import { de } from 'date-fns/locale';
 
 // ─── Scoring engine ───────────────────────────────────────────────────────────
@@ -225,7 +226,7 @@ function eventItems(todayEvents) {
 }
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
-export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, todayShifts, employees, todayEvents }) {
+export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, todayShifts, employees, todayEvents, isManager, currentUser }) {
     const [showAll, setShowAll] = useState(false);
 
     const { data: notes = [] } = useQuery({
@@ -266,6 +267,14 @@ export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, today
         <section>
             <SectionHeader criticalCount={criticalCount} total={allItems.length} />
             <div className="space-y-2">
+                {isManager && (
+                    <BulkClockInPanel
+                        todayShifts={todayShifts}
+                        employees={employees}
+                        isManager={isManager}
+                        currentUser={currentUser}
+                    />
+                )}
                 {visibleItems.map(i => i.render)}
             </div>
             {allItems.length > 5 && (

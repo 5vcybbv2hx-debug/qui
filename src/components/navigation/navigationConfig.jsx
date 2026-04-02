@@ -21,13 +21,13 @@ export const navigationSections = [
             { name: 'Meine Schichten', page: 'MyShifts', icon: CalendarCheck, permission: 'canViewShifts', color: 'from-violet-500 to-purple-600' },
             { name: 'Zeit', page: 'TimeManagement', icon: Clock, permission: 'canViewDashboard', color: 'from-cyan-500 to-blue-600' },
             { name: 'Mein Bereich', page: 'MyArea', icon: Users, permission: 'canViewDashboard', color: 'from-teal-500 to-emerald-600' },
-            { name: 'Einlernen', page: 'Onboarding', icon: GraduationCap, permission: 'canViewOnboarding', color: 'from-lime-500 to-green-600' },
             { name: 'Mitarbeiter', page: 'Employees', icon: Users, permission: 'canViewEmployees', color: 'from-green-500 to-teal-600' },
+            { name: 'Einlernen', page: 'Onboarding', icon: GraduationCap, permission: 'canViewOnboarding', color: 'from-lime-500 to-green-600' },
             { name: 'Berechtigungen', page: 'Permissions', icon: Shield, permission: 'isAdmin', color: 'from-slate-500 to-slate-700' },
         ]
     },
     {
-        title: 'Bar',
+        title: 'Bar & Lager',
         items: [
             { name: 'Lager', page: 'Warehouse', icon: Package, permission: 'canViewWarehouse', color: 'from-orange-500 to-amber-600' },
             { name: 'Einkaufen', page: 'Shopping', icon: ShoppingCart, permission: 'canViewShopping', color: 'from-yellow-500 to-orange-500' },
@@ -40,15 +40,9 @@ export const navigationSections = [
         ]
     },
     {
-        title: 'Gäste',
+        title: 'Gäste & Events',
         items: [
             { name: 'Gäste & Tische', page: 'GuestHub', icon: CalendarCheck, permission: 'canViewReservations', color: 'from-blue-500 to-cyan-600' },
-            { name: 'QR-Codes', page: 'QRCodes', icon: QrCode, permission: 'isManager', color: 'from-slate-400 to-slate-600' },
-        ]
-    },
-    {
-        title: 'Events',
-        items: [
             { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard', color: 'from-indigo-500 to-violet-600' },
         ]
     },
@@ -58,7 +52,6 @@ export const navigationSections = [
             { name: 'Tageseröffnung', page: 'Opening', icon: Sun, permission: 'canViewCleaning', color: 'from-amber-400 to-yellow-500' },
             { name: 'Tagesabschluss', page: 'Closing', icon: ClipboardCheck, permission: 'canViewCleaning', color: 'from-violet-500 to-purple-600' },
             { name: 'Aufgaben', page: 'Todos', icon: CheckSquare, permission: 'canViewTodos', color: 'from-emerald-500 to-green-600' },
-
             { name: 'Wochentagsaufgaben', page: 'WeeklyTasks', icon: RepeatIcon, permission: 'canViewCleaning', color: 'from-teal-400 to-cyan-500' },
             { name: 'Wartung', page: 'Maintenance', icon: Wrench, permission: 'isManager', color: 'from-stone-500 to-zinc-600' },
             { name: 'Teamsitzung', page: 'TeamMeeting', icon: Users, permission: 'canViewDashboard', color: 'from-violet-400 to-purple-500' },
@@ -76,7 +69,6 @@ export const navigationSections = [
         title: 'Einstellungen',
         items: [
             { name: 'Einstellungen', page: 'Settings', icon: Settings, permission: 'canViewDashboard', color: 'from-slate-500 to-slate-600' },
-
             { name: 'Dokumente', page: 'Documents', icon: BookOpen, permission: 'isManager', color: 'from-indigo-400 to-blue-500' },
             { name: 'Firmendaten', page: 'CompanySettings', icon: Building2, permission: 'isManager', color: 'from-zinc-500 to-slate-600' },
         ]

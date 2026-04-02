@@ -30,6 +30,8 @@ export default function Dashboard() {
             <ManagerDashboard
                 onSwitchToEmployee={() => setViewAsEmployee(true)}
                 currentEmployee={currentEmployee}
+                currentUser={user}
+                isManager={permissions.isManager}
             />
         );
     }

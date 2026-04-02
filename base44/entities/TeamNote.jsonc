@@ -1,0 +1,70 @@
+{
+  "name": "TeamNote",
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "Nachrichtentext"
+    },
+    "title": {
+      "type": "string",
+      "description": "Optionaler Titel"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Allgemein",
+        "Wichtig",
+        "Schicht",
+        "Lager",
+        "G\u00e4ste",
+        "Sonstiges"
+      ],
+      "default": "Allgemein"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "wichtig",
+        "dringend"
+      ],
+      "default": "normal"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Name des Erstellers"
+    },
+    "author_email": {
+      "type": "string",
+      "description": "Email des Erstellers"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "erledigt",
+        "archiviert"
+      ],
+      "default": "offen"
+    },
+    "is_pinned": {
+      "type": "boolean",
+      "default": false,
+      "description": "Angepinnt"
+    },
+    "is_manager_only": {
+      "type": "boolean",
+      "default": false,
+      "description": "Nur f\u00fcr Manager sichtbar"
+    },
+    "is_for_next_shift": {
+      "type": "boolean",
+      "default": false,
+      "description": "F\u00fcr n\u00e4chste Schicht"
+    }
+  },
+  "required": [
+    "message"
+  ]
+}

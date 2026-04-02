@@ -18,8 +18,9 @@ import TodayOverview from '@/components/dashboard/TodayOverview';
 import ShiftSwapApprovalCard from '@/components/dashboard/ShiftSwapApprovalCard';
 import TeamMeetingReminder from '@/components/dashboard/TeamMeetingReminder';
 import LegalStatusPanel from '@/components/legal/LegalStatusPanel';
+import TeamNotes from '@/components/dashboard/TeamNotes';
 
-export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts }) {
+export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts, currentUser, isManager = true }) {
     const today = format(new Date(), 'yyyy-MM-dd');
 
     const { data: employees = [] } = useQuery({
@@ -279,6 +280,9 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
 
                 <ShiftSwapApprovalCard />
                 <TodayOverview shifts={todayShifts} events={todayEvents} reservations={todayReservations} employees={employees} maxItems={4} />
+
+                {/* Team-Notizen */}
+                <TeamNotes isManager={isManager} currentUser={currentUser} />
             </div>
         </div>
     );

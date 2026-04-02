@@ -5,6 +5,18 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamNotes from '@/components/dashboard/TeamNotes';
 import TimeEntryReview from '@/components/dashboard/TimeEntryReview';
+import AlarmPanel from '@/components/dashboard/AlarmPanel';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Clock, ArrowRight, CheckSquare, Zap, Circle, Sparkles, CalendarCheck,
+    Users, Calendar, Lightbulb, LogIn, LogOut, Wrench, TrendingDown, ShoppingCart
+} from 'lucide-react';
+import { format, parseISO, startOfWeek, endOfWeek, differenceInMinutes } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { getTaskStatus } from '@/lib/maintenanceUtils';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -345,7 +357,7 @@ function PlanningTab({ upcomingEvents, upcomingShifts }) {
 
 // ─── Tab: MANAGER ────────────────────────────────────────────────────────────
 
-function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries }) {
+function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries, maintenanceTasks, todayShifts, todayEvents }) {
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const lowStock = articles.filter(a => a.min_stock != null && a.current_stock <= a.min_stock);
     const openShopping = shopping.filter(s => s.status === 'offen');
@@ -359,28 +371,14 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
 
     return (
         <div className="space-y-5">
-            {/* Offene Zeiterfassungen – ganz oben als kritisch */}
-            <TimeEntryReview entries={pendingTimeEntries} />
-
-            {/* KPIs */}
-            <section>
-                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">KPIs & Übersicht</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    {kpis.map(k => (
-                        <Link key={k.label} to={createPageUrl(k.to)}>
-                            <Card className="bg-card border-border hover:bg-accent/30 transition-colors">
-                                <CardContent className="p-4">
-                                    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-3', k.color)}>
-                                        <k.icon className="w-5 h-5 text-white" />
-                                    </div>
-                                    <p className="text-2xl font-bold text-foreground">{k.value}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{k.label}</p>
-                                </CardContent>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
-            </section>
+            {/* Alarm-Panel */}
+            <AlarmPanel
+                pendingTimeEntries={pendingTimeEntries}
+                maintenanceTasks={maintenanceTasks}
+                todayShifts={todayShifts}
+                employees={employees}
+                todayEvents={todayEvents}
+            />
 
             {/* Wichtige Hinweise */}
             {alerts.length > 0 && (
@@ -750,6 +748,9 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             shopping={shopping}
                             articles={articles}
                             pendingTimeEntries={pendingTimeEntries}
+                            maintenanceTasks={maintenanceTasks}
+                            todayShifts={todayShifts}
+                            todayEvents={todayEvents}
                         />
                     )}
                 </div>

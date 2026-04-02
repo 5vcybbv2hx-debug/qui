@@ -1,0 +1,52 @@
+{
+  "name": "ShortNameHistory",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters (Snapshot)"
+    },
+    "old_short_name": {
+      "type": "string",
+      "description": "Alter Kurzname (leer = noch kein Kurzname)"
+    },
+    "new_short_name": {
+      "type": "string",
+      "description": "Neuer Kurzname"
+    },
+    "changed_by_email": {
+      "type": "string",
+      "description": "E-Mail des \u00e4ndernden Managers"
+    },
+    "changed_by_name": {
+      "type": "string",
+      "description": "Name des \u00e4ndernden Managers"
+    },
+    "change_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der \u00c4nderung"
+    },
+    "change_time": {
+      "type": "string",
+      "description": "Uhrzeit der \u00c4nderung (HH:MM)"
+    },
+    "weekday": {
+      "type": "string",
+      "description": "Wochentag"
+    },
+    "note": {
+      "type": "string",
+      "description": "Optionaler Grund / Notiz"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "new_short_name"
+  ]
+}

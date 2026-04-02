@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Name des Mitarbeiters"
     },
+    "short_name": {
+      "type": "string",
+      "description": "Kurzname / K\u00fcrzel (optional, z.B. MM, MAX). Nur Anzeige, keine Identit\u00e4t."
+    },
     "role": {
       "type": "string",
       "enum": [

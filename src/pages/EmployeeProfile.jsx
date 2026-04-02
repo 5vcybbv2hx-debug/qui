@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PersonalBogenForm from '@/components/employees/PersonalBogenForm';
+import ShortNameEditor from '@/components/employees/ShortNameEditor';
 import DocumentManager from '@/components/employees/DocumentManager';
 import { calculateCompletion, isComplete } from '@/lib/employeeCompleteness';
 import { createPageUrl } from '@/utils';
@@ -49,6 +50,7 @@ export default function EmployeeProfile() {
   const isCurrentUser = currentUser?.email === employee?.email || currentUser?.created_by === employee?.email;
   const isManager = currentUser?.role === 'admin' || currentUser?.role === 'Manager';
   const canEdit = isCurrentUser || isManager;
+  const canEditShortName = isManager;
 
   if (isLoading) {
     return (
@@ -107,6 +109,14 @@ export default function EmployeeProfile() {
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Short Name Editor */}
+        <ShortNameEditor
+          employee={employee}
+          isManager={canEditShortName}
+          currentUser={currentUser}
+          onUpdate={() => queryClient.invalidateQueries({ queryKey: ['employee', id] })}
+        />
 
         {/* Content Tabs */}
         <Tabs defaultValue="personalbogen" className="w-full">

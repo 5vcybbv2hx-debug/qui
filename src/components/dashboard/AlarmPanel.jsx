@@ -67,8 +67,8 @@ function AlarmItem({ level = 'hoch', icon: Icon, title, sub, action, to, score }
     return to ? <Link to={to}>{inner}</Link> : inner;
 }
 
-// ─── 1. Zeiterfassungen ───────────────────────────────────────────────────────
-function TimeItems({ entries }) {
+// ─── ApproveButton (isolated so hook is always called) ─────────────────────
+function ApproveButton({ entryId }) {
     const queryClient = useQueryClient();
     const approveMutation = useMutation({
         mutationFn: (id) => base44.entities.TimeEntry.update(id, {
@@ -77,7 +77,20 @@ function TimeItems({ entries }) {
         }),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] })
     });
+    return (
+        <Button
+            size="sm"
+            onClick={() => approveMutation.mutate(entryId)}
+            disabled={approveMutation.isPending}
+            className="h-10 min-w-[72px] bg-green-600 hover:bg-green-700 text-white text-xs gap-1 shrink-0"
+        >
+            <Check className="w-3.5 h-3.5" />OK
+        </Button>
+    );
+}
 
+// ─── 1. Zeiterfassungen ───────────────────────────────────────────────────────
+function TimeItems({ entries }) {
     // Always critical — score = 150
     return entries.map(e => ({
         key: e.id,
@@ -97,14 +110,7 @@ function TimeItems({ entries }) {
                         {e.total_hours != null && <span className="ml-1 font-medium text-foreground">({e.total_hours}h)</span>}
                     </p>
                 </div>
-                <Button
-                    size="sm"
-                    onClick={() => approveMutation.mutate(e.id)}
-                    disabled={approveMutation.isPending}
-                    className="h-10 min-w-[72px] bg-green-600 hover:bg-green-700 text-white text-xs gap-1 shrink-0"
-                >
-                    <Check className="w-3.5 h-3.5" />OK
-                </Button>
+                <ApproveButton entryId={e.id} />
             </div>
         )
     }));

@@ -368,9 +368,13 @@ export default function Layout({ children, currentPageName }) {
                                                         className={cn(
                                                             "flex flex-col items-center gap-2 p-3 rounded-xl text-xs font-medium transition-all text-center border",
                                                             isActive 
-                                                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 shadow-lg shadow-amber-500/20 border-amber-500/50" 
+                                                                ? "shadow-lg border-white/20" 
                                                                 : `${color.bg} ${color.text} hover:opacity-80 active:opacity-100 ${color.border}`
                                                         )}
+                                                    style={isActive ? {
+                                                        background: 'linear-gradient(to right, var(--brand-from), var(--brand-via))',
+                                                        color: 'var(--brand-fg)',
+                                                    } : {}}
                                                     >
                                                         <item.icon className="w-5 h-5" />
                                                         {item.name}

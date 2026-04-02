@@ -114,7 +114,7 @@ export function applyThemePreset(preset) {
     // Core CSS vars used by Tailwind tokens
     root.style.setProperty('--primary', preset.primary);
     root.style.setProperty('--ring', preset.primary);
-    root.style.setProperty('--primary-foreground', hexToHsl(preset.fg));
+    root.style.setProperty('--primary-foreground', '210 40% 98%');
 
     // Background tokens
     root.style.setProperty('--background', preset.bg);
@@ -126,28 +126,140 @@ export function applyThemePreset(preset) {
     root.style.setProperty('--border', preset.card);
     root.style.setProperty('--input', preset.card);
 
-    // Brand gradient vars (used by Layout for nav active state)
+    // Brand gradient vars (used by Layout and all inline style brand refs)
     root.style.setProperty('--brand-from', preset.from);
     root.style.setProperty('--brand-via', preset.via);
     root.style.setProperty('--brand-fg', preset.fg);
 
     // Update PWA theme color
-    const metaTheme = document.querySelector('meta[name="theme-color"]');
-    if (metaTheme) metaTheme.setAttribute('content', preset.from);
+    let metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (!metaTheme) {
+        metaTheme = document.createElement('meta');
+        metaTheme.name = 'theme-color';
+        document.head.appendChild(metaTheme);
+    }
+    metaTheme.setAttribute('content', preset.from);
 
-    // Scrollbar
-    injectStyle('brand-scrollbar', `
-        ::-webkit-scrollbar-thumb { background: ${preset.from}66 !important; }
-        ::-webkit-scrollbar-thumb:hover { background: ${preset.from} !important; }
+    // ─── Comprehensive brand CSS override ───────────────────────────────────────
+    // Replaces ALL hardcoded amber/orange/brand Tailwind classes app-wide
+    injectStyle('brand-overrides', `
+        /* ── Gradient utilities ── */
+        .from-amber-400, .from-amber-500, .from-amber-600,
+        .from-orange-500, .from-orange-600 {
+            --tw-gradient-from: ${preset.from} !important;
+        }
+        .via-amber-500, .via-amber-600, .via-orange-500, .via-orange-600 {
+            --tw-gradient-via: ${preset.via} !important;
+        }
+        .to-amber-500, .to-amber-600, .to-orange-500, .to-orange-600 {
+            --tw-gradient-to: ${preset.via} !important;
+        }
+
+        /* ── Background colors ── */
+        .bg-amber-400, .bg-amber-500, .bg-amber-600, .bg-amber-700,
+        .bg-orange-500, .bg-orange-600 {
+            background-color: ${preset.from} !important;
+        }
+        .bg-amber-500\/10, .bg-amber-500\/20 { background-color: ${preset.from}1a !important; }
+        .bg-amber-500\/5  { background-color: ${preset.from}0d !important; }
+        .bg-amber-600\/20 { background-color: ${preset.from}33 !important; }
+        .bg-amber-600\/10 { background-color: ${preset.from}1a !important; }
+        .bg-amber-900\/30, .bg-amber-900\/20 { background-color: ${preset.from}22 !important; }
+        .bg-orange-500\/10 { background-color: ${preset.via}1a !important; }
+
+        /* ── Text colors ── */
+        .text-amber-400, .text-amber-500, .text-amber-600,
+        .text-orange-400, .text-orange-500 {
+            color: ${preset.from} !important;
+        }
+        .text-amber-300 { color: ${preset.from}cc !important; }
+
+        /* ── Border colors ── */
+        .border-amber-500, .border-amber-600, .border-amber-700,
+        .border-orange-500, .border-orange-600 {
+            border-color: ${preset.from} !important;
+        }
+        .border-amber-500\/20 { border-color: ${preset.from}33 !important; }
+        .border-amber-500\/30 { border-color: ${preset.from}4d !important; }
+        .border-amber-600\/30 { border-color: ${preset.from}4d !important; }
+        .border-amber-700 { border-color: ${preset.from}99 !important; }
+
+        /* ── Hover backgrounds ── */
+        .hover\:bg-amber-600:hover, .hover\:bg-amber-700:hover {
+            background-color: ${preset.via} !important;
+        }
+        .hover\:bg-amber-500\/10:hover { background-color: ${preset.from}1a !important; }
+        .hover\:border-amber-500:hover { border-color: ${preset.from} !important; }
+        .hover\:text-amber-300:hover, .hover\:text-amber-400:hover { color: ${preset.from} !important; }
+
+        /* ── Gradient backgrounds ── */
+        .bg-gradient-to-r.from-amber-500,
+        .bg-gradient-to-br.from-amber-500 {
+            background: linear-gradient(to right, ${preset.from}, ${preset.via}) !important;
+            color: ${preset.fg} !important;
+        }
+        .bg-gradient-to-r.from-amber-500.to-orange-500 {
+            background: linear-gradient(to right, ${preset.from}, ${preset.via}) !important;
+        }
+
+        /* ── Shadow colors ── */
+        .shadow-amber-500\/20 { --tw-shadow-color: ${preset.from}33 !important; }
+        .shadow-amber-500\/40 { --tw-shadow-color: ${preset.from}66 !important; }
+
+        /* ── Ring colors ── */
+        .ring-amber-500\/30 { --tw-ring-color: ${preset.from}4d !important; }
+        .ring-2.ring-inset.ring-amber-500\/30 { --tw-ring-color: ${preset.from}4d !important; }
+
+        /* ── Tabs: active state ── */
+        [role="tab"][data-state="active"],
+        [data-state="active"][role="tab"] {
+            background-color: ${preset.from} !important;
+            color: ${preset.fg} !important;
+        }
+        .data-\[state\=active\]\:bg-amber-600[data-state="active"] {
+            background-color: ${preset.from} !important;
+            color: ${preset.fg} !important;
+        }
+
+        /* ── Buttons with brand bg ── */
+        .bg-amber-600 { background-color: ${preset.from} !important; color: ${preset.fg} !important; }
+        .bg-amber-600.hover\:bg-amber-700:hover { background-color: ${preset.via} !important; }
+
+        /* ── Primary button (uses --primary HSL) ── */
+        .bg-primary { background: linear-gradient(135deg, ${preset.from}, ${preset.via}) !important; color: ${preset.fg} !important; }
+        .hover\:bg-primary\/90:hover { background: linear-gradient(135deg, ${preset.via}, ${preset.from}) !important; }
+
+        /* ── Active nav & mobile states ── */
+        [class*="text-amber-"] { color: ${preset.from} !important; }
+
+        /* ── Focus & ring ── */
         :focus-visible { outline-color: ${preset.from} !important; }
         input:focus, textarea:focus, select:focus {
             border-color: ${preset.from} !important;
             box-shadow: 0 0 0 2px ${preset.from}33 !important;
         }
+
+        /* ── Checkbox & Switch checked ── */
         [data-state="checked"] {
             background-color: ${preset.from} !important;
             border-color: ${preset.from} !important;
         }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar-thumb { background: ${preset.from}55 !important; }
+        ::-webkit-scrollbar-thumb:hover { background: ${preset.from} !important; }
+
+        /* ── Progress bars ── */
+        .bg-amber-500, .bg-amber-600 { background-color: ${preset.from} !important; }
+
+        /* ── Dot indicators ── */
+        .bg-amber-500.rounded-full, .w-2.h-2.bg-amber-500 { background-color: ${preset.from} !important; }
+
+        /* ── Gradient cards / panels ── */
+        .from-amber-500\/10 { --tw-gradient-from: ${preset.from}1a !important; }
+        .to-orange-500\/10, .to-orange-500\/20 { --tw-gradient-to: ${preset.via}1a !important; }
+        .from-amber-900\/30 { --tw-gradient-from: ${preset.from}33 !important; }
+        .to-orange-900\/20 { --tw-gradient-to: ${preset.via}22 !important; }
     `);
 }
 

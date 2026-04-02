@@ -183,7 +183,7 @@ export default function Settings() {
                  {/* Header */}
                  <div className="mb-6 sm:mb-8">
                      <div className="flex items-center gap-3 mb-2">
-                         <SettingsIcon className="w-8 h-8 text-amber-400" />
+                         <SettingsIcon className="w-8 h-8 brand-text" />
                          <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">
                              Einstellungen
                          </h1>
@@ -196,19 +196,19 @@ export default function Settings() {
                  {/* Tabs */}
                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
                      <TabsList className="grid w-full grid-cols-4 bg-card border border-border h-auto p-1">
-                         <TabsTrigger value="appearance" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                         <TabsTrigger value="appearance" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <SettingsIcon className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Allgemein</span>
                          </TabsTrigger>
-                         <TabsTrigger value="calendar" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                         <TabsTrigger value="calendar" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <Calendar className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Kalender</span>
                          </TabsTrigger>
-                         <TabsTrigger value="notifications" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                         <TabsTrigger value="notifications" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <Bell className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Benachrichtigungen</span>
                          </TabsTrigger>
-                         <TabsTrigger value="legal" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                         <TabsTrigger value="legal" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <Info className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Rechtliches</span>
                          </TabsTrigger>
@@ -240,10 +240,10 @@ export default function Settings() {
                                             key={themeOption.value}
                                             onClick={() => handleThemeChange(themeOption.value)}
                                             className={`
-                                                relative p-4 rounded-xl border-2 transition-all
-                                                ${isActive 
-                                                    ? 'border-amber-500 bg-amber-500/10' 
-                                                    : 'border-border bg-secondary hover:bg-accent'
+                                                    relative p-4 rounded-xl border-2 transition-all
+                                                    ${isActive 
+                                                        ? 'scale-105 bg-card' 
+                                                        : 'border-border bg-secondary hover:bg-accent'
                                                 }
                                             `}
                                         >
@@ -251,14 +251,14 @@ export default function Settings() {
                                                 <div className={`
                                                     p-3 rounded-lg
                                                     ${isActive 
-                                                        ? 'bg-amber-500/20' 
-                                                        : 'bg-muted'
+                                                            ? 'bg-primary/20' 
+                                                            : 'bg-muted'
                                                     }
                                                 `}>
                                                     <Icon className={`
                                                         w-6 h-6
                                                         ${isActive 
-                                                            ? 'text-amber-500' 
+                                                            ? 'brand-text' 
                                                             : 'text-muted-foreground'
                                                         }
                                                     `} />
@@ -278,7 +278,7 @@ export default function Settings() {
                                                     </p>
                                                 </div>
                                                 {isActive && (
-                                                    <div className="absolute top-3 right-3 w-2 h-2 bg-amber-500 rounded-full" />
+                                                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full brand-gradient" />
                                                 )}
                                             </div>
                                         </button>
@@ -482,8 +482,8 @@ export default function Settings() {
                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                              <Card className="p-4 bg-card border-border">
                                  <div className="flex items-center gap-3">
-                                     <div className="w-10 h-10 rounded-lg bg-amber-600/20 flex items-center justify-center">
-                                         <Calendar className="w-5 h-5 text-amber-500" />
+                                     <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                                                                      <Calendar className="w-5 h-5 brand-text" />
                                      </div>
                                      <div>
                                          <p className="text-2xl font-bold text-foreground">{shifts.length}</p>
@@ -520,7 +520,7 @@ export default function Settings() {
                     {/* Notifications Tab */}
                     <TabsContent value="notifications" className="space-y-6">
                         {currentUser && (
-                            <Card className="p-6 bg-gradient-to-br from-amber-900/30 to-orange-900/20 border-amber-700">
+                            <Card className="p-6 bg-card border-border">
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
                                         <h3 className="text-foreground font-semibold mb-1">Push-Benachrichtigungen</h3>
@@ -557,7 +557,7 @@ export default function Settings() {
                         </div>
 
                         <div className="flex justify-end">
-                            <Button onClick={() => saveNotifMutation.mutate()} disabled={saveNotifMutation.isPending} className="bg-amber-600 hover:bg-amber-700">
+                            <Button onClick={() => saveNotifMutation.mutate()} disabled={saveNotifMutation.isPending}>
                                 {saveNotifMutation.isPending ? 'Speichern...' : 'Einstellungen speichern'}
                             </Button>
                         </div>

@@ -91,3 +91,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Brand-token layer: maps CSS vars to consistent UI patterns ──────────────
+   These rules use --brand-from/via/fg set by the theme system.
+   They serve as the "always-on" baseline before/without JS theming.
+   The JS injection in applyThemePreset overrides specific Tailwind classes
+   on top of this for full coverage.
+─────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  .brand-gradient {
+    background: linear-gradient(135deg, var(--brand-from), var(--brand-via));
+    color: var(--brand-fg);
+  }
+  .brand-gradient-r {
+    background: linear-gradient(to right, var(--brand-from), var(--brand-via));
+    color: var(--brand-fg);
+  }
+  .brand-text {
+    color: var(--brand-from);
+  }
+  .brand-border {
+    border-color: var(--brand-from);
+  }
+  .brand-ring {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-from) 30%, transparent);
+  }
+}

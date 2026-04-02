@@ -1,0 +1,65 @@
+{
+  "name": "PriceHistory",
+  "type": "object",
+  "properties": {
+    "article_id": {
+      "type": "string",
+      "description": "ID des Artikels"
+    },
+    "article_name": {
+      "type": "string",
+      "description": "Name des Artikels (Snapshot)"
+    },
+    "old_price": {
+      "type": "number",
+      "description": "Alter Preis"
+    },
+    "new_price": {
+      "type": "number",
+      "description": "Neuer Preis"
+    },
+    "changed_by": {
+      "type": "string",
+      "description": "E-Mail des Nutzers der ge\u00e4ndert hat"
+    },
+    "changed_by_name": {
+      "type": "string",
+      "description": "Name des Nutzers"
+    },
+    "change_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der \u00c4nderung"
+    },
+    "change_time": {
+      "type": "string",
+      "description": "Uhrzeit der \u00c4nderung (HH:MM)"
+    },
+    "weekday": {
+      "type": "string",
+      "description": "Wochentag"
+    },
+    "supplier_name": {
+      "type": "string",
+      "description": "Zugeordneter Lieferant (optional)"
+    },
+    "price_type": {
+      "type": "string",
+      "enum": [
+        "Einkaufspreis",
+        "Verkaufspreis"
+      ],
+      "default": "Einkaufspreis",
+      "description": "Art des Preises"
+    },
+    "note": {
+      "type": "string",
+      "description": "Optionaler Grund / Notiz"
+    }
+  },
+  "required": [
+    "article_id",
+    "article_name",
+    "new_price"
+  ]
+}

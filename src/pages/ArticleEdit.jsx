@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import SmartCombobox from '@/components/ui/SmartCombobox';
@@ -14,11 +14,16 @@ import ImageEditor from '@/components/articles/ImageEditor';
 import SupplierDetailsEditor from '@/components/articles/SupplierDetailsEditor';
 import { haptics } from "@/components/utils/haptics";
 import { toast } from 'sonner';
+import PriceHistoryPanel from '@/components/articles/PriceHistoryPanel';
+import { recordPriceChange } from '@/lib/priceHistoryUtils';
+import { History } from 'lucide-react';
 
 export default function ArticleEditPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
+    const currentUser = useRef(null);
+    useEffect(() => { base44.auth.me().then(u => { currentUser.current = u; }).catch(() => {}); }, []);
     const articleData = location.state?.article;
 
     const { data: categories = [] } = useQuery({
@@ -112,24 +117,32 @@ export default function ArticleEditPage() {
         }
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Sync suppliers string array from supplier_details for backward compat
         const syncedSupplierNames = formData.supplier_details.map(s => s.supplier_name).filter(Boolean);
         const primary = formData.supplier_details.find(s => s.is_primary) || formData.supplier_details[0];
         const primaryPrice = primary?.purchase_price ? parseFloat(primary.purchase_price) : undefined;
+        const finalPrice = primaryPrice ?? (formData.purchase_price ? parseFloat(formData.purchase_price) : undefined);
 
         const dataToSave = {
             ...formData,
             suppliers: syncedSupplierNames.length > 0 ? syncedSupplierNames : formData.suppliers,
             quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
             content_amount: formData.content_amount ? parseFloat(formData.content_amount) : undefined,
-            purchase_price: primaryPrice ?? (formData.purchase_price ? parseFloat(formData.purchase_price) : undefined),
+            purchase_price: finalPrice,
             current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
         };
 
         if (articleData?.id) {
+            await recordPriceChange({
+                articleId: articleData.id,
+                articleName: formData.name,
+                oldPrice: articleData.purchase_price,
+                newPrice: finalPrice,
+                user: currentUser.current,
+                supplierName: primary?.supplier_name
+            });
             updateMutation.mutate({ id: articleData.id, data: dataToSave });
         } else {
             createMutation.mutate(dataToSave);
@@ -358,6 +371,16 @@ export default function ArticleEditPage() {
                             />
                         </div>
                     </div>
+
+                    {articleData?.id && (
+                        <div className="bg-card rounded-xl p-5 border border-border">
+                            <div className="flex items-center gap-2 text-base font-semibold text-foreground mb-3">
+                                <History className="w-5 h-5" />
+                                Preishistorie
+                            </div>
+                            <PriceHistoryPanel articleId={articleData.id} currentPrice={articleData.purchase_price} />
+                        </div>
+                    )}
 
                     <div className="flex gap-3 pt-2 sticky bottom-0 bg-background py-4">
                         <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1">

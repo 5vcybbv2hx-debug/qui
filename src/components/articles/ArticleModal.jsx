@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import SmartCombobox from '@/components/ui/SmartCombobox';
@@ -17,8 +17,13 @@ import AllergenEditor from '@/components/articles/AllergenEditor';
 import AllergenSelector from '@/components/menu/AllergenSelector';
 import { haptics } from "@/components/utils/haptics";
 import { toast } from 'sonner';
+import PriceHistoryPanel from '@/components/articles/PriceHistoryPanel';
+import { recordPriceChange } from '@/lib/priceHistoryUtils';
+import { TrendingUp, History } from 'lucide-react';
 
 export default function ArticleModal({ open, onClose, article, onSave }) {
+    const currentUser = useRef(null);
+    useEffect(() => { base44.auth.me().then(u => { currentUser.current = u; }).catch(() => {}); }, []);
     const { data: categories = [] } = useQuery({
         queryKey: ['article-categories'],
         queryFn: () => base44.entities.ArticleCategory.list('order')
@@ -147,23 +152,36 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         // Sync suppliers string array from supplier_details for backward compat
         const supplierNames = formData.supplier_details.map(s => s.supplier_name).filter(Boolean);
         // Primary price from primary supplier or first
         const primary = formData.supplier_details.find(s => s.is_primary) || formData.supplier_details[0];
         const primaryPrice = primary?.purchase_price ? parseFloat(primary.purchase_price) : undefined;
+        const finalPrice = primaryPrice ?? (formData.purchase_price ? parseFloat(formData.purchase_price) : undefined);
 
         const dataToSave = {
             ...formData,
             suppliers: supplierNames.length > 0 ? supplierNames : formData.suppliers,
             quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
             content_amount: formData.content_amount ? parseFloat(formData.content_amount) : undefined,
-            purchase_price: primaryPrice ?? (formData.purchase_price ? parseFloat(formData.purchase_price) : undefined),
+            purchase_price: finalPrice,
             current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
             min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
         };
+
+        // Preishistorie bei Änderung
+        if (article?.id) {
+            await recordPriceChange({
+                articleId: article.id,
+                articleName: formData.name,
+                oldPrice: article.purchase_price,
+                newPrice: finalPrice,
+                user: currentUser.current,
+                supplierName: primary?.supplier_name
+            });
+        }
         
         haptics.light();
         onSave(dataToSave, article?.id);
@@ -471,6 +489,16 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                             rows={2}
                         />
                     </div>
+
+                    {article?.id && (
+                        <div className="space-y-2 pt-2">
+                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                                <History className="w-4 h-4" />
+                                Preishistorie
+                            </div>
+                            <PriceHistoryPanel articleId={article.id} currentPrice={article.purchase_price} />
+                        </div>
+                    )}
 
                     <div className="flex gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={onClose} className="flex-1">

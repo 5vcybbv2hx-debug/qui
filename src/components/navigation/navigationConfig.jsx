@@ -42,7 +42,7 @@ export const navigationSections = [
     {
         title: 'Gäste',
         items: [
-            { name: 'Tischplan', page: 'SeatingChart', icon: QrCode, permission: 'isManager', color: 'from-indigo-400 to-blue-500' },
+            { name: 'Gäste & Tische', page: 'GuestHub', icon: CalendarCheck, permission: 'canViewReservations', color: 'from-blue-500 to-cyan-600' },
             { name: 'QR-Codes', page: 'QRCodes', icon: QrCode, permission: 'isManager', color: 'from-slate-400 to-slate-600' },
         ]
     },
@@ -50,7 +50,6 @@ export const navigationSections = [
         title: 'Events',
         items: [
             { name: 'Events', page: 'Events', icon: Calendar, permission: 'canViewDashboard', color: 'from-indigo-500 to-violet-600' },
-            { name: 'Reservierungen', page: 'Reservations', icon: CalendarCheck, permission: 'canViewReservations', color: 'from-blue-500 to-cyan-600' },
         ]
     },
     {

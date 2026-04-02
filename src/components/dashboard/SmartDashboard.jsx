@@ -529,7 +529,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
     // Data queries
     const { data: shifts = [] } = useQuery({
         queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('date', 300)
+        queryFn: () => base44.entities.Shift.list('-date', 1000)
     });
     const { data: events = [] } = useQuery({
         queryKey: ['events'],

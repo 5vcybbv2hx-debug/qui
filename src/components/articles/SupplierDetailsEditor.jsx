@@ -180,15 +180,15 @@ export default function SupplierDetailsEditor({ value = [], onChange, availableS
                         <Plus className="w-4 h-4" />
                     </Button>
                 </div>
-                {/* Quick add from known suppliers */}
-                {suggestions.length > 0 && newName.length > 0 && (
+                {/* Quick add from known suppliers — show all when empty, filter when typing */}
+                {suggestions.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
-                        {suggestions.slice(0, 5).map(s => (
+                        {suggestions.slice(0, 8).map(s => (
                             <button
                                 key={s}
                                 type="button"
                                 onClick={() => add(s)}
-                                className="text-xs px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-all"
+                                className="text-sm px-3 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-amber-500/50 active:scale-95 transition-all"
                             >
                                 + {s}
                             </button>

@@ -13,6 +13,7 @@ import { de } from 'date-fns/locale';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
 import TipCalculator from '@/components/dailyanalysis/TipCalculator.jsx';
 import DailyRevenueList from '@/components/dailyanalysis/DailyRevenueList.jsx';
+import InsightsPanel from '@/components/dailyanalysis/InsightsPanel.jsx';
 import { cn } from '@/lib/utils';
 
 // An employee is "daily-paid" (Aushilfe) if their role is Aushilfe OR they have an hourly_rate but no monthly contract
@@ -272,6 +273,20 @@ export default function DailyAnalysis() {
                     )}
                 </div>
             </div>
+
+            {/* Insights Panel — Top issues & status */}
+            <InsightsPanel
+                revenue={revenue}
+                dailyLaborCost={dailyLaborCost}
+                fullTimeLaborCost={fullTimeLaborCost}
+                dailyPaidCount={dailyPaidEntries.length}
+                fullTimeCount={fullTimeEntries.length}
+                totalRatio={totalRatio}
+                barMinusPersonnel={barMinusPersonnel}
+                staffCount={staffCount}
+                dailyTimeEntriesCount={todayTimeEntriesWithRates.length}
+                hasRevenue={!!todayRevenue}
+            />
 
             {/* KPI Grid: 2 cols on mobile */}
             <div className="grid grid-cols-2 gap-3">

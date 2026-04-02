@@ -244,11 +244,11 @@ export default function DrinkMenuPage() {
                                                                         Marge anzeigen
                                                                     </Button>
                                                                 )}
-                                                                {item.recipe_id && (
+                                                                {(item.linked_recipe_id || item.recipe_id) && (
                                                                     <Button
                                                                         variant="ghost"
                                                                         size="sm"
-                                                                        onClick={() => navigate(createPageUrl('PriceCalculator') + '?recipe=' + item.recipe_id)}
+                                                                        onClick={() => navigate(createPageUrl('PriceCalculator') + '?recipe=' + (item.linked_recipe_id || item.recipe_id))}
                                                                         className="text-xs h-7 text-primary hover:text-primary/90 hover:bg-primary/10"
                                                                     >
                                                                         <Calculator className="h-3 w-3 mr-1" />

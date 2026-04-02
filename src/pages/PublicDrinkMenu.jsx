@@ -135,11 +135,29 @@ export default function PublicDrinkMenu() {
                                                                     <Badge variant="outline" className="border-border text-muted-foreground">{item.alcohol_content}% Vol.</Badge>
                                                                 )}
                                                             </div>
-                                                            {item.allergens && (
+                                                            {/* Strukturierte Allergene (primär) mit Legacy-Fallback */}
+                                                            {(item.allergens_list?.length > 0 || item.additives?.length > 0) ? (
+                                                                <div className="mt-3 space-y-1.5">
+                                                                    {item.allergens_list?.length > 0 && (
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {item.allergens_list.map(a => (
+                                                                                <span key={a} className="px-2 py-0.5 rounded text-xs bg-red-500/10 border border-red-500/20 text-red-400">{a}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    {item.additives?.length > 0 && (
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            {item.additives.map(d => (
+                                                                                <span key={d} className="px-2 py-0.5 rounded text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400">{d}</span>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            ) : item.allergens ? (
                                                                 <p className="text-xs text-muted-foreground mt-3">
                                                                     <strong>Allergene:</strong> {item.allergens}
                                                                 </p>
-                                                            )}
+                                                            ) : null}
                                                         </div>
                                                         {item.image_url && (
                                                             <img 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, isToday, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
     Plus, Pin, Check, Archive, Trash2, Edit3, ChevronDown, ChevronUp,
-    MessageSquare, AlertTriangle, Clock, Tag
+    MessageSquare, Tag
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -51,7 +51,6 @@ function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, 
             note.status === 'erledigt' && 'opacity-60'
         )}>
             <CardContent className="p-4">
-                {/* Top row */}
                 <div className="flex items-start gap-2 mb-2">
                     {note.is_pinned && <Pin className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />}
                     <div className="flex-1 min-w-0">
@@ -66,13 +65,14 @@ function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, 
                                 onClick={() => setExpanded(!expanded)}
                                 className="text-xs text-primary mt-1 flex items-center gap-0.5 hover:underline"
                             >
-                                {expanded ? <><ChevronUp className="w-3 h-3" />Weniger</> : <><ChevronDown className="w-3 h-3" />Mehr anzeigen</>}
+                                {expanded
+                                    ? <><ChevronUp className="w-3 h-3" />Weniger</>
+                                    : <><ChevronDown className="w-3 h-3" />Mehr anzeigen</>}
                             </button>
                         )}
                     </div>
                 </div>
 
-                {/* Meta row */}
                 <div className="flex flex-wrap items-center gap-2 mb-3">
                     <span className="text-xs text-muted-foreground">{note.author_name || note.author_email}</span>
                     <span className="text-xs text-muted-foreground">·</span>
@@ -93,16 +93,13 @@ function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, 
                     )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border">
-                    {/* Own note or manager: edit */}
                     {(isOwn || isManager) && note.status !== 'archiviert' && (
                         <Button size="sm" variant="ghost" onClick={() => onEdit(note)}
                             className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
                             <Edit3 className="w-3 h-3 mr-1" />Bearbeiten
                         </Button>
                     )}
-                    {/* Manager only */}
                     {isManager && (
                         <>
                             <Button size="sm" variant="ghost" onClick={() => onPin(note)}
@@ -169,9 +166,7 @@ function NoteForm({ initial, onSave, onClose, isManager }) {
                 <div>
                     <Label className="text-sm">Kategorie</Label>
                     <Select value={form.category} onValueChange={v => setForm({ ...form, category: v })}>
-                        <SelectTrigger className="mt-1">
-                            <SelectValue />
-                        </SelectTrigger>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             {['Allgemein', 'Wichtig', 'Schicht', 'Lager', 'Gäste', 'Sonstiges'].map(c => (
                                 <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -182,9 +177,7 @@ function NoteForm({ initial, onSave, onClose, isManager }) {
                 <div>
                     <Label className="text-sm">Priorität</Label>
                     <Select value={form.priority} onValueChange={v => setForm({ ...form, priority: v })}>
-                        <SelectTrigger className="mt-1">
-                            <SelectValue />
-                        </SelectTrigger>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="normal">Normal</SelectItem>
                             <SelectItem value="wichtig">Wichtig</SelectItem>
@@ -223,7 +216,7 @@ function NoteForm({ initial, onSave, onClose, isManager }) {
     );
 }
 
-export default function TeamNotes({ isManager, currentUser }) {
+export default function TeamNotes({ isManager, currentUser, compact = false }) {
     const queryClient = useQueryClient();
     const [activeFilter, setActiveFilter] = useState('alle');
     const [modalOpen, setModalOpen] = useState(false);
@@ -235,7 +228,6 @@ export default function TeamNotes({ isManager, currentUser }) {
         refetchInterval: 30000
     });
 
-    // Real-time subscription
     useEffect(() => {
         const unsub = base44.entities.TeamNote.subscribe(() => {
             queryClient.invalidateQueries({ queryKey: ['team-notes'] });
@@ -279,7 +271,6 @@ export default function TeamNotes({ isManager, currentUser }) {
     const handleArchive = (note) => updateMutation.mutate({ id: note.id, data: { status: 'archiviert' } });
     const handleDelete = (id) => { if (confirm('Nachricht löschen?')) deleteMutation.mutate(id); };
 
-    // Filter
     const today = new Date().toISOString().split('T')[0];
     const filtered = notes.filter(n => {
         if (!isManager && n.is_manager_only) return false;
@@ -292,7 +283,6 @@ export default function TeamNotes({ isManager, currentUser }) {
         return true;
     });
 
-    // Sort: pinned first, then by date
     const sorted = [...filtered].sort((a, b) => {
         if (a.is_pinned && !b.is_pinned) return -1;
         if (!a.is_pinned && b.is_pinned) return 1;
@@ -300,6 +290,7 @@ export default function TeamNotes({ isManager, currentUser }) {
     });
 
     const openCount = notes.filter(n => n.status === 'offen' && (!n.is_manager_only || isManager)).length;
+    const displayNotes = compact ? sorted.filter(n => n.status !== 'archiviert').slice(0, 3) : sorted;
 
     return (
         <div className="space-y-4">
@@ -307,7 +298,9 @@ export default function TeamNotes({ isManager, currentUser }) {
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-primary" />
-                    <h2 className="text-lg font-bold text-foreground">Team-Notizen</h2>
+                    <h2 className={cn('font-bold text-foreground', compact ? 'text-sm uppercase tracking-wide' : 'text-lg')}>
+                        Team-Notizen
+                    </h2>
                     {openCount > 0 && (
                         <Badge className="bg-primary/20 text-primary border border-primary/30 text-xs">{openCount}</Badge>
                     )}
@@ -322,32 +315,34 @@ export default function TeamNotes({ isManager, currentUser }) {
                 </Button>
             </div>
 
-            {/* Filter Chips */}
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {FILTERS.map(f => (
-                    <button
-                        key={f}
-                        onClick={() => setActiveFilter(f)}
-                        className={cn(
-                            'flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border',
-                            activeFilter === f
-                                ? 'bg-primary text-primary-foreground border-primary'
-                                : 'bg-card text-muted-foreground border-border hover:border-primary/30'
-                        )}
-                    >
-                        {f === 'alle' ? 'Alle' :
-                         f === 'offen' ? 'Offen' :
-                         f === 'wichtig' ? '⚠ Wichtig' :
-                         f === 'heute' ? 'Heute' :
-                         f === 'angepinnt' ? '📌 Angepinnt' :
-                         f === 'erledigt' ? '✓ Erledigt' : f}
-                    </button>
-                ))}
-            </div>
+            {/* Filter Chips – hidden in compact mode */}
+            {!compact && (
+                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    {FILTERS.map(f => (
+                        <button
+                            key={f}
+                            onClick={() => setActiveFilter(f)}
+                            className={cn(
+                                'flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border',
+                                activeFilter === f
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'bg-card text-muted-foreground border-border hover:border-primary/30'
+                            )}
+                        >
+                            {f === 'alle' ? 'Alle' :
+                             f === 'offen' ? 'Offen' :
+                             f === 'wichtig' ? '⚠ Wichtig' :
+                             f === 'heute' ? 'Heute' :
+                             f === 'angepinnt' ? '📌 Angepinnt' :
+                             f === 'erledigt' ? '✓ Erledigt' : f}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {/* Notes Feed */}
             <div className="space-y-3">
-                {sorted.map(note => (
+                {displayNotes.map(note => (
                     <NoteCard
                         key={note.id}
                         note={note}
@@ -360,13 +355,16 @@ export default function TeamNotes({ isManager, currentUser }) {
                         onArchive={handleArchive}
                     />
                 ))}
-                {sorted.length === 0 && (
+                {displayNotes.length === 0 && (
                     <Card className="border-dashed border-border bg-card/50">
                         <CardContent className="p-8 text-center">
                             <MessageSquare className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-40" />
                             <p className="text-sm text-muted-foreground">Keine Nachrichten</p>
                         </CardContent>
                     </Card>
+                )}
+                {compact && sorted.length > 3 && (
+                    <p className="text-xs text-center text-muted-foreground py-1">+{sorted.length - 3} weitere im Team-Tab</p>
                 )}
             </div>
 

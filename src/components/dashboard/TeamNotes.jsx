@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
     Plus, Pin, Check, Archive, Trash2, Edit3, ChevronDown, ChevronUp,
-    MessageSquare, Tag
+    MessageSquare, Tag, ClipboardList
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,7 +34,7 @@ const categoryColors = {
 
 const FILTERS = ['alle', 'offen', 'wichtig', 'heute', 'angepinnt', 'erledigt'];
 
-function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, onDone, onArchive }) {
+function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, onDone, onArchive, onConvertToTask }) {
     const [expanded, setExpanded] = useState(false);
     const isOwn = note.author_email === currentUserEmail;
     const isLong = note.message && note.message.length > 120;
@@ -102,6 +102,10 @@ function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, 
                     )}
                     {isManager && (
                         <>
+                            <Button size="sm" variant="ghost" onClick={() => onConvertToTask(note)}
+                                className="h-8 px-2 text-xs text-muted-foreground hover:text-blue-400">
+                                <ClipboardList className="w-3 h-3 mr-1" />Als Aufgabe
+                            </Button>
                             <Button size="sm" variant="ghost" onClick={() => onPin(note)}
                                 className={cn('h-8 px-2 text-xs', note.is_pinned ? 'text-amber-400 hover:text-amber-300' : 'text-muted-foreground hover:text-amber-400')}>
                                 <Pin className="w-3 h-3 mr-1" />{note.is_pinned ? 'Ablösen' : 'Anpinnen'}
@@ -265,11 +269,28 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
         setEditNote(null);
     };
 
+    const createTaskMutation = useMutation({
+        mutationFn: (data) => base44.entities.TodoItem.create(data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] })
+    });
+
     const openEdit = (note) => { setEditNote(note); setModalOpen(true); };
     const handlePin = (note) => updateMutation.mutate({ id: note.id, data: { is_pinned: !note.is_pinned } });
     const handleDone = (note) => updateMutation.mutate({ id: note.id, data: { status: 'erledigt' } });
     const handleArchive = (note) => updateMutation.mutate({ id: note.id, data: { status: 'archiviert' } });
     const handleDelete = (id) => { if (confirm('Nachricht löschen?')) deleteMutation.mutate(id); };
+    const handleConvertToTask = async (note) => {
+        if (!confirm(`Notiz als Aufgabe anlegen?\n\n"${note.title || note.message.slice(0, 60)}"`) ) return;
+        await createTaskMutation.mutateAsync({
+            title: note.title || note.message.slice(0, 80),
+            description: note.message,
+            priority: note.priority === 'dringend' ? 'dringend' : note.priority === 'wichtig' ? 'hoch' : 'mittel',
+            status: 'offen',
+            created_by: note.author_name || note.author_email || ''
+        });
+        await updateMutation.mutateAsync({ id: note.id, data: { status: 'erledigt' } });
+        import('sonner').then(({ toast }) => toast.success('Aufgabe erstellt'));
+    };
 
     const today = new Date().toISOString().split('T')[0];
     const filtered = notes.filter(n => {
@@ -353,6 +374,7 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
                         onPin={handlePin}
                         onDone={handleDone}
                         onArchive={handleArchive}
+                        onConvertToTask={handleConvertToTask}
                     />
                 ))}
                 {displayNotes.length === 0 && (

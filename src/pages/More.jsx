@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { LogOut } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { haptics } from '@/components/utils/haptics';
-import { navigationSections } from '@/components/navigation/navigationConfig';
+import { mainNavigation } from '@/components/navigation/navigationConfig';
 
 export default function MorePage() {
     const permissions = usePermissions();
@@ -42,14 +42,14 @@ export default function MorePage() {
                 )}
 
                 {/* Sections as Grid */}
-                {navigationSections.map((section) => {
-                    const visibleItems = section.items.filter(item => permissions[item.permission]);
+                {mainNavigation.map((section) => {
+                    const visibleItems = section.pages.filter(item => permissions[item.permission]);
                     if (visibleItems.length === 0) return null;
 
                     return (
-                        <div key={section.title}>
+                        <div key={section.id}>
                             <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">
-                                {section.title}
+                                {section.name}
                             </h2>
                             <div className="grid grid-cols-3 gap-3">
                                 {visibleItems.map((item) => (

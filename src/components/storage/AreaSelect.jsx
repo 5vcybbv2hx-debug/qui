@@ -32,14 +32,20 @@ export default function AreaSelect({ value, onChange, className }) {
       onChange(newArea);
       setNewAreaName('');
       setShowCreateDialog(false);
+    },
+    onError: (error) => {
+      console.error('Fehler beim Erstellen des Bereichs:', error);
+      alert('Fehler beim Erstellen des Bereichs: ' + (error?.message || 'Unbekannter Fehler'));
     }
   });
 
   const handleCreate = () => {
-    if (!newAreaName.trim()) return;
+    const trimmedName = newAreaName.trim();
+    if (!trimmedName) return;
     createMutation.mutate({
-      name: newAreaName.trim(),
-      is_active: true
+      name: trimmedName,
+      is_active: true,
+      order: 0
     });
   };
 
@@ -91,8 +97,14 @@ export default function AreaSelect({ value, onChange, className }) {
                 onKeyDown={e => e.key === 'Enter' && handleCreate()}
                 className="h-11 text-base"
                 autoFocus
+                disabled={createMutation.isPending}
               />
             </div>
+            {createMutation.isError && (
+              <div className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded border border-destructive/20">
+                Fehler beim Erstellen. Bitte versuche es erneut.
+              </div>
+            )}
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -106,7 +118,7 @@ export default function AreaSelect({ value, onChange, className }) {
                 type="button"
                 onClick={handleCreate}
                 disabled={!newAreaName.trim() || createMutation.isPending}
-                className="flex-1"
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
               >
                 {createMutation.isPending ? 'Wird erstellt...' : 'Erstellen'}
               </Button>

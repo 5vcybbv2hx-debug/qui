@@ -43,17 +43,27 @@ export default function ContainerSelect({ areaId = '', value, onChange, classNam
       setNewContainerName('');
       setNewContainerType('Regal');
       setShowCreateDialog(false);
+    },
+    onError: (error) => {
+      console.error('Fehler beim Erstellen des Behälters:', error);
+      alert('Fehler beim Erstellen des Behälters: ' + (error?.message || 'Unbekannter Fehler'));
     }
   });
 
   const handleCreate = () => {
-    if (!newContainerName.trim() || !areaId || !area) return;
+    const trimmedName = newContainerName.trim();
+    if (!trimmedName || !areaId || !area) {
+      if (!trimmedName) return;
+      if (!areaId || !area) alert('Bitte wähle zuerst einen Bereich.');
+      return;
+    }
     createMutation.mutate({
       area_id: areaId,
       area_name: area.name,
-      name: newContainerName.trim(),
+      name: trimmedName,
       type: newContainerType,
-      is_active: true
+      is_active: true,
+      order: 0
     });
   };
 
@@ -108,11 +118,12 @@ export default function ContainerSelect({ areaId = '', value, onChange, classNam
                 onKeyDown={e => e.key === 'Enter' && handleCreate()}
                 className="h-11 text-base"
                 autoFocus
+                disabled={createMutation.isPending}
               />
             </div>
             <div className="space-y-2">
               <Label>Typ</Label>
-              <Select value={newContainerType} onValueChange={setNewContainerType}>
+              <Select value={newContainerType} onValueChange={setNewContainerType} disabled={createMutation.isPending}>
                 <SelectTrigger className="h-11">
                   <SelectValue />
                 </SelectTrigger>
@@ -126,6 +137,11 @@ export default function ContainerSelect({ areaId = '', value, onChange, classNam
                 </SelectContent>
               </Select>
             </div>
+            {createMutation.isError && (
+              <div className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded border border-destructive/20">
+                Fehler beim Erstellen. Bitte versuche es erneut.
+              </div>
+            )}
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -138,8 +154,8 @@ export default function ContainerSelect({ areaId = '', value, onChange, classNam
               <Button
                 type="button"
                 onClick={handleCreate}
-                disabled={!newContainerName.trim() || createMutation.isPending}
-                className="flex-1"
+                disabled={!newContainerName.trim() || createMutation.isPending || !area}
+                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
               >
                 {createMutation.isPending ? 'Wird erstellt...' : 'Erstellen'}
               </Button>

@@ -1,106 +1,242 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, getDay } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Check, RotateCcw, Calendar, User } from 'lucide-react';
+import { Plus, Check, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+
+// Weekday config: js getDay() index → label + short pattern prefix
+const WEEKDAYS = [
+    { label: 'Sonntag',    short: 'so', jsDay: 0 },
+    { label: 'Montag',     short: 'mo', jsDay: 1 },
+    { label: 'Dienstag',   short: 'di', jsDay: 2 },
+    { label: 'Mittwoch',   short: 'mi', jsDay: 3 },
+    { label: 'Donnerstag', short: 'do', jsDay: 4 },
+    { label: 'Freitag',    short: 'fr', jsDay: 5 },
+    { label: 'Samstag',    short: 'sa', jsDay: 6 },
+];
+
+// Detect weekday from biweekly_pattern (mi_1, do_2, mo, etc.) or default to Mittwoch for legacy null
+function getTaskDay(task) {
+    if (!task.biweekly_pattern) return 3; // legacy: Mittwoch
+    const prefix = task.biweekly_pattern.split('_')[0];
+    return WEEKDAYS.find(d => d.short === prefix)?.jsDay ?? 3;
+}
+
+function getWeekNumber(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7) % 2 === 1 ? 1 : 2;
+}
+
+function TaskRow({ task, onComplete, onReset }) {
+    return (
+        <div className={cn(
+            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
+            task.is_completed ? "opacity-50" : "bg-card border border-border"
+        )}>
+            <button
+                onClick={() => onComplete(task)}
+                className={cn(
+                    "w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+                    task.is_completed
+                        ? "border-emerald-500 bg-emerald-500"
+                        : "border-border hover:border-emerald-500 active:scale-95"
+                )}
+            >
+                {task.is_completed && <Check className="w-4 h-4 text-white" />}
+            </button>
+            <div className="flex-1 min-w-0">
+                <p className={cn(
+                    "text-sm font-medium",
+                    task.is_completed ? "line-through text-muted-foreground" : "text-foreground"
+                )}>
+                    {task.title}
+                </p>
+                {task.is_completed && task.completed_by && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        ✓ {task.completed_by}
+                        {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
+                    </p>
+                )}
+                {!task.is_completed && task.assigned_to_name && (
+                    <p className="text-xs text-muted-foreground mt-0.5">→ {task.assigned_to_name}</p>
+                )}
+            </div>
+            {task.is_completed && (
+                <button
+                    onClick={() => onReset(task)}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
+                >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+            )}
+        </div>
+    );
+}
+
+function DaySection({ label, tasks, isToday, onComplete, onReset }) {
+    const [doneOpen, setDoneOpen] = useState(false);
+    const open = tasks.filter(t => !t.is_completed);
+    const done = tasks.filter(t => t.is_completed);
+
+    return (
+        <div className={cn(
+            "rounded-2xl border overflow-hidden",
+            isToday
+                ? "border-amber-500 shadow-md shadow-amber-500/10"
+                : "border-border"
+        )}>
+            {/* Day header */}
+            <div className={cn(
+                "flex items-center justify-between px-4 py-3",
+                isToday ? "bg-amber-500/10" : "bg-card"
+            )}>
+                <div className="flex items-center gap-2">
+                    {isToday && (
+                        <span className="text-xs font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                            Heute
+                        </span>
+                    )}
+                    <span className={cn("font-semibold", isToday ? "text-amber-500" : "text-foreground")}>
+                        {label}
+                    </span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                    {done.length}/{tasks.length} erledigt
+                </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1 bg-border">
+                <div
+                    className={cn("h-full transition-all", isToday ? "bg-amber-500" : "bg-emerald-500")}
+                    style={{ width: tasks.length ? `${(done.length / tasks.length) * 100}%` : '0%' }}
+                />
+            </div>
+
+            {/* Open tasks */}
+            <div className="px-3 py-2 space-y-2 bg-background">
+                {open.length === 0 && done.length > 0 && (
+                    <p className="text-center text-sm text-emerald-500 py-3 font-medium">✓ Alle Aufgaben erledigt!</p>
+                )}
+                {open.map(task => (
+                    <TaskRow key={task.id} task={task} onComplete={onComplete} onReset={onReset} />
+                ))}
+            </div>
+
+            {/* Done tasks (collapsible) */}
+            {done.length > 0 && (
+                <div className="border-t border-border">
+                    <button
+                        onClick={() => setDoneOpen(v => !v)}
+                        className="w-full flex items-center justify-between px-4 py-2 text-xs text-muted-foreground hover:bg-accent/50 transition-colors"
+                    >
+                        <span>{done.length} erledigt</span>
+                        {doneOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                    {doneOpen && (
+                        <div className="px-3 pb-2 space-y-1.5 bg-background">
+                            {done.map(task => (
+                                <TaskRow key={task.id} task={task} onComplete={onComplete} onReset={onReset} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function WeeklyTasks() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
     const [modalOpen, setModalOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '',
-        weekday: 'Mittwoch',
-        biweekly_pattern: null
-    });
+    const [formData, setFormData] = useState({ title: '', weekday: 'mi', biweekly: 'every' });
 
-    const { data: user } = useQuery({
-        queryKey: ['user'],
-        queryFn: () => base44.auth.me()
-    });
+    const todayJsDay = getDay(new Date());
+    const currentWeek = getWeekNumber(new Date());
+
+    const { data: user } = useQuery({ queryKey: ['user'], queryFn: () => base44.auth.me() });
 
     const { data: allTasks = [] } = useQuery({
         queryKey: ['weekly-cleaning-tasks'],
-        queryFn: () => base44.entities.CleaningTask.filter({ 
-            area: 'Wochentagsaufgaben',
-            is_active: true 
-        })
+        queryFn: () => base44.entities.CleaningTask.filter({ area: 'Wochentagsaufgaben', is_active: true })
     });
 
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list()
-    });
-
+    const { data: shifts = [] } = useQuery({ queryKey: ['shifts'], queryFn: () => base44.entities.Shift.list() });
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
-    // Aktuelle Kalenderwoche (ungerade = 1, gerade = 2)
-    const getWeekNumber = (date) => {
-        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-        const dayNum = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
-        return weekNo % 2 === 1 ? 1 : 2;
-    };
+    // Filter tasks relevant for this week (biweekly logic)
+    const relevantTasks = useMemo(() => {
+        return allTasks.filter(task => {
+            if (!task.biweekly_pattern) return true; // legacy = every week
+            const parts = task.biweekly_pattern.split('_');
+            if (parts.length === 1) return true; // prefix only = every week
+            const weekNum = parseInt(parts[parts.length - 1]);
+            return !weekNum || weekNum === currentWeek;
+        });
+    }, [allTasks, currentWeek]);
 
-    const currentWeek = getWeekNumber(new Date());
-    const today = getDay(new Date()); // 0 = Sonntag, 3 = Mittwoch, 4 = Donnerstag
+    // Group by weekday, only show days that have tasks
+    const tasksByDay = useMemo(() => {
+        const map = {};
+        relevantTasks.forEach(task => {
+            const jsDay = getTaskDay(task);
+            if (!map[jsDay]) map[jsDay] = [];
+            map[jsDay].push(task);
+        });
+        return map;
+    }, [relevantTasks]);
 
-    // Filtere Aufgaben nach Wochentag
-    const wednesdayTasks = allTasks.filter(t => 
-        !t.biweekly_pattern || t.biweekly_pattern.startsWith('mi_')
-    );
-    const thursdayTasks = allTasks.filter(t => 
-        !t.biweekly_pattern || t.biweekly_pattern.startsWith('do_')
-    );
+    // Sort: today first, then rest of week in order
+    const sortedDays = useMemo(() => {
+        const days = Object.keys(tasksByDay).map(Number);
+        days.sort((a, b) => {
+            if (a === todayJsDay) return -1;
+            if (b === todayJsDay) return 1;
+            // future days before past days
+            const aFuture = a > todayJsDay;
+            const bFuture = b > todayJsDay;
+            if (aFuture && !bFuture) return -1;
+            if (!aFuture && bFuture) return 1;
+            return a - b;
+        });
+        return days;
+    }, [tasksByDay, todayJsDay]);
 
-    // Finde Aushilfe für heute
-    const getTodaysAushilfe = () => {
-        const todayDate = format(new Date(), 'yyyy-MM-dd');
-        const todayShifts = shifts.filter(s => s.date === todayDate);
-        const aushilfe = todayShifts
-            .map(s => employees.find(e => e.id === s.employee_id))
-            .find(e => e && e.role === 'Aushilfe');
-        return aushilfe;
-    };
+    const totalTasks = relevantTasks.length;
+    const doneTasks = relevantTasks.filter(t => t.is_completed).length;
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['weekly-cleaning-tasks'] })
+    });
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.CleaningTask.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['weekly-cleaning-tasks']);
+            queryClient.invalidateQueries({ queryKey: ['weekly-cleaning-tasks'] });
             setModalOpen(false);
-            setFormData({ title: '', weekday: 'Mittwoch', biweekly_pattern: null });
-        }
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['weekly-cleaning-tasks']);
+            setFormData({ title: '', weekday: 'mi', biweekly: 'every' });
         }
     });
 
     const handleComplete = (task) => {
-        const displayName = user?.full_name 
-            ? user.full_name.split(' ').reverse().join(', ')
-            : user?.email;
-        
+        const displayName = user?.full_name ?? user?.email ?? '';
         updateMutation.mutate({
             id: task.id,
             data: {
@@ -112,277 +248,142 @@ export default function WeeklyTasks() {
     };
 
     const handleReset = (task) => {
-        updateMutation.mutate({
-            id: task.id,
-            data: {
-                is_completed: false,
-                completed_by: null,
-                completed_at: null
-            }
-        });
+        updateMutation.mutate({ id: task.id, data: { is_completed: false, completed_by: null, completed_at: null } });
+    };
+
+    const getTodaysAushilfe = () => {
+        const todayDate = format(new Date(), 'yyyy-MM-dd');
+        const todayShifts = shifts.filter(s => s.date === todayDate);
+        return todayShifts.map(s => employees.find(e => e.id === s.employee_id)).find(e => e?.role === 'Aushilfe');
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
         const aushilfe = getTodaysAushilfe();
-        const taskData = {
+        let pattern = null;
+        if (formData.biweekly === 'every') {
+            pattern = formData.weekday; // e.g. 'mi', 'do', 'mo'
+        } else {
+            pattern = `${formData.weekday}_${formData.biweekly}`; // e.g. 'mi_1', 'do_2'
+        }
+        createMutation.mutate({
             title: formData.title,
             area: 'Wochentagsaufgaben',
             frequency: 'wöchentlich',
-            biweekly_pattern: formData.biweekly_pattern,
+            biweekly_pattern: pattern,
             assigned_to: aushilfe?.id || null,
-            assigned_to_name: aushilfe?.name || null
-        };
-        
-        createMutation.mutate(taskData);
+            assigned_to_name: aushilfe?.name || null,
+            is_active: true,
+        });
     };
 
-    const TaskCard = ({ task, dayLabel }) => {
-        const shouldShowToday = 
-            (dayLabel === 'Mittwoch' && today === 3) || 
-            (dayLabel === 'Donnerstag' && today === 4);
-        
-        const isCurrentWeekTask = !task.biweekly_pattern || 
-            (task.biweekly_pattern.endsWith(`_${currentWeek}`));
+    if (permissions.isLoading) return null;
+    if (!permissions.canViewCleaning) return <PermissionDenied />;
 
-        return (
-            <div className={cn(
-                "p-4 bg-card rounded-lg border border-border transition-all",
-                task.is_completed && "opacity-60",
-                shouldShowToday && isCurrentWeekTask && "ring-2 ring-amber-500"
-            )}>
-                <div className="flex items-start gap-3">
-                    <button
-                        onClick={() => handleComplete(task)}
-                        className={cn(
-                            "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 mt-0.5",
-                            task.is_completed 
-                                ? "border-emerald-500 bg-emerald-500" 
-                                : "border-border hover:border-emerald-500"
-                        )}
-                    >
-                        {task.is_completed && <Check className="w-4 h-4 text-white" />}
-                    </button>
-                    
-                    <div className="flex-1 min-w-0">
-                        <p className={cn(
-                            "text-sm font-medium",
-                            task.is_completed ? "text-muted-foreground line-through" : "text-foreground"
-                        )}>
-                            {task.title}
+    return (
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-5">
+
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Wochenaufgaben</h1>
+                        <p className="text-muted-foreground text-sm mt-0.5">
+                            {format(new Date(), "EEEE, d. MMMM", { locale: de })} · KW {getWeekNumber(new Date()) === 1 ? 'ungerade' : 'gerade'}
                         </p>
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            {task.biweekly_pattern && (
-                                <Badge variant="outline" className="text-xs border-border text-muted-foreground">
-                                    {task.biweekly_pattern.endsWith('_1') ? 'Woche 1' : 'Woche 2'}
-                                </Badge>
-                            )}
-                            {task.assigned_to_name && (
-                                <Badge variant="outline" className="text-xs border-blue-600 text-blue-400">
-                                    <User className="w-3 h-3 mr-1" />
-                                    {task.assigned_to_name}
-                                </Badge>
-                            )}
-                            {task.is_completed && task.completed_by && (
-                                <span className="text-xs text-muted-foreground">
-                                    ✓ {task.completed_by}
-                                    {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
-                                </span>
-                            )}
-                        </div>
                     </div>
-                    
-                    {task.is_completed && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            onClick={() => handleReset(task)}
-                        >
-                            <RotateCcw className="w-4 h-4" />
+                    {permissions.canEditCleaning && (
+                        <Button onClick={() => setModalOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white gap-2">
+                            <Plus className="w-4 h-4" />
+                            Aufgabe
                         </Button>
                     )}
                 </div>
-            </div>
-        );
-    };
 
-    if (!permissions.canViewCleaning) {
-        return <PermissionDenied />;
-    }
-
-    return (
-        <div className="min-h-screen bg-background pb-24 md:pb-0">
-            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
-                {/* Header */}
-                <div className="flex flex-col gap-3 mb-6">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                                Wochenaufgaben
-                            </h1>
-                            <p className="text-muted-foreground text-sm mt-1">
-                                {format(new Date(), "EEEE, d. MMMM", { locale: de })} · Woche {currentWeek}
-                            </p>
+                {/* Overall progress */}
+                {totalTasks > 0 && (
+                    <div className="bg-card border border-border rounded-2xl px-4 py-3 space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="font-medium text-foreground">Fortschritt diese Woche</span>
+                            <span className="text-muted-foreground">{doneTasks} / {totalTasks}</span>
                         </div>
-                        <Button 
-                            onClick={() => setModalOpen(true)}
-                            className="bg-amber-600 hover:bg-amber-700"
-                            disabled={!permissions.canEditCleaning}
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Aufgabe
-                        </Button>
+                        <div className="h-2 bg-border rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                                style={{ width: `${(doneTasks / totalTasks) * 100}%` }}
+                            />
+                        </div>
+                        {doneTasks === totalTasks && totalTasks > 0 && (
+                            <p className="text-xs text-emerald-500 font-medium text-center">🎉 Alle Aufgaben diese Woche erledigt!</p>
+                        )}
                     </div>
-                </div>
+                )}
 
-                {/* Tasks Tabs */}
-<Tabs defaultValue={today === 4 ? 'thursday' : 'wednesday'} className="space-y-4">
-                    <TabsList className="bg-card border border-border grid w-full grid-cols-2">
-                        <TabsTrigger 
-                            value="wednesday" 
-                            className={cn(
-                                "text-muted-foreground",
-                                today === 3 && "data-[state=active]:bg-amber-600 data-[state=active]:text-white"
-                            )}
-                        >
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Mittwoch ({wednesdayTasks.filter(t => t.is_completed).length}/{wednesdayTasks.length})
-                        </TabsTrigger>
-                        <TabsTrigger 
-                            value="thursday"
-                            className={cn(
-                                "text-muted-foreground",
-                                today === 4 && "data-[state=active]:bg-amber-600 data-[state=active]:text-white"
-                            )}
-                        >
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Donnerstag ({thursdayTasks.filter(t => t.is_completed).length}/{thursdayTasks.length})
-                        </TabsTrigger>
-                    </TabsList>
+                {/* No tasks at all */}
+                {totalTasks === 0 && (
+                    <div className="text-center py-16 text-muted-foreground">
+                        <p className="text-lg font-medium">Keine Aufgaben diese Woche</p>
+                        <p className="text-sm mt-1">Füge wiederkehrende Aufgaben hinzu.</p>
+                    </div>
+                )}
 
-                    <TabsContent value="wednesday" className="space-y-3">
-                        {wednesdayTasks.length === 0 ? (
-                            <Card className="p-8 text-center text-slate-400 bg-slate-800 border-slate-700">
-                                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                <p>Keine Mittwochs-Aufgaben vorhanden</p>
-                            </Card>
-                        ) : (
-                            wednesdayTasks
-                                .sort((a, b) => {
-                                    if (a.is_completed === b.is_completed) return 0;
-                                    return a.is_completed ? 1 : -1;
-                                })
-                                .map(task => (
-                                    <TaskCard key={task.id} task={task} dayLabel="Mittwoch" />
-                                ))
-                        )}
-                    </TabsContent>
-
-                    <TabsContent value="thursday" className="space-y-3">
-                        {thursdayTasks.length === 0 ? (
-                            <Card className="p-8 text-center bg-card border-border text-muted-foreground">
-                                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                <p>Keine Donnerstags-Aufgaben vorhanden</p>
-                            </Card>
-                        ) : (
-                            thursdayTasks
-                                .sort((a, b) => {
-                                    if (a.is_completed === b.is_completed) return 0;
-                                    return a.is_completed ? 1 : -1;
-                                })
-                                .map(task => (
-                                    <TaskCard key={task.id} task={task} dayLabel="Donnerstag" />
-                                ))
-                        )}
-                    </TabsContent>
-                </Tabs>
+                {/* Day sections */}
+                {sortedDays.map(jsDay => {
+                    const wd = WEEKDAYS.find(d => d.jsDay === jsDay);
+                    const tasks = tasksByDay[jsDay] || [];
+                    return (
+                        <DaySection
+                            key={jsDay}
+                            label={wd?.label ?? 'Unbekannt'}
+                            tasks={tasks}
+                            isToday={jsDay === todayJsDay}
+                            onComplete={handleComplete}
+                            onReset={handleReset}
+                        />
+                    );
+                })}
 
                 {/* Add Modal */}
                 <Dialog open={modalOpen} onOpenChange={setModalOpen}>
                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>Neue Wochentagsaufgabe</DialogTitle>
+                            <DialogTitle>Neue Wochenaufgabe</DialogTitle>
                         </DialogHeader>
-                        
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
                             <div className="space-y-2">
-                                <Label>Aufgabe</Label>
+                                <Label>Aufgabe *</Label>
                                 <Input
                                     value={formData.title}
-                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
                                     placeholder="z.B. Kühlschrank putzen"
                                     required
                                 />
                             </div>
-
                             <div className="space-y-2">
                                 <Label>Wochentag</Label>
-                                <Select 
-                                    value={formData.weekday} 
-                                    onValueChange={(v) => {
-                                        setFormData({ 
-                                            ...formData, 
-                                            weekday: v,
-                                            biweekly_pattern: null
-                                        });
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
+                                <Select value={formData.weekday} onValueChange={v => setFormData({ ...formData, weekday: v, biweekly: 'every' })}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Mittwoch">Mittwoch</SelectItem>
-                                        <SelectItem value="Donnerstag">Donnerstag</SelectItem>
+                                        {WEEKDAYS.map(d => (
+                                            <SelectItem key={d.short} value={d.short}>{d.label}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-
                             <div className="space-y-2">
-                                <Label>Turnus (optional)</Label>
-                                <Select 
-                                    value={formData.biweekly_pattern || "every"} 
-                                    onValueChange={(v) => setFormData({ 
-                                        ...formData, 
-                                        biweekly_pattern: v === "every" ? null : v
-                                    })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
+                                <Label>Turnus</Label>
+                                <Select value={formData.biweekly} onValueChange={v => setFormData({ ...formData, biweekly: v })}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="every">Jede Woche</SelectItem>
-                                        {formData.weekday === 'Mittwoch' && (
-                                            <>
-                                                <SelectItem value="mi_1">Nur Woche 1 (ungerade KW)</SelectItem>
-                                                <SelectItem value="mi_2">Nur Woche 2 (gerade KW)</SelectItem>
-                                            </>
-                                        )}
-                                        {formData.weekday === 'Donnerstag' && (
-                                            <>
-                                                <SelectItem value="do_1">Nur Woche 1 (ungerade KW)</SelectItem>
-                                                <SelectItem value="do_2">Nur Woche 2 (gerade KW)</SelectItem>
-                                            </>
-                                        )}
+                                        <SelectItem value="1">Nur Woche 1 (ungerade KW)</SelectItem>
+                                        <SelectItem value="2">Nur Woche 2 (gerade KW)</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs text-muted-foreground">
-                                    Aktuelle Woche: {currentWeek === 1 ? 'Woche 1 (ungerade KW)' : 'Woche 2 (gerade KW)'}
-                                </p>
                             </div>
-
-                            <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
-                                <p className="text-xs text-muted-foreground">
-                                    💡 Die Aufgabe wird automatisch der Aushilfe zugewiesen, die am jeweiligen Tag arbeitet
-                                </p>
-                            </div>
-
-                            <div className="flex gap-2 pt-4">
-                                <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
-                                    Abbrechen
-                                </Button>
-                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
+                            <div className="flex gap-2 pt-2">
+                                <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
+                                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
                                     Hinzufügen
                                 </Button>
                             </div>

@@ -82,8 +82,8 @@ export default function Storage() {
             setLocForm(EMPTY_LOC);
         },
         onError: (error) => {
-            console.error('Fehler beim Speichern:', error);
-            alert('Fehler beim Speichern des Lagerorts: ' + (error.message || 'Unbekannter Fehler'));
+            console.error('Fehler beim Speichern des Lagerorts:', error);
+            alert('Fehler beim Speichern: ' + (error?.message || 'Unbekannter Fehler'));
         }
     });
 
@@ -151,8 +151,27 @@ export default function Storage() {
         setItemModalOpen(true);
     };
 
-    const openAddLoc = () => { setEditingLoc(null); setLocForm(EMPTY_LOC); setLocModalOpen(true); };
-    const openEditLoc = (loc) => { setEditingLoc(loc); setLocForm({ ...loc }); setLocModalOpen(true); };
+    const openAddLoc = () => { 
+        setEditingLoc(null);
+        setLocForm(EMPTY_LOC);
+        setLocModalOpen(true);
+    };
+
+    const openEditLoc = (loc) => {
+        setEditingLoc(loc);
+        setLocForm({
+            area_id: loc.area_id,
+            area_name: loc.area_name,
+            container_id: loc.container_id,
+            container_name: loc.container_name,
+            name: loc.name,
+            short_code: loc.short_code,
+            location_type: loc.location_type || 'Regal',
+            position: loc.position,
+            notes: loc.notes,
+        });
+        setLocModalOpen(true);
+    };
 
     const handleItemFormLocChange = (locId) => {
         const loc = locations.find(l => l.id === locId);
@@ -168,10 +187,52 @@ export default function Storage() {
         savItemMutation.mutate(itemForm);
     };
 
+    const generateShortCode = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = 'LOC-';
+        for (let i = 0; i < 4; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    };
+
+    const buildLocationPayload = () => {
+        // Validierung: nur notwendige Felder
+        if (!locForm.area_id || !locForm.container_id) return null;
+
+        // Automatisch generierten Namen bauen
+        let autoName = `${locForm.area_name || '–'} › ${locForm.container_name || '–'}`;
+        if (locForm.position?.trim()) {
+            autoName += ` › ${locForm.position}`;
+        }
+
+        // Payload zusammenstellen
+        const payload = {
+            area_id: locForm.area_id,
+            area_name: locForm.area_name,
+            container_id: locForm.container_id,
+            container_name: locForm.container_name,
+            name: autoName,
+            location_type: locForm.location_type || 'Regal',
+            position: locForm.position || '',
+            notes: locForm.notes || '',
+            is_active: true,
+        };
+
+        // Kurzcode: bei neuem Lagerort generieren, bei Bearbeitung behalten
+        if (editingLoc?.id) {
+            payload.short_code = editingLoc.short_code || generateShortCode();
+        } else {
+            payload.short_code = generateShortCode();
+        }
+
+        return payload;
+    };
+
     const handleSaveLoc = () => {
-        if (!locForm.area_id || !locForm.container_id || !locForm.name.trim()) return;
-        const container = locForm.container_id ? locations.flatMap(l => l.id) : null; // Fetch from data
-        saveLocMutation.mutate(locForm);
+        const payload = buildLocationPayload();
+        if (!payload) return;
+        saveLocMutation.mutate(payload);
     };
 
     if (permissions.isLoading) return null;
@@ -465,7 +526,9 @@ export default function Storage() {
                         <div className="p-3 bg-muted/50 rounded-lg border border-border">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Name (automatisch generiert)</Label>
                             <p className="text-sm font-medium text-foreground mt-2">
-                                {locForm.name || `${locForm.area_name || '–'} › ${locForm.container_name || '–'}`}
+                                {locForm.area_name && locForm.container_name
+                                    ? `${locForm.area_name} › ${locForm.container_name}${locForm.position ? ` › ${locForm.position}` : ''}`
+                                    : 'Bereich und Behälter wählen'}
                             </p>
                         </div>
                         <div className="p-3 bg-muted/50 rounded-lg border border-border">

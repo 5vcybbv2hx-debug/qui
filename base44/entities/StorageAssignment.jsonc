@@ -1,0 +1,83 @@
+{
+  "name": "StorageAssignment",
+  "type": "object",
+  "properties": {
+    "article_id": {
+      "type": "string",
+      "description": "ID des Artikels aus der zentalen Artikelliste"
+    },
+    "article_name": {
+      "type": "string",
+      "description": "Name des Artikels (Snapshot f\u00fcr schnelle Anzeige)"
+    },
+    "article_image_url": {
+      "type": "string",
+      "description": "Bild-URL des Artikels"
+    },
+    "location_id": {
+      "type": "string",
+      "description": "ID des Lagerorts"
+    },
+    "location_name": {
+      "type": "string",
+      "description": "Name des Lagerorts (Denormalisierung)"
+    },
+    "area_id": {
+      "type": "string",
+      "description": "ID des Bereichs"
+    },
+    "area_name": {
+      "type": "string",
+      "description": "Name des Bereichs (Denormalisierung)"
+    },
+    "container_id": {
+      "type": "string",
+      "description": "ID des M\u00f6belst\u00fccks/Beh\u00e4lters"
+    },
+    "container_name": {
+      "type": "string",
+      "description": "Name des Beh\u00e4lters (Denormalisierung)"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Aktueller Bestand"
+    },
+    "unit": {
+      "type": "string",
+      "enum": [
+        "St\u00fcck",
+        "l",
+        "ml",
+        "kg",
+        "g"
+      ],
+      "default": "St\u00fcck",
+      "description": "Einheit"
+    },
+    "min_stock": {
+      "type": "number",
+      "description": "Mindestbestand (optional)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zum Lagerplatz"
+    },
+    "last_counted": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der letzten Inventur"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "article_id",
+    "location_id",
+    "area_id",
+    "container_id",
+    "quantity"
+  ]
+}

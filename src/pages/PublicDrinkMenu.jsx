@@ -27,35 +27,34 @@ function DrinkCard({ item, onClick }) {
     return (
         <button
             onClick={() => onClick(item)}
-            className="w-full text-left bg-card border border-border rounded-2xl p-4 flex gap-3 items-start active:scale-[0.98] transition-transform hover:border-amber-500/40"
+            className="w-full text-left bg-card/50 border border-border/60 rounded-2xl p-4 active:scale-[0.98] transition-transform hover:bg-card hover:border-amber-500/30 min-h-[80px] flex flex-col justify-between"
         >
-            {item.image_url && (
-                <img src={item.image_url} alt={item.name} className="w-16 h-16 object-cover rounded-xl shrink-0" />
-            )}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                    <div>
-                        <p className="font-semibold text-foreground leading-tight">{item.name}</p>
-                        {item.size && <p className="text-xs text-muted-foreground">{item.size}</p>}
-                    </div>
-                    <p className="text-lg font-bold text-amber-500 shrink-0">€{Number(item.price).toFixed(2)}</p>
-                </div>
-                {item.description && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{item.description}</p>
-                )}
-                <div className="flex flex-wrap gap-1 mt-2">
-                    {item.is_seasonal && <Badge className="text-[10px] py-0 bg-green-500/10 text-green-400 border-green-500/30">Saisonal</Badge>}
-                    {item.is_special && <Badge className="text-[10px] py-0 bg-amber-500/10 text-amber-400 border-amber-500/30">Special</Badge>}
-                    {item.alcohol_content && Number(item.alcohol_content) > 0 && (
-                        <Badge variant="outline" className="text-[10px] py-0 border-border text-muted-foreground">{item.alcohol_content}% Vol.</Badge>
-                    )}
-                    {hasInfo && (
-                        <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
-                            <Info className="w-3 h-3" /> Allergene
-                        </span>
-                    )}
-                </div>
+            {/* Header: Name + Price */}
+            <div className="flex items-baseline justify-between gap-3">
+                <p className="font-bold text-base text-foreground leading-tight">{item.name}</p>
+                <p className="text-lg font-bold text-amber-500 shrink-0">€{Number(item.price).toFixed(2)}</p>
             </div>
+
+            {/* Subtext: Size + Alcohol + Info */}
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                {item.size && <span>{item.size}</span>}
+                {item.size && item.alcohol_content && Number(item.alcohol_content) > 0 && <span>•</span>}
+                {item.alcohol_content && Number(item.alcohol_content) > 0 && <span>{item.alcohol_content}% Vol.</span>}
+                {hasInfo && <span className="ml-auto text-amber-600 font-medium">⚠ Allergen</span>}
+            </div>
+
+            {/* Description (optional, small) */}
+            {item.description && (
+                <p className="text-xs text-muted-foreground mt-2 line-clamp-1 leading-snug">{item.description}</p>
+            )}
+
+            {/* Tags */}
+            {(item.is_seasonal || item.is_special) && (
+                <div className="flex gap-1.5 mt-2">
+                    {item.is_seasonal && <Badge className="text-[9px] py-0 px-2 bg-green-500/15 text-green-400 border-green-600/30">Saisonal</Badge>}
+                    {item.is_special && <Badge className="text-[9px] py-0 px-2 bg-amber-500/15 text-amber-400 border-amber-600/30">Special</Badge>}
+                </div>
+            )}
         </button>
     );
 }
@@ -178,88 +177,96 @@ export default function PublicDrinkMenu() {
     return (
         <div className="min-h-screen bg-background">
             {/* Sticky Header */}
-            <header className="sticky top-0 z-40 bg-card/95 border-b border-border backdrop-blur-md">
-                <div className="max-w-2xl mx-auto px-4 py-4 space-y-3">
-                    {/* Title */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xl shadow-lg shrink-0">
-                            🍹
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-foreground leading-tight">{barName}</h1>
-                            <p className="text-xs text-muted-foreground">Getränkekarte</p>
+            <header className="sticky top-0 z-40 bg-background border-b border-border/80 backdrop-blur-sm pt-safe">
+                <div className="max-w-2xl mx-auto px-4 py-3 space-y-3">
+                    {/* Title Bar */}
+                    <div className="flex items-center justify-between gap-3 min-h-[48px]">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-2xl shadow-md shrink-0">
+                                🍹
+                            </div>
+                            <div className="min-w-0">
+                                <h1 className="text-lg font-bold text-foreground truncate">{barName}</h1>
+                                <p className="text-xs text-muted-foreground">Getränke</p>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Search */}
-                    <div className="flex gap-2">
+                    {/* Search Bar */}
+                    <div className="flex gap-2 items-center">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                             <Input
-                                placeholder="Getränk suchen..."
+                                placeholder="Suche..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="pl-10"
+                                className="pl-10 h-11 text-base"
                             />
                             {searchTerm && (
-                                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                    <X className="w-4 h-4" />
+                                <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground">
+                                    <X className="w-5 h-5" />
                                 </button>
                             )}
                         </div>
                         <button
                             onClick={() => setShowFilters(v => !v)}
                             className={cn(
-                                "flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
+                                "h-11 px-3 rounded-lg border font-medium transition-all text-sm shrink-0 relative",
                                 showFilters || activeFilterCount > 0
-                                    ? "bg-amber-500 text-slate-900 border-amber-500"
-                                    : "border-border text-muted-foreground hover:border-border/80"
+                                    ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20"
+                                    : "border-border text-muted-foreground hover:text-foreground"
                             )}
+                            title="Filter öffnen"
                         >
-                            Filter
+                            ⚙
                             {activeFilterCount > 0 && (
-                                <span className="bg-slate-900 text-amber-500 text-xs rounded-full w-4 h-4 flex items-center justify-center">{activeFilterCount}</span>
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                    {activeFilterCount}
+                                </span>
                             )}
-                            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showFilters && "rotate-180")} />
                         </button>
                     </div>
 
-                    {/* Category pills */}
-                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                        {categories.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setSelectedCategory(cat)}
-                                className={cn(
-                                    "shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all",
-                                    selectedCategory === cat
-                                        ? "bg-amber-500 text-slate-900"
-                                        : "bg-secondary text-muted-foreground hover:text-foreground"
-                                )}
-                            >
-                                {cat}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Allergen filters (expandable) */}
-                    {showFilters && (
-                        <div className="flex flex-wrap gap-2 pt-1 pb-1 border-t border-border">
-                            <p className="w-full text-xs text-muted-foreground font-medium">Ohne / Mit:</p>
-                            {ALLERGEN_FILTERS.map(f => (
+                    {/* Category Scroll */}
+                    <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+                        <div className="flex gap-2 pb-1">
+                            {categories.map(cat => (
                                 <button
-                                    key={f.id}
-                                    onClick={() => toggleAllergenFilter(f.id)}
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
                                     className={cn(
-                                        "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
-                                        activeAllergenFilters.includes(f.id)
-                                            ? "bg-emerald-500 text-white border-emerald-500"
-                                            : "border-border text-muted-foreground hover:border-emerald-500/50"
+                                        "shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-all min-h-[44px] flex items-center",
+                                        selectedCategory === cat
+                                            ? "bg-amber-500 text-slate-900 font-bold shadow-lg shadow-amber-500/20"
+                                            : "bg-secondary text-muted-foreground hover:text-foreground"
                                     )}
                                 >
-                                    {f.label}
+                                    {cat}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Allergen Filters Panel */}
+                    {showFilters && (
+                        <div className="pt-2 pb-2 border-t border-border space-y-2 animate-in fade-in duration-200">
+                            <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Allergen Filter:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {ALLERGEN_FILTERS.map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => toggleAllergenFilter(f.id)}
+                                        className={cn(
+                                            "px-3 py-2 rounded-full text-xs font-medium border transition-all min-h-[40px] flex items-center",
+                                            activeAllergenFilters.includes(f.id)
+                                                ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/30"
+                                                : "border-border text-muted-foreground hover:border-emerald-500/50 hover:text-emerald-500"
+                                        )}
+                                    >
+                                        {f.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -280,7 +287,7 @@ export default function PublicDrinkMenu() {
                         {activeFilterCount > 0 && (
                             <button
                                 onClick={() => { setActiveAllergenFilters([]); setSelectedCategory('Alle'); setSearchTerm(''); }}
-                                className="mt-4 text-sm text-amber-500 underline"
+                                className="mt-4 text-sm text-amber-500 underline hover:text-amber-400 font-medium"
                             >
                                 Filter zurücksetzen
                             </button>
@@ -289,12 +296,13 @@ export default function PublicDrinkMenu() {
                 )}
 
                 {Object.entries(groupedItems).map(([category, categoryItems]) => (
-                    <section key={category}>
-                        <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                            {category}
-                            <span className="text-sm font-normal text-muted-foreground">({categoryItems.length})</span>
-                        </h2>
-                        <div className="space-y-2">
+                    <section key={category} className="space-y-3">
+                        <div className="sticky top-[224px] z-20 bg-background/80 backdrop-blur-sm pt-2 pb-1 border-t border-border/50 mt-6">
+                            <h2 className="text-xl font-bold text-foreground">
+                                {category} <span className="text-sm font-normal text-muted-foreground ml-2">({categoryItems.length})</span>
+                            </h2>
+                        </div>
+                        <div className="space-y-2.5 pb-2">
                             {categoryItems.map(item => (
                                 <DrinkCard key={item.id} item={item} onClick={setDetailItem} />
                             ))}
@@ -304,10 +312,10 @@ export default function PublicDrinkMenu() {
             </main>
 
             {/* Footer */}
-            <footer className="border-t border-border mt-12 px-4 py-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto">
-                <p>© {new Date().getFullYear()} {barName}</p>
-                {companyInfo.phone && <p className="mt-1">Tel: {companyInfo.phone}</p>}
-                <p className="mt-3 text-[10px] opacity-60">Alle Preise inkl. MwSt. · Irrtümer vorbehalten</p>
+            <footer className="border-t border-border mt-8 px-4 py-6 text-center text-xs text-muted-foreground bg-card/30 pb-safe">
+                <p className="font-medium">{barName}</p>
+                {companyInfo.phone && <p className="mt-1 text-muted-foreground">☎️ {companyInfo.phone}</p>}
+                <p className="mt-3 text-[10px] opacity-50">Preise inkl. MwSt. · Allergie? → Personal fragen</p>
             </footer>
 
             {/* Detail Dialog */}

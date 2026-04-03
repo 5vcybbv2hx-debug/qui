@@ -1,13 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, QrCode, X } from 'lucide-react';
+import { Printer, QrCode, Download } from 'lucide-react';
 import QRCode from 'qrcode';
-
-const TYPE_ICONS = {
-    Regal: '🗄️', Schrank: '🚪', Fach: '📦', Schublade: '🗃️',
-    Kiste: '📫', Kühlschrank: '❄️', Sonstiges: '📌'
-};
+import { jsPDF } from 'jspdf';
 
 function LabelCard({ location, qrDataUrl, size = 'normal' }) {
     const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
@@ -93,6 +89,52 @@ export default function StorageLabelPrint({ open, onClose, location }) {
         setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
     };
 
+    const handleDownloadPDF = () => {
+        if (!qrDataUrl) return;
+        const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
+
+        const sizes = { small: [62, 29], normal: [90, 40], large: [100, 60] };
+        const [w, h] = sizes[printSize] || sizes.normal;
+
+        const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: 'landscape' });
+
+        doc.setFillColor(255, 255, 255);
+        doc.rect(0, 0, w, h, 'F');
+
+        doc.setDrawColor(0);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(1, 1, w - 2, h - 2, 2, 2);
+
+        const qrSize = h - 8;
+        const qrX = 4;
+        const qrY = 4;
+        doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
+
+        const textX = qrX + qrSize + 4;
+        const textW = w - textX - 3;
+
+        doc.setFontSize(6);
+        doc.setTextColor(120, 120, 120);
+        const typeLabel = [(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ');
+        doc.text(typeLabel, textX, qrY + 4, { maxWidth: textW });
+
+        doc.setFontSize(printSize === 'small' ? 9 : 11);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'bold');
+        const lines = doc.splitTextToSize(displayName, textW);
+        doc.text(lines, textX, qrY + 10);
+
+        if (location.short_code) {
+            doc.setFontSize(7);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(80, 80, 80);
+            doc.text(location.short_code, textX, h - 5);
+        }
+
+        const fileName = `lagerort-${displayName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.pdf`;
+        doc.save(fileName);
+    };
+
     if (!location) return null;
 
     return (
@@ -106,23 +148,18 @@ export default function StorageLabelPrint({ open, onClose, location }) {
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    {/* Size selector */}
                     <div className="flex gap-2">
-                        <button
-                            onClick={() => setPrintSize('normal')}
-                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${printSize === 'normal' ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground hover:bg-accent'}`}
-                        >
-                            Normal
-                        </button>
-                        <button
-                            onClick={() => setPrintSize('small')}
-                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${printSize === 'small' ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground hover:bg-accent'}`}
-                        >
-                            Klein
-                        </button>
+                        {['small', 'normal', 'large'].map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => setPrintSize(s)}
+                                className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${printSize === s ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground hover:bg-accent'}`}
+                            >
+                                {s === 'small' ? 'Klein' : s === 'normal' ? 'Normal' : 'Groß'}
+                            </button>
+                        ))}
                     </div>
 
-                    {/* Preview */}
                     <div className="bg-gray-50 rounded-xl p-6 flex justify-center">
                         <div id="storage-label-print-area">
                             <LabelCard location={location} qrDataUrl={qrDataUrl} size={printSize} />
@@ -133,12 +170,18 @@ export default function StorageLabelPrint({ open, onClose, location }) {
                         QR-Code führt direkt zur Lagerort-Ansicht
                     </p>
 
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={onClose} className="flex-1">Abbrechen</Button>
-                        <Button onClick={handlePrint} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white gap-2">
-                            <Printer className="w-4 h-4" />
-                            Drucken
+                    <div className="flex flex-col gap-2">
+                        <Button onClick={handleDownloadPDF} disabled={!qrDataUrl} className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                            <Download className="w-4 h-4" />
+                            Als PDF herunterladen
                         </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={onClose} className="flex-1">Abbrechen</Button>
+                            <Button onClick={handlePrint} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white gap-2">
+                                <Printer className="w-4 h-4" />
+                                Drucken
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </DialogContent>

@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import PublicWeeklySpecialDisplay from './pages/PublicWeeklySpecialDisplay';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -93,6 +94,9 @@ const AuthenticatedApp = () => {
 
       {/* Storage location scan with dynamic ID */}
       <Route path="/StorageLocationScan/:id" element={<PublicPages.StorageLocationScan />} />
+
+      {/* Public Weekly Special Display */}
+      <Route path="/PublicWeeklySpecialDisplay" element={<PublicWeeklySpecialDisplay />} />
 
       {/* Redirect old EmployeeHome links to Dashboard */}
       <Route path="/EmployeeHome" element={<Navigate to="/" replace />} />

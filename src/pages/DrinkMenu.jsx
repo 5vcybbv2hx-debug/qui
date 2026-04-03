@@ -14,7 +14,7 @@ import { usePermissions } from "../components/auth/usePermissions";
 import PermissionDenied from "../components/auth/PermissionDenied";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QRCodeGenerator from "@/components/qr/QRCodeGenerator";
-import DailySpecialGenerator from "../components/menu/DailySpecialGenerator";
+import WeeklySpecialGenerator from "../components/menu/WeeklySpecialGenerator";
 import { getGuestMenuLink, copyToClipboard, shareLink } from '@/lib/guestLinks';
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -202,7 +202,7 @@ export default function DrinkMenuPage() {
                 </Card>
 
                 {permissions.isAdmin && (
-                    <DailySpecialGenerator menuItems={items} />
+                    <WeeklySpecialGenerator menuItems={items} />
                 )}
 
                 <div className="space-y-6">

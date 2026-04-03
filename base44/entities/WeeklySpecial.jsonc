@@ -1,0 +1,43 @@
+{
+  "name": "WeeklySpecial",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titel des Wochenspecials"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Ist dieses Wochenspecial aktiv?"
+    },
+    "item_count": {
+      "type": "number",
+      "enum": [
+        3,
+        4,
+        5
+      ],
+      "default": 3,
+      "description": "Anzahl der Getr\u00e4nke im Special (3-5)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optionale Notizen"
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time",
+      "description": "G\u00fcltig ab"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "G\u00fcltig bis"
+    }
+  },
+  "required": [
+    "title",
+    "item_count"
+  ]
+}

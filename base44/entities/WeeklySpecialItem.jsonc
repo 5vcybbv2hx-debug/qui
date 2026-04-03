@@ -1,0 +1,52 @@
+{
+  "name": "WeeklySpecialItem",
+  "type": "object",
+  "properties": {
+    "weekly_special_id": {
+      "type": "string",
+      "description": "ID des zugeh\u00f6rigen Wochenspecials"
+    },
+    "menu_item_id": {
+      "type": "string",
+      "description": "ID des Men\u00fcgetr\u00e4nks"
+    },
+    "menu_item_name": {
+      "type": "string",
+      "description": "Name des Getr\u00e4nks (Snapshot)"
+    },
+    "original_price": {
+      "type": "number",
+      "description": "Originalpreis des Getr\u00e4nks"
+    },
+    "discount_type": {
+      "type": "string",
+      "enum": [
+        "percent",
+        "fixed"
+      ],
+      "default": "percent",
+      "description": "Rabattmodus: 'percent' f\u00fcr Prozent, 'fixed' f\u00fcr festen Preis"
+    },
+    "discount_value": {
+      "type": "number",
+      "description": "Rabattwert (bei percent: 20 f\u00fcr 20%, bei fixed: direkter Preis)"
+    },
+    "final_price": {
+      "type": "number",
+      "description": "Finaler Anzeigenpreis (automatisch berechnet oder direkt gesetzt)"
+    },
+    "display_order": {
+      "type": "number",
+      "description": "Anzeigereihenfolge"
+    }
+  },
+  "required": [
+    "weekly_special_id",
+    "menu_item_id",
+    "menu_item_name",
+    "original_price",
+    "discount_type",
+    "discount_value",
+    "final_price"
+  ]
+}

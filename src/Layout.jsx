@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,6 +28,10 @@ export default function Layout({ children, currentPageName }) {
     const [scannerOpen, setScannerOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('dashboard');
+    const location = useLocation();
+
+    // Exact URL-based active check — never use includes/startsWith
+    const isPageActive = (pageName) => location.pathname === createPageUrl(pageName);
 
     const handleScan = (code) => {
         setScannerOpen(false);
@@ -184,7 +188,7 @@ export default function Layout({ children, currentPageName }) {
                                         </h3>
                                         <div className="space-y-1">
                                             {visibleItems.map((item) => {
-                                                const isActive = currentPageName === item.page;
+                                                const isActive = isPageActive(item.page);
                                                 return (
                                                     <Link
                                                         key={item.name}
@@ -219,7 +223,7 @@ export default function Layout({ children, currentPageName }) {
                                     <div className="space-y-1">
                                         {additionalPages.map((item) => {
                                             if (!permissions[item.permission]) return null;
-                                            const isActive = currentPageName === item.page;
+                                            const isActive = isPageActive(item.page);
                                             return (
                                                 <Link
                                                     key={item.name}
@@ -278,12 +282,12 @@ export default function Layout({ children, currentPageName }) {
                             <button
                                 onClick={() => { haptics.selection(); navigate(createPageUrl('Dashboard')); }}
                                 className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    currentPageName === 'Dashboard' ? 'text-foreground' : 'text-muted-foreground')}
+                                    isPageActive('Dashboard') ? 'text-foreground' : 'text-muted-foreground')}
                             >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', currentPageName === 'Dashboard' && 'bg-foreground/10')}>
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Dashboard') && 'bg-foreground/10')}>
                                     {React.createElement(mainNavigation.find(a=>a.id==='dashboard')?.icon || mainNavigation[0].icon, { className: 'w-5 h-5' })}
                                 </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', currentPageName === 'Dashboard' && 'font-bold')}>Home</span>
+                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Dashboard') && 'font-bold')}>Home</span>
                             </button>
                         )}
 
@@ -292,12 +296,12 @@ export default function Layout({ children, currentPageName }) {
                             <button
                                 onClick={() => { haptics.selection(); navigate(createPageUrl('GuestHub')); }}
                                 className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    ['GuestHub','Reservations','SeatingChart'].includes(currentPageName) ? 'text-foreground' : 'text-muted-foreground')}
+                                    isPageActive('GuestHub') ? 'text-foreground' : 'text-muted-foreground')}
                             >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', ['GuestHub','Reservations','SeatingChart'].includes(currentPageName) && 'bg-foreground/10')}>
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('GuestHub') && 'bg-foreground/10')}>
                                     {React.createElement(mainNavigation.find(a=>a.id==='betrieb')?.icon || mainNavigation[1].icon, { className: 'w-5 h-5' })}
                                 </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', ['GuestHub','Reservations','SeatingChart'].includes(currentPageName) && 'font-bold')}>Betrieb</span>
+                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('GuestHub') && 'font-bold')}>Betrieb</span>
                             </button>
                         )}
 
@@ -306,12 +310,12 @@ export default function Layout({ children, currentPageName }) {
                             <button
                                 onClick={() => { haptics.selection(); navigate(createPageUrl('Todos')); }}
                                 className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    currentPageName === 'Todos' ? 'text-foreground' : 'text-muted-foreground')}
+                                    isPageActive('Todos') ? 'text-foreground' : 'text-muted-foreground')}
                             >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', currentPageName === 'Todos' && 'bg-foreground/10')}>
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Todos') && 'bg-foreground/10')}>
                                     {React.createElement(mainNavigation.find(a=>a.id==='betrieb')?.pages.find(p=>p.page==='Todos')?.icon || mainNavigation[1].icon, { className: 'w-5 h-5' })}
                                 </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', currentPageName === 'Todos' && 'font-bold')}>Aufgaben</span>
+                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Todos') && 'font-bold')}>Aufgaben</span>
                             </button>
                         )}
 
@@ -320,12 +324,12 @@ export default function Layout({ children, currentPageName }) {
                             <button
                                 onClick={() => { haptics.selection(); navigate(createPageUrl('Calendar')); }}
                                 className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    ['Calendar','Employees','TimeManagement'].includes(currentPageName) ? 'text-foreground' : 'text-muted-foreground')}
+                                    isPageActive('Calendar') ? 'text-foreground' : 'text-muted-foreground')}
                             >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', ['Calendar','Employees','TimeManagement'].includes(currentPageName) && 'bg-foreground/10')}>
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Calendar') && 'bg-foreground/10')}>
                                     {React.createElement(mainNavigation.find(a=>a.id==='team')?.icon || mainNavigation[4].icon, { className: 'w-5 h-5' })}
                                 </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', ['Calendar','Employees','TimeManagement'].includes(currentPageName) && 'font-bold')}>Team</span>
+                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Calendar') && 'font-bold')}>Team</span>
                             </button>
                         )}
 

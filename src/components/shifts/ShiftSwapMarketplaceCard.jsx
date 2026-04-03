@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isToday, isFuture } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { RepeatIcon, Check, X, Clock, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -30,8 +30,28 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
         enabled: !!currentEmployee?.id
     });
 
-    const myOpenRequests = allRequests.filter(r => r.requesting_employee_id === currentEmployee?.id);
-    const openRequests = allRequests.filter(r => r.requesting_employee_id !== currentEmployee?.id && r.marketplace);
+    const today = format(new Date(), 'yyyy-MM-dd');
+
+    // Nur zukünftige oder heutige Schichten
+    const isRelevantDate = (r) => r.shift_date && r.shift_date >= today;
+
+    // Offene Status: beide alten und neuen Status-Werte abdecken
+    const isOpen = (r) => r.status === 'offen' || r.status === 'ausstehend';
+
+    // Eigene offene Anfragen (ich habe die Schicht eingestellt)
+    const myOpenRequests = allRequests.filter(r =>
+        r.requesting_employee_id === currentEmployee?.id &&
+        isOpen(r) &&
+        isRelevantDate(r)
+    );
+
+    // Fremde offene Marketplace-Anfragen (nicht meine, explizit Marketplace, passendes Datum)
+    const openRequests = allRequests.filter(r =>
+        r.requesting_employee_id !== currentEmployee?.id &&
+        r.marketplace === true &&
+        isOpen(r) &&
+        isRelevantDate(r)
+    );
 
     const total = myOpenRequests.length + openRequests.length;
 

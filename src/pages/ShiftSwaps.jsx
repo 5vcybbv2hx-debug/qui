@@ -209,8 +209,10 @@ export default function ShiftSwaps() {
         r.target_employee_id === currentEmployee?.id
     );
 
-    const pendingRequests = swapRequests.filter(r => r.status === 'ausstehend');
-    const processedRequests = swapRequests.filter(r => r.status !== 'ausstehend');
+    // Offene Anfragen: beide Status-Werte (offen = neuer, ausstehend = Legacy)
+    const isOpenStatus = (r) => r.status === 'offen' || r.status === 'ausstehend';
+    const pendingRequests = swapRequests.filter(r => isOpenStatus(r));
+    const processedRequests = swapRequests.filter(r => !isOpenStatus(r));
 
     // Filter my upcoming shifts
     const myUpcomingShifts = shifts

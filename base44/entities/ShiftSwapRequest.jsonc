@@ -1,0 +1,118 @@
+{
+  "name": "ShiftSwapRequest",
+  "type": "object",
+  "properties": {
+    "shift_id": {
+      "type": "string",
+      "description": "ID der verkn\u00fcpften Schicht (prim\u00e4res Objekt)"
+    },
+    "requesting_employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters, der die Schicht abgeben m\u00f6chte"
+    },
+    "requesting_employee_name": {
+      "type": "string",
+      "description": "Name des abgebenden Mitarbeiters"
+    },
+    "shift_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Schicht"
+    },
+    "shift_start_time": {
+      "type": "string",
+      "description": "Startzeit der Schicht (HH:MM)"
+    },
+    "shift_end_time": {
+      "type": "string",
+      "description": "Endzeit der Schicht (HH:MM)"
+    },
+    "shift_time": {
+      "type": "string",
+      "description": "Zeitanzeige als Text (R\u00fcckw\u00e4rtskompatibilit\u00e4t, z.B. '18:00\u201302:00')"
+    },
+    "shift_type": {
+      "type": "string",
+      "description": "Schichttyp / Bereich (z.B. Bar, Service, K\u00fcche)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "in_pr\u00fcfung",
+        "vergeben",
+        "abgeschlossen",
+        "storniert",
+        "abgelaufen",
+        "ausstehend",
+        "genehmigt",
+        "abgelehnt"
+      ],
+      "default": "offen",
+      "description": "Status der Anfrage. offen=aktiv im Marketplace, in_pr\u00fcfung=Manager pr\u00fcft, vergeben=Nachfolger ausgew\u00e4hlt, abgeschlossen=fertig, storniert=zur\u00fcckgezogen, abgelaufen=Datum vergangen. ausstehend/genehmigt/abgelehnt f\u00fcr R\u00fcckw\u00e4rtskompatibilit\u00e4t."
+    },
+    "marketplace": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = Schicht wird offen im Marketplace angeboten (kein spezifischer Zielmitarbeiter)"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Grund f\u00fcr den Tausch / die Abgabe"
+    },
+    "target_employee_id": {
+      "type": "string",
+      "description": "ID des Zielmitarbeiters bei Direkttausch"
+    },
+    "target_employee_name": {
+      "type": "string",
+      "description": "Name des Zielmitarbeiters bei Direkttausch"
+    },
+    "selected_replacement_id": {
+      "type": "string",
+      "description": "ID des ausgew\u00e4hlten Nachfolgers (nach Manager-Entscheidung)"
+    },
+    "selected_replacement_name": {
+      "type": "string",
+      "description": "Name des ausgew\u00e4hlten Nachfolgers"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Name/Email des genehmigenden Managers"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Manager-Genehmigung"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt des Abschlusses (Schicht wurde \u00fcbertragen)"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Stornierung"
+    },
+    "cancelled_by": {
+      "type": "string",
+      "description": "Wer hat storniert"
+    },
+    "response_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "R\u00fcckw\u00e4rtskompatibilit\u00e4t: Antwortdatum"
+    },
+    "response_note": {
+      "type": "string",
+      "description": "Notiz zur Manager-Entscheidung"
+    }
+  },
+  "required": [
+    "shift_id",
+    "requesting_employee_id",
+    "requesting_employee_name",
+    "shift_date"
+  ]
+}

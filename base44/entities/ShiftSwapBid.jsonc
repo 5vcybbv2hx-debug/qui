@@ -4,40 +4,52 @@
   "properties": {
     "swap_request_id": {
       "type": "string",
-      "description": "ID der Schichttausch-Anfrage"
+      "description": "ID der verkn\u00fcpften ShiftSwapRequest"
     },
     "bidding_employee_id": {
       "type": "string",
-      "description": "ID des Mitarbeiters, der sich bewirbt"
+      "description": "ID des interessierten Mitarbeiters"
     },
     "bidding_employee_name": {
       "type": "string",
-      "description": "Name des Mitarbeiters, der sich bewirbt"
+      "description": "Name des interessierten Mitarbeiters"
     },
     "shift_id": {
       "type": "string",
-      "description": "ID der Schicht"
+      "description": "ID der Schicht (Denormalisierung f\u00fcr schnellen Zugriff)"
     },
     "status": {
       "type": "string",
       "enum": [
+        "beworben",
+        "zur\u00fcckgezogen",
+        "akzeptiert",
+        "abgelehnt",
         "annehmen",
         "ablehnen",
         "unter_umst\u00e4nden"
       ],
-      "default": "annehmen",
-      "description": "Reaktionsstatus des Mitarbeiters"
+      "default": "beworben",
+      "description": "Status der Bewerbung. beworben=aktiv beworben, zur\u00fcckgezogen=selbst zur\u00fcckgezogen, akzeptiert=vom Manager ausgew\u00e4hlt, abgelehnt=nicht ausgew\u00e4hlt. annehmen/ablehnen/unter_umst\u00e4nden f\u00fcr R\u00fcckw\u00e4rtskompatibilit\u00e4t."
+    },
+    "message": {
+      "type": "string",
+      "description": "Optionale Nachricht / Kommentar des Bewerbers"
+    },
+    "applied_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Bewerbung"
     },
     "created_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Erstellt am"
+      "description": "R\u00fcckw\u00e4rtskompatibilit\u00e4t: Erstellt am"
     }
   },
   "required": [
     "swap_request_id",
     "bidding_employee_id",
-    "bidding_employee_name",
-    "shift_id"
+    "bidding_employee_name"
   ]
 }

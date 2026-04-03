@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import { PageShell, PageHeader, ProgressBar } from '@/components/ui/design-system';
 
 // Weekday config: js getDay() index → label + short pattern prefix
 const WEEKDAYS = [
@@ -281,24 +282,20 @@ export default function WeeklyTasks() {
     if (!permissions.canViewCleaning) return <PermissionDenied />;
 
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-8">
-            <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-8 space-y-5">
+        <PageShell>
+            <div className="space-y-5">
 
                 {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Wochenaufgaben</h1>
-                        <p className="text-muted-foreground text-sm mt-0.5">
-                            {format(new Date(), "EEEE, d. MMMM", { locale: de })} · KW {getWeekNumber(new Date()) === 1 ? 'ungerade' : 'gerade'}
-                        </p>
-                    </div>
-                    {permissions.canEditCleaning && (
-                        <Button onClick={() => setModalOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white gap-2">
+                <PageHeader
+                    title="Wochenaufgaben"
+                    subtitle={`${format(new Date(), 'EEEE, d. MMMM', { locale: de })} · KW ${getWeekNumber(new Date()) === 1 ? 'ungerade' : 'gerade'}`}
+                    action={permissions.canEditCleaning && (
+                        <Button onClick={() => setModalOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-slate-900 gap-2">
                             <Plus className="w-4 h-4" />
                             Aufgabe
                         </Button>
                     )}
-                </div>
+                />
 
                 {/* Overall progress */}
                 {totalTasks > 0 && (
@@ -307,19 +304,14 @@ export default function WeeklyTasks() {
                             <span className="font-medium text-foreground">Fortschritt diese Woche</span>
                             <span className="text-muted-foreground">{doneTasks} / {totalTasks}</span>
                         </div>
-                        <div className="h-2 bg-border rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                                style={{ width: `${(doneTasks / totalTasks) * 100}%` }}
-                            />
-                        </div>
+                        <ProgressBar value={doneTasks} max={totalTasks} />
                         {doneTasks === totalTasks && totalTasks > 0 && (
                             <p className="text-xs text-emerald-500 font-medium text-center">🎉 Alle Aufgaben diese Woche erledigt!</p>
                         )}
                     </div>
                 )}
 
-                {/* No tasks at all */}
+                {/* No tasks */}
                 {totalTasks === 0 && (
                     <div className="text-center py-16 text-muted-foreground">
                         <p className="text-lg font-medium">Keine Aufgaben diese Woche</p>
@@ -383,7 +375,7 @@ export default function WeeklyTasks() {
                             </div>
                             <div className="flex gap-2 pt-2">
                                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
-                                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
+                                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900">
                                     Hinzufügen
                                 </Button>
                             </div>
@@ -391,6 +383,6 @@ export default function WeeklyTasks() {
                     </DialogContent>
                 </Dialog>
             </div>
-        </div>
+        </PageShell>
     );
 }

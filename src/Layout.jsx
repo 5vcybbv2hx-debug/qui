@@ -68,18 +68,14 @@ export default function Layout({ children, currentPageName }) {
     React.useEffect(() => {
         const savedTheme = localStorage.getItem('theme') || 'dark';
         const root = document.documentElement;
-        
+        root.classList.remove('light'); // always clean first
         if (savedTheme === 'light') {
             root.classList.remove('dark');
         } else if (savedTheme === 'dark') {
             root.classList.add('dark');
         } else if (savedTheme === 'system') {
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (prefersDark) {
-                root.classList.add('dark');
-            } else {
-                root.classList.remove('dark');
-            }
+            root.classList.toggle('dark', prefersDark);
         }
     }, []);
 

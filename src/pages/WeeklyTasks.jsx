@@ -147,10 +147,11 @@ export default function WeeklyTasks() {
             (task.biweekly_pattern.endsWith(`_${currentWeek}`));
 
         return (
-            <div 
-                className={cn(
-                    "p-4 bg-card rounded-lg border border-border transition-all",
-                    task.is_completed && "opacity-60",
+            <div className={cn(
+                "p-4 bg-card rounded-lg border border-border transition-all",
+                task.is_completed && "opacity-60",
+                shouldShowToday && isCurrentWeekTask && "ring-2 ring-amber-500"
+            )}>
                 <div className="flex items-start gap-3">
                     <button
                         onClick={() => handleComplete(task)}
@@ -158,7 +159,7 @@ export default function WeeklyTasks() {
                             "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0 mt-0.5",
                             task.is_completed 
                                 ? "border-emerald-500 bg-emerald-500" 
-                                : "border-slate-600 hover:border-emerald-500"
+                                : "border-border hover:border-emerald-500"
                         )}
                     >
                         {task.is_completed && <Check className="w-4 h-4 text-white" />}
@@ -184,7 +185,7 @@ export default function WeeklyTasks() {
                                 </Badge>
                             )}
                             {task.is_completed && task.completed_by && (
-                                <span className="text-xs text-slate-500">
+                                <span className="text-xs text-muted-foreground">
                                     ✓ {task.completed_by}
                                     {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
                                 </span>
@@ -196,7 +197,7 @@ export default function WeeklyTasks() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-slate-500 hover:text-slate-300"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
                             onClick={() => handleReset(task)}
                         >
                             <RotateCcw className="w-4 h-4" />

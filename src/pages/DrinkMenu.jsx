@@ -17,6 +17,7 @@ import QRCodeGenerator from "@/components/qr/QRCodeGenerator";
 import DailySpecialGenerator from "../components/menu/DailySpecialGenerator";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getGuestMenuLink, copyToClipboard, shareLink } from '@/lib/guestLinks';
 
 export default function DrinkMenuPage() {
     const permissions = usePermissions();
@@ -92,23 +93,21 @@ export default function DrinkMenuPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-52">
-                                        <DropdownMenuItem onClick={() => {
-                                             const appId = window.location.hostname.split('--')[1]?.split('.')[0] || window.location.hostname.split('.')[0];
-                                             const url = `https://api.base44.app/api/apps/${appId}/functions/publicDrinkMenu`;
-                                             window.open(url, '_blank');
-                                         }}>
-                                             <ExternalLink className="h-4 w-4 mr-2" />
-                                             Im Browser öffnen
-                                         </DropdownMenuItem>
-                                         <DropdownMenuItem onClick={() => {
-                                             const appId = window.location.hostname.split('--')[1]?.split('.')[0] || window.location.hostname.split('.')[0];
-                                             const url = `https://api.base44.app/api/apps/${appId}/functions/publicDrinkMenu`;
-                                             navigator.clipboard.writeText(url);
-                                             setGuestLinkCopied(true);
-                                             setTimeout(() => setGuestLinkCopied(false), 2000);
-                                         }}>
+                                        <DropdownMenuItem onClick={() => window.open(getGuestMenuLink(), '_blank')}>
+                                            <ExternalLink className="h-4 w-4 mr-2" />
+                                            Im Browser öffnen
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={async () => {
+                                            await copyToClipboard(getGuestMenuLink());
+                                            setGuestLinkCopied(true);
+                                            setTimeout(() => setGuestLinkCopied(false), 2000);
+                                        }}>
                                             <Copy className="h-4 w-4 mr-2" />
                                             {guestLinkCopied ? 'Kopiert!' : 'Link kopieren'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => shareLink(getGuestMenuLink(), 'Getränkekarte')}>
+                                            <QrCode className="h-4 w-4 mr-2" />
+                                            Teilen
                                         </DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => navigate(createPageUrl('QRCodes'))}>
                                             <QrCode className="h-4 w-4 mr-2" />

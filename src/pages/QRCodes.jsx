@@ -1,13 +1,55 @@
-import React from 'react';
-import { createPageUrl } from '@/utils';
+import React, { useState } from 'react';
 import TableQRGenerator from '@/components/qr/TableQRGenerator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ExternalLink, QrCode } from 'lucide-react';
+import { ExternalLink, QrCode, Copy, Share2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getGuestMenuLink, getGuestReservationLink, copyToClipboard, shareLink } from '@/lib/guestLinks';
+
+function LinkCard({ title, description, url, shareTitle }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        await copyToClipboard(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleShare = () => shareLink(url, shareTitle);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <QrCode className="w-5 h-5" />
+                    {title}
+                </CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-3 font-mono text-sm break-all">
+                    {url}
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1 min-h-[44px]" onClick={handleCopy}>
+                        {copied ? <Check className="w-4 h-4 mr-2 text-green-500" /> : <Copy className="w-4 h-4 mr-2" />}
+                        {copied ? 'Kopiert!' : 'Kopieren'}
+                    </Button>
+                    <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => window.open(url, '_blank')}>
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Öffnen
+                    </Button>
+                    <Button variant="outline" className="min-h-[44px]" onClick={handleShare} title="Teilen">
+                        <Share2 className="w-4 h-4" />
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function QRCodes() {
-    const menuUrl = `${window.location.origin}${createPageUrl('PublicDrinkMenu')}`;
-    const reservationUrl = `${window.location.origin}${createPageUrl('PublicReservation')}`;
+    const menuUrl = getGuestMenuLink();
+    const reservationUrl = getGuestReservationLink();
 
     return (
         <div className="min-h-screen bg-background p-6">
@@ -22,69 +64,18 @@ export default function QRCodes() {
                 <TableQRGenerator />
 
                 <div className="grid md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <QrCode className="w-5 h-5" />
-                                Digitale Getränkekarte
-                            </CardTitle>
-                            <CardDescription>
-                                Öffentlicher Link zur Getränkekarte
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="bg-muted/50 rounded-lg p-3 font-mono text-sm break-all">
-                                {menuUrl}
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    className="flex-1"
-                                    onClick={() => navigator.clipboard.writeText(menuUrl)}
-                                >
-                                    Link kopieren
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => window.open(menuUrl, '_blank')}
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <QrCode className="w-5 h-5" />
-                                Online Reservierung
-                            </CardTitle>
-                            <CardDescription>
-                                Öffentlicher Link zum Reservierungsformular
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="bg-muted/50 rounded-lg p-3 font-mono text-sm break-all">
-                                {reservationUrl}
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    className="flex-1"
-                                    onClick={() => navigator.clipboard.writeText(reservationUrl)}
-                                >
-                                    Link kopieren
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => window.open(reservationUrl, '_blank')}
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <LinkCard
+                        title="Digitale Getränkekarte"
+                        description="Öffentlicher Link zur Getränkekarte"
+                        url={menuUrl}
+                        shareTitle="Getränkekarte"
+                    />
+                    <LinkCard
+                        title="Online Reservierung"
+                        description="Öffentlicher Link zum Reservierungsformular"
+                        url={reservationUrl}
+                        shareTitle="Online Reservierung"
+                    />
                 </div>
 
                 <Card>

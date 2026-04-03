@@ -100,6 +100,7 @@ import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
 import Vacation from './pages/Vacation';
 import Storage from './pages/Storage';
+import StorageLocationScan from './pages/StorageLocationScan';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
@@ -208,6 +209,7 @@ const PUBLIC_PAGES = {
     "LegalImprint": LegalImprint,
     "LegalPrivacy": LegalPrivacy,
     "LegalAGB": LegalAGB,
+    "StorageLocationScan": StorageLocationScan,
 };
 
 // Combined pages object (all accessible pages)

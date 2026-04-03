@@ -91,6 +91,9 @@ const AuthenticatedApp = () => {
         <Route key={path} path={`/${path}`} element={<Page />} />
       ))}
 
+      {/* Storage location scan with dynamic ID */}
+      <Route path="/StorageLocationScan/:id" element={<PublicPages.StorageLocationScan />} />
+
       {/* Redirect old EmployeeHome links to Dashboard */}
       <Route path="/EmployeeHome" element={<Navigate to="/" replace />} />
 

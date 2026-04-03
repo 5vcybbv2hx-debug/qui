@@ -2,17 +2,47 @@
   "name": "StorageLocation",
   "type": "object",
   "properties": {
+    "name": {
+      "type": "string",
+      "description": "Vollst\u00e4ndiger Lagerortname (z.B. 'Regal A \u2013 Fach 3')"
+    },
+    "short_code": {
+      "type": "string",
+      "description": "Kurzcode f\u00fcr Etiketten (z.B. 'RA-F3')"
+    },
+    "location_type": {
+      "type": "string",
+      "enum": [
+        "Regal",
+        "Schrank",
+        "Fach",
+        "Schublade",
+        "Kiste",
+        "K\u00fchlschrank",
+        "Sonstiges"
+      ],
+      "default": "Regal",
+      "description": "Typ des Lagerorts"
+    },
     "area": {
       "type": "string",
-      "description": "Bereich (z.B. Keller, B\u00fcro, K\u00fcche)"
+      "description": "Bereich / Oberkategorie (z.B. Keller, Bar, K\u00fcche)"
     },
     "furniture": {
       "type": "string",
-      "description": "M\u00f6belst\u00fcck / Beh\u00e4lter (z.B. Regal A, Schrank 1)"
+      "description": "M\u00f6belst\u00fcck / Beh\u00e4lter (R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
     },
     "position": {
       "type": "string",
-      "description": "Position (z.B. Fach 2, Oberste Reihe)"
+      "description": "Position (R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optionale Beschreibung des Lagerorts"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Foto des Lagerorts (URL)"
     },
     "notes": {
       "type": "string",
@@ -20,8 +50,6 @@
     }
   },
   "required": [
-    "area",
-    "furniture",
-    "position"
+    "area"
   ]
 }

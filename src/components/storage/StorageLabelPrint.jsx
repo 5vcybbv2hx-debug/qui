@@ -11,7 +11,7 @@ function LabelCard({ location, qrDataUrl, size = 'normal' }) {
 
     return (
         <div
-            className="label-card bg-white border-2 border-gray-300 rounded-lg flex items-center gap-3 print:border-black"
+            className="label-card bg-white border-2 border-gray-300 rounded-lg flex items-center gap-3"
             style={{ padding: isSmall ? '8px 10px' : '12px 14px', maxWidth: isSmall ? '220px' : '300px' }}
         >
             {qrDataUrl && (
@@ -53,36 +53,18 @@ export default function StorageLabelPrint({ open, onClose, location }) {
     const handlePrint = () => {
         const printContent = document.getElementById('storage-label-print-area');
         if (!printContent) return;
-
         const printWindow = window.open('', '_blank', 'width=600,height=400');
         printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Lagerort-Etikett</title>
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { font-family: Arial, sans-serif; background: white; padding: 20px; }
-                    .label-card {
-                        display: inline-flex;
-                        align-items: center;
-                        gap: 12px;
-                        border: 2px solid #000;
-                        border-radius: 8px;
-                        padding: ${printSize === 'small' ? '8px 10px' : '12px 14px'};
-                        max-width: ${printSize === 'small' ? '220px' : '300px'};
-                        page-break-inside: avoid;
-                    }
-                    @media print {
-                        body { padding: 10mm; }
-                        .no-print { display: none; }
-                    }
-                </style>
-            </head>
-            <body>
-                ${printContent.innerHTML}
-            </body>
-            </html>
+            <!DOCTYPE html><html><head><title>Lagerort-Etikett</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: Arial, sans-serif; background: white; padding: 20px; }
+                .label-card { display: inline-flex; align-items: center; gap: 12px; border: 2px solid #000; border-radius: 8px;
+                    padding: ${printSize === 'small' ? '8px 10px' : '12px 14px'};
+                    max-width: ${printSize === 'small' ? '220px' : '300px'}; }
+                @media print { body { padding: 10mm; } }
+            </style></head>
+            <body>${printContent.innerHTML}</body></html>
         `);
         printWindow.document.close();
         printWindow.focus();
@@ -92,15 +74,12 @@ export default function StorageLabelPrint({ open, onClose, location }) {
     const handleDownloadPDF = () => {
         if (!qrDataUrl) return;
         const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
-
         const sizes = { small: [62, 29], normal: [90, 40], large: [100, 60] };
         const [w, h] = sizes[printSize] || sizes.normal;
 
         const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: 'landscape' });
-
         doc.setFillColor(255, 255, 255);
         doc.rect(0, 0, w, h, 'F');
-
         doc.setDrawColor(0);
         doc.setLineWidth(0.4);
         doc.roundedRect(1, 1, w - 2, h - 2, 2, 2);
@@ -115,14 +94,12 @@ export default function StorageLabelPrint({ open, onClose, location }) {
 
         doc.setFontSize(6);
         doc.setTextColor(120, 120, 120);
-        const typeLabel = [(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ');
-        doc.text(typeLabel, textX, qrY + 4, { maxWidth: textW });
+        doc.text([(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · '), textX, qrY + 4, { maxWidth: textW });
 
         doc.setFontSize(printSize === 'small' ? 9 : 11);
         doc.setTextColor(0, 0, 0);
         doc.setFont(undefined, 'bold');
-        const lines = doc.splitTextToSize(displayName, textW);
-        doc.text(lines, textX, qrY + 10);
+        doc.text(doc.splitTextToSize(displayName, textW), textX, qrY + 10);
 
         if (location.short_code) {
             doc.setFontSize(7);
@@ -131,8 +108,7 @@ export default function StorageLabelPrint({ open, onClose, location }) {
             doc.text(location.short_code, textX, h - 5);
         }
 
-        const fileName = `lagerort-${displayName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.pdf`;
-        doc.save(fileName);
+        doc.save(`lagerort-${displayName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.pdf`);
     };
 
     if (!location) return null;

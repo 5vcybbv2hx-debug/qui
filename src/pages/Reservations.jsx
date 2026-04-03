@@ -38,6 +38,12 @@ export default function Reservations() {
         staleTime: STALE.MEDIUM,
     });
 
+    const { data: tables = [] } = useQuery({
+        queryKey: ['tables'],
+        queryFn: () => base44.entities.Table.list(),
+        staleTime: 2 * 60 * 1000
+    });
+
     // Run lifecycle processing once after data loads (idempotent)
     useReservationLifecycle(allReservations);
 
@@ -234,6 +240,7 @@ export default function Reservations() {
                                 onDelete={handleDelete}
                                 onConfirm={handleConfirm}
                                 onCancel={handleCancel}
+                                tables={tables}
                             />
                         ))}
                     </div>

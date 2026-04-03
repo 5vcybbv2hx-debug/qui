@@ -22,6 +22,7 @@ export default function TableModal({ table, open, onClose, reservation }) {
     });
 
     const [formData, setFormData] = useState({
+        name: table?.name || '',
         room: table?.room || '',
         table_number: table?.table_number || '',
         capacity: table?.capacity || '',
@@ -59,12 +60,18 @@ export default function TableModal({ table, open, onClose, reservation }) {
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
-                        {table ? `Tisch ${table.table_number}` : 'Neuer Tisch'}
+                        {table ? (table.name ? `${table.name}` : `Tisch ${table.table_number}`) : 'Neuer Tisch'}
                     </DialogTitle>
                 </DialogHeader>
 
                 {!isEditing && table ? (
                     <div className="space-y-4">
+                        {table.name && (
+                            <div>
+                                <p className="text-sm text-muted-foreground">Tischname</p>
+                                <p className="text-lg font-semibold text-foreground">{table.name}</p>
+                            </div>
+                        )}
                         <div>
                             <p className="text-sm text-muted-foreground">Raum</p>
                             <p className="text-lg font-semibold text-foreground">{table.room}</p>
@@ -137,6 +144,15 @@ export default function TableModal({ table, open, onClose, reservation }) {
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-foreground">Tischname (z.B. 'Hochtisch Fenster')</label>
+                            <Input
+                                value={formData.name}
+                                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                placeholder="optional, z.B. Hochtisch Fenster"
+                                className="mt-1 bg-background border-border"
+                            />
+                        </div>
                         <div>
                             <label className="text-sm font-medium text-foreground">Raum</label>
                             <Select

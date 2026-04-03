@@ -28,7 +28,7 @@ const PATTERN_LABELS = {
     'monthly':   'Monatlich',
 };
 
-export default function ReservationCard({ reservation: res, permissions, onEdit, onArchive, onDelete, onConfirm, onCancel }) {
+export default function ReservationCard({ reservation: res, permissions, onEdit, onArchive, onDelete, onConfirm, onCancel, tables = [] }) {
     const dateStr = (() => {
         try { return format(parseISO(res.date), 'EEE, dd. MMM yyyy', { locale: de }); }
         catch { return res.date; }
@@ -81,12 +81,16 @@ export default function ReservationCard({ reservation: res, permissions, onEdit,
                     <Users className="w-3.5 h-3.5 text-amber-400" />
                     {res.guests} {res.guests === 1 ? 'Person' : 'Personen'}
                 </span>
-                {res.table && (
-                    <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                        Tisch {res.table}
-                    </span>
-                )}
+                {res.table && (() => {
+                    const table = tables.find(t => t.id === res.table || t.table_number === res.table);
+                    const displayName = table?.name || table?.table_number || res.table;
+                    return (
+                        <span className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                            {displayName}
+                        </span>
+                    );
+                })()}
                 {res.is_recurring && res.recurring_pattern && (
                     <span className="flex items-center gap-1.5 text-blue-400">
                         <Repeat className="w-3.5 h-3.5" />

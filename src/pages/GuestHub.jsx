@@ -27,6 +27,7 @@ import QuickReservationSheet, { getTableStatus, STATUS_CONFIG } from '@/componen
 import TableModal from '@/components/seating/TableModal';
 import RoomManager from '@/components/seating/RoomManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getTableDisplayName } from '@/components/tables/TableNameDisplay';
 
 function suggestTables(tables, reservations, guestCount, date, time) {
     const available = tables.filter(t => {
@@ -339,7 +340,7 @@ export default function GuestHub() {
                                                         {isUpcoming && <span className="text-[10px] text-amber-400 shrink-0">bald</span>}
                                                     </div>
                                                     <p className="text-xs text-muted-foreground">
-                                                        {tbl ? `Tisch ${tbl.number}` : <span className="text-amber-400">Kein Tisch</span>}
+                                                        {tbl ? getTableDisplayName(tbl) : <span className="text-amber-400">Kein Tisch</span>}
                                                     </p>
                                                 </div>
                                                 <span className={cn('text-[10px] px-2 py-1 rounded-full border shrink-0',
@@ -403,7 +404,7 @@ export default function GuestHub() {
                                         <ReservationCard key={res.id} reservation={res} permissions={permissions}
                                             onEdit={(r) => { setSelectedRes(r); setModalOpen(true); }}
                                             onArchive={handleArchive} onDelete={handleDelete}
-                                            onConfirm={handleConfirm} onCancel={handleCancel} />
+                                            onConfirm={handleConfirm} onCancel={handleCancel} tables={tables} />
                                     ))}
                                 </div>
                             ) : (
@@ -434,7 +435,7 @@ export default function GuestHub() {
                                         {suggested.map(t => (
                                             <button key={t.id} onClick={() => setSelectedTable(t)}
                                                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-sm font-medium text-amber-300 min-h-[44px]">
-                                                T{t.number} · {t.capacity} Pl.
+                                                {getTableDisplayName(t)} · {t.capacity} Pl.
                                             </button>
                                         ))}
                                     </div>
@@ -469,7 +470,7 @@ export default function GuestHub() {
                                                 STATUS_CONFIG[status].color,
                                                 suggested.some(s => s.id === table.id) && 'ring-2 ring-amber-400 ring-offset-2 ring-offset-background')}>
                                             <div className="flex items-start justify-between gap-1">
-                                                <span className="text-2xl font-black">{table.number}</span>
+                                                <span className="text-xl font-bold break-words flex-1">{table.name || table.number}</span>
                                                 <span className={cn('w-2.5 h-2.5 rounded-full mt-1 shrink-0', STATUS_CONFIG[status].dot)} />
                                             </div>
                                             <div>
@@ -500,7 +501,7 @@ export default function GuestHub() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <p className="font-semibold text-foreground">Tisch {table.number}</p>
+                                                    <p className="font-semibold text-foreground">{getTableDisplayName(table)}</p>
                                                     {table.room && <span className="text-xs text-muted-foreground">· {table.room}</span>}
                                                 </div>
                                                 <p className="text-xs text-muted-foreground">

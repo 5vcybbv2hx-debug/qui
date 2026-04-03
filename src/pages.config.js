@@ -76,7 +76,6 @@ import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
 import PublicMenu from './pages/PublicMenu';
-import QRCodes from './pages/QRCodes';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
@@ -154,7 +153,6 @@ const CORE_PAGES = {
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
     "PublicMenu": PublicMenu,
-    "QRCodes": QRCodes,
     "Recipes": Recipes,
     "Reports": Reports,
     "Reservations": Reservations,

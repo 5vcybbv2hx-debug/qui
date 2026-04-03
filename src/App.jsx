@@ -9,7 +9,6 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import StorageRefactored from './pages/StorageRefactored';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -91,16 +90,6 @@ const AuthenticatedApp = () => {
       {Object.entries(PublicPages).map(([path, Page]) => (
         <Route key={path} path={`/${path}`} element={<Page />} />
       ))}
-
-      {/* New Storage Refactored page */}
-      <Route
-        path="/StorageRefactored"
-        element={
-          <LayoutWrapper currentPageName="StorageRefactored">
-            <StorageRefactored />
-          </LayoutWrapper>
-        }
-      />
 
       {/* Storage location scan with dynamic ID */}
       <Route path="/StorageLocationScan/:id" element={<PublicPages.StorageLocationScan />} />

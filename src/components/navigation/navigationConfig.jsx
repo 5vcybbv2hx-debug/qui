@@ -3,7 +3,7 @@ import {
     Calendar, Clock, Shield, BookOpen, TrendingUp,
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
-    ArrowLeftRight, Star, Brush, FolderOpen, Wrench, QrCode,
+    ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
     Palmtree, ListChecks
 } from 'lucide-react';
 
@@ -90,7 +90,6 @@ export const additionalPages = [
     { name: 'Umsatz',         page: 'SalesAnalysis',    icon: TrendingUp, permission: 'canViewAnalytics'        },
     { name: 'Dokumente',      page: 'Documents',        icon: FolderOpen, permission: 'canViewSettings'         },
     { name: 'Wartung',        page: 'Maintenance',      icon: Wrench,     permission: 'canViewSettings'         },
-    { name: 'QR-Codes',       page: 'QRCodes',          icon: QrCode,     permission: 'isAdmin'                 },
     { name: 'Einstellungen',  page: 'Settings',         icon: Settings,   permission: 'canViewSettings'         },
     { name: 'Firmendaten',    page: 'CompanySettings',  icon: FileText,   permission: 'canEditCompanySettings'  },
     { name: 'Einarbeitung',   page: 'Onboarding',       icon: Users,      permission: 'canViewOnboarding'       },

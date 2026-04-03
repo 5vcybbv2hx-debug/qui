@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Wine, Search, Eye, EyeOff, Link2, TrendingUp, Calculator, ExternalLink, Copy, QrCode, Info } from "lucide-react";
+import { Plus, Wine, Search, Eye, EyeOff, Link2, TrendingUp, Calculator, ExternalLink, Copy, QrCode, Info, Share2 } from "lucide-react";
 import { ALLERGENS, ADDITIVES } from '../components/menu/AllergenSelector';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import MenuItemModal from "../components/menu/MenuItemModal";
@@ -15,9 +15,10 @@ import PermissionDenied from "../components/auth/PermissionDenied";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import QRCodeGenerator from "@/components/qr/QRCodeGenerator";
 import DailySpecialGenerator from "../components/menu/DailySpecialGenerator";
+import { getGuestMenuLink, copyToClipboard, shareLink } from '@/lib/guestLinks';
+import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { getGuestMenuLink, copyToClipboard, shareLink } from '@/lib/guestLinks';
 
 export default function DrinkMenuPage() {
     const permissions = usePermissions();
@@ -31,7 +32,6 @@ export default function DrinkMenuPage() {
     const [qrCodeOpen, setQrCodeOpen] = useState(false);
     const [qrCodeItem, setQrCodeItem] = useState(null);
     const [guestLinkCopied, setGuestLinkCopied] = useState(false);
-    const [guestLinkOpen, setGuestLinkOpen] = useState(false);
 
     const { data: items = [], isLoading } = useQuery({
         queryKey: ['menu-items'],
@@ -109,10 +109,7 @@ export default function DrinkMenuPage() {
                                             <QrCode className="h-4 w-4 mr-2" />
                                             Teilen
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => navigate(createPageUrl('QRCodes'))}>
-                                            <QrCode className="h-4 w-4 mr-2" />
-                                            QR-Code generieren
-                                        </DropdownMenuItem>
+
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                                 <Button 
@@ -126,6 +123,52 @@ export default function DrinkMenuPage() {
                         )}
                     </div>
                 </div>
+
+                {/* Gästelinks Card */}
+                <Card className="bg-card border-border border-amber-500/30 bg-amber-500/5">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-amber-500">
+                            <Link2 className="h-5 w-5" />
+                            Öffentlicher Gästelink
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="bg-muted/50 rounded-lg p-3 font-mono text-sm break-all text-muted-foreground">
+                            {getGuestMenuLink()}
+                        </div>
+                        <div className="flex gap-2 flex-col sm:flex-row">
+                            <Button 
+                                variant="outline" 
+                                className="flex-1 min-h-[44px]" 
+                                onClick={async () => {
+                                    await copyToClipboard(getGuestMenuLink());
+                                    setGuestLinkCopied(true);
+                                    setTimeout(() => setGuestLinkCopied(false), 2000);
+                                }}
+                            >
+                                {guestLinkCopied ? <Check className="w-4 h-4 mr-2 text-green-500" /> : <Copy className="w-4 h-4 mr-2" />}
+                                {guestLinkCopied ? 'Kopiert!' : 'Link kopieren'}
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="flex-1 min-h-[44px]" 
+                                onClick={() => window.open(getGuestMenuLink(), '_blank')}
+                            >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Öffnen
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="flex-1 min-h-[44px]" 
+                                onClick={() => shareLink(getGuestMenuLink(), 'Getränkekarte')}
+                            >
+                                <Share2 className="w-4 h-4 mr-2" />
+                                Teilen
+                            </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground italic">Kopiere diesen Link oder zeige den QR-Code Gästen, um die Getränkekarte anzusehen.</p>
+                    </CardContent>
+                </Card>
 
                 <Card className="bg-card border-border">
                     <CardContent className="p-4">

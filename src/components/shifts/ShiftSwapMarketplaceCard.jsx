@@ -1,9 +1,11 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { RepeatIcon, Check, X, User } from 'lucide-react';
+import { RepeatIcon, Check, X, Clock, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,8 +25,11 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
         enabled: !!currentEmployee?.id
     });
 
-    // Nur Anfragen anderer Mitarbeiter anzeigen (nicht eigene)
-    const openRequests = allRequests.filter(r => r.requesting_employee_id !== currentEmployee?.id);
+    // Eigene offene Anfragen (die ich selbst eingestellt habe)
+    const myOpenRequests = allRequests.filter(r => r.requesting_employee_id === currentEmployee?.id);
+
+    // Anfragen anderer Mitarbeiter im Marketplace
+    const openRequests = allRequests.filter(r => r.requesting_employee_id !== currentEmployee?.id && r.marketplace);
 
     const bidMutation = useMutation({
         mutationFn: async (request) => {
@@ -63,7 +68,7 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
 
     const hasBid = (requestId) => myBids.find(b => b.swap_request_id === requestId);
 
-    if (openRequests.length === 0) return null;
+    if (myOpenRequests.length === 0 && openRequests.length === 0) return null;
 
     return (
         <Card className="p-5 bg-card border-border">
@@ -71,11 +76,36 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
                 <div className="w-8 h-8 rounded-lg bg-blue-600/20 flex items-center justify-center">
                     <RepeatIcon className="w-4 h-4 text-blue-400" />
                 </div>
-                <h2 className="font-bold text-foreground">Schichttausch-Angebote</h2>
-                <Badge className="bg-blue-600/20 text-blue-400 ml-auto">{openRequests.length} offen</Badge>
+                <h2 className="font-bold text-foreground">Schichttausch</h2>
+                <Badge className="bg-blue-600/20 text-blue-400 ml-auto">{myOpenRequests.length + openRequests.length} offen</Badge>
             </div>
 
             <div className="space-y-3">
+                {/* Eigene offene Anfragen */}
+                {myOpenRequests.map(request => (
+                    <div key={request.id} className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                        <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <Clock className="w-4 h-4 text-amber-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-amber-400 uppercase tracking-wide mb-0.5">Deine Anfrage</p>
+                                <p className="font-medium text-foreground text-sm">
+                                    {format(parseISO(request.shift_date), 'EEE, dd.MM.yyyy', { locale: de })}
+                                    {request.shift_time && <span className="text-muted-foreground"> · {request.shift_time}</span>}
+                                </p>
+                                <p className="text-xs mt-1 text-amber-300">Noch offen – wartet auf Übernahme</p>
+                            </div>
+                            <Link to={createPageUrl('ShiftSwaps')} className="shrink-0">
+                                <Button size="sm" variant="outline" className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10 text-xs h-8 px-2">
+                                    <ArrowRight className="w-3 h-3" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                ))}
+
+                {/* Offene Marketplace-Angebote anderer */}
                 {openRequests.map(request => {
                     const bid = hasBid(request.id);
                     return (
@@ -84,40 +114,28 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
                                 {request.requesting_employee_name?.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-blue-400 uppercase tracking-wide mb-0.5">Marketplace</p>
                                 <p className="font-medium text-foreground text-sm">
-                                    {request.requesting_employee_name}
+                                    {format(parseISO(request.shift_date), 'EEE, dd.MM.yyyy', { locale: de })}
+                                    {request.shift_time && <span className="text-muted-foreground"> · {request.shift_time}</span>}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {format(parseISO(request.shift_date), 'EEE, dd.MM.yyyy', { locale: de })} • {request.shift_time}
-                                </p>
-                                {request.reason && (
-                                    <p className="text-xs text-muted-foreground italic mt-0.5 truncate">„{request.reason}"</p>
-                                )}
-                                {request.marketplace && (
-                                    <Badge variant="outline" className="text-[10px] mt-1 border-blue-500/50 text-blue-400">Marketplace</Badge>
-                                )}
+                                <p className="text-xs text-muted-foreground">{request.requesting_employee_name} sucht Vertretung</p>
+                                {request.reason && <p className="text-xs text-muted-foreground italic mt-0.5 truncate">„{request.reason}“</p>}
                             </div>
                             <div className="shrink-0">
                                 {bid ? (
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
+                                    <Button size="sm" variant="outline"
                                         onClick={() => withdrawMutation.mutate(bid.id)}
                                         disabled={withdrawMutation.isPending}
-                                        className="border-red-500/50 text-red-400 hover:bg-red-500/10 text-xs"
-                                    >
-                                        <X className="w-3 h-3 mr-1" />
-                                        Zurückziehen
+                                        className="border-red-500/50 text-red-400 hover:bg-red-500/10 text-xs h-8 px-2">
+                                        <X className="w-3 h-3" />
                                     </Button>
                                 ) : (
-                                    <Button
-                                        size="sm"
+                                    <Button size="sm"
                                         onClick={() => bidMutation.mutate(request)}
                                         disabled={bidMutation.isPending}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
-                                    >
-                                        <Check className="w-3 h-3 mr-1" />
-                                        Übernehmen
+                                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-8">
+                                        <Check className="w-3 h-3 mr-1" />Übernehmen
                                     </Button>
                                 )}
                             </div>
@@ -125,6 +143,12 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
                     );
                 })}
             </div>
+
+            <Link to={createPageUrl('ShiftSwaps')} className="block mt-3">
+                <button className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-center gap-1 py-2 rounded-lg hover:bg-accent/30 transition-colors">
+                    Alle Schichttausch-Anfragen <ArrowRight className="w-3 h-3" />
+                </button>
+            </Link>
         </Card>
     );
 }

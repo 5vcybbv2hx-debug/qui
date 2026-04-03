@@ -269,81 +269,142 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                 </aside>
 
-                {/* Mobile Bottom Navigation — 5 Hauptbereiche */}
+                {/* Mobile Bottom Navigation — Schnellzugriff + Mehr */}
                 <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
                     <div className="flex items-center justify-around px-1 pt-1 pb-1">
-                        {mainNavigation.map((area) => {
-                            const visiblePages = area.pages.filter(p => permissions[p.permission]);
-                            if (visiblePages.length === 0) return null;
 
-                            const isActive = activeTab === area.id;
-                            const AreaIcon = area.icon;
-                            return (
-                                <button
-                                    key={area.id}
-                                    onClick={() => {
-                                        haptics.selection();
-                                        setActiveTab(area.id);
-                                        const firstPage = visiblePages[0]?.page;
-                                        if (firstPage) navigate(createPageUrl(firstPage));
-                                    }}
-                                    className={cn(
-                                        'flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                        isActive ? 'text-foreground' : 'text-muted-foreground'
-                                    )}
-                                >
-                                    <div className={cn(
-                                        'flex items-center justify-center w-8 h-8 rounded-xl transition-all',
-                                        isActive && 'bg-foreground/10'
-                                    )}>
-                                        <AreaIcon className={cn('w-5 h-5 transition-transform', isActive && 'scale-110')} />
-                                    </div>
-                                    <span className={cn(
-                                        'text-[10px] leading-tight font-medium',
-                                        isActive && 'font-bold'
-                                    )}>{area.name}</span>
-                                </button>
-                            );
-                        })}
+                        {/* Dashboard */}
+                        {permissions.canViewDashboard && (
+                            <button
+                                onClick={() => { haptics.selection(); navigate(createPageUrl('Dashboard')); }}
+                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                    currentPageName === 'Dashboard' ? 'text-foreground' : 'text-muted-foreground')}
+                            >
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', currentPageName === 'Dashboard' && 'bg-foreground/10')}>
+                                    {React.createElement(mainNavigation.find(a=>a.id==='dashboard')?.icon || mainNavigation[0].icon, { className: 'w-5 h-5' })}
+                                </div>
+                                <span className={cn('text-[10px] leading-tight font-medium', currentPageName === 'Dashboard' && 'font-bold')}>Home</span>
+                            </button>
+                        )}
+
+                        {/* Betrieb - erster Schnellzugriff */}
+                        {permissions.canViewReservations && (
+                            <button
+                                onClick={() => { haptics.selection(); navigate(createPageUrl('GuestHub')); }}
+                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                    ['GuestHub','Reservations','SeatingChart'].includes(currentPageName) ? 'text-foreground' : 'text-muted-foreground')}
+                            >
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', ['GuestHub','Reservations','SeatingChart'].includes(currentPageName) && 'bg-foreground/10')}>
+                                    {React.createElement(mainNavigation.find(a=>a.id==='betrieb')?.icon || mainNavigation[1].icon, { className: 'w-5 h-5' })}
+                                </div>
+                                <span className={cn('text-[10px] leading-tight font-medium', ['GuestHub','Reservations','SeatingChart'].includes(currentPageName) && 'font-bold')}>Betrieb</span>
+                            </button>
+                        )}
+
+                        {/* Aufgaben - zweiter Schnellzugriff */}
+                        {permissions.canViewTodos && (
+                            <button
+                                onClick={() => { haptics.selection(); navigate(createPageUrl('Todos')); }}
+                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                    currentPageName === 'Todos' ? 'text-foreground' : 'text-muted-foreground')}
+                            >
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', currentPageName === 'Todos' && 'bg-foreground/10')}>
+                                    {React.createElement(mainNavigation.find(a=>a.id==='betrieb')?.pages.find(p=>p.page==='Todos')?.icon || mainNavigation[1].icon, { className: 'w-5 h-5' })}
+                                </div>
+                                <span className={cn('text-[10px] leading-tight font-medium', currentPageName === 'Todos' && 'font-bold')}>Aufgaben</span>
+                            </button>
+                        )}
+
+                        {/* Team - dritter Schnellzugriff */}
+                        {permissions.canViewShifts && (
+                            <button
+                                onClick={() => { haptics.selection(); navigate(createPageUrl('Calendar')); }}
+                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                    ['Calendar','Employees','TimeManagement'].includes(currentPageName) ? 'text-foreground' : 'text-muted-foreground')}
+                            >
+                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', ['Calendar','Employees','TimeManagement'].includes(currentPageName) && 'bg-foreground/10')}>
+                                    {React.createElement(mainNavigation.find(a=>a.id==='team')?.icon || mainNavigation[4].icon, { className: 'w-5 h-5' })}
+                                </div>
+                                <span className={cn('text-[10px] leading-tight font-medium', ['Calendar','Employees','TimeManagement'].includes(currentPageName) && 'font-bold')}>Team</span>
+                            </button>
+                        )}
+
+                        {/* Mehr */}
+                        <button
+                            onClick={() => { haptics.selection(); setSettingsOpen(true); }}
+                            className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px] text-muted-foreground')}
+                        >
+                            <div className="flex items-center justify-center w-8 h-8 rounded-xl">
+                                <Settings className="w-5 h-5" />
+                            </div>
+                            <span className="text-[10px] leading-tight font-medium">Mehr</span>
+                        </button>
+
                     </div>
                 </div>
 
-                {/* Settings Drawer */}
+                {/* Mehr-Drawer — alle Bereiche geordnet */}
                 <Drawer open={settingsOpen} onOpenChange={setSettingsOpen}>
-                    <DrawerContent className="bg-card border-border">
-                        <DrawerHeader className="border-b border-border">
-                            <DrawerTitle className="text-foreground">Weitere Optionen</DrawerTitle>
+                    <DrawerContent className="bg-card border-border max-h-[85vh]">
+                        <DrawerHeader className="border-b border-border pb-3">
+                            <DrawerTitle className="text-foreground text-base">Alle Bereiche</DrawerTitle>
                         </DrawerHeader>
-                        <nav className="overflow-y-auto p-4 space-y-1">
-                            {additionalPages.map((page) => {
-                                if (!permissions[page.permission]) return null;
-
+                        <div className="overflow-y-auto">
+                            {/* Alle Hauptbereiche */}
+                            {mainNavigation.map((section) => {
+                                const visibleItems = section.pages.filter(item => permissions[item.permission]);
+                                if (visibleItems.length === 0) return null;
                                 return (
-                                    <Link
-                                        key={page.name}
-                                        to={createPageUrl(page.page)}
-                                        onClick={() => setSettingsOpen(false)}
-                                        className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/50 transition-all"
-                                    >
-                                        <page.icon className="w-5 h-5" />
-                                        {page.name}
-                                    </Link>
+                                    <div key={section.id} className="px-4 pt-4">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">{section.name}</p>
+                                        <div className="grid grid-cols-3 gap-2 mb-2">
+                                            {visibleItems.map((item) => (
+                                                <Link
+                                                    key={item.page}
+                                                    to={createPageUrl(item.page)}
+                                                    onClick={() => { haptics.selection(); setSettingsOpen(false); }}
+                                                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-secondary/40 hover:bg-secondary active:scale-95 transition-all text-center"
+                                                >
+                                                    <item.icon className="w-5 h-5 text-foreground" />
+                                                    <span className="text-[10px] font-medium text-foreground leading-tight">{item.name}</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
                                 );
                             })}
-                            <div className="pt-2 mt-2 border-t border-border">
+
+                            {/* Zusätzliche Seiten */}
+                            {additionalPages.some(p => permissions[p.permission]) && (
+                                <div className="px-4 pt-4">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Einstellungen</p>
+                                    <div className="grid grid-cols-3 gap-2 mb-2">
+                                        {additionalPages.filter(p => permissions[p.permission]).map((item) => (
+                                            <Link
+                                                key={item.page}
+                                                to={createPageUrl(item.page)}
+                                                onClick={() => { haptics.selection(); setSettingsOpen(false); }}
+                                                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-secondary/40 hover:bg-secondary active:scale-95 transition-all text-center"
+                                            >
+                                                <item.icon className="w-5 h-5 text-foreground" />
+                                                <span className="text-[10px] font-medium text-foreground leading-tight">{item.name}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Abmelden */}
+                            <div className="px-4 pt-3 pb-6 mt-2 border-t border-border">
                                 <button
-                                    onClick={() => {
-                                        haptics.light();
-                                        base44.auth.logout();
-                                        setSettingsOpen(false);
-                                    }}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-secondary/50 hover:bg-secondary active:bg-secondary text-muted-foreground hover:text-foreground text-sm font-medium transition-all border border-border/50"
+                                    onClick={() => { haptics.light(); base44.auth.logout(); setSettingsOpen(false); }}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-secondary/50 text-muted-foreground text-sm font-medium border border-border/50"
                                 >
-                                    <LogOut className="w-5 h-5" />
+                                    <LogOut className="w-4 h-4" />
                                     Abmelden
                                 </button>
                             </div>
-                        </nav>
+                        </div>
                     </DrawerContent>
                 </Drawer>
 

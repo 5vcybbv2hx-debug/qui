@@ -14,7 +14,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Plus, Pencil, Trash2, MapPin, Package, Search, ChevronRight, Wrench, ShoppingCart } from 'lucide-react';
+import { Plus, Pencil, Trash2, MapPin, Package, Search, ChevronRight, Wrench, ShoppingCart, Printer } from 'lucide-react';
+import StorageLabelPrint from '@/components/storage/StorageLabelPrint';
 
 const CATEGORIES = ['Werkzeug', 'Reinigung', 'Geräte', 'Büro', 'Sonstiges'];
 const CONDITIONS = [
@@ -38,6 +39,9 @@ export default function Storage() {
     const [itemModalOpen, setItemModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [itemForm, setItemForm] = useState(EMPTY_ITEM);
+
+    // Print label modal
+    const [printLocation, setPrintLocation] = useState(null);
 
     // Location modal
     const [locModalOpen, setLocModalOpen] = useState(false);
@@ -223,6 +227,13 @@ export default function Storage() {
                                                     <Pencil className="w-3 h-3" />
                                                 </button>
                                             )}
+                                            <button
+                                                onClick={() => setPrintLocation(loc)}
+                                                title="Etikett drucken"
+                                                className="p-1 text-muted-foreground hover:text-amber-500 rounded transition-colors"
+                                            >
+                                                <Printer className="w-3 h-3" />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -260,15 +271,25 @@ export default function Storage() {
                         </div>
                     </Card>
 
-                    {/* Location breadcrumb */}
+                    {/* Location breadcrumb + print button */}
                     {selectedLocation && (
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <MapPin className="w-4 h-4 text-amber-500" />
-                            <span className="text-amber-500 font-medium">{selectedLocation.area}</span>
-                            <ChevronRight className="w-3 h-3" />
-                            <span>{selectedLocation.furniture}</span>
-                            <ChevronRight className="w-3 h-3" />
-                            <span>{selectedLocation.position}</span>
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <MapPin className="w-4 h-4 text-amber-500" />
+                                <span className="text-amber-500 font-medium">{selectedLocation.area}</span>
+                                <ChevronRight className="w-3 h-3" />
+                                <span>{selectedLocation.furniture}</span>
+                                <ChevronRight className="w-3 h-3" />
+                                <span>{selectedLocation.position}</span>
+                            </div>
+                            <Button
+                                size="sm"
+                                onClick={() => setPrintLocation(selectedLocation)}
+                                className="bg-amber-600 hover:bg-amber-700 text-white shrink-0 gap-2"
+                            >
+                                <Printer className="w-4 h-4" />
+                                Etikett drucken
+                            </Button>
                         </div>
                     )}
 
@@ -404,6 +425,13 @@ export default function Storage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Print Label Modal */}
+            <StorageLabelPrint
+                open={!!printLocation}
+                onClose={() => setPrintLocation(null)}
+                location={printLocation}
+            />
 
             {/* Location Modal */}
             <Dialog open={locModalOpen} onOpenChange={setLocModalOpen}>

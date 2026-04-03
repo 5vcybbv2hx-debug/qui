@@ -2,7 +2,7 @@ import {
     Home, Utensils, Package, Wine, Users,
     Calendar, Clock, Shield, BookOpen, TrendingUp,
     CheckSquare, MapPin, ShoppingCart, RefreshCw, 
-    Settings, FileText
+    Settings, FileText, BarChart2
 } from 'lucide-react';
 
 /**
@@ -73,6 +73,7 @@ export const mainNavigation = [
  * Zusätzliche Seiten (nur für berechtigte Nutzer, z.B. in Drawer/Settings):
  */
 export const additionalPages = [
+    { name: 'Tagesabschluss', page: 'DailyAnalysis', icon: BarChart2, permission: 'isManager' },
     { name: 'Einstellungen', page: 'Settings', icon: Settings, permission: 'canViewDashboard' },
     { name: 'Firmendaten', page: 'CompanySettings', icon: FileText, permission: 'isManager' },
     { name: 'Einlernen', page: 'Onboarding', icon: Users, permission: 'canViewOnboarding' },

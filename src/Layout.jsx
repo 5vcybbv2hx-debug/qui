@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ import { haptics } from '@/components/utils/haptics';
 import { ArrowLeft, LogOut, Search, ScanLine, Settings } from 'lucide-react';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import { mainNavigation, additionalPages } from '@/components/navigation/navigationConfig';
+import { useActiveNavigation } from '@/components/navigation/useActiveNavigation';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -27,11 +28,7 @@ export default function Layout({ children, currentPageName }) {
     const [searchOpen, setSearchOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('dashboard');
-    const location = useLocation();
-
-    // Exact URL-based active check — never use includes/startsWith
-    const isPageActive = (pageName) => location.pathname === createPageUrl(pageName);
+    const { isPageActive } = useActiveNavigation();
 
     const handleScan = (code) => {
         setScannerOpen(false);
@@ -86,11 +83,6 @@ export default function Layout({ children, currentPageName }) {
         }
     }, []);
 
-    // Update active tab wenn Seite sich ändert
-    React.useEffect(() => {
-        const area = mainNavigation.find(a => a.pages.some(p => p.page === currentPageName));
-        if (area) setActiveTab(area.id);
-    }, [currentPageName]);
 
     const handleRefresh = async () => {
         await queryClient.invalidateQueries();
@@ -367,10 +359,15 @@ export default function Layout({ children, currentPageName }) {
                                                     key={item.page}
                                                     to={createPageUrl(item.page)}
                                                     onClick={() => { haptics.selection(); setSettingsOpen(false); }}
-                                                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-secondary/40 hover:bg-secondary active:scale-95 transition-all text-center"
+                                                    className={cn(
+                                                        'flex flex-col items-center gap-1.5 p-3 rounded-xl active:scale-95 transition-all text-center',
+                                                        isPageActive(item.page)
+                                                            ? 'bg-amber-500/20 border border-amber-500/40'
+                                                            : 'bg-secondary/40 hover:bg-secondary'
+                                                    )}
                                                 >
-                                                    <item.icon className="w-5 h-5 text-foreground" />
-                                                    <span className="text-[10px] font-medium text-foreground leading-tight">{item.name}</span>
+                                                    <item.icon className={cn('w-5 h-5', isPageActive(item.page) ? 'text-amber-400' : 'text-foreground')} />
+                                                    <span className={cn('text-[10px] font-medium leading-tight', isPageActive(item.page) ? 'text-amber-400 font-bold' : 'text-foreground')}>{item.name}</span>
                                                 </Link>
                                             ))}
                                         </div>
@@ -388,10 +385,15 @@ export default function Layout({ children, currentPageName }) {
                                                 key={item.page}
                                                 to={createPageUrl(item.page)}
                                                 onClick={() => { haptics.selection(); setSettingsOpen(false); }}
-                                                className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-secondary/40 hover:bg-secondary active:scale-95 transition-all text-center"
+                                                className={cn(
+                                                    'flex flex-col items-center gap-1.5 p-3 rounded-xl active:scale-95 transition-all text-center',
+                                                    isPageActive(item.page)
+                                                        ? 'bg-amber-500/20 border border-amber-500/40'
+                                                        : 'bg-secondary/40 hover:bg-secondary'
+                                                )}
                                             >
-                                                <item.icon className="w-5 h-5 text-foreground" />
-                                                <span className="text-[10px] font-medium text-foreground leading-tight">{item.name}</span>
+                                                <item.icon className={cn('w-5 h-5', isPageActive(item.page) ? 'text-amber-400' : 'text-foreground')} />
+                                                <span className={cn('text-[10px] font-medium leading-tight', isPageActive(item.page) ? 'text-amber-400 font-bold' : 'text-foreground')}>{item.name}</span>
                                             </Link>
                                         ))}
                                     </div>

@@ -1,0 +1,53 @@
+{
+  "name": "Container",
+  "type": "object",
+  "properties": {
+    "area_id": {
+      "type": "string",
+      "description": "ID des zugeh\u00f6rigen Bereichs"
+    },
+    "area_name": {
+      "type": "string",
+      "description": "Name des Bereichs (Denormalisierung f\u00fcr schnelle Anzeige)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Name des M\u00f6belst\u00fccks/Beh\u00e4lters (z.B. Regal A, Schrank 1, Kiste Orange)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Regal",
+        "Schrank",
+        "Schublade",
+        "Kiste",
+        "K\u00fchler",
+        "Sonstiges"
+      ],
+      "default": "Regal",
+      "description": "Typ des Beh\u00e4lters"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optionale Beschreibung"
+    },
+    "capacity": {
+      "type": "number",
+      "description": "Kapazit\u00e4t (optional)"
+    },
+    "order": {
+      "type": "number",
+      "description": "Sortierreihenfolge innerhalb des Bereichs"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "area_id",
+    "area_name",
+    "name"
+  ]
+}

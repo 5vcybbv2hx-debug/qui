@@ -16,6 +16,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { Plus, Pencil, Trash2, MapPin, Package, Search, ChevronRight, Wrench, ShoppingCart, Printer } from 'lucide-react';
 import StorageLabelPrint from '@/components/storage/StorageLabelPrint';
+import AreaSelect from '@/components/storage/AreaSelect';
+import ContainerSelect from '@/components/storage/ContainerSelect';
 
 const CATEGORIES = ['Werkzeug', 'Reinigung', 'Geräte', 'Büro', 'Sonstiges'];
 const CONDITIONS = [
@@ -25,7 +27,7 @@ const CONDITIONS = [
 ];
 
 const EMPTY_ITEM = { name: '', category: 'Werkzeug', quantity: 1, condition: 'gut', description: '', location_id: '', location_label: '', image_url: '', is_active: true };
-const EMPTY_LOC = { area: '', furniture: '', position: '', notes: '' };
+const EMPTY_LOC = { area_id: '', area_name: '', container_id: '', container_name: '', name: '', short_code: '', location_type: 'Regal', position: '', notes: '' };
 
 export default function Storage() {
     const permissions = usePermissions();
@@ -96,13 +98,15 @@ export default function Storage() {
         },
     });
 
-    // Group locations by area
+    // Group locations by area + container
     const locationTree = useMemo(() => {
         const tree = {};
         locations.forEach(loc => {
-            if (!tree[loc.area]) tree[loc.area] = {};
-            if (!tree[loc.area][loc.furniture]) tree[loc.area][loc.furniture] = [];
-            tree[loc.area][loc.furniture].push(loc);
+            const areaKey = loc.area_name || loc.area || 'Unbenannt';
+            if (!tree[areaKey]) tree[areaKey] = {};
+            const containerKey = loc.container_name || loc.furniture || 'Sonstiges';
+            if (!tree[areaKey][containerKey]) tree[areaKey][containerKey] = [];
+            tree[areaKey][containerKey].push(loc);
         });
         return tree;
     }, [locations]);
@@ -128,7 +132,7 @@ export default function Storage() {
         setItemForm({
             ...EMPTY_ITEM,
             location_id: selectedLocationId || '',
-            location_label: loc ? `${loc.area} › ${loc.furniture} › ${loc.position}` : '',
+            location_label: loc ? `${loc.area_name || loc.area} › ${loc.container_name || loc.furniture} › ${loc.position}` : '',
         });
         setItemModalOpen(true);
     };
@@ -147,7 +151,7 @@ export default function Storage() {
         setItemForm(f => ({
             ...f,
             location_id: locId,
-            location_label: loc ? `${loc.area} › ${loc.furniture} › ${loc.position}` : '',
+            location_label: loc ? `${loc.area_name || loc.area} › ${loc.container_name || loc.furniture} › ${loc.position}` : '',
         }));
     };
 
@@ -157,7 +161,8 @@ export default function Storage() {
     };
 
     const handleSaveLoc = () => {
-        if (!locForm.area.trim() || !locForm.furniture.trim() || !locForm.position.trim()) return;
+        if (!locForm.area_id || !locForm.container_id || !locForm.name.trim()) return;
+        const container = locForm.container_id ? locations.flatMap(l => l.id) : null; // Fetch from data
         saveLocMutation.mutate(locForm);
     };
 
@@ -276,9 +281,9 @@ export default function Storage() {
                         <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                 <MapPin className="w-4 h-4 text-amber-500" />
-                                <span className="text-amber-500 font-medium">{selectedLocation.area}</span>
+                                <span className="text-amber-500 font-medium">{selectedLocation.area_name || selectedLocation.area}</span>
                                 <ChevronRight className="w-3 h-3" />
-                                <span>{selectedLocation.furniture}</span>
+                                <span>{selectedLocation.container_name || selectedLocation.furniture}</span>
                                 <ChevronRight className="w-3 h-3" />
                                 <span>{selectedLocation.position}</span>
                             </div>
@@ -405,7 +410,7 @@ export default function Storage() {
                                         <SelectItem value="__none">Kein Ort</SelectItem>
                                         {locations.map(l => (
                                             <SelectItem key={l.id} value={l.id}>
-                                                {l.area} › {l.furniture} › {l.position}
+                                                {l.area_name || l.area} › {l.container_name || l.furniture} › {l.position}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -440,17 +445,22 @@ export default function Storage() {
                         <DialogTitle>{editingLoc ? 'Lagerort bearbeiten' : 'Neuer Lagerort'}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
+                        <AreaSelect
+                            value={locForm.area_id}
+                            onChange={v => setLocForm(f => ({ ...f, area_id: v }))}
+                        />
+                        <ContainerSelect
+                            areaId={locForm.area_id}
+                            value={locForm.container_id}
+                            onChange={v => setLocForm(f => ({ ...f, container_id: v }))}
+                        />
                         <div>
-                            <Label>Bereich *</Label>
-                            <Input placeholder="z.B. Keller, Büro" value={locForm.area} onChange={e => setLocForm(f => ({ ...f, area: e.target.value }))} className="mt-1" />
+                            <Label>Name *</Label>
+                            <Input placeholder="z.B. Fach 2, Oben links" value={locForm.name} onChange={e => setLocForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
                         </div>
                         <div>
-                            <Label>Möbel / Behälter *</Label>
-                            <Input placeholder="z.B. Regal A, Schrank 1" value={locForm.furniture} onChange={e => setLocForm(f => ({ ...f, furniture: e.target.value }))} className="mt-1" />
-                        </div>
-                        <div>
-                            <Label>Position *</Label>
-                            <Input placeholder="z.B. Fach 2, Oben links" value={locForm.position} onChange={e => setLocForm(f => ({ ...f, position: e.target.value }))} className="mt-1" />
+                            <Label>Kurzcode</Label>
+                            <Input placeholder="z.B. RA-F3" value={locForm.short_code} onChange={e => setLocForm(f => ({ ...f, short_code: e.target.value }))} className="mt-1" />
                         </div>
                         <div>
                             <Label>Notizen</Label>

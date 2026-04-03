@@ -2,6 +2,22 @@
   "name": "StorageLocation",
   "type": "object",
   "properties": {
+    "area_id": {
+      "type": "string",
+      "description": "ID des Bereichs"
+    },
+    "area_name": {
+      "type": "string",
+      "description": "Name des Bereichs (Denormalisierung)"
+    },
+    "container_id": {
+      "type": "string",
+      "description": "ID des M\u00f6belst\u00fccks/Beh\u00e4lters"
+    },
+    "container_name": {
+      "type": "string",
+      "description": "Name des M\u00f6belst\u00fccks/Beh\u00e4lters (Denormalisierung)"
+    },
     "name": {
       "type": "string",
       "description": "Vollst\u00e4ndiger Lagerortname (z.B. 'Regal A \u2013 Fach 3')"
@@ -24,17 +40,9 @@
       "default": "Regal",
       "description": "Typ des Lagerorts"
     },
-    "area": {
-      "type": "string",
-      "description": "Bereich / Oberkategorie (z.B. Keller, Bar, K\u00fcche)"
-    },
-    "furniture": {
-      "type": "string",
-      "description": "M\u00f6belst\u00fcck / Beh\u00e4lter (R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
-    },
     "position": {
       "type": "string",
-      "description": "Position (R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
+      "description": "Position/Beschreibung (z.B. 'oben links')"
     },
     "description": {
       "type": "string",
@@ -47,9 +55,16 @@
     "notes": {
       "type": "string",
       "description": "Notizen"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
     }
   },
   "required": [
-    "area"
+    "area_id",
+    "area_name",
+    "name"
   ]
 }

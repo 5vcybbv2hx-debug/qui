@@ -1,0 +1,30 @@
+{
+  "name": "Area",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Bereichs (z.B. Keller, Bar, K\u00fcche, Lager)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optionale Beschreibung des Bereichs"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji oder Icon (z.B. \ud83c\udfe0, \ud83c\udf7a, \ud83c\udf73)"
+    },
+    "order": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

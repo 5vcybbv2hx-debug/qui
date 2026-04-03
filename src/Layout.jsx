@@ -25,30 +25,33 @@ import ErrorBoundary from '@/components/error/ErrorBoundary';
 import { useAnalytics } from '@/components/analytics/useAnalytics';
 
 export default function Layout({ children, currentPageName }) {
+    // ── State ────────────────────────────────────────────────────────────────
     const [searchOpen, setSearchOpen] = useState(false);
     const [scannerOpen, setScannerOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const { isPageActive } = useActiveNavigation();
+    const [currentUser, setCurrentUser] = React.useState(null);
 
+    // ── Hooks (all hooks before any early returns) ────────────────────────────
+    const { isPageActive } = useActiveNavigation();
+    const permissions = usePermissions();
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const { track } = useAnalytics();
+
+    // ── Handlers ─────────────────────────────────────────────────────────────
     const handleScan = (code) => {
         setScannerOpen(false);
         navigate(createPageUrl('Shopping') + `?scan=${code}`);
     };
 
-    const permissions = usePermissions();
-    const [currentUser, setCurrentUser] = React.useState(null);
-    const navigate = useNavigate();
-    const queryClient = useQueryClient();
-    const { track } = useAnalytics();
+    const handleRefresh = async () => {
+        await queryClient.invalidateQueries();
+    };
 
-    // Alle Seiten für Lookup
-    const allPages = mainNavigation.flatMap(area => area.pages).concat(additionalPages);
-    const getPageName = (pageName) => allPages.find(p => p.page === pageName)?.name || 'BarManager';
-
+    // ── Effects ──────────────────────────────────────────────────────────────
     React.useEffect(() => {
         base44.auth.me().then(setCurrentUser).catch(() => {});
 
-        // Keyboard shortcut für Suche (Strg+K)
         const handleKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
@@ -59,32 +62,32 @@ export default function Layout({ children, currentPageName }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Farben beim App-Start aus DB laden
+    React.useEffect(() => { loadSavedColors(); }, []);
+
+    // Theme sync (index.html script handles initial flash-prevention;
+    // this effect handles runtime theme changes e.g. from Settings page)
     React.useEffect(() => {
-        loadSavedColors();
+        const applyTheme = () => {
+            const t = localStorage.getItem('theme') || 'dark';
+            const root = document.documentElement;
+            if (t === 'light') {
+                root.classList.remove('dark');
+            } else if (t === 'dark') {
+                root.classList.add('dark');
+            } else {
+                root.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
+            }
+        };
+        applyTheme();
+        // Listen for storage events (theme changed in another tab)
+        window.addEventListener('storage', applyTheme);
+        return () => window.removeEventListener('storage', applyTheme);
     }, []);
 
-    // Theme beim App-Start laden und anwenden
-    React.useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        const root = document.documentElement;
-        root.classList.remove('light'); // always clean first
-        if (savedTheme === 'light') {
-            root.classList.remove('dark');
-        } else if (savedTheme === 'dark') {
-            root.classList.add('dark');
-        } else if (savedTheme === 'system') {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            root.classList.toggle('dark', prefersDark);
-        }
-    }, []);
 
-
-    const handleRefresh = async () => {
-        await queryClient.invalidateQueries();
-    };
-
-    // Bestimme ob es eine Root-Page ist
+    // Derived values
+    const allPages = mainNavigation.flatMap(area => area.pages).concat(additionalPages);
+    const getPageName = (pageName) => allPages.find(p => p.page === pageName)?.name || 'BarManager';
     const primaryPages = mainNavigation.flatMap(a => a.pages).map(p => p.page);
     const isRootPage = primaryPages.includes(currentPageName);
 

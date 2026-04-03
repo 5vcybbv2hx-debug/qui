@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-export default function ContainerSelect({ areaId, value, onChange, className }) {
+export default function ContainerSelect({ areaId = '', value = '', onChange, className }) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newContainerName, setNewContainerName] = useState('');
   const [newContainerType, setNewContainerType] = useState('Regal');
@@ -64,9 +64,9 @@ export default function ContainerSelect({ areaId, value, onChange, className }) 
       <div className={cn('space-y-2', className)}>
         <Label>Möbel/Behälter {areaId ? '' : '(zuerst Bereich wählen)'}</Label>
         <div className="flex gap-2">
-          <Select value={value} onValueChange={onChange} disabled={isDisabled}>
+          <Select value={value || ''} onValueChange={v => onChange(v)} disabled={isDisabled}>
             <SelectTrigger className="h-11 text-base">
-              <SelectValue placeholder={isDisabled ? "Bereich wählen..." : "Behälter wählen..."} />
+              <SelectValue placeholder={isLoading ? 'Lädt...' : isDisabled ? 'Bereich wählen...' : 'Behälter wählen...'} />
             </SelectTrigger>
             <SelectContent>
               {containers.map(container => (

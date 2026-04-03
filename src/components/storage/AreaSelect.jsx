@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-export default function AreaSelect({ value, onChange, className }) {
+export default function AreaSelect({ value = '', onChange, className }) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newAreaName, setNewAreaName] = useState('');
   const queryClient = useQueryClient();
@@ -48,9 +48,9 @@ export default function AreaSelect({ value, onChange, className }) {
       <div className={cn('space-y-2', className)}>
         <Label>Bereich *</Label>
         <div className="flex gap-2">
-          <Select value={value} onValueChange={onChange} disabled={isLoading}>
+          <Select value={value || ''} onValueChange={v => onChange(v)} disabled={isLoading || !areas?.length}>
             <SelectTrigger className="h-11 text-base">
-              <SelectValue placeholder="Bereich wählen..." />
+              <SelectValue placeholder={isLoading ? 'Lädt...' : 'Bereich wählen...'} />
             </SelectTrigger>
             <SelectContent>
               {areas.map(area => (

@@ -4,7 +4,7 @@ import {
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench, QrCode,
-    Palmtree, MessageSquare
+    Palmtree, MessageSquare, ListChecks
 } from 'lucide-react';
 
 /**
@@ -37,6 +37,7 @@ export const mainNavigation = [
             { name: 'Auffüllliste',   page: 'Restock',   icon: RefreshCw,    permission: 'canViewRestock'      },
             { name: 'Aufgaben',       page: 'Todos',      icon: CheckSquare,  permission: 'canViewTodos'        },
             { name: 'Putzliste',      page: 'Cleaning',   icon: Brush,        permission: 'canViewCleaning'     },
+            { name: 'Wochenaufgaben',  page: 'WeeklyTasks',icon: ListChecks,   permission: 'canViewCleaning'     },
             { name: 'Einkaufsliste',  page: 'Shopping',   icon: ShoppingCart, permission: 'canViewShopping'     },
             { name: 'Events',         page: 'Events',     icon: Star,         permission: 'canViewEvents'       },
             { name: 'Team-Notizen',   page: 'Todos',      icon: MessageSquare,permission: 'canViewTeamNotes'    },

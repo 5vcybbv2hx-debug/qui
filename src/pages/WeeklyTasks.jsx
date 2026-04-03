@@ -149,11 +149,8 @@ export default function WeeklyTasks() {
         return (
             <div 
                 className={cn(
-                    "p-4 bg-slate-800 rounded-lg border border-slate-700 transition-all",
-                    task.is_completed && "bg-slate-800/50",
-                    shouldShowToday && isCurrentWeekTask && "ring-2 ring-amber-500"
-                )}
-            >
+                    "p-4 bg-card rounded-lg border border-border transition-all",
+                    task.is_completed && "opacity-60",
                 <div className="flex items-start gap-3">
                     <button
                         onClick={() => handleComplete(task)}
@@ -170,13 +167,13 @@ export default function WeeklyTasks() {
                     <div className="flex-1 min-w-0">
                         <p className={cn(
                             "text-sm font-medium",
-                            task.is_completed ? "text-slate-500 line-through" : "text-white"
+                            task.is_completed ? "text-muted-foreground line-through" : "text-foreground"
                         )}>
                             {task.title}
                         </p>
                         <div className="flex items-center gap-2 mt-2 flex-wrap">
                             {task.biweekly_pattern && (
-                                <Badge variant="outline" className="text-xs border-slate-600 text-slate-400">
+                                <Badge variant="outline" className="text-xs border-border text-muted-foreground">
                                     {task.biweekly_pattern.endsWith('_1') ? 'Woche 1' : 'Woche 2'}
                                 </Badge>
                             )}
@@ -215,16 +212,16 @@ export default function WeeklyTasks() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
-            <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="min-h-screen bg-background pb-24 md:pb-0">
+            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-3 mb-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold text-white tracking-tight">
-                                Wochentagsaufgaben
+                            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+                                Wochenaufgaben
                             </h1>
-                            <p className="text-slate-400 text-sm mt-1">
+                            <p className="text-muted-foreground text-sm mt-1">
                                 {format(new Date(), "EEEE, d. MMMM", { locale: de })} · Woche {currentWeek}
                             </p>
                         </div>
@@ -240,13 +237,13 @@ export default function WeeklyTasks() {
                 </div>
 
                 {/* Tasks Tabs */}
-                <Tabs defaultValue="wednesday" className="space-y-4">
-                    <TabsList className="bg-slate-800 border border-slate-700 grid w-full grid-cols-2">
+<Tabs defaultValue={today === 4 ? 'thursday' : 'wednesday'} className="space-y-4">
+                    <TabsList className="bg-card border border-border grid w-full grid-cols-2">
                         <TabsTrigger 
                             value="wednesday" 
                             className={cn(
-                                "text-slate-300",
-                                today === 3 && "data-[state=active]:bg-amber-600"
+                                "text-muted-foreground",
+                                today === 3 && "data-[state=active]:bg-amber-600 data-[state=active]:text-white"
                             )}
                         >
                             <Calendar className="w-4 h-4 mr-2" />
@@ -255,8 +252,8 @@ export default function WeeklyTasks() {
                         <TabsTrigger 
                             value="thursday"
                             className={cn(
-                                "text-slate-300",
-                                today === 4 && "data-[state=active]:bg-amber-600"
+                                "text-muted-foreground",
+                                today === 4 && "data-[state=active]:bg-amber-600 data-[state=active]:text-white"
                             )}
                         >
                             <Calendar className="w-4 h-4 mr-2" />
@@ -284,7 +281,7 @@ export default function WeeklyTasks() {
 
                     <TabsContent value="thursday" className="space-y-3">
                         {thursdayTasks.length === 0 ? (
-                            <Card className="p-8 text-center text-slate-400 bg-slate-800 border-slate-700">
+                            <Card className="p-8 text-center bg-card border-border text-muted-foreground">
                                 <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                 <p>Keine Donnerstags-Aufgaben vorhanden</p>
                             </Card>
@@ -369,13 +366,13 @@ export default function WeeklyTasks() {
                                         )}
                                     </SelectContent>
                                 </Select>
-                                <p className="text-xs text-slate-400">
+                                <p className="text-xs text-muted-foreground">
                                     Aktuelle Woche: {currentWeek === 1 ? 'Woche 1 (ungerade KW)' : 'Woche 2 (gerade KW)'}
                                 </p>
                             </div>
 
-                            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                <p className="text-xs text-slate-600">
+                            <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
+                                <p className="text-xs text-muted-foreground">
                                     💡 Die Aufgabe wird automatisch der Aushilfe zugewiesen, die am jeweiligen Tag arbeitet
                                 </p>
                             </div>

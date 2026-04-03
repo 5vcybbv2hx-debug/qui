@@ -80,8 +80,9 @@ export default function Cleaning() {
         queryFn: () => base44.entities.CleaningTask.list('area')
     });
 
-    const tasks = allTasks.filter(t => t.is_active !== false);
-    const deactivatedTasks = allTasks.filter(t => t.is_active === false);
+    // Wochentagsaufgaben gehören zu WeeklyTasks — hier ausschließen
+    const tasks = allTasks.filter(t => t.is_active !== false && t.area !== 'Wochentagsaufgaben');
+    const deactivatedTasks = allTasks.filter(t => t.is_active === false && t.area !== 'Wochentagsaufgaben');
 
     const { data: allAreas = [] } = useQuery({
         queryKey: ['cleaning-areas'],
@@ -236,23 +237,7 @@ export default function Cleaning() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        
-        // Automatische Zuweisung für Wochentagsaufgaben mit Datum
-        let finalData = { ...formData };
-        if (formData.area === 'Wochentagsaufgaben' && formData.due_date && !formData.assigned_to) {
-            // Finde Aushilfe die an diesem Tag arbeitet
-            const dateShifts = shifts.filter(s => s.date === formData.due_date);
-            const aushilfe = dateShifts
-                .map(s => allEmployees.find(e => e.id === s.employee_id))
-                .find(e => e && e.role === 'Aushilfe');
-            
-            if (aushilfe) {
-                finalData.assigned_to = aushilfe.id;
-                finalData.assigned_to_name = aushilfe.name;
-            }
-        }
-        
-        createMutation.mutate(finalData);
+        createMutation.mutate(formData);
     };
 
     const generateWeeklyReport = async () => {
@@ -449,17 +434,17 @@ export default function Cleaning() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {areas.map(area => (
-                                                <SelectItem key={area.id} value={area.name}>
-                                                    <div className="flex items-center gap-2">
-                                                        <div 
-                                                            className="w-3 h-3 rounded-full"
-                                                            style={{ backgroundColor: area.color }}
-                                                        />
-                                                        {area.name}
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
+                                            {areas.filter(a => a.name !== 'Wochentagsaufgaben').map(area => (
+                                                 <SelectItem key={area.id} value={area.name}>
+                                                     <div className="flex items-center gap-2">
+                                                         <div 
+                                                             className="w-3 h-3 rounded-full"
+                                                             style={{ backgroundColor: area.color }}
+                                                         />
+                                                         {area.name}
+                                                     </div>
+                                                 </SelectItem>
+                                             ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -472,58 +457,13 @@ export default function Cleaning() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="täglich">Täglich</SelectItem>
-                                            <SelectItem value="am Wochenende">Am Wochenende (Fr+Sa)</SelectItem>
-                                            <SelectItem value="wöchentlich">Wöchentlich</SelectItem>
-                                            <SelectItem value="alle zwei Wochen">Alle zwei Wochen</SelectItem>
-                                            <SelectItem value="monatlich">Monatlich</SelectItem>
-                                            <SelectItem value="an Sonderöffnungstagen">An Sonderöffnungstagen</SelectItem>
+                                                <SelectItem value="am Wochenende">Am Wochenende (Fr+Sa)</SelectItem>
+                                                <SelectItem value="an Sonderöffnungstagen">An Sonderöffnungstagen</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
 
-                            {formData.area === 'Wochentagsaufgaben' && (
-                                <div className="space-y-3 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                                    <div className="space-y-2">
-                                        <Label>Fälligkeitsdatum</Label>
-                                        <Input
-                                            type="date"
-                                            value={formData.due_date}
-                                            onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Zuweisen an (optional)</Label>
-                                        <Select 
-                                            value={formData.assigned_to} 
-                                            onValueChange={(v) => {
-                                                const emp = allEmployees.find(e => e.id === v);
-                                                setFormData({ 
-                                                    ...formData, 
-                                                    assigned_to: v,
-                                                    assigned_to_name: emp?.name || ''
-                                                });
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Automatisch zuweisen" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                   <SelectItem value={null}>Automatisch (Aushilfe des Tages)</SelectItem>
-                                                {allEmployees.map(emp => (
-                                                    <SelectItem key={emp.id} value={emp.id}>
-                                                        {emp.name} ({emp.role})
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                                    <p className="text-xs text-muted-foreground">
-                                            Ohne Auswahl wird automatisch die Aushilfe zugewiesen, die an diesem Tag arbeitet
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
 
                             <div className="flex gap-2 pt-4">
                                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">

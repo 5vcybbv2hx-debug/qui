@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-export default function ContainerSelect({ areaId = '', value = '', onChange, className }) {
+export default function ContainerSelect({ areaId = '', value, onChange, className }) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newContainerName, setNewContainerName] = useState('');
   const [newContainerType, setNewContainerType] = useState('Regal');
@@ -39,7 +39,7 @@ export default function ContainerSelect({ areaId = '', value = '', onChange, cla
     mutationFn: (data) => base44.entities.Container.create(data),
     onSuccess: (newContainer) => {
       queryClient.invalidateQueries({ queryKey: ['containers', areaId] });
-      onChange(newContainer.id);
+      onChange(newContainer);
       setNewContainerName('');
       setNewContainerType('Regal');
       setShowCreateDialog(false);
@@ -64,7 +64,10 @@ export default function ContainerSelect({ areaId = '', value = '', onChange, cla
       <div className={cn('space-y-2', className)}>
         <Label>Möbel/Behälter {areaId ? '' : '(zuerst Bereich wählen)'}</Label>
         <div className="flex gap-2">
-          <Select value={value || ''} onValueChange={v => onChange(v)} disabled={isDisabled}>
+          <Select value={value?.id || ''} onValueChange={containerId => {
+            const selectedContainer = containers.find(c => c.id === containerId);
+            onChange(selectedContainer || {});
+          }} disabled={isDisabled}>
             <SelectTrigger className="h-11 text-base">
               <SelectValue placeholder={isLoading ? 'Lädt...' : isDisabled ? 'Bereich wählen...' : 'Behälter wählen...'} />
             </SelectTrigger>

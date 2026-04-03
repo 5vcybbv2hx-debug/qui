@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-export default function AreaSelect({ value = '', onChange, className }) {
+export default function AreaSelect({ value, onChange, className }) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newAreaName, setNewAreaName] = useState('');
   const queryClient = useQueryClient();
@@ -29,7 +29,7 @@ export default function AreaSelect({ value = '', onChange, className }) {
     mutationFn: (data) => base44.entities.Area.create(data),
     onSuccess: (newArea) => {
       queryClient.invalidateQueries({ queryKey: ['areas'] });
-      onChange(newArea.id);
+      onChange(newArea);
       setNewAreaName('');
       setShowCreateDialog(false);
     }
@@ -47,19 +47,22 @@ export default function AreaSelect({ value = '', onChange, className }) {
     <>
       <div className={cn('space-y-2', className)}>
         <Label>Bereich *</Label>
-        <div className="flex gap-2">
-          <Select value={value || ''} onValueChange={v => onChange(v)} disabled={isLoading || !areas?.length}>
-            <SelectTrigger className="h-11 text-base">
-              <SelectValue placeholder={isLoading ? 'Lädt...' : 'Bereich wählen...'} />
-            </SelectTrigger>
-            <SelectContent>
-              {areas.map(area => (
-                <SelectItem key={area.id} value={area.id}>
-                  {area.icon ? `${area.icon} ${area.name}` : area.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+         <div className="flex gap-2">
+           <Select value={value?.id || ''} onValueChange={areaId => {
+             const selectedArea = areas.find(a => a.id === areaId);
+             onChange(selectedArea || {});
+           }} disabled={isLoading || !areas?.length}>
+             <SelectTrigger className="h-11 text-base">
+               <SelectValue placeholder={isLoading ? 'Lädt...' : 'Bereich wählen...'} />
+             </SelectTrigger>
+             <SelectContent>
+               {areas.map(area => (
+                 <SelectItem key={area.id} value={area.id}>
+                   {area.icon ? `${area.icon} ${area.name}` : area.name}
+                 </SelectItem>
+               ))}
+             </SelectContent>
+           </Select>
           <Button
             type="button"
             variant="outline"

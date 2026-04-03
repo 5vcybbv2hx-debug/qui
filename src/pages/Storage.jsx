@@ -76,7 +76,15 @@ export default function Storage() {
         mutationFn: (data) => editingLoc?.id
             ? base44.entities.StorageLocation.update(editingLoc.id, data)
             : base44.entities.StorageLocation.create(data),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['storage-locations'] }); setLocModalOpen(false); },
+        onSuccess: () => { 
+            queryClient.invalidateQueries({ queryKey: ['storage-locations'] }); 
+            setLocModalOpen(false);
+            setLocForm(EMPTY_LOC);
+        },
+        onError: (error) => {
+            console.error('Fehler beim Speichern:', error);
+            alert('Fehler beim Speichern des Lagerorts: ' + (error.message || 'Unbekannter Fehler'));
+        }
     });
 
     const addToShoppingMutation = useMutation({
@@ -446,25 +454,31 @@ export default function Storage() {
                     </DialogHeader>
                     <div className="space-y-4">
                         <AreaSelect
-                            value={locForm.area_id}
-                            onChange={v => setLocForm(f => ({ ...f, area_id: v }))}
+                            value={locForm.area_id ? { id: locForm.area_id, name: locForm.area_name } : null}
+                            onChange={area => setLocForm(f => ({ ...f, area_id: area?.id || '', area_name: area?.name || '' }))}
                         />
                         <ContainerSelect
-                            areaId={locForm.area_id}
-                            value={locForm.container_id}
-                            onChange={v => setLocForm(f => ({ ...f, container_id: v }))}
+                            areaId={locForm.area_id || ''}
+                            value={locForm.container_id ? { id: locForm.container_id, name: locForm.container_name } : null}
+                            onChange={container => setLocForm(f => ({ ...f, container_id: container?.id || '', container_name: container?.name || '' }))}
                         />
-                        <div>
-                            <Label>Name *</Label>
-                            <Input placeholder="z.B. Fach 2, Oben links" value={locForm.name} onChange={e => setLocForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
+                        <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Name (automatisch generiert)</Label>
+                            <p className="text-sm font-medium text-foreground mt-2">
+                                {locForm.name || `${locForm.area_name || '–'} › ${locForm.container_name || '–'}`}
+                            </p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Kurzcode (automatisch generiert)</Label>
+                            <p className="text-sm font-mono font-bold text-foreground mt-2">{locForm.short_code || 'Wird generiert'}</p>
                         </div>
                         <div>
-                            <Label>Kurzcode</Label>
-                            <Input placeholder="z.B. RA-F3" value={locForm.short_code} onChange={e => setLocForm(f => ({ ...f, short_code: e.target.value }))} className="mt-1" />
+                            <Label>Position/Details (optional)</Label>
+                            <Input placeholder="z.B. oben links, Fach 2" value={locForm.position} onChange={e => setLocForm(f => ({ ...f, position: e.target.value }))} className="mt-1" />
                         </div>
                         <div>
-                            <Label>Notizen</Label>
-                            <Input value={locForm.notes} onChange={e => setLocForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" />
+                            <Label>Notizen (optional)</Label>
+                            <Input placeholder="z.B. Spezialausstattung, besonderheiten" value={locForm.notes} onChange={e => setLocForm(f => ({ ...f, notes: e.target.value }))} className="mt-1" />
                         </div>
                         {editingLoc && permissions.isManager && (
                             <Button variant="outline" className="w-full text-destructive border-destructive/50 hover:bg-destructive/10"
@@ -473,10 +487,21 @@ export default function Storage() {
                             </Button>
                         )}
                     </div>
-                    <DialogFooter className="mt-4">
-                        <Button variant="outline" onClick={() => setLocModalOpen(false)}>Abbrechen</Button>
-                        <Button onClick={handleSaveLoc} disabled={saveLocMutation.isPending} className="bg-amber-600 hover:bg-amber-700 text-white">
-                            Speichern
+                    <DialogFooter className="mt-6 gap-2">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setLocModalOpen(false)}
+                            disabled={saveLocMutation.isPending}
+                            className="flex-1"
+                        >
+                            Abbrechen
+                        </Button>
+                        <Button 
+                            onClick={handleSaveLoc} 
+                            disabled={saveLocMutation.isPending || !locForm.area_id || !locForm.container_id}
+                            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white h-11"
+                        >
+                            {saveLocMutation.isPending ? 'Wird gespeichert...' : 'Speichern'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

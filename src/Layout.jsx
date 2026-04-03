@@ -126,6 +126,13 @@ export default function Layout({ children, currentPageName }) {
                         >
                             <Search className="w-5 h-5" />
                         </button>
+                        <button
+                            onClick={() => setSettingsOpen(true)}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-foreground transition-all"
+                            title="Einstellungen"
+                        >
+                            <Settings className="w-5 h-5" />
+                        </button>
                     </div>
                 </header>
 
@@ -262,9 +269,9 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                 </aside>
 
-                {/* Mobile Bottom Navigation — 5 Hauptbereiche */}
+                {/* Mobile Bottom Navigation — exakt 5 Tabs */}
                 <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
-                    <div className="flex items-center justify-between px-1 py-2 gap-1">
+                    <div className="flex items-stretch justify-around px-0 py-1">
                         {mainNavigation.map((area) => {
                             const visiblePages = area.pages.filter(p => permissions[p.permission]);
                             if (visiblePages.length === 0) return null;
@@ -275,34 +282,31 @@ export default function Layout({ children, currentPageName }) {
                                 <button
                                     key={area.id}
                                     onClick={() => {
+                                        haptics.selection();
                                         setActiveTab(area.id);
                                         const firstPage = visiblePages[0]?.page;
                                         if (firstPage) navigate(createPageUrl(firstPage));
                                     }}
                                     className={cn(
-                                        'flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg flex-1 transition-all text-[10px] font-medium',
+                                        'flex flex-col items-center justify-center gap-1 py-2 flex-1 transition-all min-h-[56px]',
                                         isActive
-                                            ? 'shadow-md'
-                                            : 'text-muted-foreground hover:text-foreground'
+                                            ? 'text-foreground'
+                                            : 'text-muted-foreground'
                                     )}
-                                    style={isActive ? {
-                                        background: `linear-gradient(135deg, ${area.color})`,
-                                        color: 'var(--brand-fg)'
-                                    } : {}}
                                 >
-                                    <AreaIcon className="w-5 h-5" />
-                                    <span className="leading-tight text-center">{area.name}</span>
+                                    <div className={cn(
+                                        'flex items-center justify-center w-10 h-6 rounded-full transition-all',
+                                        isActive && 'bg-foreground/10'
+                                    )}>
+                                        <AreaIcon className={cn('w-5 h-5 transition-all', isActive && 'scale-110')} />
+                                    </div>
+                                    <span className={cn(
+                                        'text-[10px] font-medium leading-tight',
+                                        isActive && 'font-bold'
+                                    )}>{area.name}</span>
                                 </button>
                             );
                         })}
-                        {/* Settings Button */}
-                        <button
-                            onClick={() => setSettingsOpen(true)}
-                            className="flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg text-[10px] font-medium text-muted-foreground hover:text-foreground transition-all"
-                        >
-                            <Settings className="w-5 h-5" />
-                            <span className="leading-tight text-center">Mehr</span>
-                        </button>
                     </div>
                 </div>
 

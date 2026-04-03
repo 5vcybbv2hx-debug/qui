@@ -50,9 +50,28 @@
         "Einkauf",
         "Reparatur",
         "Event",
+        "Bar",
+        "Lager",
+        "K\u00fcche",
         "Sonstiges"
       ],
       "default": "Sonstiges"
+    },
+    "linked_area": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Bereich (z.B. Bar, Lager, K\u00fcche)"
+    },
+    "linked_event_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte Event-ID"
+    },
+    "linked_employee_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Mitarbeiter (ID)"
+    },
+    "linked_article_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Artikel (ID)"
     },
     "is_archived": {
       "type": "boolean",

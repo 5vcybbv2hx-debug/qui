@@ -34,6 +34,8 @@ function generateAttachmentId() {
 }
 
 export default function TodoModal({ open, onClose, todo, employees, onSave, currentUser }) {
+    const AREAS = ['Bar', 'Lager', 'Küche', 'Außenbereich', 'Büro', 'Allgemein'];
+
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -43,6 +45,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
         assigned_to: '',
         assigned_to_names: [],
         category: 'Sonstiges',
+        linked_area: '',
         subtasks: [],
         attachments: [],
     });
@@ -60,6 +63,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                 assigned_to: todo.assigned_to || '',
                 assigned_to_names: todo.assigned_to_names || (todo.assigned_to ? [todo.assigned_to] : []),
                 category: todo.category || 'Sonstiges',
+                linked_area: todo.linked_area || '',
                 subtasks: todo.subtasks || [],
                 attachments: todo.attachments || [],
             });
@@ -74,6 +78,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                 assigned_to: defaultAssignee,
                 assigned_to_names: defaultAssignee ? [defaultAssignee] : [],
                 category: 'Sonstiges',
+                linked_area: '',
                 subtasks: [],
                 attachments: [],
             });
@@ -194,15 +199,28 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                         </div>
                     </div>
 
-                    {/* Due date */}
-                    <div className="space-y-1.5">
-                        <Label className="text-sm font-semibold">Fällig am</Label>
-                        <Input
-                            type="date"
-                            value={formData.due_date}
-                            onChange={e => set('due_date', e.target.value)}
-                            className="h-12 text-base"
-                        />
+                    {/* Due date + Bereich */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold">Fällig am</Label>
+                            <Input
+                                type="date"
+                                value={formData.due_date}
+                                onChange={e => set('due_date', e.target.value)}
+                                className="h-12 text-base"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-sm font-semibold">Bereich (optional)</Label>
+                            <select
+                                value={formData.linked_area}
+                                onChange={e => set('linked_area', e.target.value)}
+                                className="w-full h-12 rounded-xl border border-input bg-background px-3 text-base text-foreground"
+                            >
+                                <option value="">Kein Bereich</option>
+                                {AREAS.map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
+                        </div>
                     </div>
 
                     {/* Assignees - multi-select checkboxes */}

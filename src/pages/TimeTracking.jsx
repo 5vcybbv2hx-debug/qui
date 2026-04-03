@@ -263,7 +263,15 @@ export default function TimeTracking() {
     const clockOutMutation = useMutation({
         mutationFn: async (entryId) => {
             const entry = clockEntries.find(e => e.id === entryId);
+            if (!entry) throw new Error('Eintrag nicht gefunden');
             const clockOutTime = new Date();
+            // Wenn noch in Pause: Pause automatisch beenden
+            if (entry.status === 'on_break') {
+                await base44.entities.ClockEntry.update(entryId, {
+                    status: 'clocked_in',
+                    pause_end: clockOutTime.toISOString()
+                });
+            }
             const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
             const breakMinutes = calcLegalBreak(totalMinutes);
             const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
@@ -322,12 +330,18 @@ export default function TimeTracking() {
     });
 
     const handleClockIn = () => {
-        if (currentEmployee) {
-            clockInMutation.mutate(currentEmployee.id);
+        // Schutz vor doppeltem Einstempeln
+        if (!currentEmployee) return;
+        if (activeClockEntry) {
+            alert('Du bist bereits eingestempelt.');
+            return;
         }
+        if (clockInMutation.isPending) return;
+        clockInMutation.mutate(currentEmployee.id);
     };
 
     const handleClockOut = (entry) => {
+        if (clockOutMutation.isPending) return;
         if (confirm('Möchtest du jetzt ausstempeln?')) {
             clockOutMutation.mutate(entry.id);
         }
@@ -646,7 +660,7 @@ export default function TimeTracking() {
                 <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedMonth(new Date(selectedMonth.setMonth(selectedMonth.getMonth() - 1)))}
+                    onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
                     className="border-border hover:bg-accent text-muted-foreground text-xs sm:text-sm px-2 sm:px-4"
                         >
                             <span className="hidden sm:inline">← Vorheriger</span>
@@ -659,7 +673,7 @@ export default function TimeTracking() {
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSelectedMonth(new Date(selectedMonth.setMonth(selectedMonth.getMonth() + 1)))}
+                            onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
                             className="border-border hover:bg-accent text-muted-foreground text-xs sm:text-sm px-2 sm:px-4"
                         >
                             <span className="hidden sm:inline">Nächster →</span>

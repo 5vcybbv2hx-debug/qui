@@ -21,7 +21,7 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
 
     const { data: allRequests = [] } = useQuery({
         queryKey: ['shift-swap-requests-open'],
-        queryFn: () => base44.entities.ShiftSwapRequest.filter({ status: 'ausstehend' })
+        queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date', 200)
     });
 
     const { data: myBids = [] } = useQuery({

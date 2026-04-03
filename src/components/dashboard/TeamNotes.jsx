@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, parseISO } from 'date-fns';
@@ -43,6 +44,9 @@ function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, 
     const dateStr = note.created_date
         ? format(parseISO(note.created_date), 'EEE, dd.MM. · HH:mm', { locale: de })
         : '';
+    const editedStr = note.edited_at
+        ? `Bearbeitet: ${format(parseISO(note.edited_at), 'dd.MM. HH:mm', { locale: de })}${note.edited_by_name ? ` von ${note.edited_by_name}` : ''}`
+        : null;
 
     return (
         <Card className={cn(
@@ -90,6 +94,9 @@ function NoteCard({ note, isManager, currentUserEmail, onEdit, onDelete, onPin, 
                     )}
                     {note.status === 'erledigt' && (
                         <Badge variant="outline" className="text-xs border-green-500/40 text-green-300">Erledigt</Badge>
+                    )}
+                    {editedStr && (
+                        <span className="text-xs text-muted-foreground italic">{editedStr}</span>
                     )}
                 </div>
 
@@ -241,22 +248,33 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.TeamNote.create(data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-notes'] })
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['team-notes'] }); toast.success('Notiz gespeichert'); },
+        onError: () => toast.error('Fehler beim Speichern')
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.TeamNote.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-notes'] })
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-notes'] }),
+        onError: () => toast.error('Fehler beim Aktualisieren')
     });
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.TeamNote.delete(id),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-notes'] })
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['team-notes'] }); toast.success('Notiz gelöscht'); },
+        onError: () => toast.error('Fehler beim Löschen')
     });
 
     const handleSave = async (form) => {
         if (editNote) {
-            await updateMutation.mutateAsync({ id: editNote.id, data: form });
+            await updateMutation.mutateAsync({
+                id: editNote.id,
+                data: {
+                    ...form,
+                    edited_by_name: currentUser?.full_name || currentUser?.email?.split('@')[0] || 'Unbekannt',
+                    edited_by_email: currentUser?.email || '',
+                    edited_at: new Date().toISOString(),
+                }
+            });
         } else {
             await createMutation.mutateAsync({
                 ...form,
@@ -280,7 +298,7 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
     const handleArchive = (note) => updateMutation.mutate({ id: note.id, data: { status: 'archiviert' } });
     const handleDelete = (id) => { if (confirm('Nachricht löschen?')) deleteMutation.mutate(id); };
     const handleConvertToTask = async (note) => {
-        if (!confirm(`Notiz als Aufgabe anlegen?\n\n"${note.title || note.message.slice(0, 60)}"`) ) return;
+        if (!confirm(`Notiz als Aufgabe anlegen?\n\n"${note.title || note.message.slice(0, 60)}"`)) return;
         await createTaskMutation.mutateAsync({
             title: note.title || note.message.slice(0, 80),
             description: note.message,
@@ -289,7 +307,7 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
             created_by: note.author_name || note.author_email || ''
         });
         await updateMutation.mutateAsync({ id: note.id, data: { status: 'erledigt' } });
-        import('sonner').then(({ toast }) => toast.success('Aufgabe erstellt'));
+        toast.success('Aufgabe erstellt');
     };
 
     const today = new Date().toISOString().split('T')[0];

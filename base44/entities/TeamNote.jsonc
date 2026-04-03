@@ -62,6 +62,19 @@
       "type": "boolean",
       "default": false,
       "description": "F\u00fcr n\u00e4chste Schicht"
+    },
+    "edited_by_name": {
+      "type": "string",
+      "description": "Zuletzt bearbeitet von (Name)"
+    },
+    "edited_by_email": {
+      "type": "string",
+      "description": "Zuletzt bearbeitet von (Email)"
+    },
+    "edited_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der letzten Bearbeitung"
     }
   },
   "required": [

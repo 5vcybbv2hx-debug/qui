@@ -323,7 +323,9 @@ export default function ArticleEditPage() {
                             <Label>Artikelbild</Label>
                             {formData.image_url ? (
                                 <div className="relative">
-                                    <img src={formData.image_url} alt="Vorschau" className="w-full h-32 object-cover rounded-lg" />
+                                    <div className="w-full aspect-square rounded-lg overflow-hidden bg-muted">
+                                        <img src={formData.image_url} alt="Vorschau" className="w-full h-full object-cover" />
+                                    </div>
                                     <div className="absolute top-2 right-2 flex gap-2">
                                         <Button type="button" variant="secondary" size="icon"
                                             onClick={() => { setTempImageUrl(formData.image_url); setImageEditorOpen(true); }}>
@@ -336,11 +338,11 @@ export default function ArticleEditPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center bg-muted/20">
+                                <div className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center bg-muted/20">
                                     <input type="file" accept="image/*" onChange={handleImageUpload}
                                         className="hidden" id="image-upload-edit" disabled={uploading} />
-                                    <label htmlFor="image-upload-edit" className="cursor-pointer">
-                                        <ImageIcon className="w-10 h-10 mx-auto mb-2 text-muted-foreground" />
+                                    <label htmlFor="image-upload-edit" className="cursor-pointer flex flex-col items-center gap-2">
+                                        <ImageIcon className="w-10 h-10 text-muted-foreground" />
                                         <p className="text-sm text-muted-foreground">
                                             {uploading ? 'Lädt hoch...' : 'Bild hochladen'}
                                         </p>

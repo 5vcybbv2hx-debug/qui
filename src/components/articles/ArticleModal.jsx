@@ -401,46 +401,31 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                         <Label>Artikelbild</Label>
                         {formData.image_url ? (
                             <div className="relative">
-                                <img 
-                                    src={formData.image_url} 
-                                    alt="Vorschau"
-                                    className="w-full h-32 object-cover rounded-lg"
-                                />
+                                <div className="w-full aspect-square rounded-lg overflow-hidden bg-muted">
+                                    <img
+                                        src={formData.image_url}
+                                        alt="Vorschau"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
                                 <div className="absolute top-2 right-2 flex gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="secondary"
-                                        size="icon"
-                                        onClick={() => {
-                                            setTempImageUrl(formData.image_url);
-                                            setImageEditorOpen(true);
-                                        }}
-                                    >
+                                    <Button type="button" variant="secondary" size="icon"
+                                        onClick={() => { setTempImageUrl(formData.image_url); setImageEditorOpen(true); }}>
                                         <Crop className="w-4 h-4" />
                                     </Button>
-                                    <Button
-                                        type="button"
-                                        variant="destructive"
-                                        size="icon"
-                                        onClick={() => setFormData({ ...formData, image_url: '' })}
-                                    >
+                                    <Button type="button" variant="destructive" size="icon"
+                                        onClick={() => setFormData({ ...formData, image_url: '' })}>
                                         <X className="w-4 h-4" />
                                     </Button>
                                 </div>
                             </div>
                         ) : (
-                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                    id="image-upload"
-                                    disabled={uploading}
-                                />
-                                <label htmlFor="image-upload" className="cursor-pointer">
-                                    <ImageIcon className="w-10 h-10 mx-auto mb-2 text-slate-400" />
-                                    <p className="text-sm text-slate-600">
+                            <div className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
+                                <input type="file" accept="image/*" onChange={handleImageUpload}
+                                    className="hidden" id="image-upload" disabled={uploading} />
+                                <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center gap-2">
+                                    <ImageIcon className="w-10 h-10 text-muted-foreground" />
+                                    <p className="text-sm text-muted-foreground">
                                         {uploading ? 'Lädt hoch...' : 'Bild hochladen'}
                                     </p>
                                 </label>

@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Pencil, Trash2, GripVertical, MapPin } from 'lucide-react';
+import { Pencil, Trash2, GripVertical, MapPin, Package } from 'lucide-react';
 import LazyImage from '@/components/ui/lazy-image';
 const ArticleCard = memo(function ArticleCard({ 
     article, 
@@ -49,13 +49,17 @@ const ArticleCard = memo(function ArticleCard({
                         className="mt-1"
                     />
                     <div className="flex-1">
-                        {article.image_url && (
-                            <LazyImage 
-                                src={article.image_url} 
-                                alt={article.name}
-                                className="w-full h-24 object-cover rounded-lg mb-2"
-                            />
-                        )}
+                        <div className="w-full aspect-square rounded-lg mb-2 overflow-hidden bg-slate-700 flex items-center justify-center">
+                            {article.image_url ? (
+                                <LazyImage
+                                    src={article.image_url}
+                                    alt={article.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <Package className="w-8 h-8 text-slate-500" />
+                            )}
+                        </div>
                         <h3 className="font-semibold text-white text-sm mb-1">{article.name}</h3>
                         {article.manufacturer && (
                             <p className="text-xs text-slate-400 mb-0.5">🏭 {article.manufacturer}</p>

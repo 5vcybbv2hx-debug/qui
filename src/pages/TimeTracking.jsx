@@ -77,7 +77,7 @@ export default function TimeTracking() {
             }
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
             setModalOpen(false);
             setSelectedEntry(null);
         }
@@ -86,7 +86,7 @@ export default function TimeTracking() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.TimeEntry.update(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
             setModalOpen(false);
             setSelectedEntry(null);
         }
@@ -95,7 +95,7 @@ export default function TimeTracking() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.TimeEntry.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
         }
     });
 
@@ -124,7 +124,7 @@ export default function TimeTracking() {
             return Promise.all(promises);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
         }
     });
 
@@ -178,11 +178,9 @@ export default function TimeTracking() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
         }
     });
-
-
 
     // Stempeluhr functions
     const clockInMutation = useMutation({
@@ -196,7 +194,7 @@ export default function TimeTracking() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['clockEntries']);
+            queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
         }
     });
 
@@ -255,8 +253,8 @@ export default function TimeTracking() {
             return Promise.all(promises);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['clockEntries']);
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
         }
     });
 
@@ -314,8 +312,8 @@ export default function TimeTracking() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['clockEntries']);
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
         }
     });
 

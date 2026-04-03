@@ -1,0 +1,83 @@
+{
+  "name": "Reservation",
+  "type": "object",
+  "properties": {
+    "customer_name": {
+      "type": "string",
+      "description": "Name des Gastes"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Telefonnummer"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-Mail"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Reservierung"
+    },
+    "time": {
+      "type": "string",
+      "description": "Uhrzeit (HH:MM)"
+    },
+    "guests": {
+      "type": "number",
+      "description": "Anzahl Personen"
+    },
+    "table": {
+      "type": "string",
+      "description": "Tischnummer"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Besondere W\u00fcnsche"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "vorgemerkt",
+        "best\u00e4tigt",
+        "storniert"
+      ],
+      "default": "vorgemerkt",
+      "description": "Status"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Archiviert"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wiederkehrende Reservierung"
+    },
+    "recurring_pattern": {
+      "type": "string",
+      "enum": [
+        "weekly",
+        "biweekly",
+        "monthly"
+      ],
+      "description": "Wiederholungsmuster"
+    },
+    "recurring_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Ende der Wiederholung"
+    },
+    "recurring_series_id": {
+      "type": "string",
+      "description": "ID der Wiederholungsserie"
+    }
+  },
+  "required": [
+    "customer_name",
+    "date",
+    "time",
+    "guests"
+  ]
+}

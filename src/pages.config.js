@@ -60,7 +60,6 @@ import Documents from './pages/Documents';
 import DrinkMenu from './pages/DrinkMenu';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
-import GuestReservationView from './pages/GuestReservationView';
 import Home from './pages/Home';
 import Inventory from './pages/Inventory';
 import LazyReports from './pages/LazyReports';
@@ -77,7 +76,6 @@ import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
 import PublicMenu from './pages/PublicMenu';
-import PublicReservation from './pages/PublicReservation';
 import QRCodes from './pages/QRCodes';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
@@ -141,7 +139,6 @@ const CORE_PAGES = {
     "DrinkMenu": DrinkMenu,
     "Employees": Employees,
     "Events": Events,
-    "GuestReservationView": GuestReservationView,
     "Home": Home,
     "Inventory": Inventory,
     "LazyReports": LazyReports,
@@ -158,7 +155,6 @@ const CORE_PAGES = {
     "PriceCalculator": PriceCalculator,
     "PublicDrinkMenu": PublicDrinkMenu,
     "PublicMenu": PublicMenu,
-    "PublicReservation": PublicReservation,
     "QRCodes": QRCodes,
     "Recipes": Recipes,
     "Reports": Reports,
@@ -210,6 +206,7 @@ const PUBLIC_PAGES = {
     "LegalPrivacy": LegalPrivacy,
     "LegalAGB": LegalAGB,
     "StorageLocationScan": StorageLocationScan,
+    // PublicReservation + GuestReservationView entfernt — nur interne Reservierungen
 };
 
 // Combined pages object (all accessible pages)

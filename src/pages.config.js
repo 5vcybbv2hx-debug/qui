@@ -153,7 +153,6 @@ const CORE_PAGES = {
     "Onboarding": Onboarding,
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
-    "PublicDrinkMenu": PublicDrinkMenu,
     "PublicMenu": PublicMenu,
     "QRCodes": QRCodes,
     "Recipes": Recipes,
@@ -201,10 +200,7 @@ const SPECIAL_PAGES_WITH_LAYOUT = {
 
 // Public pages: NO layout wrapper (guest/public access)
 const PUBLIC_PAGES = {
-    "ClosingDisplay": ClosingDisplay,
-    "LegalImprint": LegalImprint,
-    "LegalPrivacy": LegalPrivacy,
-    "LegalAGB": LegalAGB,
+    "PublicDrinkMenu": PublicDrinkMenu,
     "StorageLocationScan": StorageLocationScan,
     // PublicReservation + GuestReservationView entfernt — nur interne Reservierungen
 };

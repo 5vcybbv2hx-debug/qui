@@ -1,143 +1,335 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { Search, SlidersHorizontal, ChevronDown, ChevronRight, FileText, Users, Gift, TrendingDown, X } from 'lucide-react';
 import DayDetailModal from './DayDetailModal';
+import { cn } from '@/lib/utils';
 
-export default function DailyRevenueList({ revenues, timeEntries, tipDistributions, employees = [], onSelectDate, selectedDate }) {
-    const [detailRevenue, setDetailRevenue] = useState(null);
-    const employeeMap = new Map(employees.map(emp => [emp.id, emp]));
+const isDailyPaid = (emp) =>
+    emp?.role === 'Aushilfe' || (emp?.hourly_rate > 0 && emp?.contract_type === 'Minijob');
 
-    const getOperatingDate = (te) => {
-        const startHour = parseInt(te.start_time?.split(':')[0] || '12');
-        if (startHour < 9) {
-            const prev = new Date(te.date);
-            prev.setDate(prev.getDate() - 1);
-            return prev.toISOString().split('T')[0];
+// ── Build enriched day data ────────────────────────────────────────────────
+function buildDayData(rev, timeEntries, tipDistributions, employeeMap) {
+    const dateStr = rev.date;
+    const getOpDate = (te) => {
+        const h = parseInt(te.start_time?.split(':')[0] || '12');
+        if (h < 9) {
+            const p = new Date(te.date); p.setDate(p.getDate() - 1);
+            return p.toISOString().split('T')[0];
         }
         return te.date;
     };
 
-    // Letzte 30 Tage mit Daten
-    const last30Days = revenues.slice(0, 30).map(rev => {
-        const dateStr = rev.date;
-        const dayEntries = timeEntries.filter(te => getOperatingDate(te) === dateStr && te.status === 'genehmigt');
-        const staffCount = new Set(dayEntries.map(te => te.employee_id)).size;
-        const laborCost = dayEntries.reduce((sum, te) => {
-            const rate = employeeMap.get(te.employee_id)?.hourly_rate || te.hourly_rate || 0;
-            return sum + (te.total_hours * rate);
-        }, 0);
-        const tips = tipDistributions.find(td => td.date === dateStr);
+    const dayEntries = timeEntries.filter(te => getOpDate(te) === dateStr && te.status === 'genehmigt');
+    const staffCount = new Set(dayEntries.map(te => te.employee_id)).size;
+    const laborCost = dayEntries.reduce((sum, te) => {
+        const emp = employeeMap.get(te.employee_id);
+        if (!isDailyPaid(emp)) return sum;
+        const rate = emp?.hourly_rate || te.hourly_rate || 0;
+        return sum + te.total_hours * rate;
+    }, 0);
+    const revenue = rev.revenue || 0;
+    const ratio = revenue > 0 ? (laborCost / revenue) * 100 : null;
+    const tips = tipDistributions.find(td => td.date === dateStr);
+    const hasWarning = ratio !== null && ratio > 30;
 
-        return {
-            date: dateStr,
-            revenue: rev.revenue,
-            revenue_cash: rev.revenue_cash,
-            revenue_ec: rev.revenue_ec,
-            vat: rev.vat,
-            own_consumption: rev.own_consumption,
-            pdf_url: rev.pdf_url,
-            notes: rev.notes,
-            laborCost,
-            staffCount,
-            tips: tips?.total_tips || 0,
-            tipPercentage: tips?.tip_percentage || 0,
-            tipDistribution: tips || null
-        };
-    });
+    return {
+        date: dateStr,
+        revenue,
+        revenue_cash: rev.revenue_cash,
+        revenue_ec: rev.revenue_ec,
+        vat: rev.vat,
+        own_consumption: rev.own_consumption,
+        pdf_url: rev.pdf_url,
+        notes: rev.notes,
+        laborCost,
+        staffCount,
+        ratio,
+        hasWarning,
+        hasPDF: !!rev.pdf_url,
+        tips: tips?.total_tips || 0,
+        tipPercentage: tips?.tip_percentage || 0,
+        tipDistribution: tips || null,
+        _searchText: [
+            dateStr,
+            format(parseISO(dateStr), 'dd. MMMM yyyy EEEE', { locale: de }),
+            rev.notes || '',
+        ].join(' ').toLowerCase(),
+    };
+}
 
-    if (last30Days.length === 0) {
-        return null;
-    }
+// ── Month group header ─────────────────────────────────────────────────────
+function MonthHeader({ label, count, open, onToggle }) {
+    return (
+        <button
+            onClick={onToggle}
+            className="w-full flex items-center justify-between px-1 py-2 group"
+        >
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-foreground">{label}</span>
+                <span className="text-xs text-muted-foreground bg-secondary/60 px-2 py-0.5 rounded-full">{count}</span>
+            </div>
+            {open
+                ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+        </button>
+    );
+}
+
+// ── Day Card (mobile-first) ────────────────────────────────────────────────
+function DayCard({ day, isSelected, onClick }) {
+    const net = day.revenue > 0 ? day.revenue - day.laborCost : null;
+    return (
+        <Card
+            onClick={onClick}
+            className={cn(
+                'cursor-pointer border transition-all active:scale-[0.99]',
+                isSelected ? 'border-amber-500/60 bg-amber-500/5' : 'border-border bg-card hover:border-border/80',
+            )}
+        >
+            <CardContent className="px-3 py-3 space-y-2">
+                {/* Row 1: date + badges */}
+                <div className="flex items-start justify-between gap-2">
+                    <div>
+                        <p className="text-sm font-semibold text-foreground">
+                            {format(parseISO(day.date), 'EEE, dd. MMM', { locale: de })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            {format(parseISO(day.date), 'yyyy', { locale: de })}
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-1 justify-end">
+                        {day.hasPDF && (
+                            <Badge className="bg-blue-500/15 text-blue-400 text-[10px] px-1.5 py-0.5 h-auto">
+                                <FileText className="w-3 h-3 mr-0.5" />PDF
+                            </Badge>
+                        )}
+                        {day.hasWarning && (
+                            <Badge className="bg-red-500/15 text-red-400 text-[10px] px-1.5 py-0.5 h-auto">
+                                ⚠ {day.ratio?.toFixed(0)}%
+                            </Badge>
+                        )}
+                        {day.tips > 0 && (
+                            <Badge className="bg-purple-500/15 text-purple-400 text-[10px] px-1.5 py-0.5 h-auto">
+                                <Gift className="w-3 h-3 mr-0.5" />{day.tips.toFixed(0)} €
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+
+                {/* Row 2: KPIs */}
+                <div className="grid grid-cols-3 gap-2">
+                    <div className="text-center">
+                        <p className="text-[10px] text-muted-foreground">Umsatz</p>
+                        <p className="text-sm font-bold text-green-400">
+                            {day.revenue > 0 ? `${day.revenue.toFixed(0)} €` : '–'}
+                        </p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-[10px] text-muted-foreground">Personal</p>
+                        <p className={cn('text-sm font-bold', day.hasWarning ? 'text-red-400' : 'text-amber-400')}>
+                            {day.laborCost > 0 ? `${day.laborCost.toFixed(0)} €` : '–'}
+                        </p>
+                    </div>
+                    <div className="text-center">
+                        <p className="text-[10px] text-muted-foreground">Ergebnis</p>
+                        <p className={cn('text-sm font-bold', net !== null ? (net >= 0 ? 'text-green-400' : 'text-red-400') : 'text-muted-foreground')}>
+                            {net !== null ? `${net.toFixed(0)} €` : '–'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Notes preview */}
+                {day.notes && (
+                    <p className="text-xs text-muted-foreground truncate border-t border-border/40 pt-1.5">
+                        {day.notes}
+                    </p>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+// ── Filter chip ────────────────────────────────────────────────────────────
+function Chip({ label, active, onClick }) {
+    return (
+        <button
+            onClick={onClick}
+            className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-medium border transition-all min-h-[36px]',
+                active
+                    ? 'bg-amber-600 border-amber-600 text-white'
+                    : 'bg-secondary/40 border-border text-muted-foreground hover:text-foreground',
+            )}
+        >
+            {label}
+        </button>
+    );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────
+export default function DailyRevenueList({ revenues, timeEntries, tipDistributions, employees = [], onSelectDate, selectedDate }) {
+    const [detailRevenue, setDetailRevenue] = useState(null);
+    const [search, setSearch] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [filter, setFilter] = useState('all'); // all | warnings | pdf | tips | no-pdf
+    const [collapsedMonths, setCollapsedMonths] = useState(new Set());
+
+    const employeeMap = useMemo(() => new Map(employees.map(e => [e.id, e])), [employees]);
+
+    // Build all day data (all revenues, not just last 30)
+    const allDays = useMemo(() =>
+        revenues.map(rev => buildDayData(rev, timeEntries, tipDistributions, employeeMap))
+    , [revenues, timeEntries, tipDistributions, employeeMap]);
+
+    // Apply search + filter
+    const filtered = useMemo(() => {
+        let result = allDays;
+        if (search.trim()) {
+            const q = search.toLowerCase();
+            result = result.filter(d => d._searchText.includes(q));
+        }
+        if (filter === 'warnings') result = result.filter(d => d.hasWarning);
+        if (filter === 'pdf') result = result.filter(d => d.hasPDF);
+        if (filter === 'tips') result = result.filter(d => d.tips > 0);
+        if (filter === 'no-pdf') result = result.filter(d => !d.hasPDF && d.revenue > 0);
+        return result;
+    }, [allDays, search, filter]);
+
+    // Group by month key "yyyy-MM"
+    const grouped = useMemo(() => {
+        const map = new Map();
+        for (const day of filtered) {
+            const key = day.date.slice(0, 7); // "yyyy-MM"
+            if (!map.has(key)) map.set(key, []);
+            map.get(key).push(day);
+        }
+        // Sort groups: newest first; days within each group: newest first
+        return Array.from(map.entries())
+            .sort(([a], [b]) => b.localeCompare(a))
+            .map(([key, days]) => ({
+                key,
+                label: format(parseISO(key + '-01'), 'MMMM yyyy', { locale: de }),
+                days: days.sort((a, b) => b.date.localeCompare(a.date)),
+            }));
+    }, [filtered]);
+
+    const toggleMonth = (key) => {
+        setCollapsedMonths(prev => {
+            const next = new Set(prev);
+            next.has(key) ? next.delete(key) : next.add(key);
+            return next;
+        });
+    };
+
+    if (revenues.length === 0) return null;
+
+    const activeFilterCount = (search ? 1 : 0) + (filter !== 'all' ? 1 : 0);
 
     return (
         <>
-        <Card className="bg-slate-800 border-slate-700">
-            <CardHeader>
-                <CardTitle className="text-white">Letzte Einträge</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b border-slate-700">
-                                <th className="text-left py-2 px-2 text-slate-400 font-semibold">Datum</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold">Umsatz</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden md:table-cell">Bar</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden md:table-cell">EC</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden lg:table-cell">MwSt.</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden lg:table-cell">Eigenbedarf</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold">Personalkosten</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold">Personal</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold">Trinkgeld</th>
-                                <th className="text-right py-2 px-2 text-slate-400 font-semibold hidden md:table-cell">TG / Person</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {last30Days.map((day) => (
-                               <tr
-                                   key={day.date}
-                                   onClick={() => setDetailRevenue(day)}
-                                   className={`border-b border-slate-700 hover:bg-slate-700/50 cursor-pointer transition-colors ${day.date === selectedDate ? 'bg-slate-700/70 ring-1 ring-amber-500/50' : ''}`}
-                               >
-                                    <td className="py-3 px-2 text-white">
-                                        {format(parseISO(day.date), 'dd.MM.yyyy EEEE', { locale: de })}
-                                    </td>
-                                    <td className="text-right py-3 px-2 text-green-400 font-semibold">
-                                        {day.revenue.toFixed(2)} €
-                                    </td>
-                                    <td className="text-right py-3 px-2 text-slate-300 hidden md:table-cell">
-                                        {day.revenue_cash != null ? `${day.revenue_cash.toFixed(2)} €` : '-'}
-                                    </td>
-                                    <td className="text-right py-3 px-2 text-slate-300 hidden md:table-cell">
-                                        {day.revenue_ec != null ? `${day.revenue_ec.toFixed(2)} €` : '-'}
-                                    </td>
-                                    <td className="text-right py-3 px-2 text-slate-400 hidden lg:table-cell">
-                                        {day.vat != null ? `${day.vat.toFixed(2)} €` : '-'}
-                                    </td>
-                                    <td className="text-right py-3 px-2 text-slate-400 hidden lg:table-cell">
-                                        {day.own_consumption != null ? `${day.own_consumption.toFixed(2)} €` : '-'}
-                                    </td>
-                                    <td className="text-right py-3 px-2 text-amber-400">
-                                        {day.laborCost.toFixed(2)} €
-                                    </td>
-                                    <td className="text-right py-3 px-2 text-slate-400">
-                                        {day.staffCount}
-                                    </td>
-                                    <td className="text-right py-3 px-2">
-                                        {day.tips > 0 ? (
-                                            <span className="text-purple-400 font-semibold">
-                                                {day.tips.toFixed(2)} €
-                                            </span>
-                                        ) : (
-                                            <span className="text-slate-500">-</span>
-                                        )}
-                                    </td>
-                                    <td className="text-right py-3 px-2 hidden md:table-cell">
-                                        {day.tipDistribution?.tip_per_person != null ? (
-                                            <span className="text-purple-300">
-                                                {day.tipDistribution.tip_per_person.toFixed(2)} €
-                                            </span>
-                                        ) : (
-                                            <span className="text-slate-500">-</span>
-                                        )}
-                                    </td>
-                                    </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            {/* ── Section header + search ────────────────────────────────── */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">Verlauf</h2>
+                    <span className="text-xs text-muted-foreground">{revenues.length} Einträge</span>
                 </div>
-            </CardContent>
-        </Card>
 
-        <DayDetailModal
-            open={!!detailRevenue}
-            onOpenChange={(isOpen) => !isOpen && setDetailRevenue(null)}
-            revenue={detailRevenue}
-            tipDistribution={detailRevenue?.tipDistribution}
-            laborCost={detailRevenue?.laborCost || 0}
-            staffCount={detailRevenue?.staffCount || 0}
-        />
+                {/* Search bar */}
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Datum, Notiz suchen…"
+                            className="w-full h-11 pl-9 pr-9 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                        />
+                        {search && (
+                            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => setShowFilters(v => !v)}
+                        className={cn(
+                            'h-11 w-11 flex items-center justify-center rounded-xl border transition-colors',
+                            activeFilterCount > 0
+                                ? 'bg-amber-600 border-amber-600 text-white'
+                                : 'bg-card border-border text-muted-foreground hover:text-foreground',
+                        )}
+                    >
+                        <SlidersHorizontal className="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Filter chips — collapsible */}
+                {showFilters && (
+                    <div className="flex flex-wrap gap-2 pb-1">
+                        <Chip label="Alle" active={filter === 'all'} onClick={() => setFilter('all')} />
+                        <Chip label="⚠ Warnungen" active={filter === 'warnings'} onClick={() => setFilter('warnings')} />
+                        <Chip label="PDF vorhanden" active={filter === 'pdf'} onClick={() => setFilter('pdf')} />
+                        <Chip label="Mit Trinkgeld" active={filter === 'tips'} onClick={() => setFilter('tips')} />
+                        <Chip label="Kein PDF" active={filter === 'no-pdf'} onClick={() => setFilter('no-pdf')} />
+                    </div>
+                )}
+
+                {/* No results */}
+                {filtered.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                        Keine Einträge gefunden.
+                    </div>
+                )}
+
+                {/* Month groups */}
+                <div className="space-y-4">
+                    {grouped.map(({ key, label, days }, groupIdx) => {
+                        const isOpen = !collapsedMonths.has(key);
+                        return (
+                            <div key={key}>
+                                <MonthHeader
+                                    label={label}
+                                    count={days.length}
+                                    open={isOpen}
+                                    onToggle={() => toggleMonth(key)}
+                                />
+                                {isOpen && (
+                                    <div className="space-y-2 mt-1">
+                                        {days.map(day => (
+                                            <DayCard
+                                                key={day.date}
+                                                day={day}
+                                                isSelected={day.date === selectedDate}
+                                                onClick={() => {
+                                                    setDetailRevenue(day);
+                                                    onSelectDate?.(day.date);
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                                {/* Divider between groups */}
+                                {groupIdx < grouped.length - 1 && (
+                                    <div className="border-b border-border/40 mt-3" />
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <DayDetailModal
+                open={!!detailRevenue}
+                onOpenChange={(isOpen) => !isOpen && setDetailRevenue(null)}
+                revenue={detailRevenue}
+                tipDistribution={detailRevenue?.tipDistribution}
+                laborCost={detailRevenue?.laborCost || 0}
+                staffCount={detailRevenue?.staffCount || 0}
+            />
         </>
     );
 }

@@ -269,66 +269,42 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                 </aside>
 
-                {/* Mobile Bottom Navigation */}
+                {/* Mobile Bottom Navigation — 5 Hauptbereiche */}
                 <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
-                    <div className="flex items-end justify-around px-2 pt-2 pb-1">
+                    <div className="flex items-center justify-around px-1 pt-1 pb-1">
+                        {mainNavigation.map((area) => {
+                            const visiblePages = area.pages.filter(p => permissions[p.permission]);
+                            if (visiblePages.length === 0) return null;
 
-                        {/* Home */}
-                        {permissions.canViewDashboard && (
-                            <button
-                                onClick={() => { haptics.selection(); navigate(createPageUrl('Dashboard')); }}
-                                className={cn('flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all min-w-[52px]',
-                                    currentPageName === 'Dashboard' ? 'text-foreground' : 'text-muted-foreground'
-                                )}
-                            >
-                                <span className={cn('text-[10px] font-semibold order-2', currentPageName === 'Dashboard' && 'font-bold')}>Home</span>
-                                {React.createElement(mainNavigation[0].icon, { className: cn('w-6 h-6 order-1', currentPageName === 'Dashboard' && 'text-foreground') })}
-                                <span className="order-2 text-[10px] font-semibold sr-only">Home</span>
-                            </button>
-                        )}
-
-                        {/* Suche */}
-                        <button
-                            onClick={() => { haptics.selection(); setSearchOpen(true); }}
-                            className="flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-muted-foreground min-w-[52px]"
-                        >
-                            <Search className="w-6 h-6" />
-                            <span className="text-[10px] font-semibold">Suche</span>
-                        </button>
-
-                        {/* Scan — prominent center button */}
-                        <button
-                            onClick={() => { haptics.medium(); setScannerOpen(true); }}
-                            className="flex flex-col items-center gap-1 -mt-4 min-w-[64px]"
-                        >
-                            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/30" style={{ background: 'linear-gradient(135deg, var(--brand-from), var(--brand-via))' }}>
-                                <ScanLine className="w-7 h-7" style={{ color: 'var(--brand-fg)' }} />
-                            </div>
-                            <span className="text-[10px] font-semibold text-muted-foreground">Scan</span>
-                        </button>
-
-                        {/* Lager */}
-                        {permissions.canViewInventory || permissions.canViewWarehouse ? (
-                            <button
-                                onClick={() => { haptics.selection(); navigate(createPageUrl('Articles')); }}
-                                className={cn('flex flex-col items-center gap-1 py-1 px-3 rounded-xl transition-all min-w-[52px]',
-                                    ['Articles','Warehouse','Storage','Suppliers'].includes(currentPageName) ? 'text-foreground' : 'text-muted-foreground'
-                                )}
-                            >
-                                {React.createElement(mainNavigation.find(a => a.id === 'lager')?.icon || mainNavigation[0].icon, { className: 'w-6 h-6' })}
-                                <span className="text-[10px] font-semibold">Lager</span>
-                            </button>
-                        ) : <div className="min-w-[52px]" />}
-
-                        {/* Mehr */}
-                        <button
-                            onClick={() => { haptics.selection(); setSettingsOpen(true); }}
-                            className="flex flex-col items-center gap-1 py-1 px-3 rounded-xl text-muted-foreground min-w-[52px]"
-                        >
-                            <Settings className="w-6 h-6" />
-                            <span className="text-[10px] font-semibold">Mehr</span>
-                        </button>
-
+                            const isActive = activeTab === area.id;
+                            const AreaIcon = area.icon;
+                            return (
+                                <button
+                                    key={area.id}
+                                    onClick={() => {
+                                        haptics.selection();
+                                        setActiveTab(area.id);
+                                        const firstPage = visiblePages[0]?.page;
+                                        if (firstPage) navigate(createPageUrl(firstPage));
+                                    }}
+                                    className={cn(
+                                        'flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                        isActive ? 'text-foreground' : 'text-muted-foreground'
+                                    )}
+                                >
+                                    <div className={cn(
+                                        'flex items-center justify-center w-8 h-8 rounded-xl transition-all',
+                                        isActive && 'bg-foreground/10'
+                                    )}>
+                                        <AreaIcon className={cn('w-5 h-5 transition-transform', isActive && 'scale-110')} />
+                                    </div>
+                                    <span className={cn(
+                                        'text-[10px] leading-tight font-medium',
+                                        isActive && 'font-bold'
+                                    )}>{area.name}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
 

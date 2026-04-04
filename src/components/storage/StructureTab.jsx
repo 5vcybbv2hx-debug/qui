@@ -102,7 +102,7 @@ export default function StructureTab({ permissions }) {
   const canEdit = permissions.isManager;
 
   // ── Data ──
-  const { data: areas = [] } = useQuery({ queryKey: ['areas'], queryFn: () => base44.entities.Area.list('sort_order,name', 100) });
+  const { data: areas = [] } = useQuery({ queryKey: ['areas'], queryFn: () => base44.entities.Area.list('order,name', 100) });
   const { data: furniture = [] } = useQuery({ queryKey: ['furniture'], queryFn: () => base44.entities.Furniture.list('sort_order,name', 500) });
   const { data: containers = [] } = useQuery({ queryKey: ['containers-all'], queryFn: () => base44.entities.Container.list('sort_order,name', 500) });
 
@@ -118,7 +118,7 @@ export default function StructureTab({ permissions }) {
   const areaMut = useMutation({
     mutationFn: (d) => areaModal.data?.id ? base44.entities.Area.update(areaModal.data.id, d) : base44.entities.Area.create(d),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['areas'] }); setAreaModal({ open: false, data: null }); },
-    onError: (e) => { console.error(e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
+    onError: (e) => { console.error('Area save error:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
   });
 
   const deleteArea = useMutation({
@@ -139,7 +139,7 @@ export default function StructureTab({ permissions }) {
   const furnitureMut = useMutation({
     mutationFn: (d) => furnitureModal.data?.id ? base44.entities.Furniture.update(furnitureModal.data.id, d) : base44.entities.Furniture.create(d),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['furniture'] }); setFurnitureModal({ open: false, data: null }); },
-    onError: (e) => { console.error(e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
+    onError: (e) => { console.error('Furniture save error:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
   });
 
   const deleteFurniture = useMutation({
@@ -299,7 +299,7 @@ export default function StructureTab({ permissions }) {
         open={areaModal.open}
         onClose={() => setAreaModal({ open: false, data: null })}
         title={areaModal.data ? 'Bereich bearbeiten' : 'Neuer Bereich'}
-        onSave={() => areaMut.mutate({ name: areaForm.name.trim(), description: areaForm.description.trim(), is_active: true, sort_order: 0 })}
+        onSave={() => areaMut.mutate({ name: areaForm.name.trim(), description: areaForm.description?.trim() || '', is_active: true, order: 0 })}
         isPending={areaMut.isPending}
         canSave={!!areaForm.name.trim()}
       >
@@ -321,6 +321,7 @@ export default function StructureTab({ permissions }) {
         onSave={() => {
           const area = areas.find(a => a.id === furnitureForm.area_id);
           furnitureMut.mutate({ area_id: area.id, area_name: area.name, name: furnitureForm.name.trim(), type: furnitureForm.type, is_active: true, sort_order: 0 });
+
         }}
         isPending={furnitureMut.isPending}
         canSave={!!furnitureForm.area_id && !!furnitureForm.name.trim()}

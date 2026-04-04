@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Input } from '@/components/ui/input';
-import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info, Pencil, Check, X } from 'lucide-react';
+import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info, Pencil, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { format, parseISO, addDays, subDays, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
@@ -64,6 +64,30 @@ export default function DailyAnalysis() {
         queryKey: ['time-entries'],
         queryFn: () => base44.entities.TimeEntry.list('-date', 500),
         staleTime: 2 * 60 * 1000,
+    });
+
+    // ALL entries for selected date (including non-approved) for manual review
+    const allTodayEntries = useMemo(() => {
+        return timeEntries.filter(te => {
+            const opDate = (() => {
+                if (!te.start_time) return te.date;
+                const h = parseInt(te.start_time.split(':')[0]);
+                if (h < 9) {
+                    const d = new Date(te.date);
+                    d.setDate(d.getDate() - 1);
+                    return d.toISOString().split('T')[0];
+                }
+                return te.date;
+            })();
+            return opDate === selectedDate;
+        });
+    }, [timeEntries, selectedDate]);
+
+    const [showTimeImport, setShowTimeImport] = useState(false);
+
+    const approveEntryMutation = useMutation({
+        mutationFn: (id) => base44.entities.TimeEntry.update(id, { status: 'genehmigt' }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['time-entries'] }),
     });
 
     const { data: tipDistributions = [] } = useQuery({
@@ -500,6 +524,63 @@ export default function DailyAnalysis() {
                     </CardContent>
                 </Card>
             )}
+
+            {/* Manual time entry import */}
+            <Card className="bg-card border-border">
+                <button
+                    className="w-full px-4 pt-4 pb-4 flex items-center justify-between"
+                    onClick={() => setShowTimeImport(s => !s)}
+                >
+                    <div className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-amber-400" />
+                        <span className="text-sm font-semibold text-foreground">Zeiteinträge manuell abrufen</span>
+                        {allTodayEntries.filter(e => e.status !== 'genehmigt').length > 0 && (
+                            <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                {allTodayEntries.filter(e => e.status !== 'genehmigt').length}
+                            </span>
+                        )}
+                    </div>
+                    {showTimeImport ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+
+                {showTimeImport && (
+                    <CardContent className="px-4 pb-4 pt-0 space-y-2">
+                        {allTodayEntries.length === 0 ? (
+                            <p className="text-sm text-muted-foreground py-2 text-center">Keine Zeiteinträge für diesen Tag gefunden.</p>
+                        ) : (
+                            allTodayEntries.map(te => {
+                                const emp = employeeMap.get(te.employee_id);
+                                const isApproved = te.status === 'genehmigt';
+                                return (
+                                    <div key={te.id} className="flex items-center gap-3 py-2 border-b border-border/40 last:border-0">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-foreground">{te.employee_name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {te.start_time && te.end_time ? `${te.start_time} – ${te.end_time} · ` : ''}
+                                                {te.total_hours?.toFixed(2)}h
+                                                {emp?.hourly_rate ? ` · ${(te.total_hours * emp.hourly_rate).toFixed(2)} €` : ''}
+                                            </p>
+                                        </div>
+                                        {isApproved ? (
+                                            <span className="flex items-center gap-1 text-xs text-green-400 font-semibold shrink-0">
+                                                <CheckCircle2 className="w-3.5 h-3.5" />Genehmigt
+                                            </span>
+                                        ) : (
+                                            <Button size="sm"
+                                                onClick={() => approveEntryMutation.mutate(te.id)}
+                                                disabled={approveEntryMutation.isPending}
+                                                className="h-8 bg-green-600 hover:bg-green-700 text-white text-xs gap-1 shrink-0">
+                                                <Check className="w-3 h-3" />
+                                                Übernehmen
+                                            </Button>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </CardContent>
+                )}
+            </Card>
 
             {/* Personnel details */}
             {todayTimeEntriesWithRates.length > 0 && (

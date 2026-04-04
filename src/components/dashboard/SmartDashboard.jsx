@@ -5,6 +5,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamNotes from '@/components/dashboard/TeamNotes';
 import ShiftSwapMarketplaceCard from '@/components/shifts/ShiftSwapMarketplaceCard';
+import ActiveStaffPanel from '@/components/dashboard/ActiveStaffPanel';
+import TimeApprovalPanel from '@/components/dashboard/TimeApprovalPanel';
 import TimeEntryReview from '@/components/dashboard/TimeEntryReview';
 import AlarmPanel from '@/components/dashboard/AlarmPanel';
 import { cn } from '@/lib/utils';
@@ -16,6 +18,7 @@ import {
     Users, Calendar, Lightbulb, LogIn, LogOut, Wrench, TrendingDown, ShoppingCart
 } from 'lucide-react';
 import { format, parseISO, startOfWeek, endOfWeek, differenceInMinutes } from 'date-fns';
+import { isActiveEntry, getTodayOperationDate, getOperationDate, formatDuration, calcWorkMinutes, buildTimeEntryFromClock } from '@/lib/nightUtils';
 import { de } from 'date-fns/locale';
 import { getTaskStatus } from '@/lib/maintenanceUtils';
 
@@ -365,7 +368,7 @@ function PlanningTab({ upcomingEvents, upcomingShifts }) {
 
 // ─── Tab: MANAGER ────────────────────────────────────────────────────────────
 
-function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries, maintenanceTasks, todayShifts, todayEvents, isManager, currentUser }) {
+function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries, maintenanceTasks, todayShifts, todayEvents, isManager, currentUser, activeStaffCount }) {
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const lowStock = articles.filter(a => a.min_stock != null && a.current_stock <= a.min_stock);
     const openShopping = shopping.filter(s => s.status === 'offen');
@@ -379,6 +382,34 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
 
     return (
         <div className="space-y-5">
+            {/* Aktive Mitarbeiter */}
+            <section>
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-green-400" />
+                    Aktive Mitarbeiter
+                    {activeStaffCount > 0 && (
+                        <span className="ml-auto bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {activeStaffCount}
+                        </span>
+                    )}
+                </h3>
+                <ActiveStaffPanel />
+            </section>
+
+            {/* Zeiten genehmigen */}
+            <section>
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <CheckSquare className="w-4 h-4 text-amber-400" />
+                    Zeiten zur Genehmigung
+                    {pendingTimeEntries.length > 0 && (
+                        <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {pendingTimeEntries.length}
+                        </span>
+                    )}
+                </h3>
+                <TimeApprovalPanel />
+            </section>
+
             {/* Alarm-Panel */}
             <AlarmPanel
                 pendingTimeEntries={pendingTimeEntries}
@@ -450,11 +481,13 @@ function ClockWidget({ currentEmployee }) {
 
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clock-entries'],
-        queryFn: () => base44.entities.ClockEntry.list('-clock_in')
+        queryFn: () => base44.entities.ClockEntry.list('-clock_in', 200),
+        refetchInterval: 60000,
     });
 
+    // Night-safe: find active entry by status, not by date
     const activeClockEntry = clockEntries.find(e =>
-        e.employee_id === currentEmployee?.id && e.status === 'clocked_in'
+        e.employee_id === currentEmployee?.id && isActiveEntry(e)
     );
 
     const clockInMutation = useMutation({
@@ -462,31 +495,36 @@ function ClockWidget({ currentEmployee }) {
             employee_id: currentEmployee.id,
             employee_name: currentEmployee.name,
             clock_in: new Date().toISOString(),
-            status: 'clocked_in'
+            status: 'clocked_in',
         }),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clock-entries'] })
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clock-entries'] }),
     });
 
     const clockOutMutation = useMutation({
         mutationFn: async (entryId) => {
             const entry = clockEntries.find(e => e.id === entryId);
-            const clockOutTime = new Date();
-            const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
+            const now = new Date().toISOString();
+            const timeEntryData = buildTimeEntryFromClock(entry, now);
+            const totalMinutes = calcWorkMinutes(entry.clock_in, now);
             const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
             await base44.entities.ClockEntry.update(entryId, {
-                clock_out: clockOutTime.toISOString(),
+                clock_out: now,
                 total_hours: totalHours,
-                status: 'clocked_out'
+                status: 'clocked_out',
             });
+            await base44.entities.TimeEntry.create(timeEntryData);
         },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clock-entries'] })
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['clock-entries'] });
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+        },
     });
 
     if (!currentEmployee) return null;
 
     const getWorkingDuration = (clockIn) => {
-        const minutes = differenceInMinutes(new Date(), new Date(clockIn));
-        return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+        const minutes = calcWorkMinutes(clockIn, new Date());
+        return formatDuration(minutes);
     };
 
     return (
@@ -585,6 +623,9 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
         queryFn: () => base44.entities.VacationRequest.list('-created_date', 50),
         enabled: isManager
     });
+
+    // Night-safe today = operation date (not calendar date)
+    const todayOperationDate = getTodayOperationDate();
 
     // Derived
     const todayShifts = shifts.filter(s => s.date === today);
@@ -764,6 +805,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             todayEvents={todayEvents}
                             isManager={isManager}
                             currentUser={currentUser}
+                            activeStaffCount={0}
                         />
                     )}
                 </div>

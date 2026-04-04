@@ -553,6 +553,7 @@ export default function GuestHub() {
                 onSave={handleSave}
                 onDelete={handleDelete}
                 canDelete={permissions.canDeleteReservations}
+                isManager={permissions.isManager}
             />
 
             {/* Table edit modal */}

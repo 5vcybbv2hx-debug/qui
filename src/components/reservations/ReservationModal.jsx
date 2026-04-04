@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { haptics } from "@/components/utils/haptics";
 import MultiRoomFloorPlanEditor from '@/components/seating/MultiRoomFloorPlanEditor';
 
-export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false }) {
+export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false, isManager = false }) {
     const queryClient = useQueryClient();
     const [showFloorPlan, setShowFloorPlan] = useState(false);
     const [formData, setFormData] = useState({
@@ -43,9 +43,11 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
     // No bulk-create needed — one record per series, always the next future date.
     // The series_id links history together in the archive.
 
-    const hasEventOnDate = formData.date && events.some(e => 
+    const hasEventOnDate = formData.date && events.some(e =>
         isSameDay(new Date(e.date), new Date(formData.date)) && e.status !== 'abgesagt'
     );
+    // Managers can override the event lock — only block for non-managers
+    const isBlocked = hasEventOnDate && !isManager;
 
     useEffect(() => {
         if (reservation) {
@@ -83,7 +85,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (hasEventOnDate) {
+        if (isBlocked) {
             return;
         }
         
@@ -106,11 +108,19 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
 
                 <MobileModalContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {hasEventOnDate && (
-                        <Alert className="bg-red-50 border-red-200">
-                            <AlertCircle className="w-4 h-4 text-red-600" />
-                            <AlertDescription className="text-red-800">
-                                An diesem Tag findet ein Event statt. Reservierungen können nicht angenommen werden.
+                    {hasEventOnDate && isBlocked && (
+                        <Alert className="bg-red-500/10 border-red-500/30">
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                            <AlertDescription className="text-red-400">
+                                An diesem Tag findet ein Event statt. Reservierungen sind für Gäste gesperrt.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    {hasEventOnDate && isManager && (
+                        <Alert className="bg-amber-500/10 border-amber-500/30">
+                            <AlertCircle className="w-4 h-4 text-amber-500" />
+                            <AlertDescription className="text-amber-400">
+                                Reservierungen sind für Gäste gesperrt. Als Manager kannst du trotzdem manuell eintragen.
                             </AlertDescription>
                         </Alert>
                     )}
@@ -122,7 +132,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                             onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
                             placeholder="Name des Gastes"
                             required
-                            disabled={hasEventOnDate}
+                            disabled={isBlocked}
                         />
                     </div>
 
@@ -295,10 +305,11 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                         <Button type="button" variant="outline" onClick={onClose} className="flex-1 h-11">
                             Abbrechen
                         </Button>
-                        <Button 
-                            type="submit" 
+                        <Button
+                            type="submit"
                             className="flex-1 h-11 bg-amber-600 hover:bg-amber-700"
-                            disabled={hasEventOnDate}
+                            disabled={isBlocked}
+                            onClick={handleSubmit}
                         >
                             {reservation
                                 ? 'Speichern'

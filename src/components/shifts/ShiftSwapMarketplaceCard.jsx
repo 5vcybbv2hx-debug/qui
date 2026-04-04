@@ -16,7 +16,7 @@ const MAX_VISIBLE = 4;
 
 export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
     const queryClient = useQueryClient();
-    const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(true);
     const [showAll, setShowAll] = useState(false);
 
     const { data: allRequests = [] } = useQuery({
@@ -45,10 +45,11 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
         isRelevantDate(r)
     );
 
-    // Fremde offene Marketplace-Anfragen (nicht meine, explizit Marketplace, passendes Datum)
+    // Fremde offene Marketplace-Anfragen (nicht meine, passendes Datum)
+    // Zeigt sowohl Marketplace-Anfragen als auch direkte Anfragen an mich
     const openRequests = allRequests.filter(r =>
         r.requesting_employee_id !== currentEmployee?.id &&
-        r.marketplace === true &&
+        (r.marketplace === true || r.target_employee_id === currentEmployee?.id) &&
         isOpen(r) &&
         isRelevantDate(r)
     );

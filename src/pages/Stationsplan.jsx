@@ -17,19 +17,19 @@ import { toast } from 'sonner';
 const DEFAULT_AREAS = [
     {
         name: 'Nichtraucher',
-        roles: ['Service', 'Theke', 'Nachschub', 'Spülen'],
+        roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Zusatz'],
         color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30',
         badge: 'bg-blue-500/20 text-blue-300'
     },
     {
         name: 'Raucher',
-        roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Türe'],
+        roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Türe', 'Zusatz'],
         color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30',
         badge: 'bg-orange-500/20 text-orange-300'
     },
     {
         name: 'Tunnel',
-        roles: ['Service', 'Theke', 'Nachschub', 'Spülen'],
+        roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Zusatz'],
         color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30',
         badge: 'bg-purple-500/20 text-purple-300'
     },
@@ -104,6 +104,7 @@ export default function Stationsplan() {
     // assignments: { [employeeId]: { area, role, secondary_role, note, id } }
     const [assignments, setAssignments] = useState({});
     const [notes, setNotes] = useState({});
+    const [areaNotes, setAreaNotes] = useState({});
 
     // Load all shifts for the selected date
     const { data: shiftsForDay = [] } = useQuery({
@@ -161,10 +162,12 @@ export default function Stationsplan() {
     React.useEffect(() => {
         if (existingPlans.length > 0) {
             setPlanId(existingPlans[0].id);
+            try { setAreaNotes(JSON.parse(existingPlans[0].area_notes || '{}')); } catch { setAreaNotes({}); }
         } else {
             setPlanId(null);
             setAssignments({});
             setNotes({});
+            setAreaNotes({});
         }
     }, [existingPlans]);
 
@@ -190,12 +193,13 @@ export default function Stationsplan() {
                     date: selectedDate,
                     shift_id: selectedShiftId || null,
                     shift_name: shiftOptions.find(s => s.id === selectedShiftId)?.shift_type || '',
-                    status
+                    status,
+                    area_notes: JSON.stringify(areaNotes)
                 });
                 pid = plan.id;
                 setPlanId(pid);
             } else {
-                await base44.entities.Stationsplan.update(pid, { status });
+                await base44.entities.Stationsplan.update(pid, { status, area_notes: JSON.stringify(areaNotes) });
             }
             // Upsert all assignments
             for (const emp of employeesInShift) {
@@ -404,27 +408,39 @@ export default function Stationsplan() {
                                             </span>
                                         </div>
                                         <div className="space-y-2">
-                                            {area.roles.map(role => (
-                                                <div key={role}>
-                                                    <div className="flex items-center gap-1.5 mb-1">
-                                                        <Briefcase className="w-3 h-3 text-muted-foreground" />
-                                                        <span className="text-xs text-muted-foreground font-medium">{role}</span>
-                                                    </div>
-                                                    <SlotDropZone
-                                                        area={area.name}
-                                                        role={role}
-                                                        assigned={(slotMap[slotKey(area.name, role)] || []).map(id => {
-                                                            const e = getEmpById(id);
-                                                            return e ? { id, employee_name: e.employee_name } : null;
-                                                        }).filter(Boolean)}
-                                                        onRemove={removeFromSlot}
-                                                    />
-                                                </div>
-                                            ))}
+                                             {area.roles.map(role => (
+                                                 <div key={role}>
+                                                     <div className="flex items-center gap-1.5 mb-1">
+                                                         <Briefcase className="w-3 h-3 text-muted-foreground" />
+                                                         <span className="text-xs text-muted-foreground font-medium">{role}</span>
+                                                     </div>
+                                                     <SlotDropZone
+                                                         area={area.name}
+                                                         role={role}
+                                                         assigned={(slotMap[slotKey(area.name, role)] || []).map(id => {
+                                                             const e = getEmpById(id);
+                                                             return e ? { id, employee_name: e.employee_name } : null;
+                                                         }).filter(Boolean)}
+                                                         onRemove={removeFromSlot}
+                                                     />
+                                                 </div>
+                                             ))}
+                                             <div className="pt-1">
+                                                 <div className="flex items-center gap-1.5 mb-1">
+                                                     <span className="text-xs text-muted-foreground font-medium">Zusatzinfo</span>
+                                                 </div>
+                                                 <textarea
+                                                     rows={2}
+                                                     placeholder="Zusatzinformationen für diesen Bereich…"
+                                                     value={areaNotes[area.name] || ''}
+                                                     onChange={e => setAreaNotes(prev => ({ ...prev, [area.name]: e.target.value }))}
+                                                     className="w-full rounded-lg border border-dashed border-slate-600 bg-slate-800/40 px-2 py-1.5 text-xs text-foreground placeholder:text-slate-500 resize-none focus:outline-none focus:border-amber-400"
+                                                 />
+                                             </div>
+                                         </div>
+                                        </Card>
+                                        ))}
                                         </div>
-                                    </Card>
-                                ))}
-                            </div>
 
                             {/* Pool */}
                             <Card className="p-4">

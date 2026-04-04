@@ -15,6 +15,7 @@ import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
 import TipCalculator from '@/components/dailyanalysis/TipCalculator.jsx';
 import DailyRevenueList from '@/components/dailyanalysis/DailyRevenueList.jsx';
 import InsightsPanel from '@/components/dailyanalysis/InsightsPanel.jsx';
+import PeriodAnalysis from '@/components/dailyanalysis/PeriodAnalysis.jsx';
 import { cn } from '@/lib/utils';
 
 // An employee is "daily-paid" (Aushilfe) if their role is Aushilfe OR they have an hourly_rate but no monthly contract
@@ -49,6 +50,7 @@ export default function DailyAnalysis() {
     const [reanalyzingAll, setReanalyzingAll] = useState(false);
     const [reanalyzeProgress, setReanalyzeProgress] = useState({ done: 0, total: 0, errors: [] });
     const [reanalyzeOpen, setReanalyzeOpen] = useState(false);
+    const [viewMode, setViewMode] = useState('tag'); // 'tag' | 'week' | 'month' | 'quarter' | 'year'
     const [editingManual, setEditingManual] = useState(null); // 'daily' | 'fulltime' | null
     const [manualInput, setManualInput] = useState('');
     const [savingManual, setSavingManual] = useState(false);
@@ -258,7 +260,7 @@ export default function DailyAnalysis() {
             <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-3">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Tagesanalyse</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Analyse</h1>
                         <p className="text-sm text-muted-foreground">Z-Abschlag · Personal · Trinkgeld</p>
                     </div>
                     <Button size="sm" variant="outline"
@@ -269,6 +271,16 @@ export default function DailyAnalysis() {
                         {reanalyzingAll ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
                         PDFs ({dailyRevenues.filter(r => r.pdf_url).length})
                     </Button>
+                </div>
+
+                {/* View mode tabs */}
+                <div className="flex gap-1 p-1 bg-card border border-border rounded-xl">
+                    {[{k:'tag',l:'Tag'},{k:'week',l:'Woche'},{k:'month',l:'Monat'},{k:'quarter',l:'Quartal'},{k:'year',l:'Jahr'}].map(({k,l}) => (
+                        <button key={k} onClick={() => setViewMode(k)}
+                            className={cn('flex-1 py-2 text-xs font-semibold rounded-lg transition-all',
+                                viewMode === k ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            )}>{l}</button>
+                    ))}
                 </div>
 
                 {/* Progress */}
@@ -332,8 +344,19 @@ export default function DailyAnalysis() {
                 </div>
             </div>
 
-            {/* Insights Panel — Top issues & status */}
-            <InsightsPanel
+            {/* Period analysis — shown instead of day view when not 'tag' */}
+            {viewMode !== 'tag' && (
+                <PeriodAnalysis
+                    period={viewMode}
+                    selectedDate={selectedDate}
+                    dailyRevenues={dailyRevenues}
+                    timeEntries={timeEntries}
+                    tipDistributions={tipDistributions}
+                    employees={employees}
+                />
+            )}
+
+            {viewMode === 'tag' && <InsightsPanel
                 revenue={revenue}
                 dailyLaborCost={dailyLaborCost}
                 fullTimeLaborCost={fullTimeLaborCost}
@@ -344,9 +367,12 @@ export default function DailyAnalysis() {
                 staffCount={staffCount}
                 dailyTimeEntriesCount={todayTimeEntriesWithRates.length}
                 hasRevenue={!!todayRevenue}
-            />
+            />}
 
-            {/* KPI Grid: 2 cols on mobile */}
+            {viewMode === 'tag' && (
+            <div className="space-y-4">
+
+            {/* KPI Grid */}
             <div className="grid grid-cols-2 gap-3">
                 {/* Revenue */}
                 <KpiCard icon={DollarSign} label="Tagesumsatz" value={revenue > 0 ? `${revenue.toFixed(2)} €` : '–'} color="text-green-400"
@@ -437,7 +463,7 @@ export default function DailyAnalysis() {
                 </KpiCard>
             </div>
 
-            {/* Bar minus Personnel — prominent */}
+            {/* Bar minus Personnel */}
             {revenue > 0 && (
                 <Card className={cn(
                     'border-2',
@@ -542,7 +568,6 @@ export default function DailyAnalysis() {
                     </div>
                     {showTimeImport ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </button>
-
                 {showTimeImport && (
                     <CardContent className="px-4 pb-4 pt-0 space-y-2">
                         {allTodayEntries.length === 0 ? (
@@ -649,13 +674,16 @@ export default function DailyAnalysis() {
                 </Card>
             )}
 
-            {/* History */}
+            </div>
+            )}
+
+            {/* History — always visible */}
             <DailyRevenueList
                 revenues={dailyRevenues}
                 timeEntries={timeEntries}
                 tipDistributions={tipDistributions}
                 employees={employees}
-                onSelectDate={setSelectedDate}
+                onSelectDate={(d) => { setSelectedDate(d); setViewMode('tag'); }}
                 selectedDate={selectedDate}
             />
 

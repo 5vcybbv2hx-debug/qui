@@ -1,0 +1,51 @@
+{
+  "name": "DailyRevenue",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum des Z-Abschlags"
+    },
+    "revenue": {
+      "type": "number",
+      "description": "Tagesumsatz in Euro (Gesamt)"
+    },
+    "revenue_cash": {
+      "type": "number",
+      "description": "Umsatz Bar (Bargeld)"
+    },
+    "revenue_ec": {
+      "type": "number",
+      "description": "Umsatz EC-Karte"
+    },
+    "vat": {
+      "type": "number",
+      "description": "Umsatzsteuer in Euro"
+    },
+    "own_consumption": {
+      "type": "number",
+      "description": "Eigenbedarf in Euro"
+    },
+    "manual_labor_cost_daily": {
+      "type": "number",
+      "description": "Manuelle Personalkosten Aushilfen (\u00fcberschreibt berechnete Werte)"
+    },
+    "manual_labor_cost_fulltime": {
+      "type": "number",
+      "description": "Manuelle Personalkosten Festangestellte (\u00fcberschreibt berechnete Werte)"
+    },
+    "pdf_url": {
+      "type": "string",
+      "description": "URL zur hochgeladenen Z-Abschlag PDF"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zum Z-Abschlag"
+    }
+  },
+  "required": [
+    "date",
+    "revenue"
+  ]
+}

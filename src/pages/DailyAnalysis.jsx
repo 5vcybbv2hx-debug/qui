@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info, Pencil, Check, X } from 'lucide-react';
 import { format, parseISO, addDays, subDays, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
@@ -48,6 +49,9 @@ export default function DailyAnalysis() {
     const [reanalyzingAll, setReanalyzingAll] = useState(false);
     const [reanalyzeProgress, setReanalyzeProgress] = useState({ done: 0, total: 0, errors: [] });
     const [reanalyzeOpen, setReanalyzeOpen] = useState(false);
+    const [editingManual, setEditingManual] = useState(null); // 'daily' | 'fulltime' | null
+    const [manualInput, setManualInput] = useState('');
+    const [savingManual, setSavingManual] = useState(false);
     const queryClient = useQueryClient();
 
     const { data: dailyRevenues = [] } = useQuery({
@@ -137,9 +141,39 @@ export default function DailyAnalysis() {
     const dailyPaidEntries = todayTimeEntriesWithRates.filter(e => e._isDaily);
     const fullTimeEntries = todayTimeEntriesWithRates.filter(e => !e._isDaily);
 
-    const dailyLaborCost = dailyPaidEntries.reduce((s, e) => s + e.cost, 0);
-    const fullTimeLaborCost = fullTimeEntries.reduce((s, e) => s + e.cost, 0);
+    const calculatedDailyLaborCost = dailyPaidEntries.reduce((s, e) => s + e.cost, 0);
+    const calculatedFullTimeLaborCost = fullTimeEntries.reduce((s, e) => s + e.cost, 0);
+
+    // Use manual values if set, otherwise use calculated
+    const dailyLaborCost = todayRevenue?.manual_labor_cost_daily ?? calculatedDailyLaborCost;
+    const fullTimeLaborCost = todayRevenue?.manual_labor_cost_fulltime ?? calculatedFullTimeLaborCost;
     const totalLaborCost = dailyLaborCost + fullTimeLaborCost;
+
+    const hasManualdaily = todayRevenue?.manual_labor_cost_daily != null;
+    const hasManualFulltime = todayRevenue?.manual_labor_cost_fulltime != null;
+
+    const saveManualCost = async (type) => {
+        const val = parseFloat(manualInput.replace(',', '.'));
+        if (isNaN(val) || val < 0) return;
+        setSavingManual(true);
+        const field = type === 'daily' ? 'manual_labor_cost_daily' : 'manual_labor_cost_fulltime';
+        if (todayRevenue?.id) {
+            await base44.entities.DailyRevenue.update(todayRevenue.id, { [field]: val });
+        } else {
+            await base44.entities.DailyRevenue.create({ date: selectedDate, revenue: 0, [field]: val });
+        }
+        queryClient.invalidateQueries({ queryKey: ['daily-revenues'] });
+        setSavingManual(false);
+        setEditingManual(null);
+    };
+
+    const clearManualCost = async (type) => {
+        const field = type === 'daily' ? 'manual_labor_cost_daily' : 'manual_labor_cost_fulltime';
+        if (todayRevenue?.id) {
+            await base44.entities.DailyRevenue.update(todayRevenue.id, { [field]: null });
+            queryClient.invalidateQueries({ queryKey: ['daily-revenues'] });
+        }
+    };
 
     const revenue = todayRevenue?.revenue || 0;
     const barMinusPersonnel = revenue > 0 ? revenue - dailyLaborCost : null;
@@ -310,20 +344,72 @@ export default function DailyAnalysis() {
 
                 {/* Daily paid labor */}
                 <KpiCard icon={Users} label="Aushilfen Personal"
-                    value={dailyPaidEntries.length > 0 ? `${dailyLaborCost.toFixed(2)} €` : '–'}
+                    value={`${dailyLaborCost.toFixed(2)} €`}
                     color="text-amber-400"
-                    sub={dailyPaidEntries.length > 0
+                    sub={hasManualdaily ? '✎ Manuell eingetragen' : (dailyPaidEntries.length > 0
                         ? `${new Set(dailyPaidEntries.map(e => e.employee_id)).size} Pers. · ${dailyPaidEntries.reduce((s, e) => s + e.total_hours, 0).toFixed(1)}h${dailyRatio !== null ? ` · ${dailyRatio.toFixed(1)}%` : ''}`
-                        : 'Keine täglichen Aushilfen'}>
+                        : 'Keine Zeiteinträge')}>
+                    {editingManual === 'daily' ? (
+                        <div className="mt-2 flex gap-1">
+                            <Input type="number" min={0} step={0.01} autoFocus
+                                className="h-8 text-sm flex-1" placeholder="0.00"
+                                value={manualInput} onChange={e => setManualInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveManualCost('daily'); if (e.key === 'Escape') setEditingManual(null); }} />
+                            <Button size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700" onClick={() => saveManualCost('daily')} disabled={savingManual}>
+                                <Check className="w-3 h-3" />
+                            </Button>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setEditingManual(null)}>
+                                <X className="w-3 h-3" />
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="mt-2 flex gap-1">
+                            <Button size="sm" variant="outline" className="flex-1 h-8 text-xs"
+                                onClick={() => { setEditingManual('daily'); setManualInput(dailyLaborCost > 0 ? dailyLaborCost.toFixed(2) : ''); }}>
+                                <Pencil className="w-3 h-3 mr-1" />Manuell
+                            </Button>
+                            {hasManualdaily && (
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => clearManualCost('daily')} title="Manuellen Wert löschen">
+                                    <X className="w-3 h-3" />
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </KpiCard>
 
-                {/* Full-time labor — informational */}
+                {/* Full-time labor */}
                 <KpiCard icon={Users} label="Festangestellte"
-                    value={fullTimeEntries.length > 0 ? `${fullTimeLaborCost.toFixed(2)} €` : '–'}
+                    value={`${fullTimeLaborCost.toFixed(2)} €`}
                     color="text-blue-400"
-                    sub={fullTimeEntries.length > 0
+                    sub={hasManualFulltime ? '✎ Manuell eingetragen' : (fullTimeEntries.length > 0
                         ? `${new Set(fullTimeEntries.map(e => e.employee_id)).size} Pers. · nur Info`
-                        : 'Nicht in Tageskalkulation'}>
+                        : 'Keine Zeiteinträge')}>
+                    {editingManual === 'fulltime' ? (
+                        <div className="mt-2 flex gap-1">
+                            <Input type="number" min={0} step={0.01} autoFocus
+                                className="h-8 text-sm flex-1" placeholder="0.00"
+                                value={manualInput} onChange={e => setManualInput(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveManualCost('fulltime'); if (e.key === 'Escape') setEditingManual(null); }} />
+                            <Button size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700" onClick={() => saveManualCost('fulltime')} disabled={savingManual}>
+                                <Check className="w-3 h-3" />
+                            </Button>
+                            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setEditingManual(null)}>
+                                <X className="w-3 h-3" />
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="mt-2 flex gap-1">
+                            <Button size="sm" variant="outline" className="flex-1 h-8 text-xs"
+                                onClick={() => { setEditingManual('fulltime'); setManualInput(fullTimeLaborCost > 0 ? fullTimeLaborCost.toFixed(2) : ''); }}>
+                                <Pencil className="w-3 h-3 mr-1" />Manuell
+                            </Button>
+                            {hasManualFulltime && (
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => clearManualCost('fulltime')} title="Manuellen Wert löschen">
+                                    <X className="w-3 h-3" />
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </KpiCard>
             </div>
 

@@ -1,83 +1,69 @@
 /**
- * StateDisplay.jsx
- * Unified component for Loading / Empty / Error states.
- * Eliminates the need to write these patterns inline on every page.
+ * Unified Loading / Error / Empty state components.
+ * Use these app-wide for consistent feedback.
+ */
+import { AlertCircle, PackageOpen, Loader2 } from 'lucide-react';
+
+export function LoadingState({ text = 'Lädt…', className = '' }) {
+  return (
+    <div className={`flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground ${className}`}>
+      <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+      <p className="text-sm font-medium">{text}</p>
+    </div>
+  );
+}
+
+export function ErrorState({ text = 'Fehler beim Laden.', retry, className = '' }) {
+  return (
+    <div className={`rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center ${className}`}>
+      <AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" />
+      <p className="text-sm font-semibold text-destructive">{text}</p>
+      {retry && (
+        <button onClick={retry} className="mt-3 text-xs text-muted-foreground underline hover:text-foreground">
+          Erneut versuchen
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function EmptyState({ icon: IconComponent, title = 'Keine Einträge', description, action, className = '' }) {
+  const Icon = IconComponent || PackageOpen;
+  return (
+    <div className={`rounded-xl border border-border bg-card p-8 text-center ${className}`}>
+      <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+      <p className="font-semibold text-foreground">{title}</p>
+      {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
+      {action && <div className="mt-4">{action}</div>}
+    </div>
+  );
+}
+
+/**
+ * Guard component: renders children only when data is ready.
+ * Shows loading/error/empty states automatically.
  *
  * Usage:
- *   <StateDisplay loading={isLoading} error={error} empty={!data.length} emptyMessage="Keine Einträge" />
- *   // renders children when none of the above conditions are true
- *   <StateDisplay loading={isLoading}>
- *     <MyContent />
- *   </StateDisplay>
+ *   <QueryState isLoading={...} isError={...} data={items} emptyText="Keine Artikel.">
+ *     {(data) => data.map(...)}
+ *   </QueryState>
  */
-import { Loader2, AlertCircle, Inbox, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { friendlyMessage } from '@/lib/errorHandler';
-
-// ── Sub-components (also exported for standalone use) ─────────────────────────
-
-export function LoadingState({ message = 'Wird geladen…', className }) {
-    return (
-        <div className={cn('flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground', className)}>
-            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-            <p className="text-sm">{message}</p>
-        </div>
-    );
-}
-
-export function ErrorState({ error, message, onRetry, className }) {
-    const display = message ?? friendlyMessage(error);
-    return (
-        <div className={cn('flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground', className)}>
-            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="w-6 h-6 text-destructive" />
-            </div>
-            <p className="text-sm text-center max-w-xs">{display}</p>
-            {onRetry && (
-                <Button variant="outline" size="sm" onClick={onRetry} className="gap-2 mt-1">
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Erneut versuchen
-                </Button>
-            )}
-        </div>
-    );
-}
-
-export function EmptyState({ message = 'Keine Einträge vorhanden', icon: Icon = Inbox, action, actionLabel, className }) {
-    return (
-        <div className={cn('flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground', className)}>
-            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                <Icon className="w-6 h-6" />
-            </div>
-            <p className="text-sm text-center max-w-xs">{message}</p>
-            {action && actionLabel && (
-                <Button variant="outline" size="sm" onClick={action} className="mt-1">
-                    {actionLabel}
-                </Button>
-            )}
-        </div>
-    );
-}
-
-// ── Main orchestrator ─────────────────────────────────────────────────────────
-
-export default function StateDisplay({
-    loading,
-    error,
-    empty,
-    loadingMessage,
-    errorMessage,
-    emptyMessage,
-    emptyIcon,
-    emptyAction,
-    emptyActionLabel,
-    onRetry,
-    className,
-    children,
+export function QueryState({
+  isLoading,
+  isError,
+  data,
+  loadingText,
+  errorText,
+  emptyTitle,
+  emptyDescription,
+  emptyIcon,
+  children,
+  retry,
 }) {
-    if (loading) return <LoadingState message={loadingMessage} className={className} />;
-    if (error)   return <ErrorState  error={error} message={errorMessage} onRetry={onRetry} className={className} />;
-    if (empty)   return <EmptyState  message={emptyMessage} icon={emptyIcon} action={emptyAction} actionLabel={emptyActionLabel} className={className} />;
-    return children ?? null;
+  if (isLoading) return <LoadingState text={loadingText} />;
+  if (isError) return <ErrorState text={errorText} retry={retry} />;
+  if (!data || (Array.isArray(data) && data.length === 0)) {
+    return <EmptyState title={emptyTitle} description={emptyDescription} icon={emptyIcon} />;
+  }
+  return children(data);
 }

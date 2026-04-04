@@ -85,7 +85,7 @@ export default function StructureTab({ permissions }) {
 
   const { data: areas, isLoading: areasLoading, isError: areasError } = useQuery({
     queryKey: ['areas'],
-    queryFn: () => base44.entities.Area.list('order,name', 100)
+    queryFn: () => base44.entities.Area.list('name', 100)
   });
   const { data: furniture, isLoading: furLoading, isError: furError } = useQuery({
     queryKey: ['furniture'],

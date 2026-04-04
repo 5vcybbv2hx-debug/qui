@@ -4,6 +4,7 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamNotes from '@/components/dashboard/TeamNotes';
+import ShiftSwapMarketplaceCard from '@/components/shifts/ShiftSwapMarketplaceCard';
 import TimeEntryReview from '@/components/dashboard/TimeEntryReview';
 import AlarmPanel from '@/components/dashboard/AlarmPanel';
 import { cn } from '@/lib/utils';
@@ -66,7 +67,7 @@ function QuickLink({ page, icon: Icon, label, sub, color }) {
 
 // ─── Tab: HEUTE ─────────────────────────────────────────────────────────────
 
-function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employees, teamNotes, currentUser, isManager }) {
+function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employees, teamNotes, currentUser, isManager, currentEmployee }) {
     return (
         <div className="space-y-5">
             {/* Schichten heute */}
@@ -106,6 +107,13 @@ function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employ
                     </div>
                 )}
             </section>
+
+            {/* Schichttausch */}
+            {currentEmployee && (
+                <section>
+                    <ShiftSwapMarketplaceCard currentEmployee={currentEmployee} />
+                </section>
+            )}
 
             {/* Team-Notizen (kompakt) */}
             <section>
@@ -725,6 +733,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             employees={employees}
                             currentUser={currentUser}
                             isManager={isManager}
+                            currentEmployee={currentEmployee}
                         />
                     )}
                     {activeTab === 'team' && (

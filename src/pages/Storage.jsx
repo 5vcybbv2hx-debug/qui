@@ -20,12 +20,21 @@ export default function Storage() {
   const permissions = usePermissions();
   const [activeTab, setActiveTab] = useState('search');
 
-  if (permissions.isLoading) return null;
+  if (permissions.isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto px-3 py-8">
+        <div className="flex flex-col items-center justify-center gap-4 py-20">
+          <div className="w-10 h-10 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+          <p className="text-muted-foreground text-sm">Lade Lagerverwaltung…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!permissions.canViewInventory && !permissions.isManager) return <PermissionDenied />;
 
   return (
     <div className="max-w-3xl mx-auto px-3 py-4 pb-32 md:pb-8">
-      {/* Header */}
       <div className="mb-5">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <MapPin className="w-6 h-6 text-amber-500" />
@@ -52,7 +61,6 @@ export default function Storage() {
         ))}
       </div>
 
-      {/* Content */}
       {activeTab === 'search' && <SearchTab />}
       {activeTab === 'stock' && <StockTab permissions={permissions} />}
       {activeTab === 'assign' && <AssignTab permissions={permissions} />}

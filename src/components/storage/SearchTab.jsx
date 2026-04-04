@@ -6,14 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Search, MapPin, Package, ChevronRight, ArrowLeft, X, AlertTriangle } from 'lucide-react';
-
-// ── Slot Detail View ─────────────────────────────────────────────────────────
+import { LoadingSpinner } from './StorageLoading';
 
 function SlotDetail({ slot, assignments, onBack }) {
   const slotAssignments = assignments.filter(a => a.storage_slot_id === slot.id);
   return (
     <div className="space-y-4">
-      <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+      <button onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm">
         <ArrowLeft className="w-4 h-4" /> Zurück zur Suche
       </button>
       <Card className="p-4">
@@ -22,7 +21,7 @@ function SlotDetail({ slot, assignments, onBack }) {
             <MapPin className="w-5 h-5 text-amber-500" />
           </div>
           <div>
-            <p className="font-bold text-foreground">{slot.full_name}</p>
+            <p className="font-bold text-foreground">{slot.full_name || slot.name}</p>
             <Badge variant="outline" className="mt-1 text-xs font-mono">{slot.short_code}</Badge>
           </div>
         </div>
@@ -53,9 +52,7 @@ function SlotDetail({ slot, assignments, onBack }) {
                       <span className={`text-sm font-bold ${isLow ? 'text-red-500' : 'text-foreground'}`}>
                         {a.quantity} {a.unit}
                       </span>
-                      {a.min_stock != null && (
-                        <span className="text-xs text-muted-foreground">Min: {a.min_stock}</span>
-                      )}
+                      {a.min_stock != null && <span className="text-xs text-muted-foreground">Min: {a.min_stock}</span>}
                       {isLow && (
                         <Badge variant="destructive" className="text-xs py-0 flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" /> Kritisch
@@ -73,17 +70,11 @@ function SlotDetail({ slot, assignments, onBack }) {
   );
 }
 
-// ── Article Results ──────────────────────────────────────────────────────────
-
 function ArticleResult({ article, articleAssignments, slots, onSelectSlot }) {
   const [expanded, setExpanded] = useState(true);
-
   return (
     <Card className="overflow-hidden">
-      <button
-        onClick={() => setExpanded(e => !e)}
-        className="w-full flex items-center gap-3 p-4 hover:bg-accent/30 transition-colors"
-      >
+      <button onClick={() => setExpanded(e => !e)} className="w-full flex items-center gap-3 p-4 hover:bg-accent/30 transition-colors">
         {article.image_url ? (
           <img src={article.image_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
         ) : (
@@ -107,11 +98,8 @@ function ArticleResult({ article, articleAssignments, slots, onSelectSlot }) {
               const slot = slots.find(s => s.id === a.storage_slot_id);
               const isLow = a.min_stock != null && a.quantity < a.min_stock;
               return (
-                <button
-                  key={a.id}
-                  onClick={() => slot && onSelectSlot(slot)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/30 transition-colors text-left ${i > 0 ? 'border-t border-border/50' : ''}`}
-                >
+                <button key={a.id} onClick={() => slot && onSelectSlot(slot)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/30 transition-colors text-left ${i > 0 ? 'border-t border-border/50' : ''}`}>
                   <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
@@ -119,12 +107,9 @@ function ArticleResult({ article, articleAssignments, slots, onSelectSlot }) {
                     </p>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                       <span className={`text-xs font-medium ${isLow ? 'text-red-500' : 'text-muted-foreground'}`}>
-                        {a.quantity} {a.unit}
-                        {a.min_stock != null && ` (Min: ${a.min_stock})`}
+                        {a.quantity} {a.unit}{a.min_stock != null ? ` (Min: ${a.min_stock})` : ''}
                       </span>
-                      {slot?.short_code && (
-                        <span className="text-xs font-mono text-muted-foreground">{slot.short_code}</span>
-                      )}
+                      {slot?.short_code && <span className="text-xs font-mono text-muted-foreground">{slot.short_code}</span>}
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -138,47 +123,34 @@ function ArticleResult({ article, articleAssignments, slots, onSelectSlot }) {
   );
 }
 
-// ── Main SearchTab ────────────────────────────────────────────────────────────
-
 export default function SearchTab() {
   const [search, setSearch] = useState('');
   const [selectedSlot, setSelectedSlot] = useState(null);
 
-  const { data: articles = [] } = useQuery({
-    queryKey: ['articles'],
-    queryFn: () => base44.entities.Article.filter({ is_active: true }, 'name', 1000)
-  });
+  const { data: articles, isLoading: aL } = useQuery({ queryKey: ['articles'], queryFn: () => base44.entities.Article.filter({ is_active: true }, 'name', 1000) });
+  const { data: slots, isLoading: sL } = useQuery({ queryKey: ['slots'], queryFn: () => base44.entities.StorageSlot.list('full_name', 1000) });
+  const { data: assignments, isLoading: asL } = useQuery({ queryKey: ['assignments'], queryFn: () => base44.entities.StorageAssignment.filter({ is_active: true }, 'article_name', 1000) });
 
-  const { data: slots = [] } = useQuery({
-    queryKey: ['slots'],
-    queryFn: () => base44.entities.StorageSlot.list('full_name', 1000)
-  });
+  const isLoading = aL || sL || asL;
 
-  const { data: assignments = [] } = useQuery({
-    queryKey: ['assignments'],
-    queryFn: () => base44.entities.StorageAssignment.filter({ is_active: true }, 'article_name', 1000)
-  });
-
-  // Artikel die mindestens eine Zuordnung haben
-  const assignedArticleIds = useMemo(() => new Set(assignments.map(a => a.article_id)), [assignments]);
+  const assignedArticleIds = useMemo(() => new Set((assignments || []).map(a => a.article_id)), [assignments]);
 
   const matchingArticles = useMemo(() => {
-    if (!search.trim()) return [];
+    if (!search.trim() || isLoading) return [];
     const q = search.toLowerCase().trim();
-    return articles
-      .filter(a => a.name.toLowerCase().includes(q) && assignedArticleIds.has(a.id))
+    return (articles || [])
+      .filter(a => (a.name || '').toLowerCase().includes(q) && assignedArticleIds.has(a.id))
       .slice(0, 15);
-  }, [articles, search, assignedArticleIds]);
+  }, [articles, search, assignedArticleIds, isLoading]);
 
-  // Slot-Suche: wenn kein Artikel gefunden, zeige passende Slots
   const matchingSlots = useMemo(() => {
-    if (!search.trim() || matchingArticles.length > 0) return [];
+    if (!search.trim() || matchingArticles.length > 0 || isLoading) return [];
     const q = search.toLowerCase().trim();
-    return slots.filter(s => s.full_name?.toLowerCase().includes(q) || s.short_code?.toLowerCase().includes(q)).slice(0, 10);
-  }, [slots, search, matchingArticles]);
+    return (slots || []).filter(s => (s.full_name || '').toLowerCase().includes(q) || (s.short_code || '').toLowerCase().includes(q)).slice(0, 10);
+  }, [slots, search, matchingArticles, isLoading]);
 
   if (selectedSlot) {
-    return <SlotDetail slot={selectedSlot} assignments={assignments} onBack={() => setSelectedSlot(null)} />;
+    return <SlotDetail slot={selectedSlot} assignments={assignments || []} onBack={() => setSelectedSlot(null)} />;
   }
 
   return (
@@ -187,10 +159,7 @@ export default function SearchTab() {
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
         {search && (
-          <button
-            onClick={() => setSearch('')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
+          <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         )}
@@ -203,8 +172,11 @@ export default function SearchTab() {
         />
       </div>
 
-      {/* Leerzustand */}
-      {!search && (
+      {/* Loading */}
+      {isLoading && <LoadingSpinner text="Lade Lagerdaten…" />}
+
+      {/* Empty / hint */}
+      {!search && !isLoading && (
         <Card className="p-8 text-center">
           <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
           <p className="font-semibold text-foreground">Wo ist was?</p>
@@ -212,35 +184,37 @@ export default function SearchTab() {
         </Card>
       )}
 
-      {/* Artikel-Ergebnisse */}
-      {matchingArticles.length > 0 && (
+      {/* Searching but still loading */}
+      {search && isLoading && (
+        <p className="text-sm text-muted-foreground text-center py-4">Suche wird geladen…</p>
+      )}
+
+      {/* Article results */}
+      {!isLoading && matchingArticles.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground font-medium">{matchingArticles.length} Artikel gefunden</p>
           {matchingArticles.map(article => (
             <ArticleResult
               key={article.id}
               article={article}
-              articleAssignments={assignments.filter(a => a.article_id === article.id)}
-              slots={slots}
+              articleAssignments={(assignments || []).filter(a => a.article_id === article.id)}
+              slots={slots || []}
               onSelectSlot={setSelectedSlot}
             />
           ))}
         </div>
       )}
 
-      {/* Lagerplatz-Ergebnisse (Fallback) */}
-      {matchingSlots.length > 0 && (
+      {/* Slot fallback */}
+      {!isLoading && matchingSlots.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground font-medium">Lagerplätze</p>
           {matchingSlots.map(slot => (
             <Card key={slot.id} className="overflow-hidden">
-              <button
-                onClick={() => setSelectedSlot(slot)}
-                className="w-full flex items-center gap-3 p-4 hover:bg-accent/30 transition-colors text-left"
-              >
+              <button onClick={() => setSelectedSlot(slot)} className="w-full flex items-center gap-3 p-4 hover:bg-accent/30 transition-colors text-left">
                 <MapPin className="w-5 h-5 text-amber-500 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">{slot.full_name}</p>
+                  <p className="font-semibold text-foreground truncate">{slot.full_name || slot.name}</p>
                   <p className="text-xs font-mono text-muted-foreground mt-0.5">{slot.short_code}</p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -250,8 +224,8 @@ export default function SearchTab() {
         </div>
       )}
 
-      {/* Kein Ergebnis */}
-      {search && matchingArticles.length === 0 && matchingSlots.length === 0 && (
+      {/* No results */}
+      {search && !isLoading && matchingArticles.length === 0 && matchingSlots.length === 0 && (
         <Card className="p-8 text-center text-muted-foreground">
           <p className="font-medium">Kein Artikel gefunden für „{search}"</p>
           <p className="text-sm mt-1">Prüfe ob der Artikel einem Lagerplatz zugeordnet ist.</p>

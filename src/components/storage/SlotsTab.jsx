@@ -4,52 +4,60 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Pencil, Trash2, Copy, Check } from 'lucide-react';
 import { generateShortCode, buildFullName } from './storageUtils';
+import { LoadingSpinner, ErrorState, EmptyState } from './StorageLoading';
+
+const ALL = '__all__';
 
 export default function SlotsTab({ permissions }) {
   const qc = useQueryClient();
   const canEdit = permissions.isManager;
 
   const [search, setSearch] = useState('');
-  const [filterArea, setFilterArea] = useState('');
-  const [filterFurniture, setFilterFurniture] = useState('');
-  const [filterContainer, setFilterContainer] = useState('');
+  const [filterArea, setFilterArea] = useState(ALL);
+  const [filterFurniture, setFilterFurniture] = useState(ALL);
+  const [filterContainer, setFilterContainer] = useState(ALL);
   const [copiedId, setCopiedId] = useState(null);
-
   const [modal, setModal] = useState({ open: false, data: null });
   const [form, setForm] = useState({ area_id: '', furniture_id: '', container_id: '', name: '', notes: '' });
 
-  const { data: areas = [] } = useQuery({ queryKey: ['areas'], queryFn: () => base44.entities.Area.list('sort_order,name', 100) });
-  const { data: furniture = [] } = useQuery({ queryKey: ['furniture'], queryFn: () => base44.entities.Furniture.list('sort_order,name', 500) });
-  const { data: containers = [] } = useQuery({ queryKey: ['containers-all'], queryFn: () => base44.entities.Container.list('sort_order,name', 500) });
-  const { data: slots = [], isLoading } = useQuery({ queryKey: ['slots'], queryFn: () => base44.entities.StorageSlot.list('-created_date', 1000) });
+  const { data: areas, isLoading: aL, isError: aE } = useQuery({ queryKey: ['areas'], queryFn: () => base44.entities.Area.list('order,name', 100) });
+  const { data: furniture, isLoading: fL, isError: fE } = useQuery({ queryKey: ['furniture'], queryFn: () => base44.entities.Furniture.list('sort_order,name', 500) });
+  const { data: containers, isLoading: cL, isError: cE } = useQuery({ queryKey: ['containers'], queryFn: () => base44.entities.Container.list('sort_order,name', 500) });
+  const { data: slots, isLoading: sL, isError: sE } = useQuery({ queryKey: ['slots'], queryFn: () => base44.entities.StorageSlot.list('-created_date', 1000) });
 
-  const filteredFurniture = furniture.filter(f => !filterArea || f.area_id === filterArea);
-  const filteredContainers = containers.filter(c => !filterFurniture || c.furniture_id === filterFurniture);
+  const isLoading = aL || fL || cL || sL;
+  const isError = aE || fE || cE || sE;
 
-  const filteredSlots = useMemo(() => slots.filter(s => {
-    const matchSearch = !search || s.full_name?.toLowerCase().includes(search.toLowerCase()) || s.short_code?.toLowerCase().includes(search.toLowerCase());
-    const matchArea = !filterArea || s.area_id === filterArea;
-    const matchFurniture = !filterFurniture || s.furniture_id === filterFurniture;
-    const matchContainer = !filterContainer || s.container_id === filterContainer;
-    return matchSearch && matchArea && matchFurniture && matchContainer;
-  }), [slots, search, filterArea, filterFurniture, filterContainer]);
+  const filteredFurniture = useMemo(() => (furniture || []).filter(f => filterArea === ALL || f.area_id === filterArea), [furniture, filterArea]);
+  const filteredContainers = useMemo(() => (containers || []).filter(c => filterFurniture === ALL || c.furniture_id === filterFurniture), [containers, filterFurniture]);
+
+  const filteredSlots = useMemo(() => {
+    if (!slots) return [];
+    return slots.filter(s => {
+      const q = search.toLowerCase();
+      const matchSearch = !search || (s.full_name || '').toLowerCase().includes(q) || (s.short_code || '').toLowerCase().includes(q);
+      const matchArea = filterArea === ALL || s.area_id === filterArea;
+      const matchFur = filterFurniture === ALL || s.furniture_id === filterFurniture;
+      const matchCon = filterContainer === ALL || s.container_id === filterContainer;
+      return matchSearch && matchArea && matchFur && matchCon;
+    });
+  }, [slots, search, filterArea, filterFurniture, filterContainer]);
 
   const saveMut = useMutation({
-    mutationFn: (d) => modal.data?.id ? base44.entities.StorageSlot.update(modal.data.id, d) : base44.entities.StorageSlot.create(d),
+    mutationFn: d => modal.data?.id ? base44.entities.StorageSlot.update(modal.data.id, d) : base44.entities.StorageSlot.create(d),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['slots'] }); setModal({ open: false, data: null }); },
-    onError: (e) => { console.error(e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
+    onError: e => { console.error('Slot save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id) => base44.entities.StorageSlot.delete(id),
+    mutationFn: id => base44.entities.StorageSlot.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['slots'] }),
-    onError: (e) => { console.error(e); alert('Fehler beim Löschen'); }
+    onError: e => { console.error('Slot delete:', e); alert('Löschen fehlgeschlagen'); }
   });
 
   const openAdd = () => {
@@ -57,15 +65,16 @@ export default function SlotsTab({ permissions }) {
     setModal({ open: true, data: null });
   };
 
-  const openEdit = (slot) => {
-    setForm({ area_id: slot.area_id, furniture_id: slot.furniture_id, container_id: slot.container_id, name: slot.name, notes: slot.notes || '' });
+  const openEdit = slot => {
+    setForm({ area_id: slot.area_id || '', furniture_id: slot.furniture_id || '', container_id: slot.container_id || '', name: slot.name || '', notes: slot.notes || '' });
     setModal({ open: true, data: slot });
   };
 
   const handleSave = () => {
-    const area = areas.find(a => a.id === form.area_id);
-    const fur = furniture.find(f => f.id === form.furniture_id);
-    const con = containers.find(c => c.id === form.container_id);
+    const area = (areas || []).find(a => a.id === form.area_id);
+    const fur = (furniture || []).find(f => f.id === form.furniture_id);
+    const con = (containers || []).find(c => c.id === form.container_id);
+    if (!area || !fur || !con) { alert('Bitte alle Felder ausfüllen.'); return; }
     saveMut.mutate({
       area_id: area.id, area_name: area.name,
       furniture_id: fur.id, furniture_name: fur.name,
@@ -78,10 +87,19 @@ export default function SlotsTab({ permissions }) {
     });
   };
 
-  const copy = (text) => { navigator.clipboard.writeText(text); setCopiedId(text); setTimeout(() => setCopiedId(null), 2000); };
+  const copy = text => { navigator.clipboard.writeText(text); setCopiedId(text); setTimeout(() => setCopiedId(null), 2000); };
 
-  const modalFurniture = furniture.filter(f => f.area_id === form.area_id);
-  const modalContainers = containers.filter(c => c.furniture_id === form.furniture_id);
+  const modalFurniture = useMemo(() => (furniture || []).filter(f => f.area_id === form.area_id), [furniture, form.area_id]);
+  const modalContainers = useMemo(() => (containers || []).filter(c => c.furniture_id === form.furniture_id), [containers, form.furniture_id]);
+
+  const previewName = useMemo(() => {
+    if (!form.area_id || !form.furniture_id || !form.container_id || !form.name) return null;
+    const area = (areas || []).find(a => a.id === form.area_id);
+    const fur = (furniture || []).find(f => f.id === form.furniture_id);
+    const con = (containers || []).find(c => c.id === form.container_id);
+    if (!area || !fur || !con) return null;
+    return buildFullName(area.name, fur.name, con.name, form.name);
+  }, [form, areas, furniture, containers]);
 
   return (
     <>
@@ -92,24 +110,24 @@ export default function SlotsTab({ permissions }) {
           <Input className="pl-10 h-11" placeholder="Name oder Code suchen…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Select value={filterArea} onValueChange={v => { setFilterArea(v); setFilterFurniture(''); setFilterContainer(''); }}>
-            <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Bereich" /></SelectTrigger>
+          <Select value={filterArea} onValueChange={v => { setFilterArea(v); setFilterFurniture(ALL); setFilterContainer(ALL); }}>
+            <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>Alle Bereiche</SelectItem>
-              {areas.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+              <SelectItem value={ALL}>Alle Bereiche</SelectItem>
+              {(areas || []).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={filterFurniture} onValueChange={v => { setFilterFurniture(v); setFilterContainer(''); }} disabled={!filterArea}>
-            <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Möbel" /></SelectTrigger>
+          <Select value={filterFurniture} onValueChange={v => { setFilterFurniture(v); setFilterContainer(ALL); }} disabled={filterArea === ALL || fL}>
+            <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>Alle Möbel</SelectItem>
+              <SelectItem value={ALL}>Alle Möbel</SelectItem>
               {filteredFurniture.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={filterContainer} onValueChange={setFilterContainer} disabled={!filterFurniture}>
-            <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Behälter" /></SelectTrigger>
+          <Select value={filterContainer} onValueChange={setFilterContainer} disabled={filterFurniture === ALL || cL}>
+            <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>Alle Behälter</SelectItem>
+              <SelectItem value={ALL}>Alle Behälter</SelectItem>
               {filteredContainers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -121,27 +139,20 @@ export default function SlotsTab({ permissions }) {
         )}
       </div>
 
-      {/* List */}
-      {isLoading ? (
-        <p className="text-center text-muted-foreground py-10">Lädt…</p>
-      ) : filteredSlots.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">Keine Lagerplätze gefunden</Card>
-      ) : (
+      {/* Content */}
+      {isLoading ? <LoadingSpinner text="Lade Lagerplätze…" /> :
+       isError ? <ErrorState text="Lagerplätze konnten nicht geladen werden." /> :
+       filteredSlots.length === 0 ? <EmptyState text={search || filterArea !== ALL ? 'Keine Lagerplätze für diesen Filter.' : 'Noch keine Lagerplätze angelegt.'} /> : (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{filteredSlots.length} Plätze</p>
           {filteredSlots.map(slot => (
             <Card key={slot.id} className="p-3 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{slot.full_name}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  <button
-                    onClick={() => copy(slot.short_code)}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {copiedId === slot.short_code ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                    {slot.short_code}
-                  </button>
-                </div>
+                <p className="text-sm font-medium text-foreground truncate">{slot.full_name || slot.name}</p>
+                <button onClick={() => copy(slot.short_code)} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors mt-1">
+                  {copiedId === slot.short_code ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                  {slot.short_code}
+                </button>
               </div>
               {canEdit && (
                 <div className="flex gap-1">
@@ -163,7 +174,7 @@ export default function SlotsTab({ permissions }) {
               <Label>Bereich *</Label>
               <Select value={form.area_id} onValueChange={v => setForm(f => ({ ...f, area_id: v, furniture_id: '', container_id: '' }))}>
                 <SelectTrigger className="h-11"><SelectValue placeholder="Bereich wählen" /></SelectTrigger>
-                <SelectContent>{areas.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{(areas || []).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {form.area_id && (
@@ -188,17 +199,10 @@ export default function SlotsTab({ permissions }) {
               <Label>Fachname *</Label>
               <Input className="h-11" placeholder="z.B. oben links, Ebene 2, Box A" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
             </div>
-            {form.area_id && form.furniture_id && form.container_id && form.name && (
+            {previewName && (
               <div className="bg-muted/50 rounded p-3">
                 <p className="text-xs text-muted-foreground font-medium">Vollständiger Name:</p>
-                <p className="text-sm text-foreground mt-1">
-                  {buildFullName(
-                    areas.find(a => a.id === form.area_id)?.name,
-                    furniture.find(f => f.id === form.furniture_id)?.name,
-                    containers.find(c => c.id === form.container_id)?.name,
-                    form.name
-                  )}
-                </p>
+                <p className="text-sm text-foreground mt-1 font-medium">{previewName}</p>
               </div>
             )}
             <div className="space-y-2">

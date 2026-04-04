@@ -1,22 +1,24 @@
 import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { MapPin, Layers, Package, BarChart2 } from 'lucide-react';
+import { MapPin, Layers, Package, BarChart2, Search } from 'lucide-react';
 import StructureTab from '@/components/storage/StructureTab';
 import SlotsTab from '@/components/storage/SlotsTab';
 import AssignTab from '@/components/storage/AssignTab';
 import StockTab from '@/components/storage/StockTab';
+import SearchTab from '@/components/storage/SearchTab';
 
 const TABS = [
-  { id: 'structure', label: 'Struktur', icon: Layers },
-  { id: 'slots', label: 'Lagerplätze', icon: MapPin },
-  { id: 'assign', label: 'Zuordnen', icon: Package },
+  { id: 'search', label: 'Suche', icon: Search },
   { id: 'stock', label: 'Bestand', icon: BarChart2 },
+  { id: 'assign', label: 'Zuordnen', icon: Package },
+  { id: 'structure', label: 'Struktur', icon: Layers },
+  { id: 'slots', label: 'Fächer', icon: MapPin },
 ];
 
 export default function Storage() {
   const permissions = usePermissions();
-  const [activeTab, setActiveTab] = useState('structure');
+  const [activeTab, setActiveTab] = useState('search');
 
   if (permissions.isLoading) return null;
   if (!permissions.canViewInventory && !permissions.isManager) return <PermissionDenied />;
@@ -51,10 +53,11 @@ export default function Storage() {
       </div>
 
       {/* Content */}
+      {activeTab === 'search' && <SearchTab />}
+      {activeTab === 'stock' && <StockTab permissions={permissions} />}
+      {activeTab === 'assign' && <AssignTab permissions={permissions} />}
       {activeTab === 'structure' && <StructureTab permissions={permissions} />}
       {activeTab === 'slots' && <SlotsTab permissions={permissions} />}
-      {activeTab === 'assign' && <AssignTab permissions={permissions} />}
-      {activeTab === 'stock' && <StockTab permissions={permissions} />}
     </div>
   );
 }

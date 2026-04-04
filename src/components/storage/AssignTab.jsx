@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -6,14 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Package, Trash2 } from 'lucide-react';
+import { Search, Package, Trash2, Clock } from 'lucide-react';
 import { LoadingSpinner, ErrorState } from './StorageLoading';
+import { fuzzySearch } from '@/lib/fuzzySearch';
+import { useLocalPreferences } from '@/lib/useLocalPreferences';
 
 const UNITS = ['Stück', 'l', 'ml', 'kg', 'g'];
 
 export default function AssignTab({ permissions }) {
   const qc = useQueryClient();
   const canEdit = permissions.isManager;
+  const prefs = useLocalPreferences('assign');
 
   const [articleSearch, setArticleSearch] = useState('');
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -35,17 +38,44 @@ export default function AssignTab({ permissions }) {
     queryFn: () => base44.entities.StorageAssignment.filter({ is_active: true }, '-created_date', 500)
   });
 
+  // Smart default unit from last used
+  useEffect(() => {
+    const lastUnit = prefs.getLast('unit');
+    if (lastUnit) setForm(f => ({ ...f, unit: lastUnit }));
+  }, [prefs]);
+
+  // Fuzzy article search with frequency boost
   const filteredArticles = useMemo(() => {
     if (!articleSearch.trim()) return [];
-    const q = articleSearch.toLowerCase();
-    return (articles || []).filter(a => (a.name || '').toLowerCase().includes(q)).slice(0, 10);
-  }, [articles, articleSearch]);
+    return fuzzySearch(
+      articles || [],
+      articleSearch,
+      a => [a.name || '', a.category || '', a.barcode || ''],
+      a => Math.min(prefs.getFrequency('article', a.id) * 2, 15),
+    ).slice(0, 10);
+  }, [articles, articleSearch, prefs]);
 
+  // Fuzzy slot search — recent slots boosted
   const filteredSlots = useMemo(() => {
-    if (!slotSearch.trim()) return [];
-    const q = slotSearch.toLowerCase();
-    return (slots || []).filter(s => (s.full_name || '').toLowerCase().includes(q) || (s.short_code || '').toLowerCase().includes(q)).slice(0, 10);
-  }, [slots, slotSearch]);
+    const all = slots || [];
+    if (!slotSearch.trim()) {
+      // Show top used slots as quick picks when no search
+      return prefs.sortByFrequency(all, s => s.id, 'slot').slice(0, 6);
+    }
+    return fuzzySearch(
+      all,
+      slotSearch,
+      s => [s.full_name || '', s.short_code || '', s.name || ''],
+      s => Math.min(prefs.getFrequency('slot', s.id) * 2, 15),
+    ).slice(0, 10);
+  }, [slots, slotSearch, prefs]);
+
+  // Recent articles quick picks
+  const recentArticleIds = useMemo(() => prefs.getTop('article', 4), [prefs]);
+  const recentArticles = useMemo(() => {
+    if (!articles || recentArticleIds.length === 0) return [];
+    return recentArticleIds.map(id => (articles || []).find(a => a.id === id)).filter(Boolean);
+  }, [articles, recentArticleIds]);
 
   const saveMut = useMutation({
     mutationFn: d => base44.entities.StorageAssignment.create(d),
@@ -56,7 +86,7 @@ export default function AssignTab({ permissions }) {
       setSelectedSlot(null);
       setArticleSearch('');
       setSlotSearch('');
-      setForm({ quantity: '', min_stock: '', max_stock: '', unit: 'Stück', notes: '' });
+      setForm(f => ({ quantity: '', min_stock: '', max_stock: '', unit: f.unit, notes: '' }));
       setTimeout(() => setSaveSuccess(false), 3000);
     },
     onError: e => { console.error('Assignment save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
@@ -70,6 +100,9 @@ export default function AssignTab({ permissions }) {
 
   const handleSave = () => {
     if (!selectedArticle || !selectedSlot) return;
+    prefs.track('article', selectedArticle.id);
+    prefs.track('slot', selectedSlot.id);
+    prefs.track('unit', form.unit);
     saveMut.mutate({
       article_id: selectedArticle.id,
       article_name: selectedArticle.name || '',
@@ -111,6 +144,20 @@ export default function AssignTab({ permissions }) {
               <Input className="pl-10 h-11" placeholder={aL ? 'Lädt Artikel…' : 'Artikel suchen…'} value={articleSearch} onChange={e => setArticleSearch(e.target.value)} disabled={aL} />
             </div>
             {aL && <LoadingSpinner text="Lade Artikel…" />}
+            {/* Recent picks */}
+            {!aL && !articleSearch && recentArticles.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Clock className="w-3 h-3" /> Zuletzt verwendet</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {recentArticles.map(a => (
+                    <button key={a.id} onClick={() => setSelectedArticle(a)}
+                      className="px-2.5 py-1.5 rounded-lg border border-border text-xs text-foreground hover:bg-accent/30 min-h-[36px]">
+                      {a.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {!aL && articleSearch.length > 0 && (
               <div className="space-y-1 max-h-52 overflow-y-auto">
                 {filteredArticles.length === 0 ? (
@@ -149,6 +196,20 @@ export default function AssignTab({ permissions }) {
               <Input className="pl-10 h-11" placeholder={sL ? 'Lädt Lagerplätze…' : 'Lagerplatz suchen…'} value={slotSearch} onChange={e => setSlotSearch(e.target.value)} disabled={sL} />
             </div>
             {sL && <LoadingSpinner text="Lade Lagerplätze…" />}
+            {/* Smart picks: recent or top-used */}
+            {!sL && !slotSearch && filteredSlots.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Clock className="w-3 h-3" /> Häufig genutzt</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {filteredSlots.map(s => (
+                    <button key={s.id} onClick={() => setSelectedSlot(s)}
+                      className="px-2.5 py-1.5 rounded-lg border border-border text-xs text-foreground hover:bg-accent/30 min-h-[36px] text-left">
+                      {s.full_name || s.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {!sL && slotSearch.length > 0 && (
               <div className="space-y-1 max-h-52 overflow-y-auto">
                 {filteredSlots.length === 0 ? (

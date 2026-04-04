@@ -1,5 +1,5 @@
 {
-  "name": "Container",
+  "name": "Furniture",
   "type": "object",
   "properties": {
     "area_id": {
@@ -10,30 +10,22 @@
       "type": "string",
       "description": "Name des Bereichs (Denormalisierung)"
     },
-    "furniture_id": {
-      "type": "string",
-      "description": "ID des zugeh\u00f6rigen M\u00f6belst\u00fccks"
-    },
-    "furniture_name": {
-      "type": "string",
-      "description": "Name des M\u00f6belst\u00fccks (Denormalisierung)"
-    },
     "name": {
       "type": "string",
-      "description": "Name des Beh\u00e4lters (z.B. Fach, Schublade, Box)"
+      "description": "Name des M\u00f6belst\u00fccks (z.B. Regal links, K\u00fchlschrank 1)"
     },
     "type": {
       "type": "string",
       "enum": [
-        "Fach",
-        "Schublade",
-        "Box",
-        "Ebene",
-        "Abteil",
+        "Regal",
+        "K\u00fchlschrank",
+        "Schrank",
+        "Unterschrank",
+        "Theke",
         "Sonstiges"
       ],
-      "default": "Fach",
-      "description": "Typ des Beh\u00e4lters"
+      "default": "Regal",
+      "description": "Typ des M\u00f6belst\u00fccks"
     },
     "description": {
       "type": "string",

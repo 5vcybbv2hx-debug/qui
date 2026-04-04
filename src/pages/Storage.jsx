@@ -1,76 +1,60 @@
-import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Plus, Trash2, Pencil, MapPin, Package, Search } from 'lucide-react';
-import AreaManager from '@/components/storage/AreaManager';
-import ContainerManager from '@/components/storage/ContainerManager';
-import LocationManager from '@/components/storage/LocationManager';
+import { MapPin, Layers, Package, BarChart2 } from 'lucide-react';
+import StructureTab from '@/components/storage/StructureTab';
+import SlotsTab from '@/components/storage/SlotsTab';
+import AssignTab from '@/components/storage/AssignTab';
+import StockTab from '@/components/storage/StockTab';
+
+const TABS = [
+  { id: 'structure', label: 'Struktur', icon: Layers },
+  { id: 'slots', label: 'Lagerplätze', icon: MapPin },
+  { id: 'assign', label: 'Zuordnen', icon: Package },
+  { id: 'stock', label: 'Bestand', icon: BarChart2 },
+];
 
 export default function Storage() {
   const permissions = usePermissions();
-  const [activeTab, setActiveTab] = useState('areas'); // 'areas', 'containers', 'locations'
-  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('structure');
 
   if (permissions.isLoading) return null;
-  if (!permissions.canViewWarehouse && !permissions.isManager) return <PermissionDenied />;
+  if (!permissions.canViewInventory && !permissions.isManager) return <PermissionDenied />;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4 sm:py-8 pb-24 md:pb-0">
+    <div className="max-w-3xl mx-auto px-3 py-4 pb-32 md:pb-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+      <div className="mb-5">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <MapPin className="w-6 h-6 text-amber-500" />
-          Lagerplatzverwaltung
+          Lagerverwaltung
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">Bereiche, Behälter und Lagerplätze verwalten</p>
+        <p className="text-muted-foreground text-sm mt-1">Bereiche, Möbel, Behälter, Fächer und Artikel</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6 flex-wrap border-b border-border pb-3">
-        <button
-          onClick={() => setActiveTab('areas')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            activeTab === 'areas'
-              ? 'bg-amber-600 text-white'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-          }`}
-        >
-          Bereiche
-        </button>
-        <button
-          onClick={() => setActiveTab('containers')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            activeTab === 'containers'
-              ? 'bg-amber-600 text-white'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-          }`}
-        >
-          Behälter
-        </button>
-        <button
-          onClick={() => setActiveTab('locations')}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
-            activeTab === 'locations'
-              ? 'bg-amber-600 text-white'
-              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-          }`}
-        >
-          Lagerplätze
-        </button>
+      {/* Tab Bar */}
+      <div className="flex gap-1 mb-6 bg-secondary/50 rounded-xl p-1">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-lg text-xs font-medium transition-all ${
+              activeTab === tab.id
+                ? 'bg-amber-600 text-white shadow'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* Content */}
-      {activeTab === 'areas' && <AreaManager permissions={permissions} />}
-      {activeTab === 'containers' && <ContainerManager permissions={permissions} />}
-      {activeTab === 'locations' && <LocationManager permissions={permissions} />}
+      {activeTab === 'structure' && <StructureTab permissions={permissions} />}
+      {activeTab === 'slots' && <SlotsTab permissions={permissions} />}
+      {activeTab === 'assign' && <AssignTab permissions={permissions} />}
+      {activeTab === 'stock' && <StockTab permissions={permissions} />}
     </div>
   );
 }

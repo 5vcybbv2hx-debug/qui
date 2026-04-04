@@ -1,0 +1,66 @@
+{
+  "name": "StorageSlot",
+  "type": "object",
+  "properties": {
+    "area_id": {
+      "type": "string",
+      "description": "ID des Bereichs"
+    },
+    "area_name": {
+      "type": "string",
+      "description": "Name des Bereichs"
+    },
+    "furniture_id": {
+      "type": "string",
+      "description": "ID des M\u00f6belst\u00fccks"
+    },
+    "furniture_name": {
+      "type": "string",
+      "description": "Name des M\u00f6belst\u00fccks"
+    },
+    "container_id": {
+      "type": "string",
+      "description": "ID des Beh\u00e4lters"
+    },
+    "container_name": {
+      "type": "string",
+      "description": "Name des Beh\u00e4lters"
+    },
+    "name": {
+      "type": "string",
+      "description": "Kurzname des Fachs (z.B. oben links, Ebene 2)"
+    },
+    "full_name": {
+      "type": "string",
+      "description": "Automatisch generierter vollst\u00e4ndiger Name"
+    },
+    "short_code": {
+      "type": "string",
+      "description": "Automatisch generierter Kurzcode (z.B. LOC-AB12)"
+    },
+    "position": {
+      "type": "string",
+      "description": "Position innerhalb des Beh\u00e4lters"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "area_id",
+    "area_name",
+    "furniture_id",
+    "furniture_name",
+    "container_id",
+    "container_name",
+    "name",
+    "full_name",
+    "short_code"
+  ]
+}

@@ -4,43 +4,47 @@
   "properties": {
     "article_id": {
       "type": "string",
-      "description": "ID des Artikels aus der zentalen Artikelliste"
+      "description": "ID des Artikels"
     },
     "article_name": {
       "type": "string",
-      "description": "Name des Artikels (Snapshot f\u00fcr schnelle Anzeige)"
+      "description": "Name des Artikels (Snapshot)"
     },
     "article_image_url": {
       "type": "string",
       "description": "Bild-URL des Artikels"
     },
-    "location_id": {
+    "storage_slot_id": {
       "type": "string",
-      "description": "ID des Lagerorts"
+      "description": "ID des Lagerplatzes (StorageSlot)"
     },
-    "location_name": {
+    "storage_slot_name": {
       "type": "string",
-      "description": "Name des Lagerorts (Denormalisierung)"
+      "description": "Vollst\u00e4ndiger Name des Lagerplatzes (Snapshot)"
+    },
+    "storage_slot_code": {
+      "type": "string",
+      "description": "Kurzcode des Lagerplatzes"
     },
     "area_id": {
       "type": "string",
-      "description": "ID des Bereichs"
+      "description": "ID des Bereichs (Denormalisierung)"
     },
     "area_name": {
       "type": "string",
-      "description": "Name des Bereichs (Denormalisierung)"
-    },
-    "container_id": {
-      "type": "string",
-      "description": "ID des M\u00f6belst\u00fccks/Beh\u00e4lters"
-    },
-    "container_name": {
-      "type": "string",
-      "description": "Name des Beh\u00e4lters (Denormalisierung)"
+      "description": "Name des Bereichs"
     },
     "quantity": {
       "type": "number",
       "description": "Aktueller Bestand"
+    },
+    "min_stock": {
+      "type": "number",
+      "description": "Mindestbestand"
+    },
+    "max_stock": {
+      "type": "number",
+      "description": "Maximalbestand"
     },
     "unit": {
       "type": "string",
@@ -54,18 +58,14 @@
       "default": "St\u00fcck",
       "description": "Einheit"
     },
-    "min_stock": {
-      "type": "number",
-      "description": "Mindestbestand (optional)"
-    },
     "notes": {
       "type": "string",
-      "description": "Notizen zum Lagerplatz"
+      "description": "Notizen"
     },
     "last_counted": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitpunkt der letzten Inventur"
+      "description": "Letzte Inventur"
     },
     "is_active": {
       "type": "boolean",
@@ -75,9 +75,7 @@
   },
   "required": [
     "article_id",
-    "location_id",
-    "area_id",
-    "container_id",
+    "storage_slot_id",
     "quantity"
   ]
 }

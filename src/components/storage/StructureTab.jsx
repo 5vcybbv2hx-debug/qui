@@ -122,7 +122,7 @@ export default function StructureTab({ permissions }) {
 
   // ── Area Modal ──
   const [areaModal, setAreaModal] = useState({ open: false, data: null });
-  const [areaForm, setAreaForm] = useState({ name: '', description: '' });
+  const [areaForm, setAreaForm] = useState({ name: '', description: '', room_id: '' });
 
   const areaMut = useMutation({
     mutationFn: d => areaModal.data?.id ? base44.entities.Area.update(areaModal.data.id, d) : base44.entities.Area.create(d),
@@ -136,7 +136,7 @@ export default function StructureTab({ permissions }) {
   });
 
   const openAreaModal = (item = null) => {
-    setAreaForm({ name: item?.name || '', description: item?.description || '' });
+    setAreaForm({ name: item?.name || '', description: item?.description || '', room_id: item?.room_id || '' });
     setAreaModal({ open: true, data: item });
   };
 
@@ -238,7 +238,7 @@ export default function StructureTab({ permissions }) {
          areasError ? <ErrorState text="Bereiche konnten nicht geladen werden." /> :
          !areas?.length ? <EmptyState text="Noch keine Bereiche. Erstelle den ersten!" /> :
          areas.map(a => (
-           <ItemRow key={a.id} label={a.name} sublabel={a.description} canEdit={canEdit}
+           <ItemRow key={a.id} label={a.name} sublabel={[a.room_name, a.description].filter(Boolean).join(' · ')} canEdit={canEdit}
              onEdit={() => openAreaModal(a)} onDelete={() => deleteArea.mutate(a.id)} />
          ))
         }
@@ -301,11 +301,21 @@ export default function StructureTab({ permissions }) {
       {/* Area Modal */}
       <EntityModal open={areaModal.open} onClose={() => setAreaModal({ open: false, data: null })}
         title={areaModal.data ? 'Bereich bearbeiten' : 'Neuer Bereich'}
-        onSave={() => areaMut.mutate({ name: areaForm.name.trim(), description: areaForm.description.trim(), is_active: true, order: 0 })}
+        onSave={() => { const room = (rooms || []).find(r => r.id === areaForm.room_id); areaMut.mutate({ name: areaForm.name.trim(), description: areaForm.description.trim(), is_active: true, order: 0, room_id: areaForm.room_id || null, room_name: room?.name || null }); }}
         isPending={areaMut.isPending} canSave={!!areaForm.name.trim()}>
         <div className="space-y-2">
           <Label>Name *</Label>
           <Input className="h-11" placeholder="z.B. Hauptbar" value={areaForm.name} onChange={e => setAreaForm(f => ({ ...f, name: e.target.value }))} />
+        </div>
+        <div className="space-y-2">
+          <Label>Raum (optional)</Label>
+          <Select value={areaForm.room_id} onValueChange={v => setAreaForm(f => ({ ...f, room_id: v }))}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Keinem Raum zugeordnet" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>Kein Raum</SelectItem>
+              {(rooms || []).map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Beschreibung (optional)</Label>

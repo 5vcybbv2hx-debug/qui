@@ -83,6 +83,10 @@ export default function StructureTab({ permissions }) {
   const qc = useQueryClient();
   const canEdit = permissions.isManager;
 
+  const { data: rooms, isLoading: roomsLoading, isError: roomsError } = useQuery({
+    queryKey: ['storage-rooms'],
+    queryFn: () => base44.entities.Room.list('name', 100)
+  });
   const { data: areas, isLoading: areasLoading, isError: areasError } = useQuery({
     queryKey: ['areas'],
     queryFn: () => base44.entities.Area.list('name', 100)
@@ -95,6 +99,26 @@ export default function StructureTab({ permissions }) {
     queryKey: ['containers'],
     queryFn: () => base44.entities.Container.list('sort_order,name', 500)
   });
+
+  // ── Room Modal ──
+  const [roomModal, setRoomModal] = useState({ open: false, data: null });
+  const [roomForm, setRoomForm] = useState({ name: '', description: '' });
+
+  const roomMut = useMutation({
+    mutationFn: d => roomModal.data?.id ? base44.entities.Room.update(roomModal.data.id, d) : base44.entities.Room.create(d),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['storage-rooms'] }); setRoomModal({ open: false, data: null }); },
+    onError: e => { console.error('Room save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
+  });
+  const deleteRoom = useMutation({
+    mutationFn: id => base44.entities.Room.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['storage-rooms'] }),
+    onError: e => { console.error('Room delete:', e); alert('Löschen fehlgeschlagen'); }
+  });
+
+  const openRoomModal = (item = null) => {
+    setRoomForm({ name: item?.name || '', description: item?.description || '' });
+    setRoomModal({ open: true, data: item });
+  };
 
   // ── Area Modal ──
   const [areaModal, setAreaModal] = useState({ open: false, data: null });
@@ -196,6 +220,18 @@ export default function StructureTab({ permissions }) {
 
   return (
     <div className="space-y-3">
+      {/* Rooms */}
+      <Section title="Räume" subtitle="Keller, Lagerraum, Küche …" count={(rooms || []).length} onAdd={() => openRoomModal()} defaultOpen canEdit={canEdit}>
+        {roomsLoading ? <LoadingSpinner text="Lade Räume…" /> :
+         roomsError ? <ErrorState text="Räume konnten nicht geladen werden." /> :
+         !rooms?.length ? <EmptyState text="Noch keine Räume. Erstelle den ersten!" /> :
+         rooms.map(r => (
+           <ItemRow key={r.id} label={r.name} sublabel={r.description} canEdit={canEdit}
+             onEdit={() => openRoomModal(r)} onDelete={() => deleteRoom.mutate(r.id)} />
+         ))
+        }
+      </Section>
+
       {/* Areas */}
       <Section title="Bereiche" subtitle="Hauptbar, Keller, Küche …" count={(areas || []).length} onAdd={() => openAreaModal()} defaultOpen canEdit={canEdit}>
         {areasLoading ? <LoadingSpinner text="Lade Bereiche…" /> :
@@ -246,6 +282,21 @@ export default function StructureTab({ permissions }) {
           </div>
         </Card>
       )}
+
+      {/* Room Modal */}
+      <EntityModal open={roomModal.open} onClose={() => setRoomModal({ open: false, data: null })}
+        title={roomModal.data ? 'Raum bearbeiten' : 'Neuer Raum'}
+        onSave={() => roomMut.mutate({ name: roomForm.name.trim(), description: roomForm.description.trim() })}
+        isPending={roomMut.isPending} canSave={!!roomForm.name.trim()}>
+        <div className="space-y-2">
+          <Label>Name *</Label>
+          <Input className="h-11" placeholder="z.B. Keller" value={roomForm.name} onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))} />
+        </div>
+        <div className="space-y-2">
+          <Label>Beschreibung (optional)</Label>
+          <Input className="h-11" placeholder="z.B. Untergeschoss links" value={roomForm.description} onChange={e => setRoomForm(f => ({ ...f, description: e.target.value }))} />
+        </div>
+      </EntityModal>
 
       {/* Area Modal */}
       <EntityModal open={areaModal.open} onClose={() => setAreaModal({ open: false, data: null })}

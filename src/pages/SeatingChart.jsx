@@ -328,7 +328,7 @@ export default function SeatingChartPage() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <p className="font-semibold text-foreground">Tisch {table.number}</p>
+                                            <p className="font-semibold text-foreground">Tisch {table.number}{table.name ? ` · ${table.name}` : ''}</p>
                                             {table.room && <span className="text-xs text-muted-foreground">· {table.room}</span>}
                                         </div>
                                         <p className="text-xs text-muted-foreground">

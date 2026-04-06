@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Package, Trash2, Clock } from 'lucide-react';
+import { Search, Package, Trash2, Clock, Plus, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { LoadingSpinner, ErrorState } from './StorageLoading';
 import { fuzzySearch } from '@/lib/fuzzySearch';
 import { useLocalPreferences } from '@/lib/useLocalPreferences';
@@ -24,6 +25,8 @@ export default function AssignTab({ permissions }) {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [form, setForm] = useState({ quantity: '', min_stock: '', max_stock: '', unit: 'Stück', notes: '' });
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [newArticleModal, setNewArticleModal] = useState(false);
+  const [newArticleForm, setNewArticleForm] = useState({ name: '', category: '' });
 
   const { data: articles, isLoading: aL, isError: aE } = useQuery({
     queryKey: ['articles'],
@@ -90,6 +93,18 @@ export default function AssignTab({ permissions }) {
       setTimeout(() => setSaveSuccess(false), 3000);
     },
     onError: e => { console.error('Assignment save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
+  });
+
+  const createArticleMut = useMutation({
+    mutationFn: d => base44.entities.Article.create(d),
+    onSuccess: (newArticle) => {
+      qc.invalidateQueries({ queryKey: ['articles'] });
+      setSelectedArticle(newArticle);
+      setArticleSearch('');
+      setNewArticleModal(false);
+      setNewArticleForm({ name: '', category: '' });
+    },
+    onError: e => alert('Fehler: ' + e.message)
   });
 
   const deleteMut = useMutation({
@@ -161,18 +176,38 @@ export default function AssignTab({ permissions }) {
             {!aL && articleSearch.length > 0 && (
               <div className="space-y-1 max-h-52 overflow-y-auto">
                 {filteredArticles.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-2">Kein Artikel gefunden</p>
-                ) : filteredArticles.map(a => (
-                  <button key={a.id} onClick={() => { setSelectedArticle(a); setArticleSearch(''); }}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors text-left">
-                    {a.image_url && <img src={a.image_url} alt="" className="w-7 h-7 rounded object-cover" />}
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{a.name}</p>
-                      <p className="text-xs text-muted-foreground">{a.category}</p>
-                    </div>
-                  </button>
-                ))}
+                  <div className="py-2 space-y-2">
+                    <p className="text-sm text-muted-foreground">Kein Artikel gefunden</p>
+                    <button onClick={() => { setNewArticleForm({ name: articleSearch, category: '' }); setNewArticleModal(true); }}
+                      className="w-full flex items-center gap-2 p-2.5 rounded-lg border border-dashed border-amber-500/50 hover:bg-amber-500/10 text-amber-500 text-sm font-medium transition-colors">
+                      <Plus className="w-4 h-4" /> "{articleSearch}" neu anlegen
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {filteredArticles.map(a => (
+                      <button key={a.id} onClick={() => { setSelectedArticle(a); setArticleSearch(''); }}
+                        className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors text-left">
+                        {a.image_url && <img src={a.image_url} alt="" className="w-7 h-7 rounded object-cover" />}
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{a.name}</p>
+                          <p className="text-xs text-muted-foreground">{a.category}</p>
+                        </div>
+                      </button>
+                    ))}
+                    <button onClick={() => { setNewArticleForm({ name: articleSearch, category: '' }); setNewArticleModal(true); }}
+                      className="w-full flex items-center gap-2 p-2 rounded-lg border border-dashed border-border hover:bg-accent/30 text-muted-foreground text-xs transition-colors">
+                      <Plus className="w-3 h-3" /> Neuen Artikel anlegen
+                    </button>
+                  </>
+                )}
               </div>
+            )}
+            {!aL && !articleSearch && (
+              <button onClick={() => { setNewArticleForm({ name: '', category: '' }); setNewArticleModal(true); }}
+                className="w-full flex items-center gap-2 p-2.5 rounded-lg border border-dashed border-border hover:bg-accent/30 text-muted-foreground text-xs transition-colors">
+                <Plus className="w-3 h-3" /> Neuen Artikel anlegen
+              </button>
             )}
           </>
         )}
@@ -268,6 +303,34 @@ export default function AssignTab({ permissions }) {
           </Button>
         </Card>
       )}
+
+      {/* New Article Modal */}
+      <Dialog open={newArticleModal} onOpenChange={v => !v && setNewArticleModal(false)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-amber-500" />Neuen Artikel anlegen</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input className="h-11" placeholder="z.B. Vodka Red Bull, Putzmittel…" value={newArticleForm.name}
+                onChange={e => setNewArticleForm(f => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Kategorie (optional)</Label>
+              <Input className="h-11" placeholder="z.B. Spirituosen, Reinigung…" value={newArticleForm.category}
+                onChange={e => setNewArticleForm(f => ({ ...f, category: e.target.value }))} />
+            </div>
+            <p className="text-xs text-muted-foreground">Der Artikel wird in der Artikelliste angelegt und direkt hier ausgewählt.</p>
+          </div>
+          <DialogFooter className="mt-4 gap-2">
+            <Button variant="outline" onClick={() => setNewArticleModal(false)} disabled={createArticleMut.isPending}>Abbrechen</Button>
+            <Button onClick={() => createArticleMut.mutate({ name: newArticleForm.name.trim(), category: newArticleForm.category.trim() || null, is_active: true })}
+              disabled={!newArticleForm.name.trim() || createArticleMut.isPending}
+              className="bg-amber-600 hover:bg-amber-700 text-white">
+              {createArticleMut.isPending ? 'Anlegen…' : 'Artikel anlegen & wählen'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Recent Assignments */}
       {asE ? <ErrorState text="Zuordnungen konnten nicht geladen werden." /> : (

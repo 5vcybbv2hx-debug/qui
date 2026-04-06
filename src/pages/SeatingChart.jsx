@@ -290,7 +290,10 @@ export default function SeatingChartPage() {
                                         suggested.some(s => s.id === table.id) && 'ring-2 ring-amber-400 ring-offset-2 ring-offset-background'
                                     )}>
                                     <div className="flex items-start justify-between gap-1">
-                                        <span className="text-2xl font-black">{table.number}</span>
+                                        <div>
+                                            <span className="text-2xl font-black">{table.number}</span>
+                                            {table.name && <p className="text-xs font-medium opacity-80 leading-tight">{table.name}</p>}
+                                        </div>
                                         <span className={cn('w-2.5 h-2.5 rounded-full mt-1 shrink-0', STATUS_CONFIG[status].dot)} />
                                     </div>
                                     <div>

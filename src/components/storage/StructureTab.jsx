@@ -93,11 +93,11 @@ export default function StructureTab({ permissions }) {
   });
   const { data: furniture, isLoading: furLoading, isError: furError } = useQuery({
     queryKey: ['furniture'],
-    queryFn: () => base44.entities.Furniture.list('sort_order,name', 500)
+    queryFn: () => base44.entities.Furniture.list('name', 500)
   });
   const { data: containers, isLoading: conLoading, isError: conError } = useQuery({
     queryKey: ['containers'],
-    queryFn: () => base44.entities.Container.list('sort_order,name', 500)
+    queryFn: () => base44.entities.Container.list('name', 500)
   });
 
   // ── Room Modal ──

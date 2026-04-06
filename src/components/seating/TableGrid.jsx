@@ -43,6 +43,11 @@ export default function TableGrid({ tables, reservations, getTableReservation, o
                                         <div className="text-2xl font-bold text-foreground">
                                             {table.table_number}
                                         </div>
+                                        {table.name && (
+                                            <div className="text-xs font-medium text-foreground/70 mt-0.5">
+                                                {table.name}
+                                            </div>
+                                        )}
                                         <div className="text-sm text-muted-foreground mt-1">
                                             {table.capacity} Plätze
                                         </div>

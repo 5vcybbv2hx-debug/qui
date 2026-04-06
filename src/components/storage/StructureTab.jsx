@@ -7,64 +7,55 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, ChevronRight, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, Building2, Grid3X3, Sofa, Box, LayoutGrid } from 'lucide-react';
 import { generateShortCode, buildFullName } from './storageUtils';
-import { LoadingSpinner, ErrorState, EmptyState } from './StorageLoading';
 
 const FURNITURE_TYPES = ['Regal', 'Kühlschrank', 'Schrank', 'Unterschrank', 'Theke', 'Sonstiges'];
 const CONTAINER_TYPES = ['Fach', 'Schublade', 'Box', 'Ebene', 'Abteil', 'Sonstiges'];
 
-function EntityModal({ open, onClose, title, children, onSave, isPending, canSave }) {
-  return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
-        <div className="space-y-4 mt-2">{children}</div>
-        <DialogFooter className="mt-4 gap-2">
-          <Button variant="outline" onClick={onClose} disabled={isPending}>Abbrechen</Button>
-          <Button onClick={onSave} disabled={!canSave || isPending} className="bg-amber-600 hover:bg-amber-700 text-white">
-            {isPending ? 'Speichert…' : 'Speichern'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+// ── Hilfsfunktionen ──────────────────────────────────────────────────────────
+function useEntityCRUD(entityName, queryKey) {
+  const qc = useQueryClient();
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: [queryKey],
+    queryFn: () => base44.entities[entityName].list('name', 500)
+  });
+  const saveMut = useMutation({
+    mutationFn: ({ id, data }) => id ? base44.entities[entityName].update(id, data) : base44.entities[entityName].create(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [queryKey] })
+  });
+  const deleteMut = useMutation({
+    mutationFn: id => base44.entities[entityName].delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [queryKey] })
+  });
+  return { data, isLoading, isError, saveMut, deleteMut };
 }
 
-function Section({ title, subtitle, count, onAdd, children, defaultOpen = false, canEdit }) {
-  const [open, setOpen] = useState(defaultOpen);
+// ── Kleine UI-Bausteine ──────────────────────────────────────────────────────
+function SectionHeader({ icon: Icon, title, subtitle, count, color, onAdd, canEdit, open, toggle }) {
   return (
-    <Card className="overflow-hidden">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between p-4 hover:bg-accent/30 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div>
-            <p className="font-semibold text-foreground text-left">{title}</p>
-            {subtitle && <p className="text-xs text-muted-foreground text-left">{subtitle}</p>}
-          </div>
-          {count != null && (
-            <span className="text-xs bg-secondary text-foreground rounded-full px-2 py-0.5">{count}</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {canEdit && onAdd && (
-            <Button size="sm" onClick={e => { e.stopPropagation(); onAdd(); }} className="bg-amber-600 hover:bg-amber-700 text-white h-8">
-              <Plus className="w-3 h-3" />
-            </Button>
-          )}
-          {open ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-        </div>
-      </button>
-      {open && <div className="border-t border-border px-4 pb-4 pt-3 space-y-1">{children}</div>}
-    </Card>
+    <button onClick={toggle} className="w-full flex items-center gap-3 p-4 hover:bg-accent/30 transition-colors text-left">
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      <span className="text-xs bg-secondary text-foreground rounded-full px-2 py-0.5 shrink-0">{count}</span>
+      {canEdit && onAdd && (
+        <Button size="sm" onClick={e => { e.stopPropagation(); onAdd(); }} className="bg-amber-600 hover:bg-amber-700 text-white h-8 shrink-0">
+          <Plus className="w-3 h-3" />
+        </Button>
+      )}
+      {open ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+    </button>
   );
 }
 
 function ItemRow({ label, sublabel, onEdit, onDelete, canEdit }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b border-border/50 last:border-0">
+    <div className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground">{label}</p>
         {sublabel && <p className="text-xs text-muted-foreground">{sublabel}</p>}
@@ -79,361 +70,365 @@ function ItemRow({ label, sublabel, onEdit, onDelete, canEdit }) {
   );
 }
 
+function EmptyHint({ text }) {
+  return <p className="text-sm text-muted-foreground py-3 text-center">{text}</p>;
+}
+
+function EntityModal({ open, onClose, title, children, onSave, isPending, canSave }) {
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
+        <div className="space-y-4 mt-2">{children}</div>
+        <DialogFooter className="mt-4 gap-2">
+          <Button variant="outline" onClick={onClose} disabled={isPending}>Abbrechen</Button>
+          <Button onClick={onSave} disabled={!canSave || isPending} className="bg-amber-600 hover:bg-amber-700 text-white">
+            {isPending ? 'Speichert…' : 'Speichern'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Hauptkomponente ──────────────────────────────────────────────────────────
 export default function StructureTab({ permissions }) {
   const qc = useQueryClient();
   const canEdit = permissions.isManager;
 
-  const { data: rooms, isLoading: roomsLoading, isError: roomsError } = useQuery({
-    queryKey: ['storage-rooms'],
-    queryFn: () => base44.entities.Room.list('name', 100)
-  });
-  const { data: areas, isLoading: areasLoading, isError: areasError } = useQuery({
-    queryKey: ['areas'],
-    queryFn: () => base44.entities.Area.list('name', 100)
-  });
-  const { data: furniture, isLoading: furLoading, isError: furError } = useQuery({
-    queryKey: ['furniture'],
-    queryFn: () => base44.entities.Furniture.list('name', 500)
-  });
-  const { data: containers, isLoading: conLoading, isError: conError } = useQuery({
-    queryKey: ['containers'],
-    queryFn: () => base44.entities.Container.list('name', 500)
-  });
+  // ── Daten laden ──
+  const rooms    = useEntityCRUD('Room',        'st-rooms');
+  const areas    = useEntityCRUD('Area',        'st-areas');
+  const furns    = useEntityCRUD('Furniture',   'st-furniture');
+  const conts    = useEntityCRUD('Container',   'st-containers');
 
-  // ── Room Modal ──
-  const [roomModal, setRoomModal] = useState({ open: false, data: null });
-  const [roomForm, setRoomForm] = useState({ name: '', description: '' });
+  // ── Sections offen/zu ──
+  const [openSec, setOpenSec] = useState({ rooms: true, areas: true, furniture: false, containers: false, slots: false });
+  const toggle = key => setOpenSec(s => ({ ...s, [key]: !s[key] }));
 
-  const roomMut = useMutation({
-    mutationFn: d => roomModal.data?.id ? base44.entities.Room.update(roomModal.data.id, d) : base44.entities.Room.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['storage-rooms'] }); setRoomModal({ open: false, data: null }); },
-    onError: e => { console.error('Room save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
-  });
-  const deleteRoom = useMutation({
-    mutationFn: id => base44.entities.Room.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['storage-rooms'] }),
-    onError: e => { console.error('Room delete:', e); alert('Löschen fehlgeschlagen'); }
-  });
+  // ── Modal-State helper ──
+  const emptyModal = { open: false, data: null };
+  const [roomMod, setRoomMod] = useState(emptyModal);
+  const [areaMod, setAreaMod] = useState(emptyModal);
+  const [furMod,  setFurMod]  = useState(emptyModal);
+  const [conMod,  setConMod]  = useState(emptyModal);
+  const [slotMod, setSlotMod] = useState(false);
 
-  const openRoomModal = (item = null) => {
-    setRoomForm({ name: item?.name || '', description: item?.description || '' });
-    setRoomModal({ open: true, data: item });
-  };
+  // ── Formular-State ──
+  const [roomF, setRoomF] = useState({ name: '', description: '' });
+  const [areaF, setAreaF] = useState({ name: '', description: '', room_id: '' });
+  const [furF,  setFurF]  = useState({ name: '', type: 'Regal', area_id: '' });
+  const [conF,  setConF]  = useState({ name: '', type: 'Fach', furniture_id: '' });
+  const [slotF, setSlotF] = useState({ area_id: '', furniture_id: '', container_id: '', prefix: 'Fach', count: 4 });
 
-  // ── Area Modal ──
-  const [areaModal, setAreaModal] = useState({ open: false, data: null });
-  const [areaForm, setAreaForm] = useState({ name: '', description: '', room_id: '' });
-
-  const areaMut = useMutation({
-    mutationFn: d => areaModal.data?.id ? base44.entities.Area.update(areaModal.data.id, d) : base44.entities.Area.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['areas'] }); setAreaModal({ open: false, data: null }); },
-    onError: e => { console.error('Area save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
-  });
-  const deleteArea = useMutation({
-    mutationFn: id => base44.entities.Area.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['areas'] }),
-    onError: e => { console.error('Area delete:', e); alert('Löschen fehlgeschlagen'); }
-  });
-
-  const openAreaModal = (item = null) => {
-    setAreaForm({ name: item?.name || '', description: item?.description || '', room_id: item?.room_id || '' });
-    setAreaModal({ open: true, data: item });
-  };
-
-  // ── Furniture Modal ──
-  const [furModal, setFurModal] = useState({ open: false, data: null });
-  const [furForm, setFurForm] = useState({ area_id: '', name: '', type: 'Regal' });
-
-  const furMut = useMutation({
-    mutationFn: d => furModal.data?.id ? base44.entities.Furniture.update(furModal.data.id, d) : base44.entities.Furniture.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['furniture'] }); setFurModal({ open: false, data: null }); },
-    onError: e => { console.error('Furniture save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
-  });
-  const deleteFur = useMutation({
-    mutationFn: id => base44.entities.Furniture.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['furniture'] }),
-    onError: e => { console.error('Furniture delete:', e); alert('Löschen fehlgeschlagen'); }
-  });
-
-  const openFurModal = (item = null) => {
-    setFurForm({ area_id: item?.area_id || '', name: item?.name || '', type: item?.type || 'Regal' });
-    setFurModal({ open: true, data: item });
-  };
-
-  const saveFurniture = () => {
-    const area = (areas || []).find(a => a.id === furForm.area_id);
-    if (!area) { alert('Bitte wähle einen gültigen Bereich.'); return; }
-    furMut.mutate({ area_id: area.id, area_name: area.name, name: furForm.name.trim(), type: furForm.type, is_active: true, sort_order: 0 });
-  };
-
-  // ── Container Modal ──
-  const [conModal, setConModal] = useState({ open: false, data: null });
-  const [conForm, setConForm] = useState({ furniture_id: '', name: '', type: 'Fach' });
-
-  const conMut = useMutation({
-    mutationFn: d => conModal.data?.id ? base44.entities.Container.update(conModal.data.id, d) : base44.entities.Container.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['containers'] }); setConModal({ open: false, data: null }); },
-    onError: e => { console.error('Container save:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
-  });
-  const deleteCon = useMutation({
-    mutationFn: id => base44.entities.Container.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['containers'] }),
-    onError: e => { console.error('Container delete:', e); alert('Löschen fehlgeschlagen'); }
-  });
-
-  const openConModal = (item = null) => {
-    setConForm({ furniture_id: item?.furniture_id || '', name: item?.name || '', type: item?.type || 'Fach' });
-    setConModal({ open: true, data: item });
-  };
-
-  const saveContainer = () => {
-    const fur = (furniture || []).find(f => f.id === conForm.furniture_id);
-    if (!fur) { alert('Bitte wähle ein gültiges Möbelstück.'); return; }
-    const area = (areas || []).find(a => a.id === fur.area_id);
-    if (!area) { alert('Bereich des Möbelstücks nicht gefunden.'); return; }
-    conMut.mutate({ area_id: area.id, area_name: area.name, furniture_id: fur.id, furniture_name: fur.name, name: conForm.name.trim(), type: conForm.type, is_active: true, sort_order: 0 });
-  };
-
-  // ── Slot Bulk ──
-  const [slotModal, setSlotModal] = useState(false);
-  const [slotForm, setSlotForm] = useState({ area_id: '', furniture_id: '', container_id: '', count: 4, prefix: 'Fach' });
-
-  const slotBulkMut = useMutation({
-    mutationFn: async d => {
-      const area = (areas || []).find(a => a.id === d.area_id);
-      const fur = (furniture || []).find(f => f.id === d.furniture_id);
-      const con = (containers || []).find(c => c.id === d.container_id);
-      if (!area || !fur || !con) throw new Error('Fehlende Stammdaten. Bitte Seite neu laden.');
-      const slots = Array.from({ length: d.count }, (_, i) => {
-        const name = `${d.prefix} ${i + 1}`;
-        return { area_id: area.id, area_name: area.name, furniture_id: fur.id, furniture_name: fur.name, container_id: con.id, container_name: con.name, name, full_name: buildFullName(area.name, fur.name, con.name, name), short_code: generateShortCode(), is_active: true };
+  // ── Bulk-Slot-Mutation ──
+  const slotBulk = useMutation({
+    mutationFn: async f => {
+      const area = areas.data.find(a => a.id === f.area_id);
+      const fur  = furns.data.find(x => x.id === f.furniture_id);
+      const con  = conts.data.find(c => c.id === f.container_id);
+      if (!area || !fur || !con) throw new Error('Bitte alle Felder ausfüllen.');
+      const items = Array.from({ length: f.count }, (_, i) => {
+        const name = `${f.prefix} ${i + 1}`;
+        return {
+          area_id: area.id, area_name: area.name,
+          furniture_id: fur.id, furniture_name: fur.name,
+          container_id: con.id, container_name: con.name,
+          name, full_name: buildFullName(area.name, fur.name, con.name, name),
+          short_code: generateShortCode(), is_active: true
+        };
       });
-      return base44.entities.StorageSlot.bulkCreate(slots);
+      return base44.entities.StorageSlot.bulkCreate(items);
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['slots'] }); setSlotModal(false); },
-    onError: e => { console.error('Slot bulk:', e); alert('Fehler: ' + (e?.message || 'Unbekannt')); }
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['slots'] }); setSlotMod(false); alert(`${slotF.count} Fächer erfolgreich angelegt!`); },
+    onError: e => alert('Fehler: ' + e.message)
   });
 
-  const slotFurniture = (furniture || []).filter(f => f.area_id === slotForm.area_id);
-  const slotContainers = (containers || []).filter(c => c.furniture_id === slotForm.furniture_id);
-  const conFurniture = furniture || [];
+  // ── Hilfsfunktionen für Abhängigkeiten ──
+  const slotFurniture  = furns.data.filter(f => f.area_id === slotF.area_id);
+  const slotContainers = conts.data.filter(c => c.furniture_id === slotF.furniture_id);
 
+  // ── Render ──
   return (
     <div className="space-y-3">
-      {/* Rooms */}
-      <Section title="Räume" subtitle="Keller, Lagerraum, Küche …" count={(rooms || []).length} onAdd={() => openRoomModal()} defaultOpen canEdit={canEdit}>
-        {roomsLoading ? <LoadingSpinner text="Lade Räume…" /> :
-         roomsError ? <ErrorState text="Räume konnten nicht geladen werden." /> :
-         !rooms?.length ? <EmptyState text="Noch keine Räume. Erstelle den ersten!" /> :
-         rooms.map(r => (
-           <ItemRow key={r.id} label={r.name} sublabel={r.description} canEdit={canEdit}
-             onEdit={() => openRoomModal(r)} onDelete={() => deleteRoom.mutate(r.id)} />
-         ))
-        }
-      </Section>
 
-      {/* Areas */}
-      <Section title="Bereiche" subtitle="Hauptbar, Keller, Küche …" count={(areas || []).length} onAdd={() => openAreaModal()} defaultOpen canEdit={canEdit}>
-        {areasLoading ? <LoadingSpinner text="Lade Bereiche…" /> :
-         areasError ? <ErrorState text="Bereiche konnten nicht geladen werden." /> :
-         !areas?.length ? <EmptyState text="Noch keine Bereiche. Erstelle den ersten!" /> :
-         areas.map(a => (
-           <ItemRow key={a.id} label={a.name} sublabel={[a.room_name, a.description].filter(Boolean).join(' · ')} canEdit={canEdit}
-             onEdit={() => openAreaModal(a)} onDelete={() => deleteArea.mutate(a.id)} />
-         ))
-        }
-      </Section>
-
-      {/* Furniture */}
-      <Section title="Möbel" subtitle="Regal links, Kühlschrank 1 …" count={(furniture || []).length} onAdd={() => openFurModal()} canEdit={canEdit}>
-        {furLoading ? <LoadingSpinner text="Lade Möbel…" /> :
-         furError ? <ErrorState text="Möbel konnten nicht geladen werden." /> :
-         !furniture?.length ? <EmptyState text="Noch keine Möbel. Erstelle zuerst einen Bereich." /> :
-         furniture.map(f => (
-           <ItemRow key={f.id} label={f.name} sublabel={`${f.area_name} · ${f.type}`} canEdit={canEdit}
-             onEdit={() => openFurModal(f)} onDelete={() => deleteFur.mutate(f.id)} />
-         ))
-        }
-      </Section>
-
-      {/* Containers */}
-      <Section title="Behälter" subtitle="Fach, Schublade, Box …" count={(containers || []).length} onAdd={() => openConModal()} canEdit={canEdit}>
-        {conLoading ? <LoadingSpinner text="Lade Behälter…" /> :
-         conError ? <ErrorState text="Behälter konnten nicht geladen werden." /> :
-         !containers?.length ? <EmptyState text="Noch keine Behälter. Erstelle zuerst Möbel." /> :
-         containers.map(c => (
-           <ItemRow key={c.id} label={c.name} sublabel={`${c.area_name} · ${c.furniture_name} · ${c.type}`} canEdit={canEdit}
-             onEdit={() => openConModal(c)} onDelete={() => deleteCon.mutate(c.id)} />
-         ))
-        }
-      </Section>
-
-      {/* Bulk Slot */}
-      {canEdit && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-foreground">Fächer generieren</p>
-              <p className="text-xs text-muted-foreground">Mehrere Fächer auf einmal anlegen</p>
-            </div>
-            <Button onClick={() => setSlotModal(true)} className="bg-amber-600 hover:bg-amber-700 text-white h-11">
-              <Plus className="w-4 h-4 mr-1" /> Generieren
-            </Button>
+      {/* ── RÄUME ── */}
+      <Card className="overflow-hidden">
+        <SectionHeader
+          icon={Building2} title="Räume" subtitle="Keller, Lagerraum, Küche …"
+          color="bg-blue-500/20 text-blue-400" count={rooms.data.length}
+          canEdit={canEdit} onAdd={() => { setRoomF({ name: '', description: '' }); setRoomMod({ open: true, data: null }); }}
+          open={openSec.rooms} toggle={() => toggle('rooms')}
+        />
+        {openSec.rooms && (
+          <div className="border-t border-border px-4 pb-4 pt-2">
+            {rooms.isLoading ? <EmptyHint text="Lädt…" /> :
+             rooms.isError   ? <EmptyHint text="Fehler beim Laden." /> :
+             !rooms.data.length ? <EmptyHint text="Noch keine Räume vorhanden." /> :
+             rooms.data.map(r => (
+               <ItemRow key={r.id} label={r.name} sublabel={r.description} canEdit={canEdit}
+                 onEdit={() => { setRoomF({ name: r.name, description: r.description || '' }); setRoomMod({ open: true, data: r }); }}
+                 onDelete={() => { if (confirm(`"${r.name}" löschen?`)) rooms.deleteMut.mutate(r.id); }}
+               />
+             ))
+            }
           </div>
+        )}
+      </Card>
+
+      {/* ── BEREICHE ── */}
+      <Card className="overflow-hidden">
+        <SectionHeader
+          icon={Grid3X3} title="Bereiche" subtitle="Hauptbar, Kühlraum, Lager …"
+          color="bg-green-500/20 text-green-400" count={areas.data.length}
+          canEdit={canEdit} onAdd={() => { setAreaF({ name: '', description: '', room_id: '' }); setAreaMod({ open: true, data: null }); }}
+          open={openSec.areas} toggle={() => toggle('areas')}
+        />
+        {openSec.areas && (
+          <div className="border-t border-border px-4 pb-4 pt-2">
+            {areas.isLoading ? <EmptyHint text="Lädt…" /> :
+             areas.isError   ? <EmptyHint text="Fehler beim Laden." /> :
+             !areas.data.length ? <EmptyHint text="Noch keine Bereiche vorhanden." /> :
+             areas.data.map(a => (
+               <ItemRow key={a.id}
+                 label={a.name}
+                 sublabel={[a.room_name ? `📍 ${a.room_name}` : null, a.description].filter(Boolean).join('  ·  ')}
+                 canEdit={canEdit}
+                 onEdit={() => { setAreaF({ name: a.name, description: a.description || '', room_id: a.room_id || '' }); setAreaMod({ open: true, data: a }); }}
+                 onDelete={() => { if (confirm(`"${a.name}" löschen?`)) areas.deleteMut.mutate(a.id); }}
+               />
+             ))
+            }
+          </div>
+        )}
+      </Card>
+
+      {/* ── MÖBEL ── */}
+      <Card className="overflow-hidden">
+        <SectionHeader
+          icon={Sofa} title="Möbel" subtitle="Regal, Kühlschrank, Schrank …"
+          color="bg-amber-500/20 text-amber-400" count={furns.data.length}
+          canEdit={canEdit} onAdd={() => { setFurF({ name: '', type: 'Regal', area_id: '' }); setFurMod({ open: true, data: null }); }}
+          open={openSec.furniture} toggle={() => toggle('furniture')}
+        />
+        {openSec.furniture && (
+          <div className="border-t border-border px-4 pb-4 pt-2">
+            {furns.isLoading ? <EmptyHint text="Lädt…" /> :
+             furns.isError   ? <EmptyHint text="Fehler beim Laden." /> :
+             !furns.data.length ? <EmptyHint text="Noch keine Möbel. Erst Bereiche anlegen." /> :
+             furns.data.map(f => (
+               <ItemRow key={f.id}
+                 label={f.name}
+                 sublabel={[f.type, f.area_name].filter(Boolean).join(' · ')}
+                 canEdit={canEdit}
+                 onEdit={() => { setFurF({ name: f.name, type: f.type || 'Regal', area_id: f.area_id || '' }); setFurMod({ open: true, data: f }); }}
+                 onDelete={() => { if (confirm(`"${f.name}" löschen?`)) furns.deleteMut.mutate(f.id); }}
+               />
+             ))
+            }
+          </div>
+        )}
+      </Card>
+
+      {/* ── BEHÄLTER ── */}
+      <Card className="overflow-hidden">
+        <SectionHeader
+          icon={Box} title="Behälter" subtitle="Fach, Schublade, Ebene …"
+          color="bg-purple-500/20 text-purple-400" count={conts.data.length}
+          canEdit={canEdit} onAdd={() => { setConF({ name: '', type: 'Fach', furniture_id: '' }); setConMod({ open: true, data: null }); }}
+          open={openSec.containers} toggle={() => toggle('containers')}
+        />
+        {openSec.containers && (
+          <div className="border-t border-border px-4 pb-4 pt-2">
+            {conts.isLoading ? <EmptyHint text="Lädt…" /> :
+             conts.isError   ? <EmptyHint text="Fehler beim Laden." /> :
+             !conts.data.length ? <EmptyHint text="Noch keine Behälter. Erst Möbel anlegen." /> :
+             conts.data.map(c => (
+               <ItemRow key={c.id}
+                 label={c.name}
+                 sublabel={[c.type, c.furniture_name, c.area_name].filter(Boolean).join(' · ')}
+                 canEdit={canEdit}
+                 onEdit={() => { setConF({ name: c.name, type: c.type || 'Fach', furniture_id: c.furniture_id || '' }); setConMod({ open: true, data: c }); }}
+                 onDelete={() => { if (confirm(`"${c.name}" löschen?`)) conts.deleteMut.mutate(c.id); }}
+               />
+             ))
+            }
+          </div>
+        )}
+      </Card>
+
+      {/* ── FÄCHER GENERIEREN ── */}
+      {canEdit && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={LayoutGrid} title="Fächer generieren" subtitle="Mehrere Lagerplätze auf einmal anlegen"
+            color="bg-orange-500/20 text-orange-400" count={null}
+            canEdit={false} open={openSec.slots} toggle={() => toggle('slots')}
+          />
+          {openSec.slots && (
+            <div className="border-t border-border px-4 pb-4 pt-3">
+              <p className="text-xs text-muted-foreground mb-3">
+                Wähle Bereich → Möbel → Behälter und gib an wie viele Fächer generiert werden sollen.
+              </p>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>1. Bereich *</Label>
+                  <Select value={slotF.area_id} onValueChange={v => setSlotF(f => ({ ...f, area_id: v, furniture_id: '', container_id: '' }))}>
+                    <SelectTrigger className="h-11"><SelectValue placeholder="Bereich wählen" /></SelectTrigger>
+                    <SelectContent>{areas.data.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className={!slotF.area_id ? 'text-muted-foreground' : ''}>2. Möbel *</Label>
+                  <Select value={slotF.furniture_id} disabled={!slotF.area_id} onValueChange={v => setSlotF(f => ({ ...f, furniture_id: v, container_id: '' }))}>
+                    <SelectTrigger className="h-11"><SelectValue placeholder={slotF.area_id ? 'Möbel wählen' : '← Zuerst Bereich wählen'} /></SelectTrigger>
+                    <SelectContent>
+                      {slotFurniture.length ? slotFurniture.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>) : <SelectItem value="_none" disabled>Keine Möbel in diesem Bereich</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className={!slotF.furniture_id ? 'text-muted-foreground' : ''}>3. Behälter *</Label>
+                  <Select value={slotF.container_id} disabled={!slotF.furniture_id} onValueChange={v => setSlotF(f => ({ ...f, container_id: v }))}>
+                    <SelectTrigger className="h-11"><SelectValue placeholder={slotF.furniture_id ? 'Behälter wählen' : '← Zuerst Möbel wählen'} /></SelectTrigger>
+                    <SelectContent>
+                      {slotContainers.length ? slotContainers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>) : <SelectItem value="_none" disabled>Keine Behälter in diesem Möbelstück</SelectItem>}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Präfix</Label>
+                    <Input className="h-11" value={slotF.prefix} onChange={e => setSlotF(f => ({ ...f, prefix: e.target.value }))} placeholder="z.B. Fach" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Anzahl</Label>
+                    <Input type="number" min={1} max={50} className="h-11" value={slotF.count} onChange={e => setSlotF(f => ({ ...f, count: Math.max(1, parseInt(e.target.value) || 1) }))} />
+                  </div>
+                </div>
+                {slotF.area_id && slotF.furniture_id && slotF.container_id && (
+                  <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+                    Erzeugt: {Array.from({ length: Math.min(slotF.count, 5) }, (_, i) => `${slotF.prefix} ${i + 1}`).join(', ')}{slotF.count > 5 ? ` … (${slotF.count} gesamt)` : ''}
+                  </div>
+                )}
+                <Button
+                  className="w-full bg-amber-600 hover:bg-amber-700 text-white h-11"
+                  disabled={!slotF.area_id || !slotF.furniture_id || !slotF.container_id || slotBulk.isPending}
+                  onClick={() => slotBulk.mutate(slotF)}
+                >
+                  {slotBulk.isPending ? 'Erstellt…' : `${slotF.count} Fächer anlegen`}
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
-      {/* Room Modal */}
-      <EntityModal open={roomModal.open} onClose={() => setRoomModal({ open: false, data: null })}
-        title={roomModal.data ? 'Raum bearbeiten' : 'Neuer Raum'}
-        onSave={() => roomMut.mutate({ name: roomForm.name.trim(), description: roomForm.description.trim() })}
-        isPending={roomMut.isPending} canSave={!!roomForm.name.trim()}>
+      {/* ══ MODALS ══════════════════════════════════════════════════════════════ */}
+
+      {/* Raum Modal */}
+      <EntityModal open={roomMod.open} onClose={() => setRoomMod(emptyModal)}
+        title={roomMod.data ? 'Raum bearbeiten' : 'Neuer Raum'}
+        onSave={() => rooms.saveMut.mutate({ id: roomMod.data?.id, data: { name: roomF.name.trim(), description: roomF.description.trim() } }, { onSuccess: () => setRoomMod(emptyModal) })}
+        isPending={rooms.saveMut.isPending} canSave={!!roomF.name.trim()}>
         <div className="space-y-2">
           <Label>Name *</Label>
-          <Input className="h-11" placeholder="z.B. Keller" value={roomForm.name} onChange={e => setRoomForm(f => ({ ...f, name: e.target.value }))} />
+          <Input className="h-11" placeholder="z.B. Keller" value={roomF.name} onChange={e => setRoomF(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label>Beschreibung (optional)</Label>
-          <Input className="h-11" placeholder="z.B. Untergeschoss links" value={roomForm.description} onChange={e => setRoomForm(f => ({ ...f, description: e.target.value }))} />
+          <Input className="h-11" placeholder="z.B. Untergeschoss" value={roomF.description} onChange={e => setRoomF(f => ({ ...f, description: e.target.value }))} />
         </div>
       </EntityModal>
 
-      {/* Area Modal */}
-      <EntityModal open={areaModal.open} onClose={() => setAreaModal({ open: false, data: null })}
-        title={areaModal.data ? 'Bereich bearbeiten' : 'Neuer Bereich'}
-        onSave={() => { const room = (rooms || []).find(r => r.id === areaForm.room_id); areaMut.mutate({ name: areaForm.name.trim(), description: areaForm.description.trim(), is_active: true, order: 0, room_id: areaForm.room_id || null, room_name: room?.name || null }); }}
-        isPending={areaMut.isPending} canSave={!!areaForm.name.trim()}>
+      {/* Bereich Modal */}
+      <EntityModal open={areaMod.open} onClose={() => setAreaMod(emptyModal)}
+        title={areaMod.data ? 'Bereich bearbeiten' : 'Neuer Bereich'}
+        onSave={() => {
+          const room = rooms.data.find(r => r.id === areaF.room_id);
+          areas.saveMut.mutate({ id: areaMod.data?.id, data: { name: areaF.name.trim(), description: areaF.description.trim(), room_id: areaF.room_id || null, room_name: room?.name || null, is_active: true, order: 0 } }, { onSuccess: () => setAreaMod(emptyModal) });
+        }}
+        isPending={areas.saveMut.isPending} canSave={!!areaF.name.trim()}>
         <div className="space-y-2">
           <Label>Name *</Label>
-          <Input className="h-11" placeholder="z.B. Hauptbar" value={areaForm.name} onChange={e => setAreaForm(f => ({ ...f, name: e.target.value }))} />
+          <Input className="h-11" placeholder="z.B. Hauptbar" value={areaF.name} onChange={e => setAreaF(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label>Raum (optional)</Label>
-          <Select value={areaForm.room_id} onValueChange={v => setAreaForm(f => ({ ...f, room_id: v }))}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Keinem Raum zugeordnet" /></SelectTrigger>
+          <Select value={areaF.room_id || ''} onValueChange={v => setAreaF(f => ({ ...f, room_id: v }))}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Kein Raum zugeordnet" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>Kein Raum</SelectItem>
-              {(rooms || []).map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+              <SelectItem value={null}>— Kein Raum —</SelectItem>
+              {rooms.data.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label>Beschreibung (optional)</Label>
-          <Input className="h-11" placeholder="z.B. Hinter der Theke" value={areaForm.description} onChange={e => setAreaForm(f => ({ ...f, description: e.target.value }))} />
+          <Input className="h-11" placeholder="z.B. Hinter der Theke" value={areaF.description} onChange={e => setAreaF(f => ({ ...f, description: e.target.value }))} />
         </div>
       </EntityModal>
 
-      {/* Furniture Modal */}
-      <EntityModal open={furModal.open} onClose={() => setFurModal({ open: false, data: null })}
-        title={furModal.data ? 'Möbel bearbeiten' : 'Neues Möbelstück'}
-        onSave={saveFurniture} isPending={furMut.isPending}
-        canSave={!!furForm.area_id && !!furForm.name.trim()}>
+      {/* Möbel Modal */}
+      <EntityModal open={furMod.open} onClose={() => setFurMod(emptyModal)}
+        title={furMod.data ? 'Möbel bearbeiten' : 'Neues Möbelstück'}
+        onSave={() => {
+          const area = areas.data.find(a => a.id === furF.area_id);
+          furns.saveMut.mutate({ id: furMod.data?.id, data: { name: furF.name.trim(), type: furF.type, area_id: area?.id || null, area_name: area?.name || null, is_active: true, sort_order: 0 } }, { onSuccess: () => setFurMod(emptyModal) });
+        }}
+        isPending={furns.saveMut.isPending} canSave={!!furF.name.trim() && !!furF.area_id}>
         <div className="space-y-2">
           <Label>Bereich *</Label>
-          {areasLoading ? <p className="text-sm text-muted-foreground">Lädt Bereiche…</p> : (
-            <Select value={furForm.area_id} onValueChange={v => setFurForm(f => ({ ...f, area_id: v }))}>
-              <SelectTrigger className="h-11"><SelectValue placeholder="Bereich wählen" /></SelectTrigger>
-              <SelectContent>{(areas || []).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
-            </Select>
-          )}
+          <Select value={furF.area_id} onValueChange={v => setFurF(f => ({ ...f, area_id: v }))}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Bereich wählen" /></SelectTrigger>
+            <SelectContent>
+              {areas.data.length ? areas.data.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>) : <SelectItem value="_none" disabled>Erst Bereiche anlegen</SelectItem>}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Name *</Label>
-          <Input className="h-11" placeholder="z.B. Regal links" value={furForm.name} onChange={e => setFurForm(f => ({ ...f, name: e.target.value }))} />
+          <Input className="h-11" placeholder="z.B. Regal links" value={furF.name} onChange={e => setFurF(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label>Typ</Label>
-          <Select value={furForm.type} onValueChange={v => setFurForm(f => ({ ...f, type: v }))}>
+          <Select value={furF.type} onValueChange={v => setFurF(f => ({ ...f, type: v }))}>
             <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>{FURNITURE_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
           </Select>
         </div>
       </EntityModal>
 
-      {/* Container Modal */}
-      <EntityModal open={conModal.open} onClose={() => setConModal({ open: false, data: null })}
-        title={conModal.data ? 'Behälter bearbeiten' : 'Neuer Behälter'}
-        onSave={saveContainer} isPending={conMut.isPending}
-        canSave={!!conForm.furniture_id && !!conForm.name.trim()}>
+      {/* Behälter Modal */}
+      <EntityModal open={conMod.open} onClose={() => setConMod(emptyModal)}
+        title={conMod.data ? 'Behälter bearbeiten' : 'Neuer Behälter'}
+        onSave={() => {
+          const fur  = furns.data.find(f => f.id === conF.furniture_id);
+          const area = areas.data.find(a => a.id === fur?.area_id);
+          conts.saveMut.mutate({ id: conMod.data?.id, data: { name: conF.name.trim(), type: conF.type, furniture_id: fur?.id || null, furniture_name: fur?.name || null, area_id: area?.id || null, area_name: area?.name || null, is_active: true, sort_order: 0 } }, { onSuccess: () => setConMod(emptyModal) });
+        }}
+        isPending={conts.saveMut.isPending} canSave={!!conF.name.trim() && !!conF.furniture_id}>
         <div className="space-y-2">
           <Label>Möbelstück *</Label>
-          {furLoading ? <p className="text-sm text-muted-foreground">Lädt Möbel…</p> : (
-            <Select value={conForm.furniture_id} onValueChange={v => setConForm(f => ({ ...f, furniture_id: v }))}>
-              <SelectTrigger className="h-11"><SelectValue placeholder="Möbel wählen" /></SelectTrigger>
-              <SelectContent>{conFurniture.map(f => <SelectItem key={f.id} value={f.id}>{f.name} ({f.area_name})</SelectItem>)}</SelectContent>
-            </Select>
-          )}
+          <Select value={conF.furniture_id} onValueChange={v => setConF(f => ({ ...f, furniture_id: v }))}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Möbel wählen" /></SelectTrigger>
+            <SelectContent>
+              {furns.data.length ? furns.data.map(f => <SelectItem key={f.id} value={f.id}>{f.name} ({f.area_name})</SelectItem>) : <SelectItem value="_none" disabled>Erst Möbel anlegen</SelectItem>}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label>Name *</Label>
-          <Input className="h-11" placeholder="z.B. Schublade 2" value={conForm.name} onChange={e => setConForm(f => ({ ...f, name: e.target.value }))} />
+          <Input className="h-11" placeholder="z.B. Schublade 1" value={conF.name} onChange={e => setConF(f => ({ ...f, name: e.target.value }))} />
         </div>
         <div className="space-y-2">
           <Label>Typ</Label>
-          <Select value={conForm.type} onValueChange={v => setConForm(f => ({ ...f, type: v }))}>
+          <Select value={conF.type} onValueChange={v => setConF(f => ({ ...f, type: v }))}>
             <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>{CONTAINER_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
           </Select>
         </div>
       </EntityModal>
-
-      {/* Slot Bulk Modal */}
-      <Dialog open={slotModal} onOpenChange={setSlotModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>Fächer generieren</DialogTitle></DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label>Bereich *</Label>
-              <Select value={slotForm.area_id} onValueChange={v => setSlotForm(f => ({ ...f, area_id: v, furniture_id: '', container_id: '' }))}>
-                <SelectTrigger className="h-11"><SelectValue placeholder="Bereich wählen" /></SelectTrigger>
-                <SelectContent>{(areas || []).map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            {slotForm.area_id && (
-              <div className="space-y-2">
-                <Label>Möbelstück *</Label>
-                <Select value={slotForm.furniture_id} onValueChange={v => setSlotForm(f => ({ ...f, furniture_id: v, container_id: '' }))}>
-                  <SelectTrigger className="h-11"><SelectValue placeholder="Möbel wählen" /></SelectTrigger>
-                  <SelectContent>{slotFurniture.map(f => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            )}
-            {slotForm.furniture_id && (
-              <div className="space-y-2">
-                <Label>Behälter *</Label>
-                <Select value={slotForm.container_id} onValueChange={v => setSlotForm(f => ({ ...f, container_id: v }))}>
-                  <SelectTrigger className="h-11"><SelectValue placeholder="Behälter wählen" /></SelectTrigger>
-                  <SelectContent>{slotContainers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label>Präfix</Label>
-              <Input className="h-11" value={slotForm.prefix} onChange={e => setSlotForm(f => ({ ...f, prefix: e.target.value }))} placeholder="z.B. Fach, Ebene, Box" />
-            </div>
-            <div className="space-y-2">
-              <Label>Anzahl Fächer</Label>
-              <Input type="number" min={1} max={20} className="h-11" value={slotForm.count} onChange={e => setSlotForm(f => ({ ...f, count: parseInt(e.target.value) || 1 }))} />
-            </div>
-            {slotForm.area_id && slotForm.furniture_id && slotForm.container_id && (
-              <div className="bg-muted/50 rounded p-3 text-xs text-muted-foreground">
-                Erzeugt: {Array.from({ length: Math.min(slotForm.count, 5) }, (_, i) => `${slotForm.prefix} ${i + 1}`).join(', ')}
-                {slotForm.count > 5 ? ` … (${slotForm.count} gesamt)` : ''}
-              </div>
-            )}
-          </div>
-          <DialogFooter className="mt-4 gap-2">
-            <Button variant="outline" onClick={() => setSlotModal(false)} disabled={slotBulkMut.isPending}>Abbrechen</Button>
-            <Button
-              onClick={() => slotBulkMut.mutate(slotForm)}
-              disabled={!slotForm.area_id || !slotForm.furniture_id || !slotForm.container_id || slotBulkMut.isPending}
-              className="bg-amber-600 hover:bg-amber-700 text-white"
-            >
-              {slotBulkMut.isPending ? 'Erstellt…' : `${slotForm.count} Fächer anlegen`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

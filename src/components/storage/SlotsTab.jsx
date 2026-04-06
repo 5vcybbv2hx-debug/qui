@@ -7,7 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Pencil, Trash2, Copy, Check } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, Copy, Check, Printer } from 'lucide-react';
+import StorageLabelPrint from './StorageLabelPrint';
 import { generateShortCode, buildFullName } from './storageUtils';
 import { LoadingSpinner, ErrorState, EmptyState } from './StorageLoading';
 
@@ -23,11 +24,12 @@ export default function SlotsTab({ permissions }) {
   const [filterContainer, setFilterContainer] = useState(ALL);
   const [copiedId, setCopiedId] = useState(null);
   const [modal, setModal] = useState({ open: false, data: null });
+  const [labelSlot, setLabelSlot] = useState(null);
   const [form, setForm] = useState({ area_id: '', furniture_id: '', container_id: '', name: '', notes: '' });
 
-  const { data: areas, isLoading: aL, isError: aE } = useQuery({ queryKey: ['areas'], queryFn: () => base44.entities.Area.list('order,name', 100) });
-  const { data: furniture, isLoading: fL, isError: fE } = useQuery({ queryKey: ['furniture'], queryFn: () => base44.entities.Furniture.list('sort_order,name', 500) });
-  const { data: containers, isLoading: cL, isError: cE } = useQuery({ queryKey: ['containers'], queryFn: () => base44.entities.Container.list('sort_order,name', 500) });
+  const { data: areas, isLoading: aL, isError: aE } = useQuery({ queryKey: ['st-areas'], queryFn: () => base44.entities.Area.list('name', 100) });
+  const { data: furniture, isLoading: fL, isError: fE } = useQuery({ queryKey: ['st-furniture'], queryFn: () => base44.entities.Furniture.list('name', 500) });
+  const { data: containers, isLoading: cL, isError: cE } = useQuery({ queryKey: ['st-containers'], queryFn: () => base44.entities.Container.list('name', 500) });
   const { data: slots, isLoading: sL, isError: sE } = useQuery({ queryKey: ['slots'], queryFn: () => base44.entities.StorageSlot.list('-created_date', 1000) });
 
   const isLoading = aL || fL || cL || sL;
@@ -88,6 +90,16 @@ export default function SlotsTab({ permissions }) {
   };
 
   const copy = text => { navigator.clipboard.writeText(text); setCopiedId(text); setTimeout(() => setCopiedId(null), 2000); };
+
+  const toLabelLocation = slot => ({
+    id: slot.id,
+    name: slot.full_name || slot.name,
+    area: slot.area_name,
+    furniture: slot.furniture_name,
+    position: slot.name,
+    short_code: slot.short_code,
+    location_type: 'Fach'
+  });
 
   const modalFurniture = useMemo(() => (furniture || []).filter(f => f.area_id === form.area_id), [furniture, form.area_id]);
   const modalContainers = useMemo(() => (containers || []).filter(c => c.furniture_id === form.furniture_id), [containers, form.furniture_id]);
@@ -154,15 +166,29 @@ export default function SlotsTab({ permissions }) {
                   {slot.short_code}
                 </button>
               </div>
-              {canEdit && (
-                <div className="flex gap-1">
-                  <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => openEdit(slot)}><Pencil className="w-3 h-3" /></Button>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => deleteMut.mutate(slot.id)}><Trash2 className="w-3 h-3" /></Button>
+              <div className="flex gap-1">
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-amber-500 hover:bg-amber-500/10" onClick={() => setLabelSlot(slot)} title="Etikett drucken">
+                    <Printer className="w-3 h-3" />
+                  </Button>
+                  {canEdit && (
+                    <>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground" onClick={() => openEdit(slot)}><Pencil className="w-3 h-3" /></Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => deleteMut.mutate(slot.id)}><Trash2 className="w-3 h-3" /></Button>
+                    </>
+                  )}
                 </div>
-              )}
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Label Print */}
+      {labelSlot && (
+        <StorageLabelPrint
+          open={!!labelSlot}
+          onClose={() => setLabelSlot(null)}
+          location={toLabelLocation(labelSlot)}
+        />
       )}
 
       {/* Modal */}

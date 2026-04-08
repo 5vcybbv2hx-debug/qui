@@ -9,9 +9,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-    Save, Send, RotateCcw, Copy, Users, LayoutGrid, List,
-    AlertCircle, CheckCircle2, ChevronDown, X, MapPin, Briefcase
+    Save, Send, RotateCcw, Users, LayoutGrid, List,
+    AlertCircle, X, MapPin, Briefcase, Pencil, Plus, Trash2, GripVertical
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
 const DEFAULT_AREAS = [
@@ -33,6 +35,16 @@ const DEFAULT_AREAS = [
         color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30',
         badge: 'bg-purple-500/20 text-purple-300'
     },
+];
+
+const AREA_COLORS = [
+    { color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30', badge: 'bg-blue-500/20 text-blue-300' },
+    { color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30', badge: 'bg-orange-500/20 text-orange-300' },
+    { color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30', badge: 'bg-purple-500/20 text-purple-300' },
+    { color: 'from-green-500/20 to-green-600/10 border-green-500/30', badge: 'bg-green-500/20 text-green-300' },
+    { color: 'from-red-500/20 to-red-600/10 border-red-500/30', badge: 'bg-red-500/20 text-red-300' },
+    { color: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30', badge: 'bg-cyan-500/20 text-cyan-300' },
+    { color: 'from-pink-500/20 to-pink-600/10 border-pink-500/30', badge: 'bg-pink-500/20 text-pink-300' },
 ];
 
 function slotKey(area, role) {
@@ -101,10 +113,60 @@ export default function Stationsplan() {
     const [selectedShiftId, setSelectedShiftId] = useState('');
     const [view, setView] = useState('bereiche'); // 'bereiche' | 'mitarbeiter'
     const [planId, setPlanId] = useState(null);
-    // assignments: { [employeeId]: { area, role, secondary_role, note, id } }
     const [assignments, setAssignments] = useState({});
     const [notes, setNotes] = useState({});
     const [areaNotes, setAreaNotes] = useState({});
+    const [editAreasOpen, setEditAreasOpen] = useState(false);
+
+    // Load areas from localStorage or use defaults
+    const [areas, setAreas] = useState(() => {
+        try {
+            const saved = localStorage.getItem('stationsplan_areas');
+            return saved ? JSON.parse(saved) : DEFAULT_AREAS;
+        } catch { return DEFAULT_AREAS; }
+    });
+    const [editAreas, setEditAreas] = useState([]); // local edit state in modal
+    const [newRoleInputs, setNewRoleInputs] = useState({}); // { [areaIdx]: string }
+
+    const saveAreas = (updated) => {
+        setAreas(updated);
+        localStorage.setItem('stationsplan_areas', JSON.stringify(updated));
+    };
+
+    const openEditAreas = () => {
+        setEditAreas(areas.map(a => ({ ...a, roles: [...a.roles] })));
+        setNewRoleInputs({});
+        setEditAreasOpen(true);
+    };
+
+    const addArea = () => {
+        const idx = editAreas.length % AREA_COLORS.length;
+        setEditAreas(prev => [...prev, { name: 'Neuer Bereich', roles: [], ...AREA_COLORS[idx] }]);
+    };
+
+    const removeArea = (i) => setEditAreas(prev => prev.filter((_, idx) => idx !== i));
+
+    const renameArea = (i, val) => setEditAreas(prev => prev.map((a, idx) => idx === i ? { ...a, name: val } : a));
+
+    const addRole = (areaIdx) => {
+        const val = (newRoleInputs[areaIdx] || '').trim();
+        if (!val) return;
+        setEditAreas(prev => prev.map((a, idx) => idx === areaIdx ? { ...a, roles: [...a.roles, val] } : a));
+        setNewRoleInputs(prev => ({ ...prev, [areaIdx]: '' }));
+    };
+
+    const removeRole = (areaIdx, roleIdx) => {
+        setEditAreas(prev => prev.map((a, idx) => idx === areaIdx ? { ...a, roles: a.roles.filter((_, ri) => ri !== roleIdx) } : a));
+    };
+
+    const renameRole = (areaIdx, roleIdx, val) => {
+        setEditAreas(prev => prev.map((a, idx) => idx === areaIdx ? { ...a, roles: a.roles.map((r, ri) => ri === roleIdx ? val : r) } : a));
+    };
+
+    const saveEditAreas = () => {
+        saveAreas(editAreas);
+        setEditAreasOpen(false);
+    };
 
     // Load all shifts for the selected date
     const { data: shiftsForDay = [] } = useQuery({
@@ -295,14 +357,7 @@ export default function Stationsplan() {
     const hints = useMemo(() => {
         const h = [];
         if (unassigned.length > 0) h.push(`${unassigned.length} Mitarbeiter ohne Zuweisung`);
-        DEFAULT_AREAS.forEach(area => {
-            const hasTheke = area.roles.includes('Theke') && (slotMap[slotKey(area.name, 'Theke')]?.length || 0) === 0;
-            const hasService = area.roles.includes('Service') && (slotMap[slotKey(area.name, 'Service')]?.length || 0) === 0;
-            if (hasTheke) h.push(`${area.name} ohne Theke`);
-            if (hasService) h.push(`${area.name} ohne Service`);
-        });
-        return h;
-    }, [unassigned, slotMap]);
+        areas.forEach(area => {
 
     const currentPlan = existingPlans[0];
 
@@ -324,6 +379,9 @@ export default function Stationsplan() {
                     )}
                 </div>
                 <div className="flex gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={openEditAreas} className="gap-1.5">
+                        <Pencil className="w-3.5 h-3.5" /> Bereiche bearbeiten
+                    </Button>
                     <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5">
                         <RotateCcw className="w-3.5 h-3.5" /> Zurücksetzen
                     </Button>
@@ -399,7 +457,7 @@ export default function Stationsplan() {
                         <div className="space-y-4">
                             {/* Area Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {DEFAULT_AREAS.map(area => (
+                                {areas.map(area => (
                                     <Card key={area.name} className={cn('p-4 bg-gradient-to-br border', area.color)}>
                                         <div className="flex items-center gap-2 mb-3">
                                             <Badge className={cn('text-xs font-bold px-2', area.badge)}>{area.name}</Badge>
@@ -504,7 +562,7 @@ export default function Stationsplan() {
                                                     className="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground flex-1 min-w-[110px]"
                                                 >
                                                     <option value="">Kein Bereich</option>
-                                                    {DEFAULT_AREAS.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
+                                                    {areas.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
                                                 </select>
                                                 <select
                                                     value={asgn.role || ''}
@@ -512,7 +570,7 @@ export default function Stationsplan() {
                                                     className="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground flex-1 min-w-[100px]"
                                                 >
                                                     <option value="">Keine Rolle</option>
-                                                    {(asgn.area ? DEFAULT_AREAS.find(a => a.name === asgn.area)?.roles : DEFAULT_AREAS.flatMap(a => a.roles).filter((v, i, arr) => arr.indexOf(v) === i))?.map(r => (
+                                                    {(asgn.area ? areas.find(a => a.name === asgn.area)?.roles : areas.flatMap(a => a.roles).filter((v, i, arr) => arr.indexOf(v) === i))?.map(r => (
                                                         <option key={r} value={r}>{r}</option>
                                                     ))}
                                                 </select>
@@ -547,6 +605,67 @@ export default function Stationsplan() {
                     )}
                 </DragDropContext>
             )}
+
+            {/* Edit Areas Modal */}
+            <Dialog open={editAreasOpen} onOpenChange={setEditAreasOpen}>
+                <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <MapPin className="w-5 h-5 text-amber-400" />
+                            Bereiche &amp; Positionen bearbeiten
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        {editAreas.map((area, areaIdx) => (
+                            <div key={areaIdx} className={cn('rounded-xl border p-4 bg-gradient-to-br', area.color)}>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <Input
+                                        value={area.name}
+                                        onChange={e => renameArea(areaIdx, e.target.value)}
+                                        className="font-semibold h-8 flex-1 bg-background/50"
+                                    />
+                                    <button onClick={() => removeArea(areaIdx)} className="text-muted-foreground hover:text-red-400 transition-colors p-1">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="flex flex-wrap gap-2 mb-3">
+                                    {area.roles.map((role, roleIdx) => (
+                                        <div key={roleIdx} className="flex items-center gap-1 bg-background/50 border border-border rounded-lg px-2 py-1">
+                                            <input
+                                                value={role}
+                                                onChange={e => renameRole(areaIdx, roleIdx, e.target.value)}
+                                                className="text-sm bg-transparent border-none outline-none w-20 text-foreground"
+                                            />
+                                            <button onClick={() => removeRole(areaIdx, roleIdx)} className="text-muted-foreground hover:text-red-400 transition-colors">
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder="Position hinzufügen…"
+                                        value={newRoleInputs[areaIdx] || ''}
+                                        onChange={e => setNewRoleInputs(prev => ({ ...prev, [areaIdx]: e.target.value }))}
+                                        onKeyDown={e => e.key === 'Enter' && addRole(areaIdx)}
+                                        className="h-8 text-sm bg-background/50"
+                                    />
+                                    <Button size="sm" variant="outline" onClick={() => addRole(areaIdx)} className="h-8 px-3">
+                                        <Plus className="w-3.5 h-3.5" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                        <Button variant="outline" onClick={addArea} className="w-full gap-2">
+                            <Plus className="w-4 h-4" /> Bereich hinzufügen
+                        </Button>
+                        <div className="flex gap-2 justify-end pt-2 border-t border-border">
+                            <Button variant="outline" onClick={() => setEditAreasOpen(false)}>Abbrechen</Button>
+                            <Button onClick={saveEditAreas} className="bg-amber-600 hover:bg-amber-700 text-white">Speichern</Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

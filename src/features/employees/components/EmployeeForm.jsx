@@ -39,6 +39,7 @@ export default function EmployeeForm({ defaultValues, onSubmit, onCancel, isPend
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Stammdaten</h3>
                 <div className="grid grid-cols-2 gap-3">
                     <TextField name="name"      label="Name"         required form={form} className="col-span-2" />
+                    <TextField name="short_name" label="Spitzname (z.B. Ana, An Na)" form={form} className="col-span-2" />
                     <SelectField name="role"    label="Rolle"        required form={form} options={ROLE_OPTIONS} />
                     <SelectField name="contract_type" label="Vertrag" form={form} options={CONTRACT_OPTIONS} />
                     <TextField name="hourly_rate"  label="Stundensatz (€)" form={form} type="number" />

@@ -286,8 +286,8 @@ export default function Restock() {
                                         {(() => {
                                             const matches = articles.filter(a => 
                                                 a.barcode === barcode ||
-                                                a.name.toLowerCase().includes(barcode.toLowerCase()) ||
-                                                a.barcode.includes(barcode)
+                                                a.name?.toLowerCase().includes(barcode.toLowerCase()) ||
+                                                a.barcode?.includes(barcode)
                                             );
                                             
                                             if (matches.length === 0) {

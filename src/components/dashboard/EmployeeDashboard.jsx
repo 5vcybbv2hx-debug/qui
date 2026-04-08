@@ -357,7 +357,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                             ))}
                         </div>
                     </Card>
-                )}
+                </div>
 
                 <ShiftSwapMarketplaceCard currentEmployee={currentEmployee} />
 

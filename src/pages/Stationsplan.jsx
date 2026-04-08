@@ -358,6 +358,13 @@ export default function Stationsplan() {
         const h = [];
         if (unassigned.length > 0) h.push(`${unassigned.length} Mitarbeiter ohne Zuweisung`);
         areas.forEach(area => {
+            const hasTheke = area.roles.includes('Theke') && (slotMap[slotKey(area.name, 'Theke')]?.length || 0) === 0;
+            const hasService = area.roles.includes('Service') && (slotMap[slotKey(area.name, 'Service')]?.length || 0) === 0;
+            if (hasTheke) h.push(`${area.name} ohne Theke`);
+            if (hasService) h.push(`${area.name} ohne Service`);
+        });
+        return h;
+    }, [unassigned, slotMap]);
 
     const currentPlan = existingPlans[0];
 
@@ -612,7 +619,7 @@ export default function Stationsplan() {
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <MapPin className="w-5 h-5 text-amber-400" />
-                            Bereiche &amp; Positionen bearbeiten
+                            Bereiche & Positionen bearbeiten
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 mt-2">

@@ -7,7 +7,7 @@ import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isF
 import { de } from 'date-fns/locale';
 import {
     Calendar, Clock, CheckSquare, CheckCircle2, Users, Sparkles, BookOpen, Wine,
-    LogIn, LogOut, Umbrella, GraduationCap, AlertCircle, Pause
+    LogIn, LogOut, Umbrella, GraduationCap, AlertCircle, Pause, MapPin, Briefcase
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -158,6 +158,19 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
 
     const activeClockEntry = clockEntries.find(e => e.employee_id === currentEmployee.id && e.status === 'clocked_in');
 
+    // Stationsplan
+    const { data: todayPlans = [] } = useQuery({
+        queryKey: ['stationsplan-today', today],
+        queryFn: () => base44.entities.Stationsplan.filter({ date: today })
+    });
+    const publishedPlan = todayPlans.find(p => p.status === 'published');
+    const { data: myStationAssignment } = useQuery({
+        queryKey: ['my-station', publishedPlan?.id, currentEmployee.id],
+        queryFn: () => base44.entities.StationAssignment.filter({ stationsplan_id: publishedPlan.id, employee_id: currentEmployee.id }),
+        enabled: !!publishedPlan?.id,
+        select: data => data[0] || null
+    });
+
     const myOpenTodos = todos.filter(
         t => (t.assigned_to === currentEmployee.email || t.assigned_to === currentEmployee.name) && t.status !== 'erledigt'
     );
@@ -224,6 +237,37 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                     </Card>
                 )}
 
+                {/* Meine Station heute */}
+                {publishedPlan && myStationAssignment && (myStationAssignment.area || myStationAssignment.role) && (
+                    <Card className="p-5 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                                <MapPin className="w-6 h-6 text-amber-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide mb-0.5">Meine Station heute</p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {myStationAssignment.area && (
+                                        <Badge className="bg-amber-500/20 text-amber-300 text-sm font-bold">{myStationAssignment.area}</Badge>
+                                    )}
+                                    {myStationAssignment.role && (
+                                        <span className="flex items-center gap-1 text-sm text-foreground">
+                                            <Briefcase className="w-3.5 h-3.5 text-muted-foreground" />
+                                            {myStationAssignment.role}
+                                        </span>
+                                    )}
+                                    {myStationAssignment.secondary_role && (
+                                        <span className="text-xs text-muted-foreground">+ {myStationAssignment.secondary_role}</span>
+                                    )}
+                                </div>
+                                {myStationAssignment.note && (
+                                    <p className="text-xs text-muted-foreground mt-1">{myStationAssignment.note}</p>
+                                )}
+                            </div>
+                        </div>
+                    </Card>
+                )}
+
                 {/* Clock In/Out */}
                 <Card className="p-6 bg-card border-border">
                     <div className="flex items-center gap-4 mb-6">
@@ -268,29 +312,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
 
                 {/* Quick Links */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[
-                        { page: 'Calendar', color: 'bg-blue-600/20', iconColor: 'text-blue-500', icon: Calendar, sub: 'Kalender', label: 'Schichten' },
-                        { page: 'Recipes', color: 'bg-pink-600/20', iconColor: 'text-pink-500', icon: Wine, sub: 'Rezepte', label: 'Nachschlagen' },
-                        { page: 'Cleaning', color: 'bg-teal-600/20', iconColor: 'text-teal-500', icon: Sparkles, sub: 'Putzen', label: `${myCleaningTasks.length} offen` },
-                        { page: 'DrinkMenu', color: 'bg-amber-600/20', iconColor: 'text-amber-500', icon: BookOpen, sub: 'Getränke', label: 'Karte' },
-                    ].map(({ page, color, iconColor, icon: Icon, sub, label }) => (
-                        <Link key={page + sub} to={createPageUrl(page)}>
-                            <Card className="p-4 bg-card border-border hover:bg-accent/50 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-12 h-12 rounded-lg ${color} flex items-center justify-center`}>
-                                        <Icon className={`w-6 h-6 ${iconColor}`} />
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-muted-foreground">{sub}</p>
-                                        <p className="font-semibold text-foreground">{label}</p>
-                                    </div>
-                                </div>
-                            </Card>
-                        </Link>
-                    ))}
-                </div>
 
-                {/* Stats */}
                 <div className="grid sm:grid-cols-3 gap-6">
                     <Card className="p-6 bg-card border-border">
                         <div className="flex items-center justify-between mb-4">

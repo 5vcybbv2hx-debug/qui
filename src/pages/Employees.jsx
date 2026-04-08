@@ -53,6 +53,7 @@ export default function Employees() {
     const [formData, setFormData] = useState({
         employee_number: '',
         name: '',
+        short_name: '',
         role: 'Aushilfe',
         skills: [],
         contract_type: '',
@@ -169,6 +170,7 @@ export default function Employees() {
             setFormData({
                 employee_number: employee.employee_number || '',
                 name: employee.name,
+                short_name: employee.short_name || '',
                 role: employee.role,
                 skills: employee.skills || [],
                 contract_type: employee.contract_type || '',
@@ -738,6 +740,16 @@ export default function Employees() {
                                     placeholder="Name eingeben"
                                     required
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Spitzname (für alte Einträge im Kalender)</Label>
+                                <Input
+                                    value={formData.short_name}
+                                    onChange={(e) => setFormData({ ...formData, short_name: e.target.value })}
+                                    placeholder="z.B. An Na, Ana"
+                                />
+                                <p className="text-xs text-muted-foreground">Falls der Name im Schichtkalender falsch angezeigt wird, hier den gespeicherten Spitznamen eintragen.</p>
                             </div>
 
                             <div className="space-y-2">

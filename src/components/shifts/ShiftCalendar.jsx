@@ -115,6 +115,11 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
         return employee?.color || '#64748b';
     };
 
+    const getEmployeeFullName = (employeeId, fallback) => {
+        const employee = employees.find(e => e.id === employeeId);
+        return employee?.name || fallback;
+    };
+
     const getProvisionalForDay = (date) => {
         const dateStr = format(date, 'yyyy-MM-dd');
         return provisionalRequests.filter(r => r.date === dateStr);
@@ -352,7 +357,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                         style={{ backgroundColor: getEmployeeColor(shift.employee_id), color: '#fff' }}
                                     >
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[10px] truncate font-semibold leading-tight">{shift.employee_name}</p>
+                                            <p className="text-[10px] truncate font-semibold leading-tight">{getEmployeeFullName(shift.employee_id, shift.employee_name)}</p>
                                             <p className="text-[9px] opacity-80 leading-tight">{shift.start_time.slice(0,5)}-{shift.end_time.slice(0,5)}</p>
                                         </div>
                                         {shift.shift_type && (
@@ -384,7 +389,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                         title={permissions.isManager && req.status === 'ausstehend' ? 'Klicken zum Bestätigen/Ablehnen' : `${req.employee_name} – ${req.status}`}
                                     >
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[10px] truncate font-semibold leading-tight">{req.employee_name}</p>
+                                            <p className="text-[10px] truncate font-semibold leading-tight">{getEmployeeFullName(req.employee_id, req.employee_name)}</p>
                                             <p className="text-[9px] opacity-80 leading-tight">{req.start_time?.slice(0,5)}-{req.end_time?.slice(0,5)}</p>
                                         </div>
                                         <span className="text-[8px] flex-shrink-0">
@@ -399,7 +404,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                         <span>⚠</span>
                                         <span className="truncate">
                                             {unavailables.length === 1
-                                                ? unavailables[0].employee_name
+                                                ? getEmployeeFullName(unavailables[0].employee_id, unavailables[0].employee_name)
                                                 : `${unavailables.length} N.verf.`}
                                         </span>
                                     </div>
@@ -415,7 +420,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                         <Palmtree className="w-2.5 h-2.5" />
                                         <span className="truncate">
                                             {dayVacations.length === 1 
-                                                ? dayVacations[0].employee_name
+                                                ? getEmployeeFullName(dayVacations[0].employee_id, dayVacations[0].employee_name)
                                                 : `${dayVacations.length}`
                                             }
                                         </span>

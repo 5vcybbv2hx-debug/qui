@@ -21,6 +21,16 @@ export default function UnavailabilityManager() {
         queryFn: () => base44.entities.UnavailabilityRequest.list('-date', 200)
     });
 
+    const { data: employees = [] } = useQuery({
+        queryKey: ['employees-active'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+    });
+
+    const getFullName = (req) => {
+        const emp = employees.find(e => e.id === req.employee_id);
+        return emp?.name || req.employee_name;
+    };
+
     const updateMutation = useMutation({
         mutationFn: ({ id, status, note }) => base44.entities.UnavailabilityRequest.update(id, {
             status,
@@ -60,7 +70,7 @@ export default function UnavailabilityManager() {
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <p className="font-semibold text-white text-sm">{req.employee_name}</p>
+                                            <p className="font-semibold text-white text-sm">{getFullName(req)}</p>
                                             <Badge className="bg-yellow-600/20 text-yellow-400 border-yellow-600/30 text-xs">Ausstehend</Badge>
                                         </div>
                                         <p className="text-sm text-amber-300 font-medium">
@@ -101,7 +111,7 @@ export default function UnavailabilityManager() {
                                         : <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                                     }
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-slate-300">{req.employee_name} – {format(parseISO(req.date), 'dd. MMM', { locale: de })}</p>
+                                        <p className="text-sm font-medium text-slate-300">{getFullName(req)} – {format(parseISO(req.date), 'dd. MMM', { locale: de })}</p>
                                         <p className="text-xs text-slate-500 truncate">{req.reason}</p>
                                     </div>
                                     <Badge className={req.status === 'genehmigt'
@@ -125,7 +135,7 @@ export default function UnavailabilityManager() {
                     {selectedReq && (
                         <div className="space-y-4 mt-2">
                             <div className="p-4 bg-slate-800 rounded-lg space-y-1">
-                                <p className="font-semibold text-white">{selectedReq.employee_name}</p>
+                                <p className="font-semibold text-white">{getFullName(selectedReq)}</p>
                                 <p className="text-amber-400 text-sm font-medium">
                                     {format(parseISO(selectedReq.date), 'EEE, dd. MMM yyyy', { locale: de })}
                                     {selectedReq.end_date && selectedReq.end_date !== selectedReq.date && (

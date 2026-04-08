@@ -312,40 +312,31 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
 
                 {/* Quick Links */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-                <div className="grid sm:grid-cols-3 gap-6">
-                    <Card className="p-6 bg-card border-border">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 rounded-lg bg-blue-600/20 flex items-center justify-center"><Clock className="w-6 h-6 text-blue-500" /></div>
-                            <Badge className="bg-blue-600/20 text-blue-400">Woche</Badge>
-                        </div>
-                        <p className="text-3xl font-bold text-foreground mb-1">{hoursThisWeek.toFixed(1)}h</p>
-                        <p className="text-sm text-muted-foreground">Gearbeitete Stunden</p>
-                        <p className="text-xs text-muted-foreground mt-2">Monat: {hoursThisMonth.toFixed(1)}h</p>
-                    </Card>
-                    <Card className="p-6 bg-card border-border">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 rounded-lg bg-purple-600/20 flex items-center justify-center"><Umbrella className="w-6 h-6 text-purple-500" /></div>
-                            <Badge className="bg-purple-600/20 text-purple-400">Urlaub</Badge>
-                        </div>
-                        <p className="text-3xl font-bold text-foreground mb-1">{remainingVacationDays}</p>
-                        <p className="text-sm text-muted-foreground">Verbleibende Tage</p>
-                        <p className="text-xs text-muted-foreground mt-2">Von {currentEmployee.vacation_days_per_year || 0} gesamt</p>
-                    </Card>
-                    <Card className="p-6 bg-card border-border">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="w-12 h-12 rounded-lg bg-green-600/20 flex items-center justify-center"><Calendar className="w-6 h-6 text-green-500" /></div>
-                            <Badge className="bg-green-600/20 text-green-400">Nächste</Badge>
-                        </div>
-                        <p className="text-3xl font-bold text-foreground mb-1">{myUpcomingShifts.length}</p>
-                        <p className="text-sm text-muted-foreground">Kommende Schichten</p>
-                        {myUpcomingShifts[0] && (
-                            <p className="text-xs text-muted-foreground mt-2">Nächste: {format(parseISO(myUpcomingShifts[0].date), 'EEE, dd.MM', { locale: de })}</p>
-                        )}
-                    </Card>
+                    {[
+                        { page: 'Calendar', color: 'bg-blue-600/20', iconColor: 'text-blue-500', icon: Calendar, sub: 'Kalender', label: 'Schichten' },
+                        { page: 'Recipes', color: 'bg-pink-600/20', iconColor: 'text-pink-500', icon: Wine, sub: 'Rezepte', label: 'Nachschlagen' },
+                        { page: 'Cleaning', color: 'bg-teal-600/20', iconColor: 'text-teal-500', icon: Sparkles, sub: 'Putzen', label: `${myCleaningTasks.length} offen` },
+                        { page: 'DrinkMenu', color: 'bg-amber-600/20', iconColor: 'text-amber-500', icon: BookOpen, sub: 'Getränke', label: 'Karte' },
+                    ].map(({ page, color, iconColor, icon: Icon, sub, label }) => (
+                        <Link key={page + sub} to={createPageUrl(page)}>
+                            <Card className="p-4 bg-card border-border hover:bg-accent/50 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-12 h-12 rounded-lg ${color} flex items-center justify-center`}>
+                                        <Icon className={`w-6 h-6 ${iconColor}`} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-muted-foreground">{sub}</p>
+                                        <p className="font-semibold text-foreground">{label}</p>
+                                    </div>
+                                </div>
+                            </Card>
+                        </Link>
+                    ))}
                 </div>
 
-                {biweeklyTasks.length > 0 && (
+                {/* Stats */}
+                <div className="grid sm:grid-cols-3 gap-6">
+
                     <Card className="p-6 bg-card border-border">
                         <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-pink-500" />

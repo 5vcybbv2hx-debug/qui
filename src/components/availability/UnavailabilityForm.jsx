@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,11 @@ export default function UnavailabilityForm({ open, onClose, currentUser, default
 
     const set = (k, v) => setForm(p => ({ ...p, [k]: v }));
 
+    const { data: employees = [] } = useQuery({
+        queryKey: ['employees'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+    });
+
     const mutation = useMutation({
         mutationFn: (data) => base44.entities.UnavailabilityRequest.create(data),
         onSuccess: () => {
@@ -37,9 +42,10 @@ export default function UnavailabilityForm({ open, onClose, currentUser, default
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!form.reason.trim()) { toast.error('Bitte einen Grund angeben'); return; }
+        const matchedEmployee = employees.find(e => e.email === currentUser?.email);
         mutation.mutate({
-            employee_id: currentUser?.id || currentUser?.email || '',
-            employee_name: currentUser?.full_name || currentUser?.email || 'Unbekannt',
+            employee_id: matchedEmployee?.id || currentUser?.id || currentUser?.email || '',
+            employee_name: matchedEmployee?.name || currentUser?.full_name || currentUser?.email || 'Unbekannt',
             date: form.date,
             end_date: form.end_date !== form.date ? form.end_date : form.date,
             reason: form.reason.trim(),

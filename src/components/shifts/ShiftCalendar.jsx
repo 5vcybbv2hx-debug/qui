@@ -116,8 +116,17 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
     };
 
     const getEmployeeFullName = (employeeId, fallback) => {
-        const employee = employees.find(e => e.id === employeeId);
-        return employee?.name || fallback;
+        const byId = employees.find(e => e.id === employeeId);
+        if (byId) return byId.name;
+        // Fallback: match by stored name fragment (for old records with auth-ID)
+        if (fallback) {
+            const byName = employees.find(e =>
+                e.name?.toLowerCase().includes(fallback.toLowerCase()) ||
+                fallback.toLowerCase().includes(e.name?.split(' ')[0]?.toLowerCase())
+            );
+            if (byName) return byName.name;
+        }
+        return fallback;
     };
 
     const getProvisionalForDay = (date) => {

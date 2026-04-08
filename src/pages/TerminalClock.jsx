@@ -141,7 +141,22 @@ export default function TerminalClock() {
         );
 
         if (selectedAction === 'in') {
-            if (activeEntry) {
+            // Wenn on_break → Pause beenden statt neu einstempeln
+            if (activeEntry && activeEntry.status === 'on_break') {
+                const timestamp = new Date().toISOString();
+                const pauseDuration = activeEntry.pause_start
+                    ? Math.round((new Date(timestamp) - new Date(activeEntry.pause_start)) / 60000)
+                    : 0;
+                await updateMutation.mutateAsync({
+                    id: activeEntry.id,
+                    data: {
+                        status: 'clocked_in',
+                        pause_end: timestamp,
+                        pause_minutes: (activeEntry.pause_minutes || 0) + pauseDuration
+                    }
+                });
+                alert(`✓ ${employeeToProcess.name} - Pause beendet`);
+            } else if (activeEntry && activeEntry.status === 'clocked_in') {
                 alert('Du bist bereits eingestempelt!');
             } else {
                 await clockMutation.mutateAsync({
@@ -150,8 +165,6 @@ export default function TerminalClock() {
                     clock_in: new Date().toISOString(),
                     status: 'clocked_in'
                 });
-                
-                // Prüfen ob erste Person des Tages
                 const isFirstOfDay = clockEntries.length === 0;
                 if (isFirstOfDay) {
                     setNightWatchModalOpen(true);
@@ -167,20 +180,20 @@ export default function TerminalClock() {
                 const newStatus = activeEntry.status === 'clocked_in' ? 'on_break' : 'clocked_in';
                 const timestamp = new Date().toISOString();
                 const updateData = { status: newStatus };
-                
-                // Speichere Pause Start/End Zeitstempel
+
                 if (newStatus === 'on_break') {
                     updateData.pause_start = timestamp;
                 } else {
+                    const pauseDuration = activeEntry.pause_start
+                        ? Math.round((new Date(timestamp) - new Date(activeEntry.pause_start)) / 60000)
+                        : 0;
                     updateData.pause_end = timestamp;
+                    updateData.pause_minutes = (activeEntry.pause_minutes || 0) + pauseDuration;
                 }
-                
-                await updateMutation.mutateAsync({
-                    id: activeEntry.id,
-                    data: updateData
-                });
-                
-                const message = newStatus === 'on_break' 
+
+                await updateMutation.mutateAsync({ id: activeEntry.id, data: updateData });
+
+                const message = newStatus === 'on_break'
                     ? `☕ ${employeeToProcess.name} - Pause gestartet`
                     : `✓ ${employeeToProcess.name} - Pause beendet`;
                 alert(message);
@@ -192,19 +205,16 @@ export default function TerminalClock() {
                 const clockIn = new Date(activeEntry.clock_in);
                 const clockOut = new Date();
                 
-                // BERECHNE ARBEITSZEIT: Total minus Pausenzeiten
+                // BERECHNE ARBEITSZEIT: Total minus akkumulierten Pausenminuten
                 let workingMinutes = (clockOut - clockIn) / (1000 * 60);
+                let accumulatedPause = activeEntry.pause_minutes || 0;
                 
-                // Abgeschlossene Pausen: pause_start → pause_end
-                if (activeEntry.pause_start && activeEntry.pause_end) {
-                    const pauseDuration = (new Date(activeEntry.pause_end) - new Date(activeEntry.pause_start)) / (1000 * 60);
-                    workingMinutes -= pauseDuration;
-                } 
-                // Laufende Pause: pause_start → jetzt
-                else if (activeEntry.pause_start && !activeEntry.pause_end) {
-                    const currentPauseDuration = (clockOut - new Date(activeEntry.pause_start)) / (1000 * 60);
-                    workingMinutes -= currentPauseDuration;
+                // Falls aktuell in Pause (sollte nicht vorkommen beim Ausstempeln, aber sicher ist sicher)
+                if (activeEntry.status === 'on_break' && activeEntry.pause_start) {
+                    const currentPauseDuration = Math.round((clockOut - new Date(activeEntry.pause_start)) / 60000);
+                    accumulatedPause += currentPauseDuration;
                 }
+                workingMinutes -= accumulatedPause;
                 
                 const hours = Math.round((workingMinutes / 60) * 100) / 100;
 
@@ -221,7 +231,7 @@ export default function TerminalClock() {
                     data: {
                         clock_out: clockOut.toISOString(),
                         total_hours: Math.round(hours * 100) / 100,
-                        pause_minutes: pauseMinuten,
+                        pause_minutes: accumulatedPause,
                         status: 'clocked_out'
                     }
                 });

@@ -237,7 +237,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                     </div>
 
                     {!reservation && (
-                        <div className="space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="space-y-3 p-4 bg-secondary/40 rounded-lg border border-border">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <RepeatIcon className="w-4 h-4 text-slate-600" />

@@ -37,9 +37,9 @@ const DialogContent = React.forwardRef(({ className, children, ...props }, ref) 
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed z-50 gap-4 border bg-background shadow-lg duration-200",
+        "fixed z-50 gap-0 border bg-background shadow-lg duration-200 flex flex-col",
         // Mobile: full screen, no rounded corners
-        "w-screen h-[100dvh] rounded-none p-0 sm:h-auto sm:w-full sm:max-w-lg sm:rounded-2xl",
+        "w-screen h-[100dvh] rounded-none p-0 sm:h-auto sm:max-h-[90vh] sm:w-full sm:max-w-lg sm:rounded-2xl",
         // Positioning
         "left-0 top-0 sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%]",
         // Animations

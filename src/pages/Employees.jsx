@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive } from 'lucide-react';
 import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
+import EmployeePersonalFormExport from '@/components/employees/EmployeePersonalFormExport';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import PDFExportButton from '@/components/export/PDFExportButton';
@@ -628,6 +629,11 @@ export default function Employees() {
                                             )}
                                         </div>
                                     </>
+                                )}
+                                {permissions.isManager && (
+                                    <div className="flex gap-2">
+                                        <EmployeePersonalFormExport employee={employee} />
+                                    </div>
                                 )}
                                 {canEdit(employee) && (
                                     <div className="flex gap-2">

@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
         }
 
-        const { formData } = await req.json();
+        const { formData, sigEmployee, sigEmployer } = await req.json();
 
         const doc = new jsPDF();
         
@@ -73,9 +73,26 @@ Deno.serve(async (req) => {
         doc.text('gemacht habe und verpflichte mich, alle Veränderungen unverzüglich mitzuteilen.', 20, y); y += 10;
         
         const today = new Date().toLocaleDateString('de-DE');
-        doc.text(`Ort, Datum: ${today}`, 20, y);
-        doc.text('Unterschrift Arbeitnehmer: ___________________', 100, y); y += 15;
-        doc.text('Unterschrift Arbeitgeber: ___________________', 100, y);
+        doc.text(`Ort, Datum: ${today}`, 20, y); y += 7;
+
+        // Unterschrift Arbeitnehmer
+        doc.setFontSize(8);
+        doc.text('Unterschrift Arbeitnehmer:', 20, y);
+        if (sigEmployee && sigEmployee.startsWith('data:image')) {
+            try { doc.addImage(sigEmployee, 'PNG', 20, y + 2, 80, 20); } catch(_) {}
+            y += 25;
+        } else {
+            doc.text('___________________', 20, y + 8); y += 15;
+        }
+
+        // Unterschrift Arbeitgeber
+        doc.text('Unterschrift Arbeitgeber:', 20, y);
+        if (sigEmployer && sigEmployer.startsWith('data:image')) {
+            try { doc.addImage(sigEmployer, 'PNG', 20, y + 2, 80, 20); } catch(_) {}
+            y += 25;
+        } else {
+            doc.text('___________________', 20, y + 8); y += 15;
+        }
         
         const pdfBytes = doc.output('arraybuffer');
         const pdfBlob = new Uint8Array(pdfBytes);

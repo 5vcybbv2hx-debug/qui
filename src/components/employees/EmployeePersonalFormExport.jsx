@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { FileDown, Loader2 } from 'lucide-react';
+import { FileDown, Loader2, PenLine } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import SignaturePad from './SignaturePad';
 
 export default function EmployeePersonalFormExport({ employee }) {
     const [open, setOpen] = useState(false);
@@ -12,6 +13,9 @@ export default function EmployeePersonalFormExport({ employee }) {
     const [pdfUrl, setPdfUrl] = useState(null);
     const [steuerberaterEmail, setSteuerberaterEmail] = useState('');
     const [emailSent, setEmailSent] = useState(false);
+    const [showSignatures, setShowSignatures] = useState(false);
+    const [sigEmployee, setSigEmployee] = useState(null);
+    const [sigEmployer, setSigEmployer] = useState(null);
 
     const nameParts = employee.name?.split(' ') || ['', ''];
     const vorname = nameParts[0] || '';
@@ -50,7 +54,7 @@ export default function EmployeePersonalFormExport({ employee }) {
                 steuerberater_email: '',
             };
 
-            const { data: result } = await base44.functions.invoke('generatePersonalFormPDF', { formData });
+            const { data: result } = await base44.functions.invoke('generatePersonalFormPDF', { formData, sigEmployee, sigEmployer });
             setPdfUrl(result?.pdf_url);
         } catch (e) {
             alert('Fehler beim Generieren: ' + e.message);
@@ -81,7 +85,7 @@ export default function EmployeePersonalFormExport({ employee }) {
             <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setOpen(true); setPdfUrl(null); setEmailSent(false); setSteuerberaterEmail(''); }}
+                onClick={() => { setOpen(true); setPdfUrl(null); setEmailSent(false); setSteuerberaterEmail(''); setShowSignatures(false); setSigEmployee(null); setSigEmployer(null); }}
                 className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50"
             >
                 <FileDown className="w-4 h-4 mr-1" />
@@ -96,9 +100,27 @@ export default function EmployeePersonalFormExport({ employee }) {
 
                     <div className="space-y-4 mt-2">
                         {!pdfUrl ? (
-                            <Button onClick={handleGenerate} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
-                                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />PDF wird generiert...</> : 'PDF generieren'}
-                            </Button>
+                            <div className="space-y-4">
+                                {/* Toggle Unterschriften */}
+                                <button
+                                    onClick={() => setShowSignatures(v => !v)}
+                                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-border hover:bg-accent/50 text-sm text-foreground transition-colors"
+                                >
+                                    <span className="flex items-center gap-2"><PenLine className="w-4 h-4 text-amber-400" /> Unterschriften hinzufügen (optional)</span>
+                                    <span className="text-muted-foreground">{showSignatures ? '▲' : '▼'}</span>
+                                </button>
+
+                                {showSignatures && (
+                                    <div className="space-y-4 p-3 bg-secondary/30 rounded-lg">
+                                        <SignaturePad label="Unterschrift Arbeitnehmer" onSign={setSigEmployee} />
+                                        <SignaturePad label="Unterschrift Arbeitgeber" onSign={setSigEmployer} />
+                                    </div>
+                                )}
+
+                                <Button onClick={handleGenerate} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
+                                    {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />PDF wird generiert...</> : 'PDF generieren'}
+                                </Button>
+                            </div>
                         ) : (
                             <>
                                 <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-400">

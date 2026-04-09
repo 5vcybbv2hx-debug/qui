@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
         const fileName = `Personalbogen_${formData.name}_${formData.vorname}_${Date.now()}.pdf`;
         const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
         
-        const { data: uploadData } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+        const uploadData = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
         return Response.json({ 
             success: true,

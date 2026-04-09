@@ -285,6 +285,14 @@
       "type": "string",
       "description": "Notfallkontakt - Beziehung (z.B. Ehepartner, Eltern)"
     },
+    "sig_employee": {
+      "type": "string",
+      "description": "Gespeicherte Unterschrift Arbeitnehmer (base64 PNG)"
+    },
+    "sig_employer": {
+      "type": "string",
+      "description": "Gespeicherte Unterschrift Arbeitgeber (base64 PNG)"
+    },
     "is_active": {
       "type": "boolean",
       "default": true

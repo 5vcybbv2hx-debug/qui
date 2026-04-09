@@ -1,25 +1,71 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { FileDown, Loader2, PenLine } from 'lucide-react';
+import { FileDown, Loader2, PenLine, Save, CheckCircle2, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import SignaturePad from './SignaturePad';
 
-export default function EmployeePersonalFormExport({ employee }) {
+export default function EmployeePersonalFormExport({ employee, onEmployeeUpdate }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [pdfUrl, setPdfUrl] = useState(null);
     const [steuerberaterEmail, setSteuerberaterEmail] = useState('');
     const [emailSent, setEmailSent] = useState(false);
-    const [showSignatures, setShowSignatures] = useState(false);
+
+    // Aktive Unterschriften (können überschrieben werden)
     const [sigEmployee, setSigEmployee] = useState(null);
     const [sigEmployer, setSigEmployer] = useState(null);
+    const [sigSaved, setSigSaved] = useState(false);
+    const [showSigPanel, setShowSigPanel] = useState(false);
+
+    const savedSigEmployee = employee.sig_employee || null;
+    const savedSigEmployer = employee.sig_employer || null;
 
     const nameParts = employee.name?.split(' ') || ['', ''];
     const vorname = nameParts[0] || '';
     const nachname = nameParts.slice(1).join(' ') || '';
+
+    const handleOpen = () => {
+        setOpen(true);
+        setPdfUrl(null);
+        setEmailSent(false);
+        setSteuerberaterEmail('');
+        setSigEmployee(null);
+        setSigEmployer(null);
+        setSigSaved(false);
+        setShowSigPanel(false);
+    };
+
+    const handleSaveSignatures = async () => {
+        setLoading(true);
+        try {
+            const updates = {};
+            if (sigEmployee) updates.sig_employee = sigEmployee;
+            if (sigEmployer) updates.sig_employer = sigEmployer;
+            await base44.entities.Employee.update(employee.id, updates);
+            setSigSaved(true);
+            if (onEmployeeUpdate) onEmployeeUpdate({ ...employee, ...updates });
+        } catch (e) {
+            alert('Fehler beim Speichern: ' + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleClearSignature = async (type) => {
+        setLoading(true);
+        try {
+            const updates = { [type === 'employee' ? 'sig_employee' : 'sig_employer']: null };
+            await base44.entities.Employee.update(employee.id, updates);
+            if (onEmployeeUpdate) onEmployeeUpdate({ ...employee, ...updates });
+        } catch (e) {
+            alert('Fehler: ' + e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -54,7 +100,15 @@ export default function EmployeePersonalFormExport({ employee }) {
                 steuerberater_email: '',
             };
 
-            const { data: result } = await base44.functions.invoke('generatePersonalFormPDF', { formData, sigEmployee, sigEmployer });
+            // Neue Unterschrift hat Vorrang, sonst gespeicherte verwenden
+            const finalSigEmployee = sigEmployee || savedSigEmployee;
+            const finalSigEmployer = sigEmployer || savedSigEmployer;
+
+            const { data: result } = await base44.functions.invoke('generatePersonalFormPDF', {
+                formData,
+                sigEmployee: finalSigEmployee,
+                sigEmployer: finalSigEmployer,
+            });
             setPdfUrl(result?.pdf_url);
         } catch (e) {
             alert('Fehler beim Generieren: ' + e.message);
@@ -85,7 +139,7 @@ export default function EmployeePersonalFormExport({ employee }) {
             <Button
                 variant="outline"
                 size="sm"
-                onClick={() => { setOpen(true); setPdfUrl(null); setEmailSent(false); setSteuerberaterEmail(''); setShowSignatures(false); setSigEmployee(null); setSigEmployer(null); }}
+                onClick={handleOpen}
                 className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50"
             >
                 <FileDown className="w-4 h-4 mr-1" />
@@ -93,34 +147,103 @@ export default function EmployeePersonalFormExport({ employee }) {
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Personalbogen – {employee.name}</DialogTitle>
                     </DialogHeader>
 
                     <div className="space-y-4 mt-2">
-                        {!pdfUrl ? (
-                            <div className="space-y-4">
-                                {/* Toggle Unterschriften */}
-                                <button
-                                    onClick={() => setShowSignatures(v => !v)}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg border border-border hover:bg-accent/50 text-sm text-foreground transition-colors"
-                                >
-                                    <span className="flex items-center gap-2"><PenLine className="w-4 h-4 text-amber-400" /> Unterschriften hinzufügen (optional)</span>
-                                    <span className="text-muted-foreground">{showSignatures ? '▲' : '▼'}</span>
-                                </button>
 
-                                {showSignatures && (
-                                    <div className="space-y-4 p-3 bg-secondary/30 rounded-lg">
-                                        <SignaturePad label="Unterschrift Arbeitnehmer" onSign={setSigEmployee} />
-                                        <SignaturePad label="Unterschrift Arbeitgeber" onSign={setSigEmployer} />
+                        {/* Unterschriften-Bereich */}
+                        <div className="border border-border rounded-lg overflow-hidden">
+                            <button
+                                onClick={() => setShowSigPanel(v => !v)}
+                                className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 text-sm text-foreground transition-colors"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <PenLine className="w-4 h-4 text-amber-400" />
+                                    Unterschriften
+                                    {(savedSigEmployee || savedSigEmployer) && (
+                                        <span className="text-xs text-green-400 flex items-center gap-1">
+                                            <CheckCircle2 className="w-3 h-3" />
+                                            {savedSigEmployee && savedSigEmployer ? 'beide hinterlegt' : 'teilweise hinterlegt'}
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="text-muted-foreground">{showSigPanel ? '▲' : '▼'}</span>
+                            </button>
+
+                            {showSigPanel && (
+                                <div className="p-4 space-y-5 border-t border-border">
+                                    {/* Arbeitnehmer */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium">Unterschrift Arbeitnehmer</p>
+                                            {savedSigEmployee && (
+                                                <button onClick={() => handleClearSignature('employee')} className="text-xs text-red-400 flex items-center gap-1 hover:text-red-300">
+                                                    <Trash2 className="w-3 h-3" /> Löschen
+                                                </button>
+                                            )}
+                                        </div>
+                                        {savedSigEmployee && !sigEmployee ? (
+                                            <div className="space-y-2">
+                                                <div className="border border-green-500/30 rounded-lg bg-green-500/5 p-2">
+                                                    <img src={savedSigEmployee} alt="Unterschrift AN" className="max-h-16 w-full object-contain" />
+                                                </div>
+                                                <button onClick={() => setSigEmployee('__override__')} className="text-xs text-amber-400 hover:text-amber-300">
+                                                    Neue Unterschrift hinterlegen
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <SignaturePad label="" onSign={(v) => setSigEmployee(v)} />
+                                        )}
                                     </div>
-                                )}
 
-                                <Button onClick={handleGenerate} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
-                                    {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />PDF wird generiert...</> : 'PDF generieren'}
-                                </Button>
-                            </div>
+                                    {/* Arbeitgeber */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-medium">Unterschrift Arbeitgeber</p>
+                                            {savedSigEmployer && (
+                                                <button onClick={() => handleClearSignature('employer')} className="text-xs text-red-400 flex items-center gap-1 hover:text-red-300">
+                                                    <Trash2 className="w-3 h-3" /> Löschen
+                                                </button>
+                                            )}
+                                        </div>
+                                        {savedSigEmployer && !sigEmployer ? (
+                                            <div className="space-y-2">
+                                                <div className="border border-green-500/30 rounded-lg bg-green-500/5 p-2">
+                                                    <img src={savedSigEmployer} alt="Unterschrift AG" className="max-h-16 w-full object-contain" />
+                                                </div>
+                                                <button onClick={() => setSigEmployer('__override__')} className="text-xs text-amber-400 hover:text-amber-300">
+                                                    Neue Unterschrift hinterlegen
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <SignaturePad label="" onSign={(v) => setSigEmployer(v)} />
+                                        )}
+                                    </div>
+
+                                    {/* Speichern-Button */}
+                                    {(sigEmployee || sigEmployer) && (
+                                        <Button
+                                            onClick={handleSaveSignatures}
+                                            disabled={loading || sigSaved}
+                                            className="w-full bg-green-600 hover:bg-green-700"
+                                            size="sm"
+                                        >
+                                            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                                            {sigSaved ? '✓ Unterschriften gespeichert' : 'Unterschriften speichern'}
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* PDF generieren / herunterladen */}
+                        {!pdfUrl ? (
+                            <Button onClick={handleGenerate} disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
+                                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />PDF wird generiert...</> : 'PDF generieren'}
+                            </Button>
                         ) : (
                             <>
                                 <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-400">

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive } from 'lucide-react';
 import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
 import EmployeePersonalFormExport from '@/components/employees/EmployeePersonalFormExport';
+import RVBefreiungExport from '@/components/employees/RVBefreiungExport';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import PDFExportButton from '@/components/export/PDFExportButton';
@@ -632,7 +633,14 @@ export default function Employees() {
                                 )}
                                 {permissions.isManager && (
                                     <div className="flex gap-2">
-                                        <EmployeePersonalFormExport employee={employee} />
+                                        <EmployeePersonalFormExport
+                                            employee={employee}
+                                            onEmployeeUpdate={(updated) => queryClient.setQueryData(['employees'], prev => prev.map(e => e.id === updated.id ? updated : e))}
+                                        />
+                                        <RVBefreiungExport
+                                            employee={employee}
+                                            onEmployeeUpdate={(updated) => queryClient.setQueryData(['employees'], prev => prev.map(e => e.id === updated.id ? updated : e))}
+                                        />
                                     </div>
                                 )}
                                 {canEdit(employee) && (

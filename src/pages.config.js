@@ -105,7 +105,6 @@ import WeeklyTasks from './pages/WeeklyTasks';
 // Special pages (manual imports — non-standard routing)
 import CleaningChecklist from './pages/CleaningChecklist';
 import Closing from './pages/Closing';
-import ClosingDisplay from './pages/ClosingDisplay';
 import Opening from './pages/Opening';
 // EmployeeHome removed — Dashboard is now the central entry point
 import EmployeeProfile from './pages/EmployeeProfile';
@@ -117,9 +116,7 @@ import Impressum from './pages/Impressum';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AGB from './pages/AGB';
 import AuditLog from './pages/AuditLog';
-import LegalImprint from './pages/LegalImprint';
-import LegalPrivacy from './pages/LegalPrivacy';
-import LegalAGB from './pages/LegalAGB';
+
 
 import __Layout from './Layout.jsx';
 

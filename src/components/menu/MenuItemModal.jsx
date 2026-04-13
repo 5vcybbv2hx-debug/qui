@@ -72,9 +72,9 @@ export default function MenuItemModal({ item, open, onClose }) {
         price: "", size: "", purchase_price: "",
         use_recipe_calculation: false, linked_recipe_id: "",
         is_available: true, is_seasonal: false, is_special: false,
-        order_position: "", allergens: "", allergens_list: [], additives: [],
+        order_position: "", allergens_list: [], additives: [],
         alcohol_content: "", image_url: "",
-        linked_article_id: "", linked_article_name: "", linked_article_ids: []
+        linked_article_ids: []
     });
 
     const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
@@ -105,9 +105,9 @@ export default function MenuItemModal({ item, open, onClose }) {
                 price: "", size: "", purchase_price: "",
                 use_recipe_calculation: false, linked_recipe_id: "",
                 is_available: true, is_seasonal: false, is_special: false,
-                order_position: "", allergens: "", allergens_list: [], additives: [],
+                order_position: "", allergens_list: [], additives: [],
                 alcohol_content: "", image_url: "",
-                linked_article_id: "", linked_article_name: "", linked_article_ids: []
+                linked_article_ids: []
             });
         }
     }, [item, open]);
@@ -191,8 +191,10 @@ export default function MenuItemModal({ item, open, onClose }) {
             }
         }
 
+        // eslint-disable-next-line no-unused-vars
+        const { margin_percentage, margin_absolute, allergens, linked_article_id, linked_article_name, ...cleanData } = effectiveFormData;
         saveMutation.mutate({
-            ...effectiveFormData,
+            ...cleanData,
             price:          parseFloat(formData.price),
             purchase_price: calculatedPurchasePrice,
             alcohol_content: formData.alcohol_content ? parseFloat(formData.alcohol_content) : undefined,

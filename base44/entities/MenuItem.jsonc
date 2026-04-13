@@ -51,14 +51,6 @@
       "type": "string",
       "description": "Verkn\u00fcpftes Rezept f\u00fcr automatische Berechnung"
     },
-    "margin_percentage": {
-      "type": "number",
-      "description": "Marge in Prozent (berechnet)"
-    },
-    "margin_absolute": {
-      "type": "number",
-      "description": "Marge absolut in Euro (berechnet)"
-    },
     "is_available": {
       "type": "boolean",
       "default": true,
@@ -77,10 +69,6 @@
     "order_position": {
       "type": "number",
       "description": "Reihenfolge in der Karte"
-    },
-    "allergens": {
-      "type": "string",
-      "description": "Allergene (Freitext, Legacy)"
     },
     "allergens_list": {
       "type": "array",
@@ -103,14 +91,6 @@
     "image_url": {
       "type": "string",
       "description": "Bild-URL"
-    },
-    "linked_article_id": {
-      "type": "string",
-      "description": "ID des verkn\u00fcpften Artikels (Legacy, einzeln)"
-    },
-    "linked_article_name": {
-      "type": "string",
-      "description": "Name des verkn\u00fcpften Artikels (Legacy)"
     },
     "linked_article_ids": {
       "type": "array",

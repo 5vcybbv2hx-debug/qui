@@ -248,12 +248,7 @@ export default function DrinkMenuPage() {
                                                              {item.alcohol_content && (
                                                                  <Badge variant="outline" className="border-border text-muted-foreground">{item.alcohol_content}% Vol.</Badge>
                                                             )}
-                                                            {item.linked_article_name && (
-                                                                <Badge className="bg-accent/50 text-accent-foreground border-accent">
-                                                                   <Link2 className="h-3 w-3 mr-1" />
-                                                                   {item.linked_article_name}
-                                                               </Badge>
-                                                            )}
+
                                                             </div>
 
                                                             {/* Allergene & Zusatzstoffe */}
@@ -267,10 +262,7 @@ export default function DrinkMenuPage() {
                                                                     ))}
                                                                 </div>
                                                             )}
-                                                            {/* Legacy allergens text */}
-                                                            {item.allergens && !(item.allergens_list?.length > 0) && (
-                                                                <div className="mt-1 text-xs text-muted-foreground"><span className="font-semibold">Allergene:</span> {item.allergens}</div>
-                                                            )}
+
 
                                                             {/* Margin Indicator & Price Calculator - Admin Only */}
                                                         {permissions.isAdmin && (

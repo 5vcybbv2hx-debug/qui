@@ -19,7 +19,10 @@ export default function ShiftSwapApprovalCard() {
 
     const { data: pendingRequests = [] } = useQuery({
         queryKey: ['shift-swap-requests-pending'],
-        queryFn: () => base44.entities.ShiftSwapRequest.filter({ status: 'ausstehend' })
+        queryFn: async () => {
+            const all = await base44.entities.ShiftSwapRequest.list('-created_date', 200);
+            return all.filter(r => r.status === 'ausstehend' || r.status === 'offen');
+        }
     });
 
     const { data: bids = [] } = useQuery({

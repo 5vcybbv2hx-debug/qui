@@ -160,8 +160,8 @@ export default function ShiftSwapManager() {
         }
     };
 
-    const pendingRequests = swapRequests.filter(r => r.status === 'ausstehend');
-    const processedRequests = swapRequests.filter(r => r.status !== 'ausstehend');
+    const pendingRequests = swapRequests.filter(r => r.status === 'ausstehend' || r.status === 'offen');
+    const processedRequests = swapRequests.filter(r => r.status !== 'ausstehend' && r.status !== 'offen');
 
     // Nur Manager/Admins können Tauschanfragen verwalten
     if (!permissions.canApproveShiftSwaps) {

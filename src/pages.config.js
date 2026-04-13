@@ -108,7 +108,7 @@ import Closing from './pages/Closing';
 import Opening from './pages/Opening';
 // EmployeeHome removed — Dashboard is now the central entry point
 import EmployeeProfile from './pages/EmployeeProfile';
-import EmployeesImproved from './pages/EmployeesImproved';
+
 import Stationsplan from './pages/Stationsplan';
 import OperatorDashboard from './pages/OperatorDashboard';
 import DataProtection from './pages/DataProtection';
@@ -183,7 +183,7 @@ const SPECIAL_PAGES_WITH_LAYOUT = {
     "Opening": Opening,
 
     "EmployeeProfile": EmployeeProfile,
-    "EmployeesImproved": EmployeesImproved,
+
     "Stationsplan": Stationsplan,
     "OperatorDashboard": OperatorDashboard,
     "DataProtection": DataProtection,

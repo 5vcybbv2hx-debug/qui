@@ -13,7 +13,32 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import ShiftSwapRequest from './ShiftSwapRequest';
+import ShiftSwapRequestModal from './ShiftSwapRequestModal';
+import { useState as useSwapState } from 'react';
+
+function ShiftSwapInline({ shift, onClose }) {
+    const [open, setOpen] = useSwapState(false);
+    return (
+        <>
+            <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setOpen(true)}
+                className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+            >
+                <span className="w-4 h-4 mr-1">⇄</span>
+                Tausch anfragen
+            </Button>
+            <ShiftSwapRequestModal
+                shift={shift}
+                open={open}
+                onOpenChange={setOpen}
+                onSuccess={() => { setOpen(false); onClose(); }}
+            />
+        </>
+    );
+}
 import { haptics } from "@/components/utils/haptics";
 
 export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete, existingShifts = [] }) {
@@ -591,7 +616,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
 
                     {shift?.id && (
                         <div className="pt-2 border-t">
-                            <ShiftSwapRequest shift={shift} onSuccess={onClose} />
+                            <ShiftSwapInline shift={shift} onClose={onClose} />
                         </div>
                     )}
 

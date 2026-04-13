@@ -33,15 +33,13 @@ export function ShiftMarketplace() {
         enabled: !!currentUser,
     });
 
-    // Get open shift swap requests
+    // Get open shift swap requests (marketplace=true means open to all)
     const { data: openRequests = [] } = useQuery({
         queryKey: ['openShiftSwaps'],
         queryFn: async () => {
-            const requests = await base44.entities.ShiftSwapRequest.filter({
-                status: 'ausstehend',
-                target_employee_id: '' // Empty = open for everyone
-            });
-            return requests;
+            const allPending = await base44.entities.ShiftSwapRequest.filter({ status: 'ausstehend' });
+            // marketplace flag OR no target_employee_id set = open for everyone
+            return allPending.filter(r => r.marketplace === true || (!r.target_employee_id && !r.target_employee_name));
         },
     });
 

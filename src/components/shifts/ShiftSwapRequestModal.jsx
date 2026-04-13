@@ -115,9 +115,12 @@ export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuc
              target_employee_id: targetEmployee?.id || null,
              target_employee_name: targetEmployee?.name || null,
              shift_date: shift.date,
+             shift_start_time: shift.start_time,
+             shift_end_time: shift.end_time,
              shift_time: `${shift.start_time} - ${shift.end_time}`,
+             shift_type: shift.shift_type || '',
              reason: formData.reason,
-             status: 'ausstehend',
+             status: 'offen',
              marketplace: mode === 'marketplace'
          });
      };

@@ -95,7 +95,7 @@ export default function TerminalReservation({ employees = [] }) {
         });
     };
 
-    const employeesWithPin = employees.filter(e => e.pin && e.name !== 'Orga');
+    const employeesWithPin = employees.filter(e => e.pin && !e.is_system_account);
 
     return (
         <>

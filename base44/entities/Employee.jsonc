@@ -296,6 +296,11 @@
     "is_active": {
       "type": "boolean",
       "default": true
+    },
+    "is_system_account": {
+      "type": "boolean",
+      "default": false,
+      "description": "Systemkonto (wird in Terminal-Ansichten ausgeblendet)"
     }
   },
   "required": [

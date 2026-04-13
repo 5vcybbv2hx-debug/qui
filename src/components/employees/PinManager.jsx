@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { hashPin } from '@/lib/pinUtils';
 
 export default function PinManager({ employee, open, onClose, isAdmin }) {
     const queryClient = useQueryClient();
@@ -19,11 +20,15 @@ export default function PinManager({ employee, open, onClose, isAdmin }) {
     const updatePinMutation = useMutation({
         mutationFn: async ({ employeeId, pin, currentUserPin }) => {
             // Wenn nicht Admin, muss die aktuelle PIN verifiziert werden
-            if (!isAdmin && employee.pin && employee.pin !== currentUserPin) {
-                throw new Error('Aktuelle PIN ist falsch');
+            if (!isAdmin && employee.pin) {
+                const hashedCurrent = await hashPin(currentUserPin);
+                if (employee.pin !== hashedCurrent) {
+                    throw new Error('Aktuelle PIN ist falsch');
+                }
             }
 
-            return base44.entities.Employee.update(employeeId, { pin });
+            const hashedNew = await hashPin(pin);
+            return base44.entities.Employee.update(employeeId, { pin: hashedNew });
         },
         onSuccess: () => {
             queryClient.invalidateQueries(['employees']);

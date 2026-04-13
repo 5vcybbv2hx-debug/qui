@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PinVerification from '@/components/terminal/PinVerification';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO, addMonths } from 'date-fns';
+import { hashPin } from '@/lib/pinUtils';
 import { de } from 'date-fns/locale';
 import { usePermissions } from '@/components/auth/usePermissions';
 
@@ -129,7 +130,8 @@ export default function TerminalClock() {
     };
 
     const handlePinVerified = async (pin) => {
-        if (selectedEmployee.pin !== pin) {
+        const hashedInput = await hashPin(pin);
+        if (selectedEmployee.pin !== hashedInput) {
             alert('Falsche PIN!');
             return;
         }

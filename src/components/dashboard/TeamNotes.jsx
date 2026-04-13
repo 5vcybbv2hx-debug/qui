@@ -306,8 +306,8 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
             status: 'offen',
             created_by: note.author_name || note.author_email || ''
         });
-        await updateMutation.mutateAsync({ id: note.id, data: { status: 'erledigt' } });
-        toast.success('Aufgabe erstellt');
+        await deleteMutation.mutateAsync(note.id);
+        toast.success('Aufgabe erstellt & Notiz gelöscht');
     };
 
     const today = new Date().toISOString().split('T')[0];

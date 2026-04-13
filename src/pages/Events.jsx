@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import SavedFilters from '@/components/filters/SavedFilters';
+import { usePermissions } from '@/components/auth/usePermissions';
 import EventArchive from '@/components/events/EventArchive';
 import EventIdeas from '@/components/events/EventIdeas';
 import CalendarSubscribe from '@/components/events/CalendarSubscribe';
@@ -41,6 +42,8 @@ const formatDateWithDay = (dateStr) => {
 
 export default function Events() {
     const queryClient = useQueryClient();
+    const permissions = usePermissions();
+    const canEdit = permissions.canEditEvents;
     const [activeTab, setActiveTab] = useState('upcoming');
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
@@ -224,6 +227,7 @@ export default function Events() {
 
                 {/* Action Bar */}
                 <div className="flex flex-wrap gap-2 mb-6">
+                    {canEdit && (
                     <Button 
                         size="sm"
                         onClick={() => { setActiveTab('upcoming'); openModal(); }}
@@ -233,6 +237,7 @@ export default function Events() {
                         <span className="hidden sm:inline">Event</span>
                         <span className="sm:hidden">+</span>
                     </Button>
+                    )}
                     <CalendarSubscribe />
                 </div>
 
@@ -297,8 +302,8 @@ export default function Events() {
                                 {sortedEvents.map(event => (
                                     <Card 
                                         key={event.id}
-                                        className="p-5 bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors cursor-pointer"
-                                        onClick={() => openModal(event)}
+                                        className={cn("p-5 bg-slate-800 border-slate-700 transition-colors", canEdit && "hover:bg-slate-750 cursor-pointer")}
+                                        onClick={() => canEdit && openModal(event)}
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1">
@@ -343,6 +348,7 @@ export default function Events() {
                                                 )}
                                             </div>
                                             
+                                            {canEdit && (
                                             <div className="flex gap-1">
                                                 <Button
                                                     variant="ghost"
@@ -367,6 +373,7 @@ export default function Events() {
                                                     <Trash2 className="w-4 h-4" />
                                                 </Button>
                                             </div>
+                                            )}
                                         </div>
                                     </Card>
                                 ))}
@@ -390,8 +397,9 @@ export default function Events() {
                     <TabsContent value="archive" className="space-y-4">
                         <EventArchive
                             events={sortedArchiveEvents}
-                            onEdit={openModal}
-                            onDelete={handleDelete}
+                            onEdit={canEdit ? openModal : null}
+                            onDelete={canEdit ? handleDelete : null}
+                            canEdit={canEdit}
                         />
                     </TabsContent>
 
@@ -399,16 +407,17 @@ export default function Events() {
                     <TabsContent value="ideas" className="space-y-4">
                         <EventIdeas
                             ideas={allIdeas}
-                            onAdd={(data) => createIdeaMutation.mutate(data)}
-                            onEdit={({ id, data }) => updateIdeaMutation.mutate({ id, data })}
-                            onDelete={(id) => deleteIdeaMutation.mutate(id)}
-                            onConvertToEvent={handleConvertIdeaToEvent}
+                            onAdd={canEdit ? (data) => createIdeaMutation.mutate(data) : null}
+                            onEdit={canEdit ? ({ id, data }) => updateIdeaMutation.mutate({ id, data }) : null}
+                            onDelete={canEdit ? (id) => deleteIdeaMutation.mutate(id) : null}
+                            onConvertToEvent={canEdit ? handleConvertIdeaToEvent : null}
+                            canEdit={canEdit}
                         />
                     </TabsContent>
                 </Tabs>
 
-                {/* Event Modal */}
-                <Dialog open={modalOpen} onOpenChange={closeModal}>
+                {/* Event Modal — only accessible when canEdit */}
+                <Dialog open={modalOpen && canEdit} onOpenChange={closeModal}>
                     <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>

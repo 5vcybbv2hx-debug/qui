@@ -66,7 +66,8 @@ export default function ShiftSwapMarketplaceCard({ currentEmployee }) {
                 status: 'ausstehend'
             });
             await base44.entities.Notification.create({
-                type: 'shift_swap_bid',
+                type: 'general',
+                category: 'schicht',
                 title: 'Jemand möchte deine Schicht übernehmen',
                 message: `${currentEmployee.name} möchte die Schicht am ${format(parseISO(request.shift_date), 'dd.MM.yyyy', { locale: de })} übernehmen.`,
                 related_id: request.id,

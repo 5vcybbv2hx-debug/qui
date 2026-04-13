@@ -100,7 +100,7 @@ export default function DailyAnalysis() {
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.list('name'),
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name'),
         staleTime: 5 * 60 * 1000,
     });
 

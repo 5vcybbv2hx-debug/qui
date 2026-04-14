@@ -1,247 +1,371 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Printer, QrCode, Download } from 'lucide-react';
+import { Printer, Download, QrCode, Share2, Loader2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
-function LabelCard({ location, qrDataUrl, size = 'normal' }) {
-    const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
-    const isSmall = size === 'small';
+// ─── Brother QL-800 Label Dimensions ──────────────────────────────────────────
+// 62mm width, dynamic height. We offer two heights:
+const LABEL_CONFIGS = {
+    standard: { wMM: 62, hMM: 29, label: '62×29mm (Standard)' },
+    tall:     { wMM: 62, hMM: 62, label: '62×62mm (Quadrat)' },
+};
+
+// ─── Canvas rendering at high DPI ─────────────────────────────────────────────
+// We render at 300 DPI equivalent for crisp print output.
+const MM_TO_PX_300DPI = 300 / 25.4; // ≈ 11.81 px per mm
+
+async function renderLabelToCanvas(location, qrDataUrl, configKey = 'standard') {
+    const cfg = LABEL_CONFIGS[configKey];
+    const W = Math.round(cfg.wMM * MM_TO_PX_300DPI);
+    const H = Math.round(cfg.hMM * MM_TO_PX_300DPI);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    const pad = Math.round(4 * MM_TO_PX_300DPI);  // 4mm padding
+    const gap = Math.round(2.5 * MM_TO_PX_300DPI);
+
+    // ── Background: white ────────────────────────────────────────────────────
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── QR Code (left column) ────────────────────────────────────────────────
+    const qrSize = H - pad * 2;
+    const qrImg = new Image();
+    await new Promise(res => { qrImg.onload = res; qrImg.src = qrDataUrl; });
+    ctx.drawImage(qrImg, pad, pad, qrSize, qrSize);
+
+    // ── Divider line ─────────────────────────────────────────────────────────
+    const divX = pad + qrSize + Math.round(2 * MM_TO_PX_300DPI);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(divX, pad, 2, H - pad * 2);
+
+    // ── Text column ──────────────────────────────────────────────────────────
+    const textX = divX + Math.round(3 * MM_TO_PX_300DPI);
+    const textW = W - textX - pad;
+    let curY = pad;
+
     const articles = location.article_names || [];
+    const displayName = location.position || location.name || '';
+    const path = [location.area, location.furniture, location.container, displayName]
+        .filter(Boolean)
+        .join(' › ');
+
+    // Helper: fill wrapped text, returns ending Y
+    function fillWrapped(text, fontSize, weight, color, x, y, maxW) {
+        ctx.font = `${weight} ${fontSize}px Arial, Helvetica, sans-serif`;
+        ctx.fillStyle = color;
+        const lineH = fontSize * 1.3;
+        const words = String(text).split(' ');
+        let line = '';
+        let ly = y;
+        for (const word of words) {
+            const test = line ? line + ' ' + word : word;
+            if (ctx.measureText(test).width > maxW && line) {
+                ctx.fillText(line, x, ly, maxW);
+                ly += lineH;
+                line = word;
+            } else {
+                line = test;
+            }
+        }
+        if (line) { ctx.fillText(line, x, ly, maxW); ly += lineH; }
+        return ly;
+    }
+
+    // 1. SHORT CODE — biggest, most prominent
+    const codeSize = Math.round(cfg.hMM >= 60 ? 13 * MM_TO_PX_300DPI / 10 : 10 * MM_TO_PX_300DPI / 10);
+    if (location.short_code) {
+        ctx.font = `900 ${codeSize}px 'Courier New', Courier, monospace`;
+        ctx.fillStyle = '#000000';
+        ctx.fillText(location.short_code, textX, curY + codeSize, textW);
+        curY += codeSize + gap;
+    }
+
+    // 2. FACHNAME — large, bold
+    const nameSize = Math.round(cfg.hMM >= 60 ? 10 * MM_TO_PX_300DPI / 10 : 7.5 * MM_TO_PX_300DPI / 10);
+    curY = fillWrapped(displayName || path, nameSize, '800', '#000000', textX, curY + nameSize, textW);
+    curY += gap * 0.5;
+
+    // 3. PATH — small, grey
+    if (path && path !== displayName) {
+        const pathSize = Math.round(5 * MM_TO_PX_300DPI / 10);
+        ctx.font = `500 ${pathSize}px Arial, sans-serif`;
+        ctx.fillStyle = '#555555';
+        const pathText = path.length > 60 ? path.slice(0, 57) + '…' : path;
+        ctx.fillText(pathText, textX, curY + pathSize, textW);
+        curY += pathSize + gap;
+    }
+
+    // 4. ARTICLES ─────────────────────────────────────────────────────────────
+    const artSize = Math.round(5 * MM_TO_PX_300DPI / 10);
+    if (articles.length > 0) {
+        // separator
+        ctx.fillStyle = '#bbbbbb';
+        ctx.fillRect(textX, curY, textW, 1);
+        curY += gap * 0.8;
+
+        ctx.font = `700 ${artSize * 0.85}px Arial, sans-serif`;
+        ctx.fillStyle = '#888888';
+        ctx.fillText('INHALT', textX, curY + artSize * 0.85, textW);
+        curY += artSize + gap * 0.4;
+
+        const MAX_ART = 5;
+        const shown = articles.slice(0, MAX_ART);
+        const extra = articles.length - MAX_ART;
+        const artText = shown.join('  ·  ') + (extra > 0 ? `  +${extra} weitere` : '');
+
+        ctx.font = `600 ${artSize}px Arial, sans-serif`;
+        ctx.fillStyle = '#111111';
+        curY = fillWrapped(artText, artSize, '600', '#111111', textX, curY + artSize, textW);
+    } else {
+        ctx.fillStyle = '#bbbbbb';
+        ctx.fillRect(textX, curY, textW, 1);
+        curY += gap * 0.8;
+        ctx.font = `400 ${artSize}px Arial, sans-serif`;
+        ctx.fillStyle = '#aaaaaa';
+        ctx.fillText('Noch keine Artikel zugeordnet', textX, curY + artSize, textW);
+    }
+
+    return canvas;
+}
+
+// ─── Label Preview (DOM-based, matches PDF proportionally) ────────────────────
+function LabelPreview({ location, qrDataUrl, configKey }) {
+    const cfg = LABEL_CONFIGS[configKey];
+    const PREVIEW_W = 248; // px in UI
+    const scale = PREVIEW_W / cfg.wMM;
+    const previewH = Math.round(cfg.hMM * scale);
+
+    const articles = location.article_names || [];
+    const displayName = location.position || location.name || '';
+    const path = [location.area, location.furniture, location.container, displayName]
+        .filter(Boolean).join(' › ');
+
+    const qrSide = previewH - 16;
 
     return (
         <div
-            className="label-card bg-white border-2 border-gray-800 rounded-lg flex items-center gap-3"
-            style={{ padding: isSmall ? '8px 10px' : '12px 14px', maxWidth: isSmall ? '240px' : '320px' }}
+            style={{
+                width: PREVIEW_W,
+                height: previewH,
+                background: '#fff',
+                border: '2px solid #000',
+                display: 'flex',
+                alignItems: 'stretch',
+                fontFamily: 'Arial, sans-serif',
+                overflow: 'hidden',
+                borderRadius: 4,
+            }}
         >
-            {qrDataUrl && (
-                <img
-                    src={qrDataUrl}
-                    alt="QR"
-                    style={{ width: isSmall ? 60 : 84, height: isSmall ? 60 : 84, flexShrink: 0 }}
-                />
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: isSmall ? 9 : 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-                    {location.location_type || 'Lagerort'} · {location.area}
-                </div>
-                <div style={{ fontSize: isSmall ? 14 : 17, fontWeight: 800, color: '#000', lineHeight: 1.2, wordBreak: 'break-word' }}>
-                    {displayName}
-                </div>
+            {/* QR */}
+            <div style={{ padding: 8, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                {qrDataUrl
+                    ? <img src={qrDataUrl} alt="QR" style={{ width: qrSide, height: qrSide }} />
+                    : <div style={{ width: qrSide, height: qrSide, background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#999' }}>QR</div>
+                }
+            </div>
+            {/* Divider */}
+            <div style={{ width: 2, background: '#000', margin: '8px 0', flexShrink: 0 }} />
+            {/* Text */}
+            <div style={{ flex: 1, padding: '6px 8px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2, overflow: 'hidden', minWidth: 0 }}>
+                {/* Short code */}
                 {location.short_code && (
-                    <div style={{ fontSize: isSmall ? 11 : 13, color: '#222', fontFamily: 'monospace', fontWeight: 700, marginTop: 3, letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: cfg.hMM >= 60 ? 15 : 13, fontWeight: 900, fontFamily: 'Courier New, monospace', color: '#000', lineHeight: 1, letterSpacing: '0.02em' }}>
                         {location.short_code}
                     </div>
                 )}
-                {articles.length > 0 && (
-                    <div style={{ marginTop: 4, borderTop: '1px solid #ccc', paddingTop: 3 }}>
-                        <div style={{ fontSize: isSmall ? 8 : 9, color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: 1 }}>Artikel</div>
-                        <div style={{ fontSize: isSmall ? 9 : 11, color: '#333', fontWeight: 600, lineHeight: 1.3 }}>
-                            {articles.slice(0, 4).join(' · ')}
-                            {articles.length > 4 && ` +${articles.length - 4}`}
-                        </div>
+                {/* Name */}
+                <div style={{ fontSize: cfg.hMM >= 60 ? 11 : 9, fontWeight: 800, color: '#000', lineHeight: 1.2, wordBreak: 'break-word' }}>
+                    {displayName || path}
+                </div>
+                {/* Path */}
+                {path && path !== displayName && (
+                    <div style={{ fontSize: 7, color: '#666', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {path}
                     </div>
                 )}
+                {/* Articles */}
+                <div style={{ borderTop: '1px solid #ddd', marginTop: 2, paddingTop: 2 }}>
+                    {articles.length > 0 ? (
+                        <>
+                            <div style={{ fontSize: 6, fontWeight: 700, color: '#999', textTransform: 'uppercase', marginBottom: 1 }}>Inhalt</div>
+                            <div style={{ fontSize: 7, fontWeight: 600, color: '#222', lineHeight: 1.3 }}>
+                                {articles.slice(0, 5).join(' · ')}
+                                {articles.length > 5 && ` +${articles.length - 5} weitere`}
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ fontSize: 7, color: '#bbb' }}>Noch keine Artikel zugeordnet</div>
+                    )}
+                </div>
             </div>
         </div>
     );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function StorageLabelPrint({ open, onClose, location }) {
     const [qrDataUrl, setQrDataUrl] = useState('');
-    const [printSize, setPrintSize] = useState('normal');
+    const [configKey, setConfigKey] = useState('standard');
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (!location?.id || !open) return;
         const url = `${window.location.origin}/StorageLocationScan/${location.id}`;
-        QRCode.toDataURL(url, { width: 200, margin: 1, color: { dark: '#000', light: '#fff' } })
-            .then(setQrDataUrl)
-            .catch(console.error);
+        // High-res QR code for clean printing
+        QRCode.toDataURL(url, {
+            width: 600,
+            margin: 2,
+            errorCorrectionLevel: 'M',
+            color: { dark: '#000000', light: '#ffffff' },
+        }).then(setQrDataUrl).catch(console.error);
     }, [location?.id, open]);
 
-    const handlePrint = () => {
-        const printContent = document.getElementById('storage-label-print-area');
-        if (!printContent) return;
-        const printWindow = window.open('', '_blank', 'width=600,height=400');
-        printWindow.document.write(`
-            <!DOCTYPE html><html><head><title>Lagerort-Etikett</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: Arial, sans-serif; background: white; padding: 20px; }
-                .label-card { display: inline-flex; align-items: center; gap: 12px; border: 2px solid #000; border-radius: 8px;
-                    padding: ${printSize === 'small' ? '8px 10px' : '12px 14px'};
-                    max-width: ${printSize === 'small' ? '220px' : '300px'}; }
-                @media print { body { padding: 10mm; } }
-            </style></head>
-            <body>${printContent.innerHTML}</body></html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+    const handleDownloadPDF = async () => {
+        if (!qrDataUrl || loading) return;
+        setLoading(true);
+        try {
+            const canvas = await renderLabelToCanvas(location, qrDataUrl, configKey);
+            const cfg = LABEL_CONFIGS[configKey];
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            const doc = new jsPDF({ unit: 'mm', format: [cfg.wMM, cfg.hMM], orientation: 'landscape' });
+            doc.addImage(imgData, 'PNG', 0, 0, cfg.wMM, cfg.hMM, undefined, 'NONE');
+            const code = location.short_code || location.id.slice(0, 8);
+            doc.save(`etikett_${code}.pdf`);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleDownloadPDF = async () => {
-        if (!qrDataUrl) return;
-        const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
-        const articles = location.article_names || [];
-
-        // Fixed pixel dimensions — large enough for crisp print
-        // We use a big internal canvas and scale down into a fixed PDF label
-        const SCALE = 4; // 4x for sharpness
-        const sizes = {
-            small:  { wMM: 62,  hMM: 29,  cW: 740,  cH: 340  },
-            normal: { wMM: 90,  hMM: 40,  cW: 1080, cH: 480  },
-            large:  { wMM: 100, hMM: 60,  cW: 1200, cH: 720  },
-        };
-        const { wMM, hMM, cW, cH } = sizes[printSize] || sizes.normal;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = cW * SCALE;
-        canvas.height = cH * SCALE;
-        const ctx = canvas.getContext('2d');
-        ctx.scale(SCALE, SCALE);
-
-        // White background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, cW, cH);
-
-        // Border
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2.5;
-        const r = 10;
-        ctx.beginPath();
-        ctx.moveTo(r, 1.5); ctx.lineTo(cW - r, 1.5);
-        ctx.quadraticCurveTo(cW - 1.5, 1.5, cW - 1.5, r);
-        ctx.lineTo(cW - 1.5, cH - r); ctx.quadraticCurveTo(cW - 1.5, cH - 1.5, cW - r, cH - 1.5);
-        ctx.lineTo(r, cH - 1.5); ctx.quadraticCurveTo(1.5, cH - 1.5, 1.5, cH - r);
-        ctx.lineTo(1.5, r); ctx.quadraticCurveTo(1.5, 1.5, r, 1.5);
-        ctx.closePath();
-        ctx.stroke();
-
-        // QR Code
-        const pad = printSize === 'small' ? 10 : 14;
-        const qrSize = cH - pad * 2;
-        const qrImg = new Image();
-        await new Promise(res => { qrImg.onload = res; qrImg.src = qrDataUrl; });
-        ctx.drawImage(qrImg, pad, pad, qrSize, qrSize);
-
-        // Text column
-        const textX = pad + qrSize + (printSize === 'small' ? 10 : 14);
-        const textW = cW - textX - pad;
-        let curY = pad;
-
-        // Helper: draw wrapped text, returns new curY
-        const drawWrapped = (text, fontSize, fontStyle, color, maxW, startY) => {
-            ctx.font = `${fontStyle} ${fontSize}px Arial, sans-serif`;
-            ctx.fillStyle = color;
-            const lineH = fontSize * 1.25;
-            const parts = text.split(' ');
-            let line = '';
-            let y = startY + fontSize;
-            for (const part of parts) {
-                const test = line ? line + ' ' + part : part;
-                if (ctx.measureText(test).width > maxW && line) {
-                    ctx.fillText(line, textX, y, maxW);
-                    y += lineH;
-                    line = part;
-                } else { line = test; }
-            }
-            if (line) { ctx.fillText(line, textX, y, maxW); y += lineH; }
-            return y;
-        };
-
-        // Category label (small, grey)
-        const catSize = printSize === 'small' ? 14 : 18;
-        ctx.font = `bold ${catSize}px Arial, sans-serif`;
-        ctx.fillStyle = '#666666';
-        const catText = [(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ').toUpperCase();
-        ctx.fillText(catText, textX, curY + catSize, textW);
-        curY += catSize + 8;
-
-        // Main name — very large and bold
-        const nameSize = printSize === 'small' ? 28 : printSize === 'large' ? 42 : 36;
-        curY = drawWrapped(displayName, nameSize, '900', '#000000', textW, curY);
-        curY += 6;
-
-        // Short code
-        if (location.short_code) {
-            const codeSize = printSize === 'small' ? 20 : 26;
-            ctx.font = `bold ${codeSize}px 'Courier New', monospace`;
-            ctx.fillStyle = '#111111';
-            ctx.fillText(location.short_code, textX, curY + codeSize, textW);
-            curY += codeSize + 10;
+    const handlePrint = async () => {
+        if (!qrDataUrl || loading) return;
+        setLoading(true);
+        try {
+            const canvas = await renderLabelToCanvas(location, qrDataUrl, configKey);
+            const cfg = LABEL_CONFIGS[configKey];
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            // 1mm = 3.7795px at 96dpi screen; but we want actual size
+            const mmToPt = 2.8346;
+            const wPt = cfg.wMM * mmToPt;
+            const hPt = cfg.hMM * mmToPt;
+            const win = window.open('', '_blank', 'width=400,height=300');
+            win.document.write(`<!DOCTYPE html><html><head><title>Etikett</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  @page { size: ${cfg.wMM}mm ${cfg.hMM}mm; margin: 0; }
+  html, body { width: ${cfg.wMM}mm; height: ${cfg.hMM}mm; overflow: hidden; }
+  img { width: ${cfg.wMM}mm; height: ${cfg.hMM}mm; display: block; }
+</style></head>
+<body><img src="${imgData}" /></body></html>`);
+            win.document.close();
+            win.focus();
+            setTimeout(() => { win.print(); win.close(); }, 400);
+        } finally {
+            setLoading(false);
         }
+    };
 
-        // Articles
-        if (articles.length > 0 && curY + 30 < cH - pad) {
-            ctx.strokeStyle = '#cccccc';
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(textX, curY); ctx.lineTo(textX + textW, curY); ctx.stroke();
-            curY += 6;
-
-            const artHeaderSize = printSize === 'small' ? 11 : 14;
-            ctx.font = `bold ${artHeaderSize}px Arial`;
-            ctx.fillStyle = '#888888';
-            ctx.fillText('ARTIKEL', textX, curY + artHeaderSize, textW);
-            curY += artHeaderSize + 4;
-
-            const artSize = printSize === 'small' ? 14 : 18;
-            const artText = articles.slice(0, 4).join(' · ') + (articles.length > 4 ? ` +${articles.length - 4}` : '');
-            drawWrapped(artText, artSize, '600', '#222222', textW, curY);
+    const handleShare = async () => {
+        if (!qrDataUrl || !navigator.share) return;
+        setLoading(true);
+        try {
+            const canvas = await renderLabelToCanvas(location, qrDataUrl, configKey);
+            canvas.toBlob(async blob => {
+                const code = location.short_code || 'etikett';
+                const file = new File([blob], `etikett_${code}.png`, { type: 'image/png' });
+                await navigator.share({ files: [file], title: `Etikett ${code}` });
+                setLoading(false);
+            }, 'image/png', 1.0);
+        } catch {
+            setLoading(false);
         }
-
-        // Export
-        const imgData = canvas.toDataURL('image/png', 1.0);
-        const doc = new jsPDF({ unit: 'mm', format: [wMM, hMM], orientation: 'landscape' });
-        doc.addImage(imgData, 'PNG', 0, 0, wMM, hMM, undefined, 'NONE');
-        doc.save(`lagerort-${displayName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.pdf`);
     };
 
     if (!location) return null;
 
+    const canShare = !!navigator.share;
+
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-sm">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+                    <DialogTitle className="flex items-center gap-2 text-base">
                         <QrCode className="w-5 h-5 text-amber-500" />
                         Etikett drucken
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-4">
+                    {/* Format selector */}
                     <div className="flex gap-2">
-                        {['small', 'normal', 'large'].map((s) => (
+                        {Object.entries(LABEL_CONFIGS).map(([key, cfg]) => (
                             <button
-                                key={s}
-                                onClick={() => setPrintSize(s)}
-                                className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${printSize === s ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground hover:bg-accent'}`}
+                                key={key}
+                                onClick={() => setConfigKey(key)}
+                                className={`flex-1 py-2 px-3 rounded-lg border text-xs font-medium transition-all ${
+                                    configKey === key
+                                        ? 'bg-amber-500 text-slate-900 border-amber-500'
+                                        : 'border-border text-muted-foreground hover:bg-accent'
+                                }`}
                             >
-                                {s === 'small' ? 'Klein' : s === 'normal' ? 'Normal' : 'Groß'}
+                                {cfg.label}
                             </button>
                         ))}
                     </div>
 
-                    <div className="bg-gray-50 rounded-xl p-6 flex justify-center">
-                        <div id="storage-label-print-area">
-                            <LabelCard location={location} qrDataUrl={qrDataUrl} size={printSize} />
-                        </div>
+                    {/* Preview */}
+                    <div className="bg-gray-100 rounded-xl p-4 flex justify-center items-center">
+                        <LabelPreview
+                            location={location}
+                            qrDataUrl={qrDataUrl}
+                            configKey={configKey}
+                        />
                     </div>
 
                     <p className="text-xs text-muted-foreground text-center">
-                        QR-Code führt direkt zur Lagerort-Ansicht
+                        Optimiert für Brother QL-800 · QR-Code führt direkt zum Lagerort
                     </p>
 
+                    {/* Action buttons */}
                     <div className="flex flex-col gap-2">
-                        <Button onClick={handleDownloadPDF} disabled={!qrDataUrl} className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                            <Download className="w-4 h-4" />
+                        <Button
+                            onClick={handleDownloadPDF}
+                            disabled={!qrDataUrl || loading}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                        >
+                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             Als PDF herunterladen
                         </Button>
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={onClose} className="flex-1">Abbrechen</Button>
-                            <Button onClick={handlePrint} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white gap-2">
-                                <Printer className="w-4 h-4" />
+                            <Button
+                                variant="outline"
+                                onClick={onClose}
+                                className="flex-1"
+                                disabled={loading}
+                            >
+                                Abbrechen
+                            </Button>
+                            {canShare && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleShare}
+                                    disabled={!qrDataUrl || loading}
+                                    className="gap-2"
+                                >
+                                    <Share2 className="w-4 h-4" />
+                                </Button>
+                            )}
+                            <Button
+                                onClick={handlePrint}
+                                disabled={!qrDataUrl || loading}
+                                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white gap-2"
+                            >
+                                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
                                 Drucken
                             </Button>
                         </div>
@@ -250,4 +374,22 @@ export default function StorageLabelPrint({ open, onClose, location }) {
             </DialogContent>
         </Dialog>
     );
+}
+
+// ─── Batch export helper (prepared for future multi-label use) ────────────────
+export async function exportBatchPDF(locations, configKey = 'standard') {
+    const cfg = LABEL_CONFIGS[configKey];
+    const doc = new jsPDF({ unit: 'mm', format: [cfg.wMM, cfg.hMM], orientation: 'landscape' });
+
+    for (let i = 0; i < locations.length; i++) {
+        const loc = locations[i];
+        const url = `${window.location.origin}/StorageLocationScan/${loc.id}`;
+        const qrDataUrl = await QRCode.toDataURL(url, { width: 600, margin: 2, errorCorrectionLevel: 'M' });
+        const canvas = await renderLabelToCanvas(loc, qrDataUrl, configKey);
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        if (i > 0) doc.addPage([cfg.wMM, cfg.hMM], 'landscape');
+        doc.addImage(imgData, 'PNG', 0, 0, cfg.wMM, cfg.hMM, undefined, 'NONE');
+    }
+
+    doc.save('etiketten_batch.pdf');
 }

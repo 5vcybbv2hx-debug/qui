@@ -86,17 +86,21 @@ export default function StorageLabelPrint({ open, onClose, location }) {
         const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
         const articles = location.article_names || [];
 
-        // mm -> px at 300 DPI
-        const MM_TO_PX = 300 / 25.4;
-        const sizes = { small: [62, 29], normal: [90, 40], large: [100, 60] };
-        const [wMM, hMM] = sizes[printSize] || sizes.normal;
-        const cW = Math.round(wMM * MM_TO_PX);
-        const cH = Math.round(hMM * MM_TO_PX);
+        // Fixed pixel dimensions — large enough for crisp print
+        // We use a big internal canvas and scale down into a fixed PDF label
+        const SCALE = 4; // 4x for sharpness
+        const sizes = {
+            small:  { wMM: 62,  hMM: 29,  cW: 740,  cH: 340  },
+            normal: { wMM: 90,  hMM: 40,  cW: 1080, cH: 480  },
+            large:  { wMM: 100, hMM: 60,  cW: 1200, cH: 720  },
+        };
+        const { wMM, hMM, cW, cH } = sizes[printSize] || sizes.normal;
 
         const canvas = document.createElement('canvas');
-        canvas.width = cW;
-        canvas.height = cH;
+        canvas.width = cW * SCALE;
+        canvas.height = cH * SCALE;
         const ctx = canvas.getContext('2d');
+        ctx.scale(SCALE, SCALE);
 
         // White background
         ctx.fillStyle = '#ffffff';
@@ -104,101 +108,93 @@ export default function StorageLabelPrint({ open, onClose, location }) {
 
         // Border
         ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        const r = 12;
+        ctx.lineWidth = 2.5;
+        const r = 10;
         ctx.beginPath();
-        ctx.moveTo(r, 0); ctx.lineTo(cW - r, 0);
-        ctx.quadraticCurveTo(cW, 0, cW, r);
-        ctx.lineTo(cW, cH - r); ctx.quadraticCurveTo(cW, cH, cW - r, cH);
-        ctx.lineTo(r, cH); ctx.quadraticCurveTo(0, cH, 0, cH - r);
-        ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.moveTo(r, 1.5); ctx.lineTo(cW - r, 1.5);
+        ctx.quadraticCurveTo(cW - 1.5, 1.5, cW - 1.5, r);
+        ctx.lineTo(cW - 1.5, cH - r); ctx.quadraticCurveTo(cW - 1.5, cH - 1.5, cW - r, cH - 1.5);
+        ctx.lineTo(r, cH - 1.5); ctx.quadraticCurveTo(1.5, cH - 1.5, 1.5, cH - r);
+        ctx.lineTo(1.5, r); ctx.quadraticCurveTo(1.5, 1.5, r, 1.5);
         ctx.closePath();
         ctx.stroke();
 
-        // QR Code image
-        const pad = Math.round(12 * MM_TO_PX / 10);
-        const qrPx = cH - pad * 2;
+        // QR Code
+        const pad = printSize === 'small' ? 10 : 14;
+        const qrSize = cH - pad * 2;
         const qrImg = new Image();
         await new Promise(res => { qrImg.onload = res; qrImg.src = qrDataUrl; });
-        ctx.drawImage(qrImg, pad, pad, qrPx, qrPx);
+        ctx.drawImage(qrImg, pad, pad, qrSize, qrSize);
 
-        // Text area
-        const textX = pad + qrPx + pad;
+        // Text column
+        const textX = pad + qrSize + (printSize === 'small' ? 10 : 14);
         const textW = cW - textX - pad;
         let curY = pad;
 
-        // Type · Area label
-        const labelFontSize = Math.round(18 * MM_TO_PX / 10);
-        ctx.font = `bold ${labelFontSize}px Arial`;
-        ctx.fillStyle = '#555555';
-        const typeLabel = [(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ').toUpperCase();
-        ctx.fillText(typeLabel, textX, curY + labelFontSize, textW);
-        curY += labelFontSize + Math.round(4 * MM_TO_PX / 10);
+        // Helper: draw wrapped text, returns new curY
+        const drawWrapped = (text, fontSize, fontStyle, color, maxW, startY) => {
+            ctx.font = `${fontStyle} ${fontSize}px Arial, sans-serif`;
+            ctx.fillStyle = color;
+            const lineH = fontSize * 1.25;
+            const parts = text.split(' ');
+            let line = '';
+            let y = startY + fontSize;
+            for (const part of parts) {
+                const test = line ? line + ' ' + part : part;
+                if (ctx.measureText(test).width > maxW && line) {
+                    ctx.fillText(line, textX, y, maxW);
+                    y += lineH;
+                    line = part;
+                } else { line = test; }
+            }
+            if (line) { ctx.fillText(line, textX, y, maxW); y += lineH; }
+            return y;
+        };
 
-        // Display name (big, bold)
-        const nameFontSize = Math.round((printSize === 'small' ? 26 : 32) * MM_TO_PX / 10);
-        ctx.font = `900 ${nameFontSize}px Arial`;
-        ctx.fillStyle = '#000000';
-        // Word wrap
-        const words = displayName.split(/\s+/);
-        let line = '';
-        const lineH = nameFontSize * 1.2;
-        for (const word of words) {
-            const test = line ? line + ' ' + word : word;
-            if (ctx.measureText(test).width > textW && line) {
-                ctx.fillText(line, textX, curY + nameFontSize, textW);
-                curY += lineH;
-                line = word;
-            } else { line = test; }
-        }
-        if (line) { ctx.fillText(line, textX, curY + nameFontSize, textW); curY += lineH; }
-        curY += Math.round(3 * MM_TO_PX / 10);
+        // Category label (small, grey)
+        const catSize = printSize === 'small' ? 14 : 18;
+        ctx.font = `bold ${catSize}px Arial, sans-serif`;
+        ctx.fillStyle = '#666666';
+        const catText = [(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ').toUpperCase();
+        ctx.fillText(catText, textX, curY + catSize, textW);
+        curY += catSize + 8;
+
+        // Main name — very large and bold
+        const nameSize = printSize === 'small' ? 28 : printSize === 'large' ? 42 : 36;
+        curY = drawWrapped(displayName, nameSize, '900', '#000000', textW, curY);
+        curY += 6;
 
         // Short code
         if (location.short_code) {
-            const codeFontSize = Math.round((printSize === 'small' ? 22 : 26) * MM_TO_PX / 10);
-            ctx.font = `bold ${codeFontSize}px 'Courier New', monospace`;
+            const codeSize = printSize === 'small' ? 20 : 26;
+            ctx.font = `bold ${codeSize}px 'Courier New', monospace`;
             ctx.fillStyle = '#111111';
-            ctx.fillText(location.short_code, textX, curY + codeFontSize, textW);
-            curY += codeFontSize + Math.round(4 * MM_TO_PX / 10);
+            ctx.fillText(location.short_code, textX, curY + codeSize, textW);
+            curY += codeSize + 10;
         }
 
         // Articles
-        if (articles.length > 0 && curY + 20 < cH) {
+        if (articles.length > 0 && curY + 30 < cH - pad) {
             ctx.strokeStyle = '#cccccc';
             ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(textX, curY); ctx.lineTo(textX + textW, curY);
-            ctx.stroke();
-            curY += Math.round(4 * MM_TO_PX / 10);
+            ctx.beginPath(); ctx.moveTo(textX, curY); ctx.lineTo(textX + textW, curY); ctx.stroke();
+            curY += 6;
 
-            const artLabelSize = Math.round(15 * MM_TO_PX / 10);
-            ctx.font = `bold ${artLabelSize}px Arial`;
+            const artHeaderSize = printSize === 'small' ? 11 : 14;
+            ctx.font = `bold ${artHeaderSize}px Arial`;
             ctx.fillStyle = '#888888';
-            ctx.fillText('ARTIKEL', textX, curY + artLabelSize, textW);
-            curY += artLabelSize + Math.round(2 * MM_TO_PX / 10);
+            ctx.fillText('ARTIKEL', textX, curY + artHeaderSize, textW);
+            curY += artHeaderSize + 4;
 
-            const artFontSize = Math.round((printSize === 'small' ? 18 : 20) * MM_TO_PX / 10);
-            ctx.font = `600 ${artFontSize}px Arial`;
-            ctx.fillStyle = '#222222';
+            const artSize = printSize === 'small' ? 14 : 18;
             const artText = articles.slice(0, 4).join(' · ') + (articles.length > 4 ? ` +${articles.length - 4}` : '');
-            // Simple wrap
-            const aWords = artText.split(/\s+/);
-            let aLine = '';
-            for (const w of aWords) {
-                const t = aLine ? aLine + ' ' + w : w;
-                if (ctx.measureText(t).width > textW && aLine) {
-                    if (curY + artFontSize < cH - pad) { ctx.fillText(aLine, textX, curY + artFontSize, textW); curY += artFontSize * 1.2; }
-                    aLine = w;
-                } else { aLine = t; }
-            }
-            if (aLine && curY + artFontSize < cH - pad) ctx.fillText(aLine, textX, curY + artFontSize, textW);
+            drawWrapped(artText, artSize, '600', '#222222', textW, curY);
         }
 
-        // Export as PDF with canvas image
+        // Export
         const imgData = canvas.toDataURL('image/png', 1.0);
         const doc = new jsPDF({ unit: 'mm', format: [wMM, hMM], orientation: 'landscape' });
-        doc.addImage(imgData, 'PNG', 0, 0, wMM, hMM, undefined, 'FAST');
+        doc.addImage(imgData, 'PNG', 0, 0, wMM, hMM, undefined, 'NONE');
         doc.save(`lagerort-${displayName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.pdf`);
     };
 

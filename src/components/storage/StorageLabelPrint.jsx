@@ -55,124 +55,114 @@ async function generateQrPng(locationId) {
 }
 
 // ─── Core PDF builder ─────────────────────────────────────────────────────────
-// All mm measurements. Text is real jsPDF vector text.
+// Fixed Brother QL-800 layout — all coordinates in mm.
+// Label: 62mm wide. QR is FIXED at 22mm regardless of label height.
+// Text column gets the remaining ~34mm — always stable.
 function buildLabelPDF(location, qrPng, configKey) {
     const cfg = LABEL_CONFIGS[configKey];
-    const W = cfg.wMM; // 62mm
-    const H = cfg.hMM; // 29 or 62mm
+    const W = cfg.wMM; // always 62
+    const H = cfg.hMM; // 29 or 62
 
-    // CRITICAL: do NOT pass orientation — jsPDF with custom small formats
-    // and orientation:'landscape' incorrectly swaps W/H. Pass format directly.
     const doc = new jsPDF({
         unit: 'mm',
         format: [W, H],
-        compress: false, // no compression → better quality
+        compress: false,
     });
 
     const { articles, displayName, pathStr, short_code } = getLabelData(location);
 
-    // ── Layout (all mm) ───────────────────────────────────────────────────────
-    const PAD = 2.0;
-    const QR_SIZE = H - PAD * 2;   // QR fills full label height
+    // ── FIXED layout constants (all mm) ──────────────────────────────────────
+    // These never change regardless of label height — stable, predictable layout
+    const PAD = 2.0;           // outer margin all sides
+    const QR_SIZE = 22;        // QR always 22mm × 22mm — fixed, not dynamic
     const QR_X = PAD;
-    const QR_Y = PAD;
-    const DIV_X = PAD + QR_SIZE + 1.5;
-    const TEXT_X = DIV_X + 2.0;
-    const TEXT_W = W - TEXT_X - PAD;
+    const QR_Y = (H - QR_SIZE) / 2; // vertically centered
+    const DIV_X = PAD + QR_SIZE + 1.5; // divider at 25.5mm from left
+    const TEXT_X = DIV_X + 2.0;       // text starts at ~27.5mm
+    const TEXT_W = W - TEXT_X - PAD;  // ~32.5mm for text — generous
+
+    // pt → mm conversion + line height
+    const ptMm = (pt) => pt * 0.3528;
+    const lh = (pt) => ptMm(pt) * 1.3;
 
     // ── Background ────────────────────────────────────────────────────────────
     doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, W, H, 'F');
 
-    // ── QR Code (lossless PNG, no compression flag) ───────────────────────────
+    // ── QR Code ───────────────────────────────────────────────────────────────
     doc.addImage(qrPng, 'PNG', QR_X, QR_Y, QR_SIZE, QR_SIZE, undefined, 'NONE');
 
-    // ── Divider line ──────────────────────────────────────────────────────────
+    // ── Divider ───────────────────────────────────────────────────────────────
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.25);
     doc.line(DIV_X, PAD, DIV_X, H - PAD);
 
-    // ── Text helpers ──────────────────────────────────────────────────────────
-    // jsPDF baseline: text Y coordinate is the baseline of the first line.
-    // Line height in mm = fontSize(pt) × 0.3528 × leading
-    const LEADING = 1.25;
-    const ptToMm = (pt) => pt * 0.3528;
-    const lineH = (pt) => ptToMm(pt) * LEADING;
+    // ── Text: start at top padding + first baseline offset ────────────────────
+    let y = PAD + ptMm(13); // baseline of first line
 
-    let y = PAD + ptToMm(14); // start after top padding, accounting for first baseline
-
-    const drawText = (text, pt, style, r, g, b) => {
+    // Helper: set font/size/color, draw wrapped text, advance y
+    const draw = (text, pt, fontStyle, fontName, r, g, b, gapAfter = 0.5) => {
+        doc.setFont(fontName, fontStyle);
         doc.setFontSize(pt);
         doc.setTextColor(r, g, b);
-        const lines = doc.splitTextToSize(text, TEXT_W);
+        const lines = doc.splitTextToSize(String(text), TEXT_W);
         doc.text(lines, TEXT_X, y);
-        y += lines.length * lineH(pt);
+        y += lines.length * lh(pt) + gapAfter;
     };
 
-    // ── 1. SHORT CODE — 14pt Courier Bold ────────────────────────────────────
+    // ── 1. SHORT CODE — 13pt Courier Bold ────────────────────────────────────
     if (short_code) {
-        doc.setFont('courier', 'bold');
-        drawText(short_code, 14, 'bold', 0, 0, 0);
-        y += 0.8; // gap
+        draw(short_code, 13, 'bold', 'courier', 0, 0, 0, 1.0);
     }
 
-    // ── 2. FACHNAME — 11pt Helvetica Bold ────────────────────────────────────
+    // ── 2. FACHNAME — 10pt Helvetica Bold ────────────────────────────────────
     if (displayName) {
-        doc.setFont('helvetica', 'bold');
-        drawText(displayName, 11, 'bold', 10, 10, 10);
-        y += 0.5;
+        draw(displayName, 10, 'bold', 'helvetica', 10, 10, 10, 0.5);
     }
 
-    // ── 3. LAGERPFAD — 7pt Helvetica Normal, grey ────────────────────────────
+    // ── 3. LAGERPFAD — 7pt grey ───────────────────────────────────────────────
     if (pathStr) {
-        doc.setFont('helvetica', 'normal');
-        const shortened = pathStr.length > 60 ? pathStr.slice(0, 57) + '…' : pathStr;
-        drawText(shortened, 7, 'normal', 80, 80, 80);
-        y += 0.8;
+        const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
+        draw(s, 7, 'normal', 'helvetica', 85, 85, 85, 1.0);
     }
 
     // ── Separator ─────────────────────────────────────────────────────────────
-    doc.setDrawColor(180, 180, 180);
+    doc.setDrawColor(190, 190, 190);
     doc.setLineWidth(0.15);
     doc.line(TEXT_X, y, TEXT_X + TEXT_W, y);
     y += 1.5;
 
-    // ── 4. ARTIKEL — 7.5pt Helvetica Bold ────────────────────────────────────
+    // ── 4. ARTIKEL ────────────────────────────────────────────────────────────
     if (articles.length > 0) {
-        // "INHALT" caption
+        // "INHALT" label — 6pt grey caps
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(6);
-        doc.setTextColor(140, 140, 140);
+        doc.setTextColor(150, 150, 150);
         doc.text('INHALT', TEXT_X, y);
-        y += lineH(6) + 0.3;
+        y += lh(6) + 0.4;
 
-        const MAX = 5;
+        const MAX = 4;
         const shown = articles.slice(0, MAX);
         const extra = articles.length - MAX;
         const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(15, 15, 15);
-        const artLines = doc.splitTextToSize(artText, TEXT_W);
-        doc.setFontSize(7.5);
-        doc.text(artLines, TEXT_X, y);
+        draw(artText, 7.5, 'bold', 'helvetica', 15, 15, 15, 0);
     } else {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);
-        doc.setTextColor(170, 170, 170);
+        doc.setTextColor(175, 175, 175);
         doc.text('Keine Artikel zugeordnet', TEXT_X, y);
     }
 
     return doc;
 }
 
-// ─── Label Preview (HTML, proportional, no canvas) ───────────────────────────
+// ─── Label Preview (HTML, same fixed proportions as PDF) ─────────────────────
 function LabelPreview({ location, qrDataUrl, configKey }) {
     const cfg = LABEL_CONFIGS[configKey];
-    const SCALE = 4; // 1mm = 4px
-    const W = cfg.wMM * SCALE;
+    const SCALE = 4; // 1mm = 4px in preview
+    const W = cfg.wMM * SCALE;   // 248px
     const H = cfg.hMM * SCALE;
-    const QR_PX = (cfg.hMM - 4) * SCALE;
+    const QR_PX = 22 * SCALE;    // FIXED 22mm = 88px — mirrors PDF exactly
     const { articles, displayName, pathStr, short_code } = getLabelData(location);
 
     return (

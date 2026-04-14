@@ -127,10 +127,10 @@ function buildLabelPDF(location, qrPng, configKey) {
         draw(displayName, 10, 'bold', 'helvetica', 10, 10, 10, 0.5);
     }
 
-    // ── 3. LAGERPFAD — 7pt grey ───────────────────────────────────────────────
+    // ── 3. LAGERPFAD — 7pt grey bold ─────────────────────────────────────────
     if (pathStr) {
         const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
-        draw(s, 7, 'normal', 'helvetica', 85, 85, 85, 1.0);
+        draw(s, 7, 'bold', 'helvetica', 60, 60, 60, 1.0);
     }
 
     // ── Separator ─────────────────────────────────────────────────────────────
@@ -144,7 +144,7 @@ function buildLabelPDF(location, qrPng, configKey) {
         // "INHALT" label — 6pt grey caps
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(6);
-        doc.setTextColor(150, 150, 150);
+        doc.setTextColor(100, 100, 100);
         doc.text('INHALT', TEXT_X, y);
         y += lh(6) + 0.4;
 

@@ -8,29 +8,39 @@ import { jsPDF } from 'jspdf';
 function LabelCard({ location, qrDataUrl, size = 'normal' }) {
     const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
     const isSmall = size === 'small';
+    const articles = location.article_names || [];
 
     return (
         <div
-            className="label-card bg-white border-2 border-gray-300 rounded-lg flex items-center gap-3"
-            style={{ padding: isSmall ? '8px 10px' : '12px 14px', maxWidth: isSmall ? '220px' : '300px' }}
+            className="label-card bg-white border-2 border-gray-800 rounded-lg flex items-center gap-3"
+            style={{ padding: isSmall ? '8px 10px' : '12px 14px', maxWidth: isSmall ? '240px' : '320px' }}
         >
             {qrDataUrl && (
                 <img
                     src={qrDataUrl}
                     alt="QR"
-                    style={{ width: isSmall ? 56 : 80, height: isSmall ? 56 : 80, flexShrink: 0 }}
+                    style={{ width: isSmall ? 60 : 84, height: isSmall ? 60 : 84, flexShrink: 0 }}
                 />
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: isSmall ? 10 : 12, color: '#888', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                <div style={{ fontSize: isSmall ? 9 : 10, color: '#555', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
                     {location.location_type || 'Lagerort'} · {location.area}
                 </div>
-                <div style={{ fontSize: isSmall ? 13 : 16, fontWeight: 700, color: '#111', lineHeight: 1.2, wordBreak: 'break-word' }}>
+                <div style={{ fontSize: isSmall ? 14 : 17, fontWeight: 800, color: '#000', lineHeight: 1.2, wordBreak: 'break-word' }}>
                     {displayName}
                 </div>
                 {location.short_code && (
-                    <div style={{ fontSize: isSmall ? 10 : 11, color: '#555', fontFamily: 'monospace', marginTop: 3 }}>
+                    <div style={{ fontSize: isSmall ? 11 : 13, color: '#222', fontFamily: 'monospace', fontWeight: 700, marginTop: 3, letterSpacing: '0.05em' }}>
                         {location.short_code}
+                    </div>
+                )}
+                {articles.length > 0 && (
+                    <div style={{ marginTop: 4, borderTop: '1px solid #ccc', paddingTop: 3 }}>
+                        <div style={{ fontSize: isSmall ? 8 : 9, color: '#666', fontWeight: 700, textTransform: 'uppercase', marginBottom: 1 }}>Artikel</div>
+                        <div style={{ fontSize: isSmall ? 9 : 11, color: '#333', fontWeight: 600, lineHeight: 1.3 }}>
+                            {articles.slice(0, 4).join(' · ')}
+                            {articles.length > 4 && ` +${articles.length - 4}`}
+                        </div>
                     </div>
                 )}
             </div>
@@ -92,20 +102,43 @@ export default function StorageLabelPrint({ open, onClose, location }) {
         const textX = qrX + qrSize + 4;
         const textW = w - textX - 3;
 
-        doc.setFontSize(6);
-        doc.setTextColor(120, 120, 120);
-        doc.text([(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · '), textX, qrY + 4, { maxWidth: textW });
+        doc.setFontSize(7);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(80, 80, 80);
+        doc.text([(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ').toUpperCase(), textX, qrY + 4, { maxWidth: textW });
 
-        doc.setFontSize(printSize === 'small' ? 9 : 11);
+        doc.setFontSize(printSize === 'small' ? 10 : 13);
         doc.setTextColor(0, 0, 0);
         doc.setFont(undefined, 'bold');
-        doc.text(doc.splitTextToSize(displayName, textW), textX, qrY + 10);
+        const nameLines = doc.splitTextToSize(displayName, textW);
+        doc.text(nameLines, textX, qrY + 10);
+
+        const afterName = qrY + 10 + nameLines.length * (printSize === 'small' ? 4 : 5);
 
         if (location.short_code) {
-            doc.setFontSize(7);
-            doc.setFont(undefined, 'normal');
-            doc.setTextColor(80, 80, 80);
-            doc.text(location.short_code, textX, h - 5);
+            doc.setFontSize(printSize === 'small' ? 8 : 10);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(30, 30, 30);
+            doc.text(location.short_code, textX, afterName + 2);
+        }
+
+        const articles = location.article_names || [];
+        if (articles.length > 0) {
+            const artY = afterName + (location.short_code ? 7 : 3);
+            if (artY < h - 3) {
+                doc.setDrawColor(180, 180, 180);
+                doc.setLineWidth(0.2);
+                doc.line(textX, artY - 1, textX + textW, artY - 1);
+                doc.setFontSize(6);
+                doc.setFont(undefined, 'bold');
+                doc.setTextColor(100, 100, 100);
+                doc.text('ARTIKEL', textX, artY + 2);
+                doc.setFontSize(printSize === 'small' ? 7 : 8);
+                doc.setFont(undefined, 'normal');
+                doc.setTextColor(50, 50, 50);
+                const artText = articles.slice(0, 4).join(' · ') + (articles.length > 4 ? ` +${articles.length - 4}` : '');
+                doc.text(doc.splitTextToSize(artText, textW), textX, artY + 6);
+            }
         }
 
         doc.save(`lagerort-${displayName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.pdf`);

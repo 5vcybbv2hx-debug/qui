@@ -31,6 +31,7 @@ export default function SlotsTab({ permissions }) {
   const { data: furniture, isLoading: fL, isError: fE } = useQuery({ queryKey: ['st-furniture'], queryFn: () => base44.entities.Furniture.list('name', 500) });
   const { data: containers, isLoading: cL, isError: cE } = useQuery({ queryKey: ['st-containers'], queryFn: () => base44.entities.Container.list('name', 500) });
   const { data: slots, isLoading: sL, isError: sE } = useQuery({ queryKey: ['slots'], queryFn: () => base44.entities.StorageSlot.list('-created_date', 1000) });
+  const { data: assignments } = useQuery({ queryKey: ['storage-assignments'], queryFn: () => base44.entities.StorageAssignment.list('article_name', 2000) });
 
   const isLoading = aL || fL || cL || sL;
   const isError = aE || fE || cE || sE;
@@ -91,15 +92,20 @@ export default function SlotsTab({ permissions }) {
 
   const copy = text => { navigator.clipboard.writeText(text); setCopiedId(text); setTimeout(() => setCopiedId(null), 2000); };
 
-  const toLabelLocation = slot => ({
-    id: slot.id,
-    name: slot.full_name || slot.name,
-    area: slot.area_name,
-    furniture: slot.furniture_name,
-    position: slot.name,
-    short_code: slot.short_code,
-    location_type: 'Fach'
-  });
+  const toLabelLocation = slot => {
+    const slotAssignments = (assignments || []).filter(a => a.storage_slot_id === slot.id && a.is_active !== false);
+    const articleNames = slotAssignments.map(a => a.article_name).filter(Boolean);
+    return {
+      id: slot.id,
+      name: slot.full_name || slot.name,
+      area: slot.area_name,
+      furniture: slot.furniture_name,
+      position: slot.name,
+      short_code: slot.short_code,
+      location_type: 'Fach',
+      article_names: articleNames
+    };
+  };
 
   const modalFurniture = useMemo(() => (furniture || []).filter(f => f.area_id === form.area_id), [furniture, form.area_id]);
   const modalContainers = useMemo(() => (containers || []).filter(c => c.furniture_id === form.furniture_id), [containers, form.furniture_id]);

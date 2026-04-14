@@ -63,9 +63,16 @@ function buildLabelPDF(location, qrPng, configKey) {
     const W = cfg.wMM; // always 62
     const H = cfg.hMM; // 29 or 62
 
+    // jsPDF ALWAYS sorts format so that the SMALLER dimension is width in portrait mode.
+    // For [62, 29]: jsPDF sees 29 < 62, so it makes the page 29mm wide × 62mm tall — WRONG.
+    // Fix: pass the smaller dimension first + orientation:'landscape' to force 62mm wide.
+    // With orientation:'landscape', jsPDF uses the LARGER value as width.
+    // So format:[29, 62] + landscape → 62mm wide × 29mm tall. ✓
+    // For the square 62×62 case, landscape/portrait doesn't matter.
     const doc = new jsPDF({
         unit: 'mm',
-        format: [W, H],
+        format: [Math.min(W, H), Math.max(W, H)],
+        orientation: W >= H ? 'landscape' : 'portrait',
         compress: false,
     });
 

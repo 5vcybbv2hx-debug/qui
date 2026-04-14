@@ -81,66 +81,124 @@ export default function StorageLabelPrint({ open, onClose, location }) {
         setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
     };
 
-    const handleDownloadPDF = () => {
+    const handleDownloadPDF = async () => {
         if (!qrDataUrl) return;
         const displayName = location.name || [location.area, location.furniture, location.position].filter(Boolean).join(' › ');
-        const sizes = { small: [62, 29], normal: [90, 40], large: [100, 60] };
-        const [w, h] = sizes[printSize] || sizes.normal;
-
-        const doc = new jsPDF({ unit: 'mm', format: [w, h], orientation: 'landscape' });
-        doc.setFillColor(255, 255, 255);
-        doc.rect(0, 0, w, h, 'F');
-        doc.setDrawColor(0);
-        doc.setLineWidth(0.4);
-        doc.roundedRect(1, 1, w - 2, h - 2, 2, 2);
-
-        const qrSize = h - 8;
-        const qrX = 4;
-        const qrY = 4;
-        doc.addImage(qrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize);
-
-        const textX = qrX + qrSize + 4;
-        const textW = w - textX - 3;
-
-        doc.setFontSize(7);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(80, 80, 80);
-        doc.text([(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ').toUpperCase(), textX, qrY + 4, { maxWidth: textW });
-
-        doc.setFontSize(printSize === 'small' ? 10 : 13);
-        doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'bold');
-        const nameLines = doc.splitTextToSize(displayName, textW);
-        doc.text(nameLines, textX, qrY + 10);
-
-        const afterName = qrY + 10 + nameLines.length * (printSize === 'small' ? 4 : 5);
-
-        if (location.short_code) {
-            doc.setFontSize(printSize === 'small' ? 8 : 10);
-            doc.setFont(undefined, 'bold');
-            doc.setTextColor(30, 30, 30);
-            doc.text(location.short_code, textX, afterName + 2);
-        }
-
         const articles = location.article_names || [];
-        if (articles.length > 0) {
-            const artY = afterName + (location.short_code ? 7 : 3);
-            if (artY < h - 3) {
-                doc.setDrawColor(180, 180, 180);
-                doc.setLineWidth(0.2);
-                doc.line(textX, artY - 1, textX + textW, artY - 1);
-                doc.setFontSize(6);
-                doc.setFont(undefined, 'bold');
-                doc.setTextColor(100, 100, 100);
-                doc.text('ARTIKEL', textX, artY + 2);
-                doc.setFontSize(printSize === 'small' ? 7 : 8);
-                doc.setFont(undefined, 'normal');
-                doc.setTextColor(50, 50, 50);
-                const artText = articles.slice(0, 4).join(' · ') + (articles.length > 4 ? ` +${articles.length - 4}` : '');
-                doc.text(doc.splitTextToSize(artText, textW), textX, artY + 6);
-            }
+
+        // mm -> px at 300 DPI
+        const MM_TO_PX = 300 / 25.4;
+        const sizes = { small: [62, 29], normal: [90, 40], large: [100, 60] };
+        const [wMM, hMM] = sizes[printSize] || sizes.normal;
+        const cW = Math.round(wMM * MM_TO_PX);
+        const cH = Math.round(hMM * MM_TO_PX);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = cW;
+        canvas.height = cH;
+        const ctx = canvas.getContext('2d');
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cW, cH);
+
+        // Border
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        const r = 12;
+        ctx.beginPath();
+        ctx.moveTo(r, 0); ctx.lineTo(cW - r, 0);
+        ctx.quadraticCurveTo(cW, 0, cW, r);
+        ctx.lineTo(cW, cH - r); ctx.quadraticCurveTo(cW, cH, cW - r, cH);
+        ctx.lineTo(r, cH); ctx.quadraticCurveTo(0, cH, 0, cH - r);
+        ctx.lineTo(0, r); ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.closePath();
+        ctx.stroke();
+
+        // QR Code image
+        const pad = Math.round(12 * MM_TO_PX / 10);
+        const qrPx = cH - pad * 2;
+        const qrImg = new Image();
+        await new Promise(res => { qrImg.onload = res; qrImg.src = qrDataUrl; });
+        ctx.drawImage(qrImg, pad, pad, qrPx, qrPx);
+
+        // Text area
+        const textX = pad + qrPx + pad;
+        const textW = cW - textX - pad;
+        let curY = pad;
+
+        // Type · Area label
+        const labelFontSize = Math.round(18 * MM_TO_PX / 10);
+        ctx.font = `bold ${labelFontSize}px Arial`;
+        ctx.fillStyle = '#555555';
+        const typeLabel = [(location.location_type || 'Lagerort'), location.area].filter(Boolean).join(' · ').toUpperCase();
+        ctx.fillText(typeLabel, textX, curY + labelFontSize, textW);
+        curY += labelFontSize + Math.round(4 * MM_TO_PX / 10);
+
+        // Display name (big, bold)
+        const nameFontSize = Math.round((printSize === 'small' ? 26 : 32) * MM_TO_PX / 10);
+        ctx.font = `900 ${nameFontSize}px Arial`;
+        ctx.fillStyle = '#000000';
+        // Word wrap
+        const words = displayName.split(/\s+/);
+        let line = '';
+        const lineH = nameFontSize * 1.2;
+        for (const word of words) {
+            const test = line ? line + ' ' + word : word;
+            if (ctx.measureText(test).width > textW && line) {
+                ctx.fillText(line, textX, curY + nameFontSize, textW);
+                curY += lineH;
+                line = word;
+            } else { line = test; }
+        }
+        if (line) { ctx.fillText(line, textX, curY + nameFontSize, textW); curY += lineH; }
+        curY += Math.round(3 * MM_TO_PX / 10);
+
+        // Short code
+        if (location.short_code) {
+            const codeFontSize = Math.round((printSize === 'small' ? 22 : 26) * MM_TO_PX / 10);
+            ctx.font = `bold ${codeFontSize}px 'Courier New', monospace`;
+            ctx.fillStyle = '#111111';
+            ctx.fillText(location.short_code, textX, curY + codeFontSize, textW);
+            curY += codeFontSize + Math.round(4 * MM_TO_PX / 10);
         }
 
+        // Articles
+        if (articles.length > 0 && curY + 20 < cH) {
+            ctx.strokeStyle = '#cccccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(textX, curY); ctx.lineTo(textX + textW, curY);
+            ctx.stroke();
+            curY += Math.round(4 * MM_TO_PX / 10);
+
+            const artLabelSize = Math.round(15 * MM_TO_PX / 10);
+            ctx.font = `bold ${artLabelSize}px Arial`;
+            ctx.fillStyle = '#888888';
+            ctx.fillText('ARTIKEL', textX, curY + artLabelSize, textW);
+            curY += artLabelSize + Math.round(2 * MM_TO_PX / 10);
+
+            const artFontSize = Math.round((printSize === 'small' ? 18 : 20) * MM_TO_PX / 10);
+            ctx.font = `600 ${artFontSize}px Arial`;
+            ctx.fillStyle = '#222222';
+            const artText = articles.slice(0, 4).join(' · ') + (articles.length > 4 ? ` +${articles.length - 4}` : '');
+            // Simple wrap
+            const aWords = artText.split(/\s+/);
+            let aLine = '';
+            for (const w of aWords) {
+                const t = aLine ? aLine + ' ' + w : w;
+                if (ctx.measureText(t).width > textW && aLine) {
+                    if (curY + artFontSize < cH - pad) { ctx.fillText(aLine, textX, curY + artFontSize, textW); curY += artFontSize * 1.2; }
+                    aLine = w;
+                } else { aLine = t; }
+            }
+            if (aLine && curY + artFontSize < cH - pad) ctx.fillText(aLine, textX, curY + artFontSize, textW);
+        }
+
+        // Export as PDF with canvas image
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        const doc = new jsPDF({ unit: 'mm', format: [wMM, hMM], orientation: 'landscape' });
+        doc.addImage(imgData, 'PNG', 0, 0, wMM, hMM, undefined, 'FAST');
         doc.save(`lagerort-${displayName.toLowerCase().replace(/[^a-z0-9]+/gi, '-')}.pdf`);
     };
 

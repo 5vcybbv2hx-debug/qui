@@ -4,7 +4,7 @@ import {
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
-    Palmtree, ListChecks
+    Palmtree, ListChecks, Video
 } from 'lucide-react';
 
 /**
@@ -76,6 +76,7 @@ export const mainNavigation = [
             { name: 'Urlaub',        page: 'Vacation',       icon: Palmtree,       permission: 'canViewOwnTimeEntries' },
             { name: 'Schichttausch', page: 'ShiftSwaps',     icon: ArrowLeftRight, permission: 'canRequestShiftSwap'   },
             { name: 'Berechtigungen',page: 'Permissions',    icon: Shield,         permission: 'canEditEmployeePermissions'},
+            { name: 'Teamsitzung',   page: 'TeamMeeting',    icon: Video,          permission: 'canViewShifts'             },
         ]
     },
 ];

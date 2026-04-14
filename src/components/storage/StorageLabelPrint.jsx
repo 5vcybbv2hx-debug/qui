@@ -12,123 +12,137 @@ const LABEL_CONFIGS = {
     tall:     { wMM: 62, hMM: 62, label: '62×62mm (Quadrat)' },
 };
 
-// ─── Canvas rendering at high DPI ─────────────────────────────────────────────
-// We render at 300 DPI equivalent for crisp print output.
-const MM_TO_PX_300DPI = 300 / 25.4; // ≈ 11.81 px per mm
+// ─── Canvas rendering ─────────────────────────────────────────────────────────
+// Strategy: render at a fixed "virtual" resolution where 1 unit = 1/3 mm at 300 DPI.
+// This means font sizes in "virtual px" map directly to pt on paper:
+//   1 pt = 1/72 inch = 25.4/72 mm ≈ 0.353 mm
+//   At our scale (1 unit = 0.1mm), font 10pt = 10 * 0.353/0.1 = 35.3 units
+// We choose: 1 canvas px = 0.1 mm  →  canvas is wMM*10 × hMM*10 px
+// Then jsPDF renders it at exactly wMM × hMM mm → perfect 1:1
+
+const UNITS_PER_MM = 10; // 1 canvas unit = 0.1 mm → 10 units/mm
+
+// Convert pt to canvas units: 1 pt = 0.3528 mm → × UNITS_PER_MM
+const pt = (points) => Math.round(points * 0.3528 * UNITS_PER_MM);
+const mm = (millimeters) => Math.round(millimeters * UNITS_PER_MM);
 
 async function renderLabelToCanvas(location, qrDataUrl, configKey = 'standard') {
     const cfg = LABEL_CONFIGS[configKey];
-    const W = Math.round(cfg.wMM * MM_TO_PX_300DPI);
-    const H = Math.round(cfg.hMM * MM_TO_PX_300DPI);
+    const W = mm(cfg.wMM);
+    const H = mm(cfg.hMM);
 
     const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    const pad = Math.round(4 * MM_TO_PX_300DPI);  // 4mm padding
-    const gap = Math.round(2.5 * MM_TO_PX_300DPI);
-
-    // ── Background: white ────────────────────────────────────────────────────
+    // White background
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, W, H);
 
-    // ── QR Code (left column) ────────────────────────────────────────────────
-    const qrSize = H - pad * 2;
-    const qrImg = new Image();
-    await new Promise(res => { qrImg.onload = res; qrImg.src = qrDataUrl; });
-    ctx.drawImage(qrImg, pad, pad, qrSize, qrSize);
-
-    // ── Divider line ─────────────────────────────────────────────────────────
-    const divX = pad + qrSize + Math.round(2 * MM_TO_PX_300DPI);
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(divX, pad, 2, H - pad * 2);
-
-    // ── Text column ──────────────────────────────────────────────────────────
-    const textX = divX + Math.round(3 * MM_TO_PX_300DPI);
-    const textW = W - textX - pad;
-    let curY = pad;
+    const PAD = mm(2.5);  // 2.5mm padding
+    const GAP = mm(1);
 
     const articles = location.article_names || [];
     const displayName = location.position || location.name || '';
-    const path = [location.area, location.furniture, location.container, displayName]
-        .filter(Boolean)
-        .join(' › ');
+    const pathParts = [location.area, location.furniture, location.container, displayName].filter(Boolean);
+    const path = pathParts.join(' › ');
 
-    // Helper: fill wrapped text, returns ending Y
-    function fillWrapped(text, fontSize, weight, color, x, y, maxW) {
-        ctx.font = `${weight} ${fontSize}px Arial, Helvetica, sans-serif`;
+    // ── QR Code (left, square, min 20mm) ─────────────────────────────────────
+    const qrMM = Math.max(20, cfg.hMM - 5); // at least 20mm, fill height
+    const qrSize = mm(Math.min(qrMM, cfg.hMM - 5));
+    const qrX = PAD;
+    const qrY = Math.round((H - qrSize) / 2); // vertically centered
+    const qrImg = new Image();
+    await new Promise(res => { qrImg.onload = res; qrImg.src = qrDataUrl; });
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+
+    // ── Divider ───────────────────────────────────────────────────────────────
+    const divX = qrX + qrSize + mm(2);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(divX, PAD, mm(0.3), H - PAD * 2);
+
+    // ── Text column ───────────────────────────────────────────────────────────
+    const textX = divX + mm(2);
+    const textW = W - textX - PAD;
+    let curY = PAD;
+
+    // Helper: draw word-wrapped text, returns new curY
+    function fillWrapped(text, fontStr, color, startY) {
+        ctx.font = fontStr;
         ctx.fillStyle = color;
-        const lineH = fontSize * 1.3;
+        const metrics = ctx.measureText('M');
+        const lineH = (metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent) * 1.4;
         const words = String(text).split(' ');
         let line = '';
-        let ly = y;
+        let ly = startY;
         for (const word of words) {
             const test = line ? line + ' ' + word : word;
-            if (ctx.measureText(test).width > maxW && line) {
-                ctx.fillText(line, x, ly, maxW);
+            if (ctx.measureText(test).width > textW && line) {
+                ctx.fillText(line, textX, ly, textW);
                 ly += lineH;
                 line = word;
             } else {
                 line = test;
             }
         }
-        if (line) { ctx.fillText(line, x, ly, maxW); ly += lineH; }
+        if (line) { ctx.fillText(line, textX, ly, textW); ly += lineH; }
         return ly;
     }
 
-    // 1. SHORT CODE — biggest, most prominent
-    const codeSize = Math.round(cfg.hMM >= 60 ? 13 * MM_TO_PX_300DPI / 10 : 10 * MM_TO_PX_300DPI / 10);
+    // 1. SHORT CODE — 16pt, monospace, heaviest weight
+    const codeFont = `900 ${pt(16)}px 'Courier New', Courier, monospace`;
+    ctx.font = codeFont;
+    const codeAsc = pt(16);
     if (location.short_code) {
-        ctx.font = `900 ${codeSize}px 'Courier New', Courier, monospace`;
+        curY += codeAsc;
         ctx.fillStyle = '#000000';
-        ctx.fillText(location.short_code, textX, curY + codeSize, textW);
-        curY += codeSize + gap;
+        ctx.fillText(location.short_code, textX, curY, textW);
+        curY += GAP * 2;
     }
 
-    // 2. FACHNAME — large, bold
-    const nameSize = Math.round(cfg.hMM >= 60 ? 10 * MM_TO_PX_300DPI / 10 : 7.5 * MM_TO_PX_300DPI / 10);
-    curY = fillWrapped(displayName || path, nameSize, '800', '#000000', textX, curY + nameSize, textW);
-    curY += gap * 0.5;
+    // 2. FACHNAME — 12pt bold
+    const nameFont = `800 ${pt(12)}px Arial, Helvetica, sans-serif`;
+    curY = fillWrapped(displayName || path, nameFont, '#000000', curY + pt(12));
+    curY += GAP;
 
-    // 3. PATH — small, grey
-    if (path && path !== displayName) {
-        const pathSize = Math.round(5 * MM_TO_PX_300DPI / 10);
-        ctx.font = `500 ${pathSize}px Arial, sans-serif`;
+    // 3. PATH — 7pt, grey (only if different from displayName)
+    if (path && path !== displayName && pathParts.length > 1) {
+        const pathFont = `500 ${pt(7)}px Arial, sans-serif`;
+        const pathText = path.length > 55 ? path.slice(0, 52) + '…' : path;
+        ctx.font = pathFont;
         ctx.fillStyle = '#555555';
-        const pathText = path.length > 60 ? path.slice(0, 57) + '…' : path;
-        ctx.fillText(pathText, textX, curY + pathSize, textW);
-        curY += pathSize + gap;
+        curY += pt(7);
+        ctx.fillText(pathText, textX, curY, textW);
+        curY += GAP * 1.5;
     }
 
-    // 4. ARTICLES ─────────────────────────────────────────────────────────────
-    const artSize = Math.round(5 * MM_TO_PX_300DPI / 10);
+    // 4. ARTICLES — 8pt
+    const artFont = `600 ${pt(8)}px Arial, sans-serif`;
+    const artLabelFont = `700 ${pt(6)}px Arial, sans-serif`;
     if (articles.length > 0) {
-        // separator
-        ctx.fillStyle = '#bbbbbb';
-        ctx.fillRect(textX, curY, textW, 1);
-        curY += gap * 0.8;
+        ctx.fillStyle = '#cccccc';
+        ctx.fillRect(textX, curY, textW, mm(0.3));
+        curY += mm(1.5);
 
-        ctx.font = `700 ${artSize * 0.85}px Arial, sans-serif`;
+        ctx.font = artLabelFont;
         ctx.fillStyle = '#888888';
-        ctx.fillText('INHALT', textX, curY + artSize * 0.85, textW);
-        curY += artSize + gap * 0.4;
+        curY += pt(6);
+        ctx.fillText('INHALT', textX, curY, textW);
+        curY += GAP;
 
         const MAX_ART = 5;
         const shown = articles.slice(0, MAX_ART);
         const extra = articles.length - MAX_ART;
-        const artText = shown.join('  ·  ') + (extra > 0 ? `  +${extra} weitere` : '');
-
-        ctx.font = `600 ${artSize}px Arial, sans-serif`;
-        ctx.fillStyle = '#111111';
-        curY = fillWrapped(artText, artSize, '600', '#111111', textX, curY + artSize, textW);
+        const artText = shown.join(' · ') + (extra > 0 ? `  +${extra} weitere` : '');
+        curY = fillWrapped(artText, artFont, '#111111', curY + pt(8));
     } else {
-        ctx.fillStyle = '#bbbbbb';
-        ctx.fillRect(textX, curY, textW, 1);
-        curY += gap * 0.8;
-        ctx.font = `400 ${artSize}px Arial, sans-serif`;
+        ctx.fillStyle = '#cccccc';
+        ctx.fillRect(textX, curY, textW, mm(0.3));
+        curY += mm(1.5) + pt(7);
+        ctx.font = `400 ${pt(7)}px Arial, sans-serif`;
         ctx.fillStyle = '#aaaaaa';
-        ctx.fillText('Noch keine Artikel zugeordnet', textX, curY + artSize, textW);
+        ctx.fillText('Keine Artikel zugeordnet', textX, curY, textW);
     }
 
     return canvas;
@@ -230,9 +244,10 @@ export default function StorageLabelPrint({ open, onClose, location }) {
         if (!qrDataUrl || loading) return;
         setLoading(true);
         try {
-            const canvas = await renderLabelToCanvas(location, qrDataUrl, configKey);
             const cfg = LABEL_CONFIGS[configKey];
+            const canvas = await renderLabelToCanvas(location, qrDataUrl, configKey);
             const imgData = canvas.toDataURL('image/png', 1.0);
+            // canvas is wMM*10 × hMM*10 px → maps 1:1 to wMM×hMM mm
             const doc = new jsPDF({ unit: 'mm', format: [cfg.wMM, cfg.hMM], orientation: 'landscape' });
             doc.addImage(imgData, 'PNG', 0, 0, cfg.wMM, cfg.hMM, undefined, 'NONE');
             const code = location.short_code || location.id.slice(0, 8);

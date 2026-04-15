@@ -1,221 +1,154 @@
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+
 /**
- * Bar Manager Design System
- * Zentrale, wiederverwendbare UI-Bausteine für alle Seiten.
- * Import: import { PageShell, PageHeader, SectionCard, StatCard, EmptyState, StatusBadge } from '@/components/ui/design-system';
+ * Design System Showcase
+ * Zeige alle Farben, Komponenten und Patterns
  */
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+export function DesignSystemShowcase() {
+  return (
+    <div className="min-h-screen bg-background p-6 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Design System</h1>
+        <p className="text-muted-foreground">BarManager — Zentrale Farb- & Komponentenbibliothek</p>
+      </div>
 
-// ── PageShell ──────────────────────────────────────────────────────────────────
-// Wraps every page's content with consistent padding and max-width.
-export function PageShell({ children, className }) {
-    return (
-        <div className={cn('min-h-screen bg-background pb-28 md:pb-10', className)}>
-            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
-                {children}
+      {/* ── Farbpalette ── */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">Farbpalette</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { name: 'Background', class: 'bg-background border border-border', text: 'text-foreground' },
+            { name: 'Card', class: 'bg-card border border-border', text: 'text-card-foreground' },
+            { name: 'Primary', class: 'bg-primary', text: 'text-primary-foreground' },
+            { name: 'Secondary', class: 'bg-secondary', text: 'text-secondary-foreground' },
+            { name: 'Muted', class: 'bg-muted', text: 'text-muted-foreground' },
+            { name: 'Accent', class: 'bg-accent', text: 'text-accent-foreground' },
+            { name: 'Destructive', class: 'bg-destructive', text: 'text-destructive-foreground' },
+            { name: 'Border', class: 'bg-background border-2 border-border', text: 'text-foreground' },
+            { name: 'Input', class: 'bg-input border border-input', text: 'text-foreground' },
+          ].map(c => (
+            <div key={c.name} className={`rounded-lg p-4 ${c.class}`}>
+              <p className={`text-sm font-medium ${c.text}`}>{c.name}</p>
+              <p className={`text-xs ${c.text} opacity-70`}>var(--{c.name.toLowerCase()})</p>
             </div>
+          ))}
         </div>
-    );
-}
+      </section>
 
-// ── PageHeader ─────────────────────────────────────────────────────────────────
-// Consistent page title + optional subtitle + optional right-side action slot.
-export function PageHeader({ title, subtitle, action, className }) {
-    return (
-        <div className={cn('flex items-start justify-between gap-3', className)}>
-            <div className="min-w-0">
-                <h1 className="text-2xl font-bold text-foreground tracking-tight leading-tight">{title}</h1>
-                {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
+      {/* ── Buttons ── */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">Buttons</h2>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="default">Default</Button>
+          <Button variant="secondary">Secondary</Button>
+          <Button variant="outline">Outline</Button>
+          <Button variant="ghost">Ghost</Button>
+          <Button variant="destructive">Destructive</Button>
+          <Button disabled>Disabled</Button>
+        </div>
+      </section>
+
+      {/* ── Cards ── */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">Cards</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Standard Card</h3>
+            <p className="text-muted-foreground text-sm">Verwendet bg-card mit border-border</p>
+          </Card>
+          <Card className="p-6 border-amber-500/30 bg-amber-500/5">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Accent Card</h3>
+            <p className="text-muted-foreground text-sm">Mit custom Accent-Border</p>
+          </Card>
+        </div>
+      </section>
+
+      {/* ── Badges ── */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">Badges</h2>
+        <div className="flex flex-wrap gap-2">
+          <Badge>Default</Badge>
+          <Badge variant="secondary">Secondary</Badge>
+          <Badge variant="outline">Outline</Badge>
+          <Badge variant="destructive">Destructive</Badge>
+          <Badge className="bg-amber-500/15 text-amber-400 border-amber-600/30">Custom Brand</Badge>
+          <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-600/30">Success</Badge>
+        </div>
+      </section>
+
+      {/* ── Status States ── */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">Status States</h2>
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 p-4 rounded-lg border border-green-500/30 bg-green-500/5">
+            <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-green-500">Success</p>
+              <p className="text-sm text-muted-foreground">Verwendung: bg-green-500/5, border-green-500/30, text-green-500</p>
             </div>
-            {action && <div className="shrink-0">{action}</div>}
-        </div>
-    );
-}
-
-// ── SectionCard ────────────────────────────────────────────────────────────────
-// Standard card container with optional title.
-export function SectionCard({ title, children, className, headerAction }) {
-    return (
-        <div className={cn('bg-card border border-border rounded-2xl overflow-hidden', className)}>
-            {title && (
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <h2 className="text-base font-semibold text-foreground">{title}</h2>
-                    {headerAction && <div>{headerAction}</div>}
-                </div>
-            )}
-            <div className="p-4">{children}</div>
-        </div>
-    );
-}
-
-// ── StatCard ───────────────────────────────────────────────────────────────────
-// Prominent metric display.
-export function StatCard({ label, value, sub, icon: Icon, accent = false, className }) {
-    return (
-        <div className={cn(
-            'bg-card border border-border rounded-2xl p-4 flex flex-col gap-2',
-            accent && 'border-amber-500/30 bg-amber-500/5',
-            className
-        )}>
-            <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground leading-tight">{label}</p>
-                {Icon && (
-                    <div className={cn('w-8 h-8 rounded-xl flex items-center justify-center', accent ? 'bg-amber-500/15 text-amber-500' : 'bg-secondary text-muted-foreground')}>
-                        <Icon className="w-4 h-4" />
-                    </div>
-                )}
+          </div>
+          <div className="flex items-start gap-3 p-4 rounded-lg border border-red-500/30 bg-red-500/5">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-red-500">Error/Destructive</p>
+              <p className="text-sm text-muted-foreground">Verwendung: bg-destructive/5, border-destructive/30, text-destructive</p>
             </div>
-            <p className={cn('text-2xl font-bold', accent ? 'text-amber-500' : 'text-foreground')}>{value}</p>
-            {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+          </div>
         </div>
-    );
-}
+      </section>
 
-// ── ActionCard ─────────────────────────────────────────────────────────────────
-// Tappable card for quick-actions / nav tiles.
-export function ActionCard({ icon: Icon, label, sub, onClick, accent = false, className }) {
-    return (
-        <button
-            onClick={onClick}
-            className={cn(
-                'w-full flex flex-col items-center gap-2 p-4 bg-card border border-border rounded-2xl transition-all active:scale-95 hover:border-amber-500/40',
-                accent && 'border-amber-500/40 bg-amber-500/5',
-                className
-            )}
-        >
-            {Icon && (
-                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', accent ? 'bg-amber-500/15 text-amber-500' : 'bg-secondary text-muted-foreground')}>
-                    <Icon className="w-5 h-5" />
-                </div>
-            )}
-            <div className="text-center">
-                <p className="text-sm font-semibold text-foreground leading-tight">{label}</p>
-                {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
-            </div>
-        </button>
-    );
-}
-
-// ── EmptyState ─────────────────────────────────────────────────────────────────
-export function EmptyState({ icon: Icon, title, description, action, className }) {
-    return (
-        <div className={cn('flex flex-col items-center justify-center py-16 px-4 text-center', className)}>
-            {Icon && (
-                <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center mb-4">
-                    <Icon className="w-7 h-7 text-muted-foreground" />
-                </div>
-            )}
-            <p className="text-base font-semibold text-foreground">{title}</p>
-            {description && <p className="text-sm text-muted-foreground mt-1 max-w-xs">{description}</p>}
-            {action && <div className="mt-4">{action}</div>}
+      {/* ── Typographie ── */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">Typographie</h2>
+        <div className="space-y-3">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Heading 1 (3xl bold)</h1>
+            <p className="text-xs text-muted-foreground mt-1">Hero-Titel, Page-Überschriften</p>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Heading 2 (2xl bold)</h2>
+            <p className="text-xs text-muted-foreground mt-1">Section-Titel</p>
+          </div>
+          <div>
+            <p className="text-base text-foreground">Body Text (base)</p>
+            <p className="text-xs text-muted-foreground mt-1">Standard Paragraph, Copy</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Small Text (sm muted)</p>
+            <p className="text-xs text-muted-foreground mt-1">Sekundärer Text, Labels</p>
+          </div>
         </div>
-    );
+      </section>
+
+      {/* ── Best Practices ── */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold text-foreground">Best Practices</h2>
+        <Card className="p-6 space-y-3">
+          <div>
+            <p className="font-semibold text-foreground">✅ Nutze CSS-Variablen überall:</p>
+            <code className="text-xs bg-secondary p-2 rounded block mt-1">
+              &lt;div className="bg-card text-card-foreground border border-border"&gt;
+            </code>
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">❌ Vermeide hardcoded Farben:</p>
+            <code className="text-xs bg-secondary p-2 rounded block mt-1 text-red-400">
+              &lt;div className="bg-[#ffffff] text-[#000000]"&gt;
+            </code>
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">💡 Für Brand-Gradients:</p>
+            <code className="text-xs bg-secondary p-2 rounded block mt-1">
+              style={`{ background: 'linear-gradient(to right, var(--brand-from), var(--brand-via))', color: 'var(--brand-fg)' }`}
+            </code>
+          </div>
+        </Card>
+      </section>
+    </div>
+  );
 }
 
-// ── StatusBadge ────────────────────────────────────────────────────────────────
-// Semantic status pills.
-const STATUS_STYLES = {
-    success:  'bg-emerald-500/10 text-emerald-400 border-emerald-500/25',
-    warning:  'bg-amber-500/10 text-amber-400 border-amber-500/25',
-    error:    'bg-red-500/10 text-red-400 border-red-500/25',
-    info:     'bg-blue-500/10 text-blue-400 border-blue-500/25',
-    neutral:  'bg-secondary text-muted-foreground border-border',
-    amber:    'bg-amber-500/10 text-amber-400 border-amber-500/25',
-};
-
-export function StatusBadge({ status = 'neutral', children, className }) {
-    return (
-        <span className={cn(
-            'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
-            STATUS_STYLES[status] || STATUS_STYLES.neutral,
-            className
-        )}>
-            {children}
-        </span>
-    );
-}
-
-// ── LoadingState ───────────────────────────────────────────────────────────────
-export function LoadingState({ text = 'Lädt...' }) {
-    return (
-        <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-            <p className="text-sm">{text}</p>
-        </div>
-    );
-}
-
-// ── ListItem ───────────────────────────────────────────────────────────────────
-// Consistent row in a list/card.
-export function ListItem({ left, center, right, onClick, className }) {
-    const Comp = onClick ? 'button' : 'div';
-    return (
-        <Comp
-            onClick={onClick}
-            className={cn(
-                'w-full flex items-center gap-3 px-4 py-3 text-left transition-colors',
-                onClick && 'hover:bg-accent/50 active:bg-accent cursor-pointer',
-                className
-            )}
-        >
-            {left && <div className="shrink-0">{left}</div>}
-            <div className="flex-1 min-w-0">{center}</div>
-            {right && <div className="shrink-0">{right}</div>}
-        </Comp>
-    );
-}
-
-// ── FilterBar ──────────────────────────────────────────────────────────────────
-export function FilterBar({ options, active, onChange, className }) {
-    return (
-        <div className={cn('flex gap-2 overflow-x-auto pb-1', className)}>
-            {options.map(opt => {
-                const isActive = opt.value === active;
-                return (
-                    <button
-                        key={opt.value}
-                        onClick={() => onChange(opt.value)}
-                        className={cn(
-                            'shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap',
-                            isActive
-                                ? 'bg-amber-500 text-slate-900 font-semibold'
-                                : 'bg-secondary text-muted-foreground hover:text-foreground'
-                        )}
-                    >
-                        {opt.label}
-                        {opt.count !== undefined && (
-                            <span className={cn('ml-1.5 text-xs', isActive ? 'opacity-70' : 'text-muted-foreground')}>
-                                {opt.count}
-                            </span>
-                        )}
-                    </button>
-                );
-            })}
-        </div>
-    );
-}
-
-// ── SectionDivider ─────────────────────────────────────────────────────────────
-export function SectionDivider({ label }) {
-    return (
-        <div className="flex items-center gap-3 py-1">
-            <div className="flex-1 h-px bg-border" />
-            {label && <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider shrink-0">{label}</span>}
-            <div className="flex-1 h-px bg-border" />
-        </div>
-    );
-}
-
-// ── ProgressBar ────────────────────────────────────────────────────────────────
-export function ProgressBar({ value, max, accent = false, className }) {
-    const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
-    return (
-        <div className={cn('h-2 bg-secondary rounded-full overflow-hidden', className)}>
-            <div
-                className={cn('h-full rounded-full transition-all', accent ? 'bg-amber-500' : 'bg-emerald-500')}
-                style={{ width: `${pct}%` }}
-            />
-        </div>
-    );
-}
+export default DesignSystemShowcase;

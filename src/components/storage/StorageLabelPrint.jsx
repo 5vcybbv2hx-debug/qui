@@ -59,6 +59,9 @@ async function generateQrPng(locationId) {
 // 1mm = 300/25.4 ≈ 11.81px at 300dpi, × 2 = 23.62px at 600dpi
 const MM_TO_PX = (300 / 25.4) * 2; // ~23.62 px per mm at 600 DPI
 
+// pt → canvas px: 1pt = 1/72 inch. At 600dpi: 1pt = 600/72 = 8.33px
+const PT_TO_PX = 600 / 72; // 8.33px per pt
+
 function renderTextColumnToCanvas(location, textXmm, textWmm, Hmm) {
     const { articles, displayName, pathStr, short_code } = getLabelData(location);
 
@@ -108,18 +111,18 @@ function renderTextColumnToCanvas(location, textXmm, textWmm, Hmm) {
 
     // 1. SHORT CODE — large, monospace, bold
     if (short_code) {
-        drawText(short_code, Math.round(13 * MM_TO_PX / 25.4 * 25.4 * 0.35), '900', '"Courier New", Courier, monospace', '#000000', Math.round(1.0 * MM_TO_PX), maxW);
+        drawText(short_code, Math.round(13 * PT_TO_PX), '900', '"Courier New", Courier, monospace', '#000000', Math.round(1.0 * MM_TO_PX), maxW);
     }
 
     // 2. FACHNAME
     if (displayName) {
-        drawText(displayName, Math.round(10 * MM_TO_PX / 25.4 * 25.4 * 0.35), '800', 'Arial, Helvetica, sans-serif', '#000000', Math.round(0.5 * MM_TO_PX), maxW);
+        drawText(displayName, Math.round(10 * PT_TO_PX), '800', 'Arial, Helvetica, sans-serif', '#000000', Math.round(0.5 * MM_TO_PX), maxW);
     }
 
     // 3. LAGERPFAD
     if (pathStr) {
         const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
-        drawText(s, Math.round(8 * MM_TO_PX / 25.4 * 25.4 * 0.35), '700', 'Arial, Helvetica, sans-serif', '#1a1a1a', Math.round(1.0 * MM_TO_PX), maxW);
+        drawText(s, Math.round(8 * PT_TO_PX), '700', 'Arial, Helvetica, sans-serif', '#1a1a1a', Math.round(1.0 * MM_TO_PX), maxW);
     }
 
     // Separator line
@@ -133,14 +136,14 @@ function renderTextColumnToCanvas(location, textXmm, textWmm, Hmm) {
 
     // 4. INHALT
     if (articles.length > 0) {
-        drawText('INHALT', Math.round(7 * MM_TO_PX / 25.4 * 25.4 * 0.35), '700', 'Arial, Helvetica, sans-serif', '#333333', Math.round(0.4 * MM_TO_PX), maxW);
+        drawText('INHALT', Math.round(7 * PT_TO_PX), '700', 'Arial, Helvetica, sans-serif', '#333333', Math.round(0.4 * MM_TO_PX), maxW);
         const MAX = 4;
         const shown = articles.slice(0, MAX);
         const extra = articles.length - MAX;
         const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-        drawText(artText, Math.round(8.5 * MM_TO_PX / 25.4 * 25.4 * 0.35), '800', 'Arial, Helvetica, sans-serif', '#000000', 0, maxW);
+        drawText(artText, Math.round(8.5 * PT_TO_PX), '800', 'Arial, Helvetica, sans-serif', '#000000', 0, maxW);
     } else {
-        drawText('Keine Artikel zugeordnet', Math.round(7 * MM_TO_PX / 25.4 * 25.4 * 0.35), '400', 'Arial, Helvetica, sans-serif', '#aaaaaa', 0, maxW);
+        drawText('Keine Artikel zugeordnet', Math.round(7 * PT_TO_PX), '400', 'Arial, Helvetica, sans-serif', '#aaaaaa', 0, maxW);
     }
 
     return canvas.toDataURL('image/png');

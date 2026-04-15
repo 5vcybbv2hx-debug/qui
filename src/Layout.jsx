@@ -24,6 +24,7 @@ import GlobalSearch from '@/components/search/GlobalSearch';
 import { loadSavedColors } from '@/components/settings/ColorCustomizer';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 import { useAnalytics } from '@/components/analytics/useAnalytics';
+import BarAssistant from '@/components/assistant/BarAssistant';
 
 export default function Layout({ children, currentPageName }) {
     // ── State ────────────────────────────────────────────────────────────────
@@ -397,6 +398,9 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                     </DrawerContent>
                 </Drawer>
+
+                {/* KI-Assistent (nur Manager) */}
+                <BarAssistant isManager={permissions.isManager} />
 
                 {/* Main Content */}
                 <main className="md:pl-72 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">

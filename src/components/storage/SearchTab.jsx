@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Search, MapPin, Package, ChevronRight, ArrowLeft, X, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
-import { LoadingSpinner } from './StorageLoading';
+import { LoadingState } from '@/components/ui/StateDisplay';
 import { fuzzySearch, highlightMatch } from '@/lib/fuzzySearch';
 import { useLocalPreferences } from '@/lib/useLocalPreferences';
 
@@ -221,7 +221,7 @@ export default function SearchTab() {
       </div>
 
       {/* Loading */}
-      {isLoading && <LoadingSpinner text="Lade Lagerdaten…" />}
+      {isLoading && <LoadingState text="Lade Lagerdaten…" />}
 
       {/* Empty state with recent searches */}
       {!search && !isLoading && (

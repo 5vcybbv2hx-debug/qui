@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, Grid3X3, Sofa, Box, LayoutGrid, Loader2 } from 'lucide-react';
 import { generateShortCode, buildFullName } from './storageUtils';
+import { LoadingState } from '@/components/ui/StateDisplay';
 
 const FURNITURE_TYPES = ['Regal', 'Schrank', 'Tisch', 'Käsewagen', 'Sonstiges'];
 const CONTAINER_TYPES = ['Schublade', 'Box', 'Kiste', 'Behälter', 'Ablage', 'Sonstiges'];
@@ -104,7 +105,7 @@ function ItemRow({ label, sublabel, onEdit, onDelete, canEdit }) {
 }
 
 function EmptyHint({ text }) {
-  return <p className="text-sm text-muted-foreground py-3 text-center">{text}</p>;
+  return <p className="text-xs text-muted-foreground py-3 text-center">{text}</p>;
 }
 
 function EntityModal({ open, onClose, title, children, onSave, isPending, canSave }) {
@@ -234,7 +235,7 @@ export default function StructureTab({ permissions }) {
         {openSec.areas && (
           <div className="border-t border-border px-4 pb-4 pt-2">
             {areas.isLoading ? (
-              <EmptyHint text="Lädt…" />
+              <LoadingState text="Lädt Bereiche…" />
             ) : areas.isError ? (
               <EmptyHint text="Fehler beim Laden." />
             ) : !areas.data.length ? (
@@ -285,7 +286,7 @@ export default function StructureTab({ permissions }) {
         {openSec.furniture && (
           <div className="border-t border-border px-4 pb-4 pt-2">
             {furnitures.isLoading ? (
-              <EmptyHint text="Lädt…" />
+              <LoadingState text="Lädt Möbel…" />
             ) : furnitures.isError ? (
               <EmptyHint text="Fehler beim Laden." />
             ) : !furnitures.data.length ? (
@@ -337,7 +338,7 @@ export default function StructureTab({ permissions }) {
         {openSec.containers && (
           <div className="border-t border-border px-4 pb-4 pt-2">
             {containers.isLoading ? (
-              <EmptyHint text="Lädt…" />
+              <LoadingState text="Lädt Behälter…" />
             ) : containers.isError ? (
               <EmptyHint text="Fehler beim Laden." />
             ) : !containers.data.length ? (

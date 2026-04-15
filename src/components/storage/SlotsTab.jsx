@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Pencil, Trash2, Copy, Check, Printer } from 'lucide-react';
 import StorageLabelPrint from './StorageLabelPrint';
 import { generateShortCode, buildFullName } from './storageUtils';
-import { LoadingSpinner, ErrorState, EmptyState } from './StorageLoading';
+import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
 
 const ALL = '__all__';
 
@@ -158,7 +158,7 @@ export default function SlotsTab({ permissions }) {
       </div>
 
       {/* Content */}
-      {isLoading ? <LoadingSpinner text="Lade Lagerplätze…" /> :
+      {isLoading ? <LoadingState text="Lade Lagerplätze…" /> :
        isError ? <ErrorState text="Lagerplätze konnten nicht geladen werden." /> :
        filteredSlots.length === 0 ? <EmptyState text={search || filterArea !== ALL ? 'Keine Lagerplätze für diesen Filter.' : 'Noch keine Lagerplätze angelegt.'} /> : (
         <div className="space-y-2">

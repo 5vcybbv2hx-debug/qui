@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, AlertTriangle, Package } from 'lucide-react';
-import { LoadingSpinner, ErrorState, EmptyState } from './StorageLoading';
+import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
 
 const ALL = '__all__';
 
@@ -75,7 +75,7 @@ export default function StockTab() {
 
       {/* Content */}
       {asE ? <ErrorState text="Bestandsdaten konnten nicht geladen werden." /> :
-       isLoading ? <LoadingSpinner text="Lade Bestand…" /> :
+       isLoading ? <LoadingState text="Lade Bestand…" /> :
        filtered.length === 0 ? (
          <EmptyState text={search || filterArea !== ALL || filterLow ? 'Keine Einträge für diesen Filter.' : 'Noch keine Artikel zugeordnet.'} />
        ) : (

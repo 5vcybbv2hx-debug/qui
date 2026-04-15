@@ -54,106 +54,13 @@ async function generateQrPng(locationId) {
     return canvas.toDataURL('image/png'); // lossless PNG
 }
 
-// ─── Render text column as high-res canvas (1200 DPI equivalent) ─────────────
-// Brother QL-800 = 300 DPI. We render at 4× (1200 DPI) for maximum crispness.
-// 1mm = 300/25.4 ≈ 11.81px at 300dpi, × 4 = 47.24px at 1200dpi
-const MM_TO_PX = (300 / 25.4) * 4; // ~47.24 px per mm at 1200 DPI
-
-// pt → canvas px: 1pt = 1/72 inch. At 1200dpi: 1pt = 1200/72 = 16.67px
-const PT_TO_PX = 1200 / 72; // 16.67px per pt
-
-function renderTextColumnToCanvas(location, textXmm, textWmm, Hmm) {
-    const { articles, displayName, pathStr, short_code } = getLabelData(location);
-
-    const canvasW = Math.round(textWmm * MM_TO_PX);
-    const canvasH = Math.round(Hmm * MM_TO_PX);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = canvasW;
-    canvas.height = canvasH;
-    const ctx = canvas.getContext('2d');
-
-    // White background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvasW, canvasH);
-
-    const PAD_PX = Math.round(2.0 * MM_TO_PX);
-    let y = PAD_PX;
-
-    const drawText = (text, sizePx, weight, family, color, gapPx, maxWidthPx) => {
-        ctx.font = `${weight} ${sizePx}px ${family}`;
-        ctx.fillStyle = color;
-        ctx.textBaseline = 'top';
-
-        // Simple word-wrap
-        const words = String(text).split(' ');
-        let line = '';
-        const lines = [];
-        for (const word of words) {
-            const test = line ? line + ' ' + word : word;
-            if (ctx.measureText(test).width > maxWidthPx && line) {
-                lines.push(line);
-                line = word;
-            } else {
-                line = test;
-            }
-        }
-        if (line) lines.push(line);
-
-        for (const l of lines) {
-            ctx.fillText(l, 0, y);
-            y += sizePx * 1.3;
-        }
-        y += gapPx;
-    };
-
-    const maxW = canvasW;
-
-    // 1. SHORT CODE — large, monospace, bold
-    if (short_code) {
-        drawText(short_code, Math.round(13 * PT_TO_PX), '900', '"Courier New", Courier, monospace', '#000000', Math.round(1.0 * MM_TO_PX), maxW);
-    }
-
-    // 2. FACHNAME
-    if (displayName) {
-        drawText(displayName, Math.round(10 * PT_TO_PX), '800', 'Arial, Helvetica, sans-serif', '#000000', Math.round(0.5 * MM_TO_PX), maxW);
-    }
-
-    // 3. LAGERPFAD
-    if (pathStr) {
-        const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
-        drawText(s, Math.round(8 * PT_TO_PX), '700', 'Arial, Helvetica, sans-serif', '#1a1a1a', Math.round(1.0 * MM_TO_PX), maxW);
-    }
-
-    // Separator line
-    ctx.strokeStyle = '#c0c0c0';
-    ctx.lineWidth = Math.round(0.15 * MM_TO_PX);
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvasW, y);
-    ctx.stroke();
-    y += Math.round(1.5 * MM_TO_PX);
-
-    // 4. INHALT
-    if (articles.length > 0) {
-        drawText('INHALT', Math.round(7 * PT_TO_PX), '700', 'Arial, Helvetica, sans-serif', '#333333', Math.round(0.4 * MM_TO_PX), maxW);
-        const MAX = 4;
-        const shown = articles.slice(0, MAX);
-        const extra = articles.length - MAX;
-        const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-        drawText(artText, Math.round(8.5 * PT_TO_PX), '800', 'Arial, Helvetica, sans-serif', '#000000', 0, maxW);
-    } else {
-        drawText('Keine Artikel zugeordnet', Math.round(7 * PT_TO_PX), '400', 'Arial, Helvetica, sans-serif', '#aaaaaa', 0, maxW);
-    }
-
-    return canvas.toDataURL('image/png');
-}
-
-// ─── Core PDF builder ─────────────────────────────────────────────────────────
+// ─── Core PDF builder — pure vector text (sharpest possible) ─────────────────
 function buildLabelPDF(location, qrPng, configKey) {
     const cfg = LABEL_CONFIGS[configKey];
     const W = cfg.wMM;
     const H = cfg.hMM;
+
+    const { articles, displayName, pathStr, short_code } = getLabelData(location);
 
     const doc = new jsPDF({
         unit: 'mm',
@@ -170,6 +77,10 @@ function buildLabelPDF(location, qrPng, configKey) {
     const TEXT_X = DIV_X + 2.0;
     const TEXT_W = W - TEXT_X - PAD;
 
+    // pt → mm
+    const ptMm = (pt) => pt * 0.3528;
+    const lhMm = (pt) => ptMm(pt) * 1.35;
+
     // ── Background ────────────────────────────────────────────────────────────
     doc.setFillColor(255, 255, 255);
     doc.rect(0, 0, W, H, 'F');
@@ -179,12 +90,58 @@ function buildLabelPDF(location, qrPng, configKey) {
 
     // ── Divider ───────────────────────────────────────────────────────────────
     doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.35);
     doc.line(DIV_X, PAD, DIV_X, H - PAD);
 
-    // ── Text column as high-res raster image ──────────────────────────────────
-    const textPng = renderTextColumnToCanvas(location, TEXT_X, TEXT_W, H);
-    doc.addImage(textPng, 'PNG', TEXT_X, 0, TEXT_W, H, undefined, 'NONE');
+    // ── Vector text layout ────────────────────────────────────────────────────
+    let y = PAD + ptMm(13); // start at top + first baseline
+
+    const drawLine = (text, pt, fontName, fontStyle, r, g, b) => {
+        doc.setFont(fontName, fontStyle);
+        doc.setFontSize(pt);
+        doc.setTextColor(r, g, b);
+        const lines = doc.splitTextToSize(String(text), TEXT_W);
+        doc.text(lines, TEXT_X, y);
+        return lines.length * lhMm(pt);
+    };
+
+    // 1. SHORT CODE — Courier Bold, large
+    if (short_code) {
+        y += drawLine(short_code, 14, 'courier', 'bold', 0, 0, 0);
+        y += 1.5;
+    }
+
+    // 2. FACHNAME — Helvetica Bold
+    if (displayName) {
+        y += drawLine(displayName, 11, 'helvetica', 'bold', 0, 0, 0);
+        y += 1.0;
+    }
+
+    // 3. LAGERPFAD — Helvetica Bold, dark grey
+    if (pathStr) {
+        const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
+        y += drawLine(s, 8.5, 'helvetica', 'bold', 30, 30, 30);
+        y += 1.5;
+    }
+
+    // ── Separator ─────────────────────────────────────────────────────────────
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.15);
+    doc.line(TEXT_X, y, TEXT_X + TEXT_W, y);
+    y += 1.8;
+
+    // 4. INHALT label + articles
+    if (articles.length > 0) {
+        y += drawLine('INHALT', 7, 'helvetica', 'bold', 80, 80, 80);
+        y += 0.5;
+        const MAX = 4;
+        const shown = articles.slice(0, MAX);
+        const extra = articles.length - MAX;
+        const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
+        drawLine(artText, 9, 'helvetica', 'bold', 0, 0, 0);
+    } else {
+        drawLine('Keine Artikel zugeordnet', 7, 'helvetica', 'normal', 170, 170, 170);
+    }
 
     return doc;
 }

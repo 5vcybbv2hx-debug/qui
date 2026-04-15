@@ -58,16 +58,31 @@ export default function ActiveStaffPanel() {
   const clockOutMutation = useMutation({
     mutationFn: async (entry) => {
       const now = new Date().toISOString();
-      const timeEntryData = buildTimeEntryFromClock(entry, now);
       const totalMinutes = calcWorkMinutes(entry.clock_in, now);
       const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
 
+      // Update ClockEntry
       await base44.entities.ClockEntry.update(entry.id, {
         clock_out: now,
         total_hours: totalHours,
         status: 'clocked_out',
       });
-      await base44.entities.TimeEntry.create(timeEntryData);
+
+      // Erstelle TimeEntry mit korrektem Format
+      const { format } = await import('date-fns');
+      await base44.entities.TimeEntry.create({
+        employee_id: entry.employee_id,
+        employee_name: entry.employee_name,
+        date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+        start_time: format(new Date(entry.clock_in), 'HH:mm'),
+        end_time: format(now, 'HH:mm'),
+        break_minutes: entry.pause_minutes || 0,
+        total_hours: totalHours,
+        notes: 'Automatisch von Manager ausstempelt',
+        status: 'eingereicht',
+        employee_confirmed: true,
+        employee_confirmed_at: now
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['clock-entries'] });

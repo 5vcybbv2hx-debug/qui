@@ -136,6 +136,20 @@ export default function PublicDrinkMenu() {
         staleTime: 30 * 60 * 1000, // 30 minutes
     });
 
+    const { data: activeSpecial = null } = useQuery({
+        queryKey: ['public-weekly-special'],
+        queryFn: async () => {
+            const specials = await base44.asServiceRole.entities.WeeklySpecial.filter({ is_active: true });
+            return specials[0] || null;
+        }
+    });
+
+    const { data: specialItems = [] } = useQuery({
+        queryKey: ['public-weekly-special-items', activeSpecial?.id],
+        queryFn: () => activeSpecial ? base44.asServiceRole.entities.WeeklySpecialItem.filter({ weekly_special_id: activeSpecial.id }) : Promise.resolve([]),
+        enabled: !!activeSpecial?.id
+    });
+
     const companyInfo = companyData[0] || {};
     const barName = companyInfo.company_name || 'Getränkekarte';
 
@@ -282,6 +296,35 @@ export default function PublicDrinkMenu() {
 
             {/* Content */}
             <main className="max-w-2xl mx-auto px-4 py-6 space-y-8">
+                {/* Weekly Special Banner */}
+                {activeSpecial && specialItems.length > 0 && (
+                    <section className="bg-gradient-to-r from-amber-600/20 to-orange-600/20 border-l-4 border-amber-500 rounded-r-xl p-6 mb-8">
+                        <h2 className="text-2xl font-bold text-amber-400 mb-4">✨ Wochenspecial</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {specialItems
+                                .sort((a, b) => a.display_order - b.display_order)
+                                .map((item) => (
+                                    <div key={item.id} className="bg-card/60 rounded-lg p-3 border border-amber-500/20 hover:border-amber-500/40 transition-colors">
+                                        <div className="flex items-baseline justify-between mb-2">
+                                            <p className="font-bold text-foreground">{item.menu_item_name}</p>
+                                            <p className="text-lg font-bold text-amber-400">€{Number(item.final_price).toFixed(2)}</p>
+                                        </div>
+                                        <div className="flex gap-2 text-xs text-muted-foreground">
+                                            {item.original_price && (
+                                                <span className="line-through text-slate-500">€{Number(item.original_price).toFixed(2)}</span>
+                                            )}
+                                            {item.discount_type === 'fixed' ? (
+                                                <span className="text-amber-400 font-semibold">-€{Number(item.discount_value).toFixed(2)}</span>
+                                            ) : (
+                                                <span className="text-amber-400 font-semibold">-{item.discount_value}%</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                    </section>
+                )}
+
                 {isLoading && (
                     <div className="flex justify-center py-16">
                         <div className="w-8 h-8 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />

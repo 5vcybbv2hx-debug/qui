@@ -53,7 +53,7 @@ export default function TimeTracking() {
 
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clockEntries'],
-        queryFn: () => base44.entities.ClockEntry.list('-clock_in')
+        queryFn: () => base44.entities.ClockEntry.list('-clock_in', 200)
     });
 
     const createMutation = useMutation({
@@ -321,10 +321,14 @@ export default function TimeTracking() {
         e => e.employee_id === currentEmployee?.id && e.status === 'clocked_in'
     );
 
-    const todayClockEntries = clockEntries.filter(e => {
+    // Filter auf aktive Einträge (unabhängig von Kalendertag, nachtbetriebssicher)
+    const activeClockEntries = clockEntries.filter(e => !e.clock_out);
+    const completedTodayClockEntries = clockEntries.filter(e => {
+        if (!e.clock_in) return false;
         const entryDate = new Date(e.clock_in);
         const today = new Date();
-        return entryDate.toDateString() === today.toDateString();
+        // Nur "heutige" Einträge, die fertig sind
+        return entryDate.toDateString() === today.toDateString() && e.clock_out;
     });
 
     const handleClockIn = () => {
@@ -503,11 +507,11 @@ export default function TimeTracking() {
                     </Card>
                 )}
 
-                {/* Today's Clock Entries */}
-                {todayClockEntries.length > 0 && (
-                    <div className="mb-6">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm sm:text-base font-semibold text-foreground">Heutige Stempelungen</h3>
+                {/* Active Clock Entries — mit Nachtbetrieb sichtbar */}
+                {activeClockEntries.length > 0 && (
+                     <div className="mb-6">
+                         <div className="flex items-center justify-between mb-3">
+                             <h3 className="text-sm sm:text-base font-semibold text-foreground">🟢 Aktive Stempelungen</h3>
                             {permissions.isManager && clockEntries.some(e => e.status === 'clocked_in') && (
                                 <Button
                                     onClick={() => {
@@ -526,7 +530,7 @@ export default function TimeTracking() {
                             )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {todayClockEntries.map(entry => (
+                            {activeClockEntries.map(entry => (
                                 <Card key={entry.id} className="p-3 bg-card border-border">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">

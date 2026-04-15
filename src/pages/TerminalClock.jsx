@@ -56,9 +56,10 @@ export default function TerminalClock() {
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clock-entries-today'],
         queryFn: async () => {
-            const today = format(new Date(), 'yyyy-MM-dd');
-            const entries = await base44.entities.ClockEntry.list('-clock_in', 50);
-            return entries.filter(e => e.clock_in.startsWith(today));
+            // Alle aktiven Einträge (ohne Filter auf Kalendertag)
+            // Nachtbetrieb: zeitstempel entscheidet, nicht das Datum
+            const entries = await base44.entities.ClockEntry.list('-clock_in', 100);
+            return entries;
         }
     });
 

@@ -154,8 +154,8 @@ async function buildLabelPNG(location, configKey) {
     if (pathStr) {
         const s = pathStr.length > 45 ? pathStr.slice(0, 42) + '…' : pathStr;
         const fs = ptToPx(7.5);
-        ctx.font = `400 ${fs}px Arial, sans-serif`;
-        ctx.fillStyle = '#555555';
+        ctx.font = `700 ${fs}px Arial, sans-serif`;
+        ctx.fillStyle = '#000000';
         y += wrapText(ctx, s, TEXT_X, y, TEXT_W, fs * 1.3);
         y += Math.round(1.5 * MM_TO_PX);
     }
@@ -173,7 +173,7 @@ async function buildLabelPNG(location, configKey) {
     if (articles.length > 0) {
         const labelFs = ptToPx(6.5);
         ctx.font = `700 ${labelFs}px Arial, sans-serif`;
-        ctx.fillStyle = '#aaaaaa';
+        ctx.fillStyle = '#000000';
         ctx.fillText('INHALT', TEXT_X, y);
         y += labelFs * 1.4;
 
@@ -187,8 +187,8 @@ async function buildLabelPNG(location, configKey) {
         wrapText(ctx, artText, TEXT_X, y, TEXT_W, artFs * 1.3);
     } else {
         const fs = ptToPx(6.5);
-        ctx.font = `400 ${fs}px Arial, sans-serif`;
-        ctx.fillStyle = '#cccccc';
+        ctx.font = `700 ${fs}px Arial, sans-serif`;
+        ctx.fillStyle = '#000000';
         ctx.fillText('Keine Artikel zugeordnet', TEXT_X, y);
     }
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
+import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -76,10 +78,11 @@ export default function Cleaning() {
         queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name')
     });
 
-    const { data: allTasks = [], isLoading } = useQuery({
+    const { data: allTasks = [], isLoading, isError: tasksError, error: tasksErrorObj } = useQuery({
         queryKey: ['cleaning'],
         queryFn: () => base44.entities.CleaningTask.list('area')
     });
+    const { handleError } = useErrorHandler();
 
     // Wochentagsaufgaben gehören zu WeeklyTasks — hier ausschließen
     const tasks = allTasks.filter(t => t.is_active !== false && t.area !== 'Wochentagsaufgaben');
@@ -370,44 +373,46 @@ export default function Cleaning() {
                 </div>
 
                 {/* Task List */}
-                <Tabs defaultValue="active" className="space-y-4">
-                    <TabsList className="bg-card border border-border grid w-full grid-cols-2">
-                        <TabsTrigger value="active" className="text-muted-foreground">
-                            Aktiv ({tasks.length})
-                        </TabsTrigger>
-                        <TabsTrigger value="deactivated" className="text-muted-foreground">
-                            <Archive className="w-4 h-4 mr-2" />
-                            Deaktiviert ({deactivatedTasks.length})
-                        </TabsTrigger>
-                    </TabsList>
+                {isLoading ? <LoadingState text="Lade Putzaufgaben…" /> :
+                 tasksError ? <ErrorFallback error={tasksErrorObj} title="Putzaufgaben konnten nicht geladen werden" onRetry={() => queryClient.invalidateQueries(['cleaning'])} /> : (
+                    <Tabs defaultValue="active" className="space-y-4">
+                        <TabsList className="bg-card border border-border grid w-full grid-cols-2">
+                            <TabsTrigger value="active" className="text-muted-foreground">
+                                Aktiv ({tasks.length})
+                            </TabsTrigger>
+                            <TabsTrigger value="deactivated" className="text-muted-foreground">
+                                <Archive className="w-4 h-4 mr-2" />
+                                Deaktiviert ({deactivatedTasks.length})
+                            </TabsTrigger>
+                        </TabsList>
 
-                    <TabsContent value="active">
-                        <CleaningList 
-                            tasks={tasks}
-                            areas={areas}
-                            onComplete={handleComplete}
-                            onReset={handleReset}
-                            userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
-                        />
-                    </TabsContent>
+                        <TabsContent value="active">
+                            {tasks.length === 0 ? <EmptyState text="Keine aktiven Aufgaben" /> : (
+                                <CleaningList 
+                                    tasks={tasks}
+                                    areas={areas}
+                                    onComplete={handleComplete}
+                                    onReset={handleReset}
+                                    userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
+                                />
+                            )}
+                        </TabsContent>
 
-                    <TabsContent value="deactivated">
-                        {deactivatedTasks.length === 0 ? (
-                            <div className="text-center py-12 text-muted-foreground">
-                                <Archive className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                <p>Keine deaktivierten Aufgaben</p>
-                            </div>
-                        ) : (
-                            <CleaningList 
-                                tasks={deactivatedTasks}
-                                areas={areas}
-                                onComplete={handleComplete}
-                                onReset={handleReset}
-                                userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
-                            />
-                        )}
-                    </TabsContent>
-                </Tabs>
+                        <TabsContent value="deactivated">
+                            {deactivatedTasks.length === 0 ? (
+                                <EmptyState text="Keine deaktivierten Aufgaben" />
+                            ) : (
+                                <CleaningList 
+                                    tasks={deactivatedTasks}
+                                    areas={areas}
+                                    onComplete={handleComplete}
+                                    onReset={handleReset}
+                                    userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
+                                />
+                            )}
+                        </TabsContent>
+                    </Tabs>
+                )}
 
                 {/* Add Modal */}
                 <Dialog open={modalOpen} onOpenChange={setModalOpen}>

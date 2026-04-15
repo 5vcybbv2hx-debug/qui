@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive } from 'lucide-react';
 import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
 import EmployeePersonalFormExport from '@/components/employees/EmployeePersonalFormExport';

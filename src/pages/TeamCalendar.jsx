@@ -75,25 +75,35 @@ export default function TeamCalendar() {
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card className="p-4">
-                            <div className="text-2xl font-bold">{shifts.length}</div>
-                            <div className="text-sm text-muted-foreground">Schichten</div>
-                        </Card>
-                        <Card className="p-4">
-                            <div className="text-2xl font-bold">{vacations.length}</div>
-                            <div className="text-sm text-muted-foreground">Urlaube</div>
-                        </Card>
-                        <Card className="p-4">
-                            <div className="text-2xl font-bold">{holidays.length}</div>
-                            <div className="text-sm text-muted-foreground">Feiertage</div>
-                        </Card>
-                        <Card className="p-4">
-                            <div className="text-2xl font-bold">{employees.length}</div>
-                            <div className="text-sm text-muted-foreground">Mitarbeiter</div>
-                        </Card>
-                    </div>
+                    {/* Heute im Dienst */}
+                    {(() => {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        const todayShifts = shifts.filter(s => s.date === todayStr);
+                        return (
+                            <Card className="p-4">
+                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3">Heute im Dienst</p>
+                                {todayShifts.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">Keine Schichten heute eingetragen.</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {todayShifts.map(s => {
+                                            const emp = employees.find(e => e.id === s.employee_id);
+                                            return (
+                                                <div key={s.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary border border-border text-sm">
+                                                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                                                        style={{ backgroundColor: emp?.color || '#64748b' }}>
+                                                        {s.employee_name?.charAt(0)}
+                                                    </div>
+                                                    <span className="font-medium text-foreground">{s.employee_name?.split(' ')[0]}</span>
+                                                    <span className="text-muted-foreground text-xs">{s.start_time}–{s.end_time}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </Card>
+                        );
+                    })()}
                 </div>
 
                 {/* Calendar & Export */}

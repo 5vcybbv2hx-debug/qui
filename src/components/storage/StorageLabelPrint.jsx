@@ -54,21 +54,104 @@ async function generateQrPng(locationId) {
     return canvas.toDataURL('image/png'); // lossless PNG
 }
 
+// ─── Render text column as high-res canvas (600 DPI equivalent) ──────────────
+// Brother QL-800 = 300 DPI. We render at 2× (600 DPI) for crispness.
+// 1mm = 300/25.4 ≈ 11.81px at 300dpi, × 2 = 23.62px at 600dpi
+const MM_TO_PX = (300 / 25.4) * 2; // ~23.62 px per mm at 600 DPI
+
+function renderTextColumnToCanvas(location, textXmm, textWmm, Hmm) {
+    const { articles, displayName, pathStr, short_code } = getLabelData(location);
+
+    const canvasW = Math.round(textWmm * MM_TO_PX);
+    const canvasH = Math.round(Hmm * MM_TO_PX);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvasW, canvasH);
+
+    const PAD_PX = Math.round(2.0 * MM_TO_PX);
+    let y = PAD_PX;
+
+    const drawText = (text, sizePx, weight, family, color, gapPx, maxWidthPx) => {
+        ctx.font = `${weight} ${sizePx}px ${family}`;
+        ctx.fillStyle = color;
+        ctx.textBaseline = 'top';
+
+        // Simple word-wrap
+        const words = String(text).split(' ');
+        let line = '';
+        const lines = [];
+        for (const word of words) {
+            const test = line ? line + ' ' + word : word;
+            if (ctx.measureText(test).width > maxWidthPx && line) {
+                lines.push(line);
+                line = word;
+            } else {
+                line = test;
+            }
+        }
+        if (line) lines.push(line);
+
+        for (const l of lines) {
+            ctx.fillText(l, 0, y);
+            y += sizePx * 1.3;
+        }
+        y += gapPx;
+    };
+
+    const maxW = canvasW;
+
+    // 1. SHORT CODE — large, monospace, bold
+    if (short_code) {
+        drawText(short_code, Math.round(13 * MM_TO_PX / 25.4 * 25.4 * 0.35), '900', '"Courier New", Courier, monospace', '#000000', Math.round(1.0 * MM_TO_PX), maxW);
+    }
+
+    // 2. FACHNAME
+    if (displayName) {
+        drawText(displayName, Math.round(10 * MM_TO_PX / 25.4 * 25.4 * 0.35), '800', 'Arial, Helvetica, sans-serif', '#000000', Math.round(0.5 * MM_TO_PX), maxW);
+    }
+
+    // 3. LAGERPFAD
+    if (pathStr) {
+        const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
+        drawText(s, Math.round(8 * MM_TO_PX / 25.4 * 25.4 * 0.35), '700', 'Arial, Helvetica, sans-serif', '#1a1a1a', Math.round(1.0 * MM_TO_PX), maxW);
+    }
+
+    // Separator line
+    ctx.strokeStyle = '#c0c0c0';
+    ctx.lineWidth = Math.round(0.15 * MM_TO_PX);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvasW, y);
+    ctx.stroke();
+    y += Math.round(1.5 * MM_TO_PX);
+
+    // 4. INHALT
+    if (articles.length > 0) {
+        drawText('INHALT', Math.round(7 * MM_TO_PX / 25.4 * 25.4 * 0.35), '700', 'Arial, Helvetica, sans-serif', '#333333', Math.round(0.4 * MM_TO_PX), maxW);
+        const MAX = 4;
+        const shown = articles.slice(0, MAX);
+        const extra = articles.length - MAX;
+        const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
+        drawText(artText, Math.round(8.5 * MM_TO_PX / 25.4 * 25.4 * 0.35), '800', 'Arial, Helvetica, sans-serif', '#000000', 0, maxW);
+    } else {
+        drawText('Keine Artikel zugeordnet', Math.round(7 * MM_TO_PX / 25.4 * 25.4 * 0.35), '400', 'Arial, Helvetica, sans-serif', '#aaaaaa', 0, maxW);
+    }
+
+    return canvas.toDataURL('image/png');
+}
+
 // ─── Core PDF builder ─────────────────────────────────────────────────────────
-// Fixed Brother QL-800 layout — all coordinates in mm.
-// Label: 62mm wide. QR is FIXED at 22mm regardless of label height.
-// Text column gets the remaining ~34mm — always stable.
 function buildLabelPDF(location, qrPng, configKey) {
     const cfg = LABEL_CONFIGS[configKey];
-    const W = cfg.wMM; // always 62
-    const H = cfg.hMM; // 29 or 62
+    const W = cfg.wMM;
+    const H = cfg.hMM;
 
-    // jsPDF ALWAYS sorts format so that the SMALLER dimension is width in portrait mode.
-    // For [62, 29]: jsPDF sees 29 < 62, so it makes the page 29mm wide × 62mm tall — WRONG.
-    // Fix: pass the smaller dimension first + orientation:'landscape' to force 62mm wide.
-    // With orientation:'landscape', jsPDF uses the LARGER value as width.
-    // So format:[29, 62] + landscape → 62mm wide × 29mm tall. ✓
-    // For the square 62×62 case, landscape/portrait doesn't matter.
     const doc = new jsPDF({
         unit: 'mm',
         format: [Math.min(W, H), Math.max(W, H)],
@@ -76,21 +159,13 @@ function buildLabelPDF(location, qrPng, configKey) {
         compress: false,
     });
 
-    const { articles, displayName, pathStr, short_code } = getLabelData(location);
-
-    // ── FIXED layout constants (all mm) ──────────────────────────────────────
-    // These never change regardless of label height — stable, predictable layout
-    const PAD = 2.0;           // outer margin all sides
-    const QR_SIZE = 22;        // QR always 22mm × 22mm — fixed, not dynamic
+    const PAD = 2.0;
+    const QR_SIZE = 22;
     const QR_X = PAD;
-    const QR_Y = (H - QR_SIZE) / 2; // vertically centered
-    const DIV_X = PAD + QR_SIZE + 1.5; // divider at 25.5mm from left
-    const TEXT_X = DIV_X + 2.0;       // text starts at ~27.5mm
-    const TEXT_W = W - TEXT_X - PAD;  // ~32.5mm for text — generous
-
-    // pt → mm conversion + line height
-    const ptMm = (pt) => pt * 0.3528;
-    const lh = (pt) => ptMm(pt) * 1.3;
+    const QR_Y = (H - QR_SIZE) / 2;
+    const DIV_X = PAD + QR_SIZE + 1.5;
+    const TEXT_X = DIV_X + 2.0;
+    const TEXT_W = W - TEXT_X - PAD;
 
     // ── Background ────────────────────────────────────────────────────────────
     doc.setFillColor(255, 255, 255);
@@ -101,72 +176,12 @@ function buildLabelPDF(location, qrPng, configKey) {
 
     // ── Divider ───────────────────────────────────────────────────────────────
     doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.25);
+    doc.setLineWidth(0.3);
     doc.line(DIV_X, PAD, DIV_X, H - PAD);
 
-    // ── Text: start at top padding + first baseline offset ────────────────────
-    let y = PAD + ptMm(13); // baseline of first line
-
-    // Helper: set font/size/color, draw wrapped text, advance y
-    // stroke=true adds a hairline outline pass for extra crispness on thermal printers
-    const draw = (text, pt, fontStyle, fontName, r, g, b, gapAfter = 0.5, stroke = false) => {
-        doc.setFont(fontName, fontStyle);
-        doc.setFontSize(pt);
-        doc.setTextColor(r, g, b);
-        const lines = doc.splitTextToSize(String(text), TEXT_W);
-        if (stroke) {
-            // Draw fill + stroke in one pass for thicker apparent weight
-            doc.setDrawColor(r, g, b);
-            doc.setLineWidth(0.12);
-            doc.text(lines, TEXT_X, y, { renderingMode: 'fillThenStroke' });
-        } else {
-            doc.text(lines, TEXT_X, y);
-        }
-        y += lines.length * lh(pt) + gapAfter;
-    };
-
-    // ── 1. SHORT CODE — 13pt Courier Bold + stroke ───────────────────────────
-    if (short_code) {
-        draw(short_code, 13, 'bold', 'courier', 0, 0, 0, 1.0, true);
-    }
-
-    // ── 2. FACHNAME — 10pt Helvetica Bold + stroke ───────────────────────────
-    if (displayName) {
-        draw(displayName, 10, 'bold', 'helvetica', 0, 0, 0, 0.5, true);
-    }
-
-    // ── 3. LAGERPFAD — 8pt dark bold ─────────────────────────────────────────
-    if (pathStr) {
-        const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
-        draw(s, 8, 'bold', 'helvetica', 20, 20, 20, 1.0, false);
-    }
-
-    // ── Separator ─────────────────────────────────────────────────────────────
-    doc.setDrawColor(190, 190, 190);
-    doc.setLineWidth(0.15);
-    doc.line(TEXT_X, y, TEXT_X + TEXT_W, y);
-    y += 1.5;
-
-    // ── 4. ARTIKEL ────────────────────────────────────────────────────────────
-    if (articles.length > 0) {
-        // "INHALT" label — 6pt grey caps
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7);
-        doc.setTextColor(50, 50, 50);
-        doc.text('INHALT', TEXT_X, y);
-        y += lh(7) + 0.4;
-
-        const MAX = 4;
-        const shown = articles.slice(0, MAX);
-        const extra = articles.length - MAX;
-        const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-        draw(artText, 8.5, 'bold', 'helvetica', 0, 0, 0, 0, true);
-    } else {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(175, 175, 175);
-        doc.text('Keine Artikel zugeordnet', TEXT_X, y);
-    }
+    // ── Text column as high-res raster image ──────────────────────────────────
+    const textPng = renderTextColumnToCanvas(location, TEXT_X, TEXT_W, H);
+    doc.addImage(textPng, 'PNG', TEXT_X, 0, TEXT_W, H, undefined, 'NONE');
 
     return doc;
 }

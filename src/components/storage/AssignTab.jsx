@@ -121,12 +121,8 @@ export default function AssignTab({ permissions }) {
     saveMut.mutate({
       article_id: selectedArticle.id,
       article_name: selectedArticle.name || '',
-      article_image_url: selectedArticle.image_url || '',
       storage_slot_id: selectedSlot.id,
-      storage_slot_name: selectedSlot.full_name || selectedSlot.name || '',
-      storage_slot_code: selectedSlot.short_code || '',
-      area_id: selectedSlot.area_id || '',
-      area_name: selectedSlot.area_name || '',
+      slot_full_name: selectedSlot.full_name || selectedSlot.name || '',
       quantity: parseFloat(form.quantity) || 0,
       min_stock: form.min_stock !== '' ? parseFloat(form.min_stock) : null,
       max_stock: form.max_stock !== '' ? parseFloat(form.max_stock) : null,

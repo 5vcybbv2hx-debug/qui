@@ -48,8 +48,8 @@ function SlotDetail({ slot, assignments, onBack }) {
               const isLow = a.min_stock != null && a.quantity < a.min_stock;
               return (
                 <Card key={a.id} className={`p-4 flex items-center gap-3 ${isLow ? 'border-red-500/40' : ''}`}>
-                  {a.article_image_url ? (
-                    <img src={a.article_image_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  {article.image_url ? (
+                    <img src={article.image_url} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center shrink-0">
                       <Package className="w-5 h-5 text-muted-foreground" />

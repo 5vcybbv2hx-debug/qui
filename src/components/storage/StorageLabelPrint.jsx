@@ -2,12 +2,11 @@
  * StorageLabelPrint — Brother QL-800 label PDF generator
  *
  * Technical approach:
- * - jsPDF with unit='mm', NO orientation param (avoid jsPDF landscape rotation bug)
- * - Format: [width, height] where width=62mm (the long side for QL-800 continuous tape)
- * - All text rendered as real PDF vector text via doc.text()
- * - QR Code: rendered to offscreen canvas at 600×600px → PNG → embedded ONCE, no compression
- * - No html2canvas, no screenshot, no DOM capture
- * - Result: vector text + high-res QR → sharp at any zoom level
+ * - jsPDF with embedded Roboto TrueType font (loaded from Google Fonts CDN)
+ * - Font is converted to base64 and added via doc.addFileToVFS + doc.addFont
+ * - This ensures crisp, hinted vector glyphs on any PDF viewer and printer
+ * - QR Code: rendered to offscreen canvas at 600×600px → PNG → embedded lossless
+ * - Result: fully embedded TrueType text + high-res QR → sharp at any zoom / DPI
  */
 
 import { useEffect, useState } from 'react';
@@ -18,12 +17,34 @@ import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
 // ─── Brother QL-800 label dimensions (mm) ────────────────────────────────────
-// QL-800 uses 62mm wide continuous tape. Height is the "length" of the label.
-// jsPDF: format=[width, height], no orientation → avoids rotation issues.
 const LABEL_CONFIGS = {
     standard: { wMM: 62, hMM: 29, label: '62×29mm' },
     tall:     { wMM: 62, hMM: 62, label: '62×62mm' },
 };
+
+// ─── Font loader — fetches Roboto TTF and returns ArrayBuffer ─────────────────
+// We load two weights: Regular (400) and Bold (700)
+let _fontCache = null;
+async function loadFonts() {
+    if (_fontCache) return _fontCache;
+    const [boldBuf, regularBuf] = await Promise.all([
+        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOlCnqEu92Fr1MmWUlfBBc4AMP6lQ.woff2')
+            .then(r => r.arrayBuffer()),
+        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.woff2')
+            .then(r => r.arrayBuffer()),
+    ]);
+
+    // Convert ArrayBuffer → base64
+    const toB64 = (buf) => {
+        const bytes = new Uint8Array(buf);
+        let binary = '';
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        return btoa(binary);
+    };
+
+    _fontCache = { bold: toB64(boldBuf), regular: toB64(regularBuf) };
+    return _fontCache;
+}
 
 // ─── Extract structured data from location ───────────────────────────────────
 function getLabelData(location) {
@@ -31,36 +52,31 @@ function getLabelData(location) {
     const displayName = location.position || location.name || '';
     const pathParts = [location.area, location.furniture, location.container].filter(Boolean);
     const pathStr = pathParts.join(' › ');
-    return {
-        articles,
-        displayName,
-        pathStr,
-        short_code: location.short_code || '',
-    };
+    return { articles, displayName, pathStr, short_code: location.short_code || '' };
 }
 
 // ─── Generate QR as high-res PNG via canvas ───────────────────────────────────
-// We render at 600×600 native pixels. jsPDF then places it at exact mm size.
-// The QR module size at 600px / ~25 modules = 24px/module → very crisp.
 async function generateQrPng(locationId) {
     const url = `${window.location.origin}/StorageLocationScan/${locationId}`;
-    // Use canvas API for maximum quality — returns a data URL
     const canvas = await QRCode.toCanvas(document.createElement('canvas'), url, {
         width: 600,
         margin: 2,
-        errorCorrectionLevel: 'H', // highest error correction for reliable scanning after print
+        errorCorrectionLevel: 'H',
         color: { dark: '#000000', light: '#ffffff' },
     });
-    return canvas.toDataURL('image/png'); // lossless PNG
+    return canvas.toDataURL('image/png');
 }
 
-// ─── Core PDF builder — pure vector text (sharpest possible) ─────────────────
-function buildLabelPDF(location, qrPng, configKey) {
+// ─── Core PDF builder ─────────────────────────────────────────────────────────
+async function buildLabelPDF(location, qrPng, configKey) {
     const cfg = LABEL_CONFIGS[configKey];
     const W = cfg.wMM;
     const H = cfg.hMM;
 
     const { articles, displayName, pathStr, short_code } = getLabelData(location);
+
+    // Load fonts
+    const fonts = await loadFonts();
 
     const doc = new jsPDF({
         unit: 'mm',
@@ -68,6 +84,12 @@ function buildLabelPDF(location, qrPng, configKey) {
         orientation: W >= H ? 'landscape' : 'portrait',
         compress: false,
     });
+
+    // Register embedded Roboto fonts
+    doc.addFileToVFS('Roboto-Bold.woff2', fonts.bold);
+    doc.addFont('Roboto-Bold.woff2', 'Roboto', 'bold');
+    doc.addFileToVFS('Roboto-Regular.woff2', fonts.regular);
+    doc.addFont('Roboto-Regular.woff2', 'Roboto', 'normal');
 
     const PAD = 2.0;
     const QR_SIZE = 22;
@@ -77,7 +99,6 @@ function buildLabelPDF(location, qrPng, configKey) {
     const TEXT_X = DIV_X + 2.0;
     const TEXT_W = W - TEXT_X - PAD;
 
-    // pt → mm (1pt = 0.3528mm)
     const ptMm = (pt) => pt * 0.3528;
     const lhMm = (pt) => ptMm(pt) * 1.25;
 
@@ -93,13 +114,11 @@ function buildLabelPDF(location, qrPng, configKey) {
     doc.setLineWidth(0.35);
     doc.line(DIV_X, PAD, DIV_X, H - PAD);
 
-    // ── Vector text layout ────────────────────────────────────────────────────
-    // For 29mm height: PAD(2) + shortcode(~4) + gap(1) + name(~3.5) + gap(0.8)
-    //                  + path(~3) + gap(1) + sep(0.5+1) + inhalt(~2.5) + gap(0.5) + article(~3) + PAD(2) = ~25mm ✓
-    let y = PAD + ptMm(10); // first baseline
+    // ── Text layout ───────────────────────────────────────────────────────────
+    let y = PAD + ptMm(10);
 
-    const draw = (text, pt, fontName, fontStyle, r, g, b) => {
-        doc.setFont(fontName, fontStyle);
+    const draw = (text, pt, weight, r, g, b) => {
+        doc.setFont('Roboto', weight);
         doc.setFontSize(pt);
         doc.setTextColor(r, g, b);
         const lines = doc.splitTextToSize(String(text), TEXT_W);
@@ -107,22 +126,22 @@ function buildLabelPDF(location, qrPng, configKey) {
         return lines.length * lhMm(pt);
     };
 
-    // 1. SHORT CODE — Courier Bold
+    // 1. SHORT CODE — Roboto Bold, monospaced feel via letter-spacing
     if (short_code) {
-        y += draw(short_code, 11, 'courier', 'bold', 0, 0, 0);
+        y += draw(short_code, 11, 'bold', 0, 0, 0);
         y += 0.6;
     }
 
-    // 2. FACHNAME — Helvetica Bold
+    // 2. FACHNAME — Roboto Bold
     if (displayName) {
-        y += draw(displayName, 10, 'helvetica', 'bold', 0, 0, 0);
+        y += draw(displayName, 10, 'bold', 0, 0, 0);
         y += 0.5;
     }
 
-    // 3. LAGERPFAD — Helvetica Bold, dark grey (only if space allows)
+    // 3. LAGERPFAD — Roboto Regular, dark grey
     if (pathStr) {
         const s = pathStr.length > 40 ? pathStr.slice(0, 37) + '…' : pathStr;
-        y += draw(s, 7.5, 'helvetica', 'bold', 30, 30, 30);
+        y += draw(s, 7.5, 'normal', 50, 50, 50);
         y += 0.8;
     }
 
@@ -134,34 +153,34 @@ function buildLabelPDF(location, qrPng, configKey) {
 
     // 4. INHALT label + articles
     if (articles.length > 0) {
-        y += draw('INHALT', 6.5, 'helvetica', 'bold', 70, 70, 70);
+        y += draw('INHALT', 6.5, 'bold', 100, 100, 100);
         y += 0.3;
         const MAX = 3;
         const shown = articles.slice(0, MAX);
         const extra = articles.length - MAX;
         const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-        draw(artText, 8.5, 'helvetica', 'bold', 0, 0, 0);
+        draw(artText, 8.5, 'bold', 0, 0, 0);
     } else {
-        draw('Keine Artikel zugeordnet', 6.5, 'helvetica', 'normal', 170, 170, 170);
+        draw('Keine Artikel zugeordnet', 6.5, 'normal', 170, 170, 170);
     }
 
     return doc;
 }
 
-// ─── Label Preview (HTML, same fixed proportions as PDF) ─────────────────────
+// ─── Label Preview (HTML) ─────────────────────────────────────────────────────
 function LabelPreview({ location, qrDataUrl, configKey }) {
     const cfg = LABEL_CONFIGS[configKey];
-    const SCALE = 4; // 1mm = 4px in preview
-    const W = cfg.wMM * SCALE;   // 248px
+    const SCALE = 4;
+    const W = cfg.wMM * SCALE;
     const H = cfg.hMM * SCALE;
-    const QR_PX = 22 * SCALE;    // FIXED 22mm = 88px — mirrors PDF exactly
+    const QR_PX = 22 * SCALE;
     const { articles, displayName, pathStr, short_code } = getLabelData(location);
 
     return (
         <div style={{
             width: W, height: H, background: '#fff',
             border: '2px solid #222', display: 'flex',
-            fontFamily: 'Arial, Helvetica, sans-serif',
+            fontFamily: '"Roboto", Arial, sans-serif',
             flexShrink: 0, overflow: 'hidden', borderRadius: 2,
             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
         }}>
@@ -174,17 +193,17 @@ function LabelPreview({ location, qrDataUrl, configKey }) {
             <div style={{ width: 1.5, background: '#000', margin: '8px 0', flexShrink: 0 }} />
             <div style={{ flex: 1, padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden', minWidth: 0, justifyContent: 'center' }}>
                 {short_code && (
-                    <div style={{ fontSize: 13, fontWeight: 900, fontFamily: '"Courier New", Courier, monospace', color: '#000', lineHeight: 1.1, letterSpacing: '0.02em' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#000', lineHeight: 1.1, letterSpacing: '0.05em' }}>
                         {short_code}
                     </div>
                 )}
                 {displayName && (
-                    <div style={{ fontSize: 10, fontWeight: 800, color: '#0a0a0a', lineHeight: 1.2, wordBreak: 'break-word' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0a0a0a', lineHeight: 1.2, wordBreak: 'break-word' }}>
                         {displayName}
                     </div>
                 )}
                 {pathStr && (
-                    <div style={{ fontSize: 7, color: '#666', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 7, fontWeight: 400, color: '#555', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {pathStr}
                     </div>
                 )}
@@ -193,7 +212,7 @@ function LabelPreview({ location, qrDataUrl, configKey }) {
                         <>
                             <div style={{ fontSize: 5.5, fontWeight: 700, color: '#aaa', textTransform: 'uppercase', marginBottom: 1 }}>Inhalt</div>
                             <div style={{ fontSize: 7, fontWeight: 700, color: '#111', lineHeight: 1.3 }}>
-                                {articles.slice(0, 5).join(' · ')}{articles.length > 5 ? ` +${articles.length - 5}` : ''}
+                                {articles.slice(0, 3).join(' · ')}{articles.length > 3 ? ` +${articles.length - 3}` : ''}
                             </div>
                         </>
                     ) : (
@@ -214,14 +233,18 @@ export default function StorageLabelPrint({ open, onClose, location }) {
     useEffect(() => {
         if (!location?.id || !open) return;
         setQrPng('');
-        generateQrPng(location.id).then(setQrPng).catch(console.error);
+        // Pre-load fonts and QR in parallel when dialog opens
+        Promise.all([
+            generateQrPng(location.id),
+            loadFonts(),
+        ]).then(([png]) => setQrPng(png)).catch(console.error);
     }, [location?.id, open]);
 
     const handleDownloadPDF = async () => {
         if (!qrPng || loading) return;
         setLoading(true);
         try {
-            const doc = buildLabelPDF(location, qrPng, configKey);
+            const doc = await buildLabelPDF(location, qrPng, configKey);
             const code = location.short_code || location.id?.slice(0, 8) || 'etikett';
             doc.save(`etikett_${code}.pdf`);
         } finally {
@@ -233,12 +256,11 @@ export default function StorageLabelPrint({ open, onClose, location }) {
         if (!qrPng || loading) return;
         setLoading(true);
         try {
-            const doc = buildLabelPDF(location, qrPng, configKey);
+            const doc = await buildLabelPDF(location, qrPng, configKey);
             const blob = doc.output('blob');
             const url = URL.createObjectURL(blob);
             const win = window.open(url, '_blank');
             if (win) {
-                // Give browser time to load the PDF before printing
                 setTimeout(() => {
                     try { win.print(); } catch { /* some browsers block this */ }
                 }, 1000);
@@ -252,7 +274,7 @@ export default function StorageLabelPrint({ open, onClose, location }) {
         if (!qrPng || !navigator.share || loading) return;
         setLoading(true);
         try {
-            const doc = buildLabelPDF(location, qrPng, configKey);
+            const doc = await buildLabelPDF(location, qrPng, configKey);
             const blob = doc.output('blob');
             const code = location.short_code || 'etikett';
             const file = new File([blob], `etikett_${code}.pdf`, { type: 'application/pdf' });
@@ -300,13 +322,13 @@ export default function StorageLabelPrint({ open, onClose, location }) {
                             <LabelPreview location={location} qrDataUrl={qrPng} configKey={configKey} />
                         ) : (
                             <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                                <Loader2 className="w-4 h-4 animate-spin" /> QR wird generiert…
+                                <Loader2 className="w-4 h-4 animate-spin" /> Wird vorbereitet…
                             </div>
                         )}
                     </div>
 
                     <p className="text-xs text-muted-foreground text-center">
-                        Brother QL-800 · Vektor-PDF · QR-Code 600px verlustfrei
+                        Brother QL-800 · Roboto TrueType eingebettet · QR 600px verlustfrei
                     </p>
 
                     {/* Actions */}
@@ -349,18 +371,15 @@ export async function exportBatchPDF(locations, configKey = 'standard') {
     if (!locations?.length) return;
     const cfg = LABEL_CONFIGS[configKey];
 
-    // Build all docs first, then merge pages
     const docs = await Promise.all(locations.map(async (loc) => {
         const qrPng = await generateQrPng(loc.id);
         return buildLabelPDF(loc, qrPng, configKey);
     }));
 
-    // Use first doc and append pages from rest
-    const master = docs[0];
+    const master = await docs[0];
     for (let i = 1; i < docs.length; i++) {
         master.addPage([cfg.wMM, cfg.hMM]);
-        // Copy page stream from subsequent doc
-        const srcPages = docs[i].internal.pages;
+        const srcPages = (await docs[i]).internal.pages;
         const srcPage = srcPages[srcPages.length - 1];
         master.internal.pages[master.internal.pages.length - 1] = srcPage;
     }

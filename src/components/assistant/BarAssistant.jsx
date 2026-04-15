@@ -64,6 +64,11 @@ export default function BarAssistant({ isManager }) {
     const location = useLocation();
     const currentPage = getPageName(location.pathname);
 
+    // Determine which assistant to use
+    const isEmployeeMode = !isManager;
+    const assistantFunction = isManager ? 'barAssistant' : 'employeeAssistant';
+    const assistantLabel = isManager ? 'BarAssist' : 'Hilfe';
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -72,7 +77,7 @@ export default function BarAssistant({ isManager }) {
         if (open) setTimeout(() => inputRef.current?.focus(), 300);
     }, [open]);
 
-    // Proactive hint on page change
+    // Proactive hint on page change (only for managers)
     useEffect(() => {
         if (!isManager) return;
         setProactiveHint(null);
@@ -94,8 +99,6 @@ export default function BarAssistant({ isManager }) {
         return () => clearTimeout(timer);
     }, [location.pathname, isManager]);
 
-    if (!isManager) return null;
-
     const sendMessage = async (text) => {
         const userMsg = text || input.trim();
         if (!userMsg) return;
@@ -106,7 +109,7 @@ export default function BarAssistant({ isManager }) {
         setLoading(true);
 
         try {
-            const res = await base44.functions.invoke('barAssistant', {
+            const res = await base44.functions.invoke(assistantFunction, {
                 messages: newMessages,
                 currentPage,
             });
@@ -207,10 +210,13 @@ export default function BarAssistant({ isManager }) {
                     'fixed bottom-[5rem] md:bottom-6 right-4 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all',
                     open
                         ? 'bg-foreground text-background'
-                        : 'bg-gradient-to-br from-amber-500 to-orange-600 text-slate-900'
+                        : isManager
+                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-slate-900'
+                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-slate-900'
                 )}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                title={isManager ? 'Manager-Assistent' : 'Mitarbeiter-Hilfe'}
             >
                 <AnimatePresence mode="wait">
                     {open ? (
@@ -239,13 +245,25 @@ export default function BarAssistant({ isManager }) {
                         className="fixed bottom-[5.5rem] md:bottom-24 right-4 z-50 w-[340px] md:w-[380px] max-h-[72vh] flex flex-col bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
                     >
                         {/* Header */}
-                        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 bg-gradient-to-r from-amber-500/10 to-orange-500/5 shrink-0">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+                        <div className={cn(
+                            'flex items-center gap-3 px-4 py-3 border-b border-border/50 shrink-0',
+                            isManager
+                                ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/5'
+                                : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/5'
+                        )}>
+                            <div className={cn(
+                                'w-8 h-8 rounded-xl flex items-center justify-center',
+                                isManager
+                                    ? 'bg-gradient-to-br from-amber-500 to-orange-600'
+                                    : 'bg-gradient-to-br from-blue-500 to-cyan-600'
+                            )}>
                                 <Bot className="w-4 h-4 text-slate-900" />
                             </div>
                             <div className="flex-1">
-                                <p className="text-sm font-bold text-foreground">BarAssist</p>
-                                <p className="text-[10px] text-muted-foreground">KI-Assistent · {currentPage}</p>
+                                <p className="text-sm font-bold text-foreground">{assistantLabel}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                    {isManager ? 'Manager-Assistent' : 'Mitarbeiter-Hilfe'} · {currentPage}
+                                </p>
                             </div>
                             <button
                                 onClick={() => setMessages([])}
@@ -260,16 +278,25 @@ export default function BarAssistant({ isManager }) {
                             {messages.length === 0 && (
                                 <div className="space-y-3">
                                     <div className="text-center py-2">
-                                        <Sparkles className="w-8 h-8 text-amber-400/50 mx-auto mb-2" />
+                                        <Sparkles className={cn('w-8 h-8 mx-auto mb-2', isManager ? 'text-amber-400/50' : 'text-blue-400/50')} />
                                         <p className="text-sm text-muted-foreground">Wie kann ich helfen?</p>
-                                        <p className="text-xs text-muted-foreground/60 mt-1">Ich kenne den aktuellen Betriebsstatus</p>
+                                        <p className="text-xs text-muted-foreground/60 mt-1">
+                                            {isManager 
+                                                ? 'Ich kenne den aktuellen Betriebsstatus' 
+                                                : 'Ich helfe dir bei Fragen zur App'}
+                                        </p>
                                     </div>
                                     <div className="grid grid-cols-2 gap-1.5">
-                                        {QUICK_PROMPTS.map(p => (
+                                        {(isManager ? QUICK_PROMPTS : ['Was ist meine Aufgabe?', 'Zeige meine Schicht', 'Putzliste erklären', 'Hilf mir mit der App']).map(p => (
                                             <button
                                                 key={p}
                                                 onClick={() => sendMessage(p)}
-                                                className="text-left px-2.5 py-2 rounded-xl bg-secondary/50 hover:bg-secondary text-xs text-foreground transition-all border border-border/50 hover:border-amber-500/30 leading-tight"
+                                                className={cn(
+                                                    'text-left px-2.5 py-2 rounded-xl bg-secondary/50 hover:bg-secondary text-xs text-foreground transition-all border border-border/50 leading-tight',
+                                                    isManager
+                                                        ? 'hover:border-amber-500/30'
+                                                        : 'hover:border-blue-500/30'
+                                                )}
                                             >
                                                 {p}
                                             </button>
@@ -282,7 +309,12 @@ export default function BarAssistant({ isManager }) {
                                 <div key={i} className="space-y-2">
                                     <div className={cn('flex', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
                                         {msg.role === 'assistant' && (
-                                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mr-2 mt-0.5 shrink-0">
+                                            <div className={cn(
+                                                'w-6 h-6 rounded-lg flex items-center justify-center mr-2 mt-0.5 shrink-0',
+                                                isManager
+                                                    ? 'bg-gradient-to-br from-amber-500 to-orange-600'
+                                                    : 'bg-gradient-to-br from-blue-500 to-cyan-600'
+                                            )}>
                                                 <Bot className="w-3 h-3 text-slate-900" />
                                             </div>
                                         )}
@@ -327,11 +359,16 @@ export default function BarAssistant({ isManager }) {
 
                             {loading && (
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shrink-0">
+                                    <div className={cn(
+                                        'w-6 h-6 rounded-lg flex items-center justify-center shrink-0',
+                                        isManager
+                                            ? 'bg-gradient-to-br from-amber-500 to-orange-600'
+                                            : 'bg-gradient-to-br from-blue-500 to-cyan-600'
+                                    )}>
                                         <Bot className="w-3 h-3 text-slate-900" />
                                     </div>
                                     <div className="bg-secondary px-3 py-2.5 rounded-2xl rounded-bl-sm flex items-center gap-2">
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                                        <Loader2 className={cn('w-3.5 h-3.5 animate-spin', isManager ? 'text-amber-400' : 'text-blue-400')} />
                                         <span className="text-xs text-muted-foreground">Analysiere...</span>
                                     </div>
                                 </div>
@@ -349,12 +386,22 @@ export default function BarAssistant({ isManager }) {
                                     onKeyDown={handleKeyDown}
                                     placeholder="Nachricht..."
                                     rows={1}
-                                    className="flex-1 bg-secondary/50 border border-border/50 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-amber-500/50 max-h-24 leading-relaxed"
+                                    className={cn(
+                                        'flex-1 bg-secondary/50 border border-border/50 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none max-h-24 leading-relaxed',
+                                        isManager
+                                            ? 'focus:border-amber-500/50'
+                                            : 'focus:border-blue-500/50'
+                                    )}
                                 />
                                 <button
                                     onClick={() => sendMessage()}
                                     disabled={!input.trim() || loading}
-                                    className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center disabled:opacity-40 transition-all hover:shadow-lg hover:shadow-amber-500/20 shrink-0"
+                                    className={cn(
+                                        'w-9 h-9 rounded-xl flex items-center justify-center disabled:opacity-40 transition-all shrink-0',
+                                        isManager
+                                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 hover:shadow-lg hover:shadow-amber-500/20'
+                                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 hover:shadow-lg hover:shadow-blue-500/20'
+                                    )}
                                 >
                                     <Send className="w-4 h-4 text-slate-900" />
                                 </button>

@@ -5,7 +5,10 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Users, Filter, X, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { createPageUrl } from '@/utils';
+import { LoadingState, ErrorState } from '@/components/ui/StateDisplay';
+import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,10 +40,11 @@ export default function Shifts() {
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
-    const { data: shifts = [] } = useQuery({
+    const { data: shifts = [], isLoading: shiftsLoading, isError: shiftsError, error: shiftsErrorObj } = useQuery({
         queryKey: ['shifts'],
         queryFn: () => base44.entities.Shift.list('-date', 200)
     });
+    const { handleError } = useErrorHandler();
 
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
@@ -291,9 +295,10 @@ export default function Shifts() {
                     onShiftMove={handleShiftMove}
                     selectedDate={selectedDate}
                     setSelectedDate={setSelectedDate}
-                />
+                    />
+                    )}
 
-                {/* Selected Date Details */}
+                    {/* Selected Date Details */}
                 {selectedDate && (
                     <Card className="mt-6 p-5 bg-slate-800 border-slate-700">
                         <div className="flex items-center justify-between mb-4">

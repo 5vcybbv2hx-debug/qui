@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
+import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { Plus, CheckSquare, Tag, Search, X, ListChecks } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import TodoCategoryManager, { loadCategories } from '@/components/todos/TodoCategoryManager';
@@ -50,10 +53,11 @@ export default function Todos() {
         queryFn: () => base44.auth.me()
     });
 
-    const { data: todos = [], isLoading } = useQuery({
+    const { data: todos = [], isLoading, isError: todosError, error: todosErrorObj } = useQuery({
         queryKey: ['todos'],
         queryFn: () => base44.entities.TodoItem.list('-created_date', 200)
     });
+    const { handleError } = useErrorHandler();
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.TodoItem.create(data),
@@ -196,9 +200,18 @@ export default function Todos() {
         return <PermissionDenied message="Du hast keine Berechtigung, Aufgaben zu sehen." />;
     }
 
+    // Error state
+    if (todosError) {
+        return (
+            <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+                {handleError({ error: todosErrorObj, title: 'Aufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries(['todos']) })}
+            </div>
+        );
+    }
+
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-0">
-            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
+         <div className="min-h-screen bg-background pb-24 md:pb-0">
+             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
 
                 {/* Aufgabenbereiche Banner */}
                 <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-card rounded-xl border border-border">
@@ -352,8 +365,12 @@ export default function Todos() {
                     )}
                 </div>
 
-                {!showArchived ? (
-                    <div className="space-y-6">
+                {isLoading ? (
+                    <LoadingState text="Lade Aufgaben…" />
+                ) : filteredTodos.length === 0 ? (
+                    <EmptyState text="Keine Aufgaben" />
+                ) : !showArchived ? (
+                     <div className="space-y-6">
                         {['offen', 'in_bearbeitung', 'erledigt'].map(status => {
                             const statusTodos = filteredTodos.filter(t => t.status === status);
                             if (statusTodos.length === 0) return null;

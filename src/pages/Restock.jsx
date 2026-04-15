@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
+import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
 import { Scan, Camera, Check, Trash2, CheckCheck, Plus, Pencil } from 'lucide-react';
@@ -40,10 +43,11 @@ export default function Restock() {
         queryFn: () => base44.entities.RestockItem.list('-created_date', 100)
     });
 
-    const { data: articles = [] } = useQuery({
-        queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list()
-    });
+    const { data: articles = [], isLoading: articlesLoading, isError: articlesError, error: articlesErrorObj } = useQuery({
+         queryKey: ['articles'],
+         queryFn: () => base44.entities.Article.list()
+     });
+     const { handleError } = useErrorHandler();
 
     const markRecent = (id) => {
         setRecentIds(prev => [...prev.filter(x => x !== id), id]);
@@ -242,9 +246,17 @@ export default function Restock() {
             return a.article_name.localeCompare(b.article_name);
         });
 
+    if (articlesError) {
+        return (
+            <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+                {handleError({ error: articlesErrorObj, title: 'Artikel konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries(['articles']) })}
+            </div>
+        );
+    }
+
     return (
-        <div>
-            <div className="max-w-4xl mx-auto">
+         <div>
+             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-white tracking-tight">Auffülliste</h1>

@@ -6,6 +6,8 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
+import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
@@ -78,12 +80,13 @@ export default function GuestHub() {
     });
 
     // ── Data ─────────────────────────────────────────────────────────────────
-    const { data: allReservations = [], isLoading: resLoading } = useQuery({
-        queryKey: RES_KEYS.active,
-        queryFn: () => base44.entities.Reservation.list('-date', 300),
-        staleTime: STALE.MEDIUM,
-    });
-    useReservationLifecycle(allReservations);
+     const { data: allReservations = [], isLoading: resLoading, isError: resError, error: resErrorObj } = useQuery({
+         queryKey: RES_KEYS.active,
+         queryFn: () => base44.entities.Reservation.list('-date', 300),
+         staleTime: STALE.MEDIUM,
+     });
+     const { handleError } = useErrorHandler();
+     useReservationLifecycle(allReservations);
 
     const { data: tables = [] } = useQuery({
         queryKey: ['tables'],
@@ -186,7 +189,15 @@ export default function GuestHub() {
 
     if (!permissions.canViewReservations) return <PermissionDenied message="Keine Berechtigung." />;
 
-    const isToday = filterDate === todayStr;
+    if (resError) {
+        return (
+            <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+                {handleError({ error: resErrorObj, title: 'Reservierungen konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries(RES_KEYS.all) })}
+            </div>
+        );
+    }
+
+     const isToday = filterDate === todayStr;
 
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-8">

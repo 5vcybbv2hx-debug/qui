@@ -1,6 +1,8 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { LoadingState } from '@/components/ui/StateDisplay';
+import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { usePermissions } from '@/components/auth/usePermissions';
 import SmartDashboard from '@/components/dashboard/SmartDashboard';
 
@@ -17,9 +19,10 @@ export default function Dashboard() {
         queryFn: () => base44.auth.me()
     });
 
+    const { handleError } = useErrorHandler();
     const currentEmployee = employees.find(e => e.email === user?.email);
 
-    if (permissions.isLoading) return null;
+    if (permissions.isLoading) return <LoadingState text="Lade Dashboard…" fullScreen />;
 
     return (
         <SmartDashboard

@@ -27,10 +27,11 @@ const LABEL_CONFIGS = {
 let _fontCache = null;
 async function loadFonts() {
     if (_fontCache) return _fontCache;
+    // jsPDF requires TTF format (not woff2)
     const [boldBuf, regularBuf] = await Promise.all([
-        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOlCnqEu92Fr1MmWUlfBBc4AMP6lQ.woff2')
+        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOlCnqEu92Fr1MmWUlfBBc4AMP6lbQ.ttf')
             .then(r => r.arrayBuffer()),
-        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.woff2')
+        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu4mxP.ttf')
             .then(r => r.arrayBuffer()),
     ]);
 
@@ -85,11 +86,11 @@ async function buildLabelPDF(location, qrPng, configKey) {
         compress: false,
     });
 
-    // Register embedded Roboto fonts
-    doc.addFileToVFS('Roboto-Bold.woff2', fonts.bold);
-    doc.addFont('Roboto-Bold.woff2', 'Roboto', 'bold');
-    doc.addFileToVFS('Roboto-Regular.woff2', fonts.regular);
-    doc.addFont('Roboto-Regular.woff2', 'Roboto', 'normal');
+    // Register embedded Roboto TTF fonts
+    doc.addFileToVFS('Roboto-Bold.ttf', fonts.bold);
+    doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+    doc.addFileToVFS('Roboto-Regular.ttf', fonts.regular);
+    doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
 
     const PAD = 2.0;
     const QR_SIZE = 22;

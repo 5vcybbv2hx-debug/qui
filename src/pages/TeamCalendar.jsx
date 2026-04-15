@@ -11,6 +11,7 @@ import EventDetailsModal from '@/components/calendar/EventDetailsModal';
 import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import TeamCalendarExport from '@/components/calendar/TeamCalendarExport';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
+import DayDetailDrawer from '@/components/calendar/DayDetailDrawer';
 
 export default function TeamCalendar() {
     const permissions = usePermissions();
@@ -20,6 +21,8 @@ export default function TeamCalendar() {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [showEventModal, setShowEventModal] = useState(false);
     const [shiftSwapData, setShiftSwapData] = useState(null);
+    const [selectedDay, setSelectedDay] = useState(null);
+    const [showDayDrawer, setShowDayDrawer] = useState(false);
 
     const { data: shifts = [] } = useQuery({
         queryKey: ['shifts'],
@@ -58,6 +61,11 @@ export default function TeamCalendar() {
 
     const handleShiftSwap = (shift) => {
         setShiftSwapData(shift);
+    };
+
+    const handleDayClick = (day) => {
+        setSelectedDay(day);
+        setShowDayDrawer(true);
     };
 
     return (
@@ -118,6 +126,7 @@ export default function TeamCalendar() {
                     </div>
 
                     <UnifiedCalendarView
+                        onDayClick={handleDayClick}
                         shifts={shifts}
                         vacations={vacations}
                         holidays={holidays}
@@ -143,6 +152,18 @@ export default function TeamCalendar() {
                     setSelectedEvent(null);
                 }}
                 onShiftSwap={handleShiftSwap}
+            />
+
+            {/* Day Detail Drawer */}
+            <DayDetailDrawer
+                open={showDayDrawer}
+                onClose={() => setShowDayDrawer(false)}
+                day={selectedDay}
+                shifts={shifts}
+                vacations={vacations}
+                holidays={holidays}
+                employees={employees}
+                maintenanceTasks={maintenanceTasks}
             />
 
             {/* Shift Swap Modal */}

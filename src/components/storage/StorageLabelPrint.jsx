@@ -108,29 +108,37 @@ function buildLabelPDF(location, qrPng, configKey) {
     let y = PAD + ptMm(13); // baseline of first line
 
     // Helper: set font/size/color, draw wrapped text, advance y
-    const draw = (text, pt, fontStyle, fontName, r, g, b, gapAfter = 0.5) => {
+    // stroke=true adds a hairline outline pass for extra crispness on thermal printers
+    const draw = (text, pt, fontStyle, fontName, r, g, b, gapAfter = 0.5, stroke = false) => {
         doc.setFont(fontName, fontStyle);
         doc.setFontSize(pt);
         doc.setTextColor(r, g, b);
         const lines = doc.splitTextToSize(String(text), TEXT_W);
-        doc.text(lines, TEXT_X, y);
+        if (stroke) {
+            // Draw fill + stroke in one pass for thicker apparent weight
+            doc.setDrawColor(r, g, b);
+            doc.setLineWidth(0.12);
+            doc.text(lines, TEXT_X, y, { renderingMode: 'fillThenStroke' });
+        } else {
+            doc.text(lines, TEXT_X, y);
+        }
         y += lines.length * lh(pt) + gapAfter;
     };
 
-    // ── 1. SHORT CODE — 13pt Courier Bold ────────────────────────────────────
+    // ── 1. SHORT CODE — 13pt Courier Bold + stroke ───────────────────────────
     if (short_code) {
-        draw(short_code, 13, 'bold', 'courier', 0, 0, 0, 1.0);
+        draw(short_code, 13, 'bold', 'courier', 0, 0, 0, 1.0, true);
     }
 
-    // ── 2. FACHNAME — 10pt Helvetica Bold ────────────────────────────────────
+    // ── 2. FACHNAME — 10pt Helvetica Bold + stroke ───────────────────────────
     if (displayName) {
-        draw(displayName, 10, 'bold', 'helvetica', 0, 0, 0, 0.5);
+        draw(displayName, 10, 'bold', 'helvetica', 0, 0, 0, 0.5, true);
     }
 
     // ── 3. LAGERPFAD — 8pt dark bold ─────────────────────────────────────────
     if (pathStr) {
         const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
-        draw(s, 8, 'bold', 'helvetica', 30, 30, 30, 1.0);
+        draw(s, 8, 'bold', 'helvetica', 20, 20, 20, 1.0, false);
     }
 
     // ── Separator ─────────────────────────────────────────────────────────────
@@ -152,7 +160,7 @@ function buildLabelPDF(location, qrPng, configKey) {
         const shown = articles.slice(0, MAX);
         const extra = articles.length - MAX;
         const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-        draw(artText, 8.5, 'bold', 'helvetica', 0, 0, 0, 0);
+        draw(artText, 8.5, 'bold', 'helvetica', 0, 0, 0, 0, true);
     } else {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7);

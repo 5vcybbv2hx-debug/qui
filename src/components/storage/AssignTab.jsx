@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Package, Trash2, Clock, Plus, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { LoadingSpinner, ErrorState } from './StorageLoading';
+import { LoadingState, ErrorState } from './StorageLoading';
 import { fuzzySearch } from '@/lib/fuzzySearch';
 import { useLocalPreferences } from '@/lib/useLocalPreferences';
 
@@ -154,7 +154,7 @@ export default function AssignTab({ permissions }) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input className="pl-10 h-11" placeholder={aL ? 'Lädt Artikel…' : 'Artikel suchen…'} value={articleSearch} onChange={e => setArticleSearch(e.target.value)} disabled={aL} />
             </div>
-            {aL && <LoadingSpinner text="Lade Artikel…" />}
+            {aL && <LoadingState text="Lade Artikel…" />}
             {/* Recent picks */}
             {!aL && !articleSearch && recentArticles.length > 0 && (
               <div>
@@ -226,7 +226,7 @@ export default function AssignTab({ permissions }) {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input className="pl-10 h-11" placeholder={sL ? 'Lädt Lagerplätze…' : 'Lagerplatz suchen…'} value={slotSearch} onChange={e => setSlotSearch(e.target.value)} disabled={sL} />
             </div>
-            {sL && <LoadingSpinner text="Lade Lagerplätze…" />}
+            {sL && <LoadingState text="Lade Lagerplätze…" />}
             {/* Smart picks: recent or top-used */}
             {!sL && !slotSearch && filteredSlots.length > 0 && (
               <div>
@@ -332,7 +332,7 @@ export default function AssignTab({ permissions }) {
       {asE ? <ErrorState text="Zuordnungen konnten nicht geladen werden." /> : (
         <div>
           <p className="font-semibold text-foreground mb-3">Aktuelle Zuordnungen</p>
-          {asL ? <LoadingSpinner text="Lade Zuordnungen…" /> : !assignments?.length ? (
+          {asL ? <LoadingState text="Lade Zuordnungen…" /> : !assignments?.length ? (
             <p className="text-sm text-muted-foreground text-center py-4">Noch keine Zuordnungen vorhanden.</p>
           ) : (
             <div className="space-y-2">

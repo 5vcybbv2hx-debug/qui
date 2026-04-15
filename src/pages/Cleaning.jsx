@@ -79,10 +79,11 @@ export default function Cleaning() {
     });
 
     const { data: allTasks = [], isLoading, isError: tasksError, error: tasksErrorObj } = useQuery({
-        queryKey: ['cleaning'],
-        queryFn: () => base44.entities.CleaningTask.list('area')
-    });
-    const { handleError } = useErrorHandler();
+         queryKey: ['cleaning'],
+         queryFn: () => base44.entities.CleaningTask.list('area')
+     });
+     const { handleError } = useErrorHandler();
+     const queryClient = useQueryClient();
 
     // Wochentagsaufgaben gehören zu WeeklyTasks — hier ausschließen
     const tasks = allTasks.filter(t => t.is_active !== false && t.area !== 'Wochentagsaufgaben');
@@ -280,9 +281,17 @@ export default function Cleaning() {
     };
 
     const completedCount = tasks.filter(t => t.is_completed).length;
-    const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
+     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
 
-    return (
+    if (tasksError) {
+        return (
+            <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+                {handleError({ error: tasksErrorObj, title: 'Putzaufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries(['cleaning']) })}
+            </div>
+        );
+    }
+
+     return (
         <div className="min-h-screen bg-background pb-24 md:pb-0">
             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}

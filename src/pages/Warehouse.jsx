@@ -3,6 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, ShoppingCart, Scan, TrendingDown, ClipboardCheck } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import { useErrorHandler } from '@/components/error/ErrorHandler';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Import existing page components
 import ArticlesPage from './Articles';

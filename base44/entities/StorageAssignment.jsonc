@@ -4,39 +4,23 @@
   "properties": {
     "article_id": {
       "type": "string",
-      "description": "ID des Artikels"
+      "description": "ID des Artikels (aus Article-Entity)"
     },
     "article_name": {
       "type": "string",
-      "description": "Name des Artikels (Snapshot)"
-    },
-    "article_image_url": {
-      "type": "string",
-      "description": "Bild-URL des Artikels"
+      "description": "Name des Artikels (f\u00fcr schnellen Zugriff)"
     },
     "storage_slot_id": {
       "type": "string",
       "description": "ID des Lagerplatzes (StorageSlot)"
     },
-    "storage_slot_name": {
+    "slot_full_name": {
       "type": "string",
-      "description": "Vollst\u00e4ndiger Name des Lagerplatzes (Snapshot)"
-    },
-    "storage_slot_code": {
-      "type": "string",
-      "description": "Kurzcode des Lagerplatzes"
-    },
-    "area_id": {
-      "type": "string",
-      "description": "ID des Bereichs (Denormalisierung)"
-    },
-    "area_name": {
-      "type": "string",
-      "description": "Name des Bereichs"
+      "description": "Full Name des Lagerplatzes"
     },
     "quantity": {
       "type": "number",
-      "description": "Aktueller Bestand"
+      "description": "Aktuelle Menge am Lagerplatz"
     },
     "min_stock": {
       "type": "number",
@@ -44,38 +28,24 @@
     },
     "max_stock": {
       "type": "number",
-      "description": "Maximalbestand"
+      "description": "Maximaler Bestand"
     },
     "unit": {
       "type": "string",
-      "enum": [
-        "St\u00fcck",
-        "l",
-        "ml",
-        "kg",
-        "g"
-      ],
-      "default": "St\u00fcck",
-      "description": "Einheit"
+      "description": "Einheit (St\u00fcck, Liter, kg, etc.)"
     },
     "notes": {
       "type": "string",
-      "description": "Notizen"
-    },
-    "last_counted": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Letzte Inventur"
+      "description": "Notizen zur Lagerung"
     },
     "is_active": {
       "type": "boolean",
       "default": true,
-      "description": "Aktiv"
+      "description": "Zuordnung aktiv"
     }
   },
   "required": [
     "article_id",
-    "storage_slot_id",
-    "quantity"
+    "storage_slot_id"
   ]
 }

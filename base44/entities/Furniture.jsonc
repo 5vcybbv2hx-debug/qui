@@ -4,46 +4,40 @@
   "properties": {
     "area_id": {
       "type": "string",
-      "description": "ID des zugeh\u00f6rigen Bereichs"
+      "description": "ID des Bereichs"
     },
     "area_name": {
       "type": "string",
-      "description": "Name des Bereichs (Denormalisierung)"
+      "description": "Name des Bereichs (f\u00fcr schnellen Zugriff)"
     },
     "name": {
       "type": "string",
-      "description": "Name des M\u00f6belst\u00fccks (z.B. Regal links, K\u00fchlschrank 1)"
+      "description": "Name des M\u00f6bels (z.B. Regal A, Schrank 1)"
     },
     "type": {
       "type": "string",
       "enum": [
         "Regal",
-        "K\u00fchlschrank",
         "Schrank",
-        "Unterschrank",
-        "Theke",
+        "Tisch",
+        "K\u00e4sewagen",
         "Sonstiges"
       ],
-      "default": "Regal",
-      "description": "Typ des M\u00f6belst\u00fccks"
-    },
-    "description": {
-      "type": "string",
-      "description": "Optionale Beschreibung"
-    },
-    "sort_order": {
-      "type": "number",
-      "description": "Sortierreihenfolge"
+      "description": "M\u00f6beltyp"
     },
     "is_active": {
       "type": "boolean",
       "default": true,
-      "description": "Aktiv"
+      "description": "M\u00f6bel aktiv"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sortierreihenfolge im Bereich"
     }
   },
   "required": [
     "area_id",
-    "area_name",
-    "name"
+    "name",
+    "type"
   ]
 }

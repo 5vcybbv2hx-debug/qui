@@ -6,61 +6,40 @@
       "type": "string",
       "description": "ID des Bereichs"
     },
-    "area_name": {
-      "type": "string",
-      "description": "Name des Bereichs"
-    },
     "furniture_id": {
       "type": "string",
-      "description": "ID des M\u00f6belst\u00fccks"
-    },
-    "furniture_name": {
-      "type": "string",
-      "description": "Name des M\u00f6belst\u00fccks"
+      "description": "ID des M\u00f6bels"
     },
     "container_id": {
       "type": "string",
       "description": "ID des Beh\u00e4lters"
     },
-    "container_name": {
-      "type": "string",
-      "description": "Name des Beh\u00e4lters"
-    },
     "name": {
       "type": "string",
-      "description": "Kurzname des Fachs (z.B. oben links, Ebene 2)"
-    },
-    "full_name": {
-      "type": "string",
-      "description": "Automatisch generierter vollst\u00e4ndiger Name"
-    },
-    "short_code": {
-      "type": "string",
-      "description": "Automatisch generierter Kurzcode (z.B. LOC-AB12)"
+      "description": "Name des Fachs (z.B. Fach 1, Platz A)"
     },
     "position": {
       "type": "string",
-      "description": "Position innerhalb des Beh\u00e4lters"
+      "description": "Position im Beh\u00e4lter (z.B. oben links, Ebene 2)"
     },
-    "notes": {
+    "full_name": {
       "type": "string",
-      "description": "Notizen"
+      "description": "Automatisch generierter Pfad: Area \u203a Furniture \u203a Container \u203a Slot"
+    },
+    "short_code": {
+      "type": "string",
+      "description": "Automatisch generierter Code (z.B. LOC-AB12)"
     },
     "is_active": {
       "type": "boolean",
       "default": true,
-      "description": "Aktiv"
+      "description": "Fach aktiv"
     }
   },
   "required": [
     "area_id",
-    "area_name",
     "furniture_id",
-    "furniture_name",
     "container_id",
-    "container_name",
-    "name",
-    "full_name",
-    "short_code"
+    "name"
   ]
 }

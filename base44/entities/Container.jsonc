@@ -4,54 +4,50 @@
   "properties": {
     "area_id": {
       "type": "string",
-      "description": "ID des zugeh\u00f6rigen Bereichs"
+      "description": "ID des Bereichs"
     },
     "area_name": {
       "type": "string",
-      "description": "Name des Bereichs (Denormalisierung)"
+      "description": "Name des Bereichs"
     },
     "furniture_id": {
       "type": "string",
-      "description": "ID des zugeh\u00f6rigen M\u00f6belst\u00fccks"
+      "description": "ID des M\u00f6bels"
     },
     "furniture_name": {
       "type": "string",
-      "description": "Name des M\u00f6belst\u00fccks (Denormalisierung)"
+      "description": "Name des M\u00f6bels"
     },
     "name": {
       "type": "string",
-      "description": "Name des Beh\u00e4lters (z.B. Fach, Schublade, Box)"
+      "description": "Name des Beh\u00e4lters (z.B. Schublade 1, Box A)"
     },
     "type": {
       "type": "string",
       "enum": [
-        "Fach",
         "Schublade",
         "Box",
-        "Ebene",
-        "Abteil",
+        "Kiste",
+        "Beh\u00e4lter",
+        "Ablage",
         "Sonstiges"
       ],
-      "default": "Fach",
-      "description": "Typ des Beh\u00e4lters"
-    },
-    "description": {
-      "type": "string",
-      "description": "Optionale Beschreibung"
-    },
-    "sort_order": {
-      "type": "number",
-      "description": "Sortierreihenfolge"
+      "description": "Beh\u00e4ltertyp"
     },
     "is_active": {
       "type": "boolean",
       "default": true,
-      "description": "Aktiv"
+      "description": "Beh\u00e4lter aktiv"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sortierreihenfolge im M\u00f6bel"
     }
   },
   "required": [
     "area_id",
-    "area_name",
-    "name"
+    "furniture_id",
+    "name",
+    "type"
   ]
 }

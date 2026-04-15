@@ -4,24 +4,20 @@
   "properties": {
     "name": {
       "type": "string",
-      "description": "Name des Bereichs (z.B. Keller, Bar, K\u00fcche, Lager)"
+      "description": "Name des Bereichs (z.B. Lagerraum, Keller, K\u00fchlraum)"
     },
     "description": {
       "type": "string",
-      "description": "Optionale Beschreibung des Bereichs"
-    },
-    "icon": {
-      "type": "string",
-      "description": "Emoji oder Icon (z.B. \ud83c\udfe0, \ud83c\udf7a, \ud83c\udf73)"
-    },
-    "order": {
-      "type": "number",
-      "description": "Sortierreihenfolge"
+      "description": "Beschreibung"
     },
     "is_active": {
       "type": "boolean",
       "default": true,
-      "description": "Aktiv"
+      "description": "Bereich aktiv"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
     }
   },
   "required": [

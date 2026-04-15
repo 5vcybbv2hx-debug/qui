@@ -150,27 +150,31 @@ export default function BarAssistant({ isManager }) {
         };
     }, [open]);
 
-    // Proactive hint on page change (only for managers)
+    // Proactive hint on page change (only for managers, rarely)
     useEffect(() => {
         if (!isManager) return;
         setProactiveHint(null);
         setHintDismissed(false);
 
+        // Only show hints on specific high-value pages
+        const hintPages = ['Dashboard', 'Shifts', 'Cleaning', 'GuestHub'];
+        if (!hintPages.includes(currentPage)) return;
+
         const timer = setTimeout(async () => {
             try {
                 const res = await base44.functions.invoke('barAssistant', {
-                    messages: [{ role: 'user', content: `Gib mir einen kurzen proaktiven Hinweis (max 1-2 Sätze) für die aktuelle Seite "${currentPage}". Nur wenn etwas wirklich wichtig ist, sonst antworte nur mit dem Wort "OK".` }],
+                    messages: [{ role: 'user', content: `Gib mir einen KURZEN kritischen Hinweis (max 1 Satz) für die Seite "${currentPage}". Nur wenn es WIRKLICH wichtig ist, sonst antworte "OK".` }],
                     currentPage,
                 });
                 const hint = res?.data?.reply || '';
-                if (hint && hint.trim() !== 'OK' && !hint.toLowerCase().startsWith('ok') && hint.length > 20) {
+                if (hint && hint.trim() !== 'OK' && !hint.toLowerCase().startsWith('ok') && hint.length > 15 && hint.length < 100) {
                     setProactiveHint(hint);
                 }
             } catch (e) { /* silent */ }
-        }, 2500);
+        }, 4500);
 
         return () => clearTimeout(timer);
-    }, [location.pathname, isManager]);
+    }, [location.pathname, isManager, currentPage]);
 
     const sendMessage = async (text) => {
         const userMsg = text || input.trim();

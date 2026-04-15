@@ -16,6 +16,7 @@ import { Printer, Download, QrCode, Share2, Loader2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
+
 // ─── Brother QL-800 label dimensions (mm) ────────────────────────────────────
 const LABEL_CONFIGS = {
     standard: { wMM: 62, hMM: 29, label: '62×29mm' },
@@ -27,12 +28,14 @@ const LABEL_CONFIGS = {
 let _fontCache = null;
 async function loadFonts() {
     if (_fontCache) return _fontCache;
-    // Use jsDelivr CDN for reliable TTF access (jsPDF requires TTF, not woff/woff2)
+    // Fetch TTF files from jsDelivr (jsPDF ONLY supports TTF, not woff/woff2)
     const [boldBuf, regularBuf] = await Promise.all([
-        fetch('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-700-normal.woff2')
-            .then(r => r.arrayBuffer()),
-        fetch('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-400-normal.woff2')
-            .then(r => r.arrayBuffer()),
+        fetch('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-700-normal.ttf')
+            .then(r => r.ok ? r.arrayBuffer() : null)
+            .catch(() => null),
+        fetch('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-400-normal.ttf')
+            .then(r => r.ok ? r.arrayBuffer() : null)
+            .catch(() => null),
     ]);
 
     const toB64 = (buf) => {
@@ -41,6 +44,9 @@ async function loadFonts() {
         for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
         return btoa(binary);
     };
+
+    // If fonts failed to load, return null so we fall back to helvetica
+    if (!boldBuf || !regularBuf) return null;
 
     _fontCache = { bold: toB64(boldBuf), regular: toB64(regularBuf) };
     return _fontCache;
@@ -75,7 +81,7 @@ async function buildLabelPDF(location, qrPng, configKey) {
 
     const { articles, displayName, pathStr, short_code } = getLabelData(location);
 
-    // Load fonts
+    // Load fonts (may return null if CDN unreachable)
     const fonts = await loadFonts();
 
     const doc = new jsPDF({
@@ -85,11 +91,14 @@ async function buildLabelPDF(location, qrPng, configKey) {
         compress: false,
     });
 
-    // Register embedded Roboto TTF fonts
-    doc.addFileToVFS('Roboto-Bold.ttf', fonts.bold);
-    doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
-    doc.addFileToVFS('Roboto-Regular.ttf', fonts.regular);
-    doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    // Register embedded Roboto TTF fonts if available, else fall back to helvetica
+    const FONT_NAME = fonts ? 'Roboto' : 'helvetica';
+    if (fonts) {
+        doc.addFileToVFS('Roboto-Bold.ttf', fonts.bold);
+        doc.addFont('Roboto-Bold.ttf', 'Roboto', 'bold');
+        doc.addFileToVFS('Roboto-Regular.ttf', fonts.regular);
+        doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    }
 
     const PAD = 2.0;
     const QR_SIZE = 22;
@@ -118,7 +127,7 @@ async function buildLabelPDF(location, qrPng, configKey) {
     let y = PAD + ptMm(10);
 
     const draw = (text, pt, weight, r, g, b) => {
-        doc.setFont('Roboto', weight);
+        doc.setFont(FONT_NAME, weight);
         doc.setFontSize(pt);
         doc.setTextColor(r, g, b);
         const lines = doc.splitTextToSize(String(text), TEXT_W);

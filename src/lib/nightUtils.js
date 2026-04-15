@@ -1,135 +1,156 @@
 /**
- * Night Gastronomy Utilities
- * Centralized logic for operation_date and night-shift handling.
+ * Nachtbetrieb & Betriebstag Utilities
  * 
- * NIGHT_CUTOFF: Times before this hour (06:00) belong to the PREVIOUS business day.
- * Example:
- *   04.04.2026 02:30 → operation_date = 2026-04-03
- *   04.04.2026 07:00 → operation_date = 2026-04-04
+ * Nachtgastronomie-spezifisch:
+ * - Betriebstag = „Operation Date" unabhängig von Kalendertag
+ * - Standard Cutoff: 06:00 (konfigurierbar)
+ * - 00:00–05:59 → gehören zum vorherigen Betriebstag
+ * - 06:00+ → neuer Betriebstag
  */
-
-export const NIGHT_CUTOFF_HOUR = 6; // 06:00 Uhr
 
 /**
- * Get the operation_date (business day) for a given Date or ISO string.
- * Times before NIGHT_CUTOFF_HOUR belong to the previous calendar day.
- * @param {Date|string} date
- * @returns {string} YYYY-MM-DD
+ * Globale Konfiguration für Betriebstag-Cutoff
+ * Kann pro App konfiguriert werden (z. B. in CompanySettings)
  */
-export function getOperationDate(date) {
-  const d = date instanceof Date ? date : new Date(date);
-  if (isNaN(d)) return null;
+export const NIGHT_CUTOFF_HOUR = 6; // 06:00 UTC
+export const NIGHT_CUTOFF_MINUTES = 0;
 
-  // If before cutoff, shift back one day
-  if (d.getHours() < NIGHT_CUTOFF_HOUR) {
-    const prev = new Date(d);
-    prev.setDate(prev.getDate() - 1);
-    return formatDate(prev);
+/**
+ * Berechne den Betriebstag für einen gegebenen Timestamp
+ * 
+ * @param {Date|string|number} timestamp - Moment in Zeit
+ * @returns {Date} - Betriebstag als Date (00:00 in UTC)
+ * 
+ * Beispiele:
+ * - 2024-01-15 02:00 → 2024-01-14 (noch vorheriger Betriebstag)
+ * - 2024-01-15 06:30 → 2024-01-15 (neuer Betriebstag)
+ */
+export function getOperationDate(timestamp) {
+  const date = new Date(timestamp);
+  const hour = date.getUTCHours();
+  const minute = date.getUTCMinutes();
+
+  // Vor Cutoff-Zeit → gehört zum vorherigen Betriebstag
+  if (hour < NIGHT_CUTOFF_HOUR || (hour === NIGHT_CUTOFF_HOUR && minute < NIGHT_CUTOFF_MINUTES)) {
+    date.setUTCDate(date.getUTCDate() - 1);
   }
-  return formatDate(d);
+
+  // Setze auf Mitternacht (Start des Betriebstages)
+  date.setUTCHours(0, 0, 0, 0);
+  return date;
 }
 
 /**
- * Get the current operation_date (business day) right now.
- * @returns {string} YYYY-MM-DD
+ * Berechne den aktuellen Betriebstag (heute)
  */
 export function getTodayOperationDate() {
   return getOperationDate(new Date());
 }
 
 /**
- * Format a Date to YYYY-MM-DD in local time.
- * @param {Date} d
- * @returns {string}
+ * Gib zwei Betriebstage als ISO-String zurück: [start, end]
+ * start = 00:00 des Betriebstages
+ * end = 06:00 des nächsten Kalendertages (= 24:00 des Betriebstages)
+ * 
+ * Wird verwendet für Queries, die einen ganzen Betriebstag abdecken sollen
  */
-export function formatDate(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+export function getOperationDateRange(operationDate) {
+  const start = new Date(operationDate);
+  start.setUTCHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  end.setUTCHours(NIGHT_CUTOFF_HOUR, NIGHT_CUTOFF_MINUTES, 0, 0);
+
+  return [start.toISOString(), end.toISOString()];
 }
 
 /**
- * Format a Date to HH:MM in local time.
- * @param {Date|string} date
- * @returns {string}
+ * Formatiere einen Betriebstag lesbar
+ * z. B. „2024-01-15" oder „15. Jan 2024"
  */
-export function formatTime(date) {
-  const d = date instanceof Date ? date : new Date(date);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+export function formatOperationDate(date, format = 'ISO') {
+  const d = new Date(date);
+  
+  if (format === 'ISO') {
+    return d.toISOString().split('T')[0];
+  }
+  
+  if (format === 'de') {
+    return d.toLocaleDateString('de-DE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }
+
+  return d.toISOString().split('T')[0];
 }
 
 /**
- * Calculate total working minutes between clock_in and clock_out.
- * Safe across midnight.
- * @param {string|Date} clockIn
- * @param {string|Date} clockOut
- * @returns {number} minutes
+ * Validiere, ob eine ClockEntry im Nachtbetrieb korrekt ist
+ * (z. B. Zeiten über Mitternacht)
  */
-export function calcWorkMinutes(clockIn, clockOut) {
-  const inTime = new Date(clockIn);
-  const outTime = clockOut ? new Date(clockOut) : new Date();
-  if (isNaN(inTime) || isNaN(outTime)) return 0;
-  return Math.max(0, Math.round((outTime - inTime) / 60000));
+export function validateNightShift(clockIn, clockOut) {
+  if (!clockIn || !clockOut) return true;
+
+  const inDate = new Date(clockIn);
+  const outDate = new Date(clockOut);
+
+  // clockOut muss nach clockIn sein
+  if (outDate <= inDate) {
+    return false; // Fehler
+  }
+
+  // Wenn über Mitternacht, ist das OK (z. B. 22:00 bis 06:00)
+  return true;
 }
 
 /**
- * Format minutes as "Xh Ym".
- * @param {number} minutes
- * @returns {string}
+ * Berechne Arbeitszeit über Mitternacht korrekt (in Minuten)
  */
-export function formatDuration(minutes) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+export function calculateWorkDuration(clockIn, clockOut) {
+  const inDate = new Date(clockIn);
+  const outDate = new Date(clockOut);
+  
+  const durationMs = outDate.getTime() - inDate.getTime();
+  const durationMinutes = Math.round(durationMs / (1000 * 60));
+  
+  return Math.max(0, durationMinutes);
 }
 
 /**
- * Check if a ClockEntry is currently active (no clock_out, status is working/break).
- * Does NOT filter by calendar date — works correctly for night shifts.
- * @param {object} entry
- * @returns {boolean}
+ * Konvertiere Minuten zu HH:MM Format
  */
-export function isActiveEntry(entry) {
-  return (entry.status === 'clocked_in' || entry.status === 'on_break') && !entry.clock_out;
+export function minutesToHHMM(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 }
 
 /**
- * Get warning level for a shift based on duration.
- * @param {number} minutes
- * @returns {null|'info'|'warning'|'danger'}
+ * Hilfsfunktion: Betriebstag für Queries
+ * Wird in vielen Queries verwendet, um korrekt nach Betriebstag zu filtern
  */
-export function getShiftWarning(minutes) {
-  if (minutes >= 600) return 'danger';  // 10h+
-  if (minutes >= 480) return 'warning'; // 8h+
-  if (minutes >= 360) return 'info';    // 6h+
-  return null;
-}
-
-/**
- * Build a TimeEntry data object from a completed ClockEntry.
- * Uses operation_date as the fachlicher Betriebstag.
- * @param {object} clockEntry
- * @param {string|null} clockOutISO — ISO string, or null to use now
- * @returns {object}
- */
-export function buildTimeEntryFromClock(clockEntry, clockOutISO = null) {
-  const clockIn = new Date(clockEntry.clock_in);
-  const clockOut = clockOutISO ? new Date(clockOutISO) : new Date();
-  const totalMinutes = calcWorkMinutes(clockIn, clockOut);
-  const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
-  const opDate = getOperationDate(clockIn);
-
+export function buildOperationDateFilter(operationDate = null) {
+  const date = operationDate || getTodayOperationDate();
+  const [start, end] = getOperationDateRange(date);
+  
   return {
-    employee_id: clockEntry.employee_id,
-    employee_name: clockEntry.employee_name,
-    date: opDate,                        // Betriebstag
-    start_time: formatTime(clockIn),
-    end_time: formatTime(clockOut),
-    break_minutes: clockEntry.break_minutes || 0,
-    total_hours: totalHours,
-    notes: 'Automatisch von Stempeluhr übertragen',
-    status: 'eingereicht',
-    operation_date: opDate,
+    operationDate: formatOperationDate(date, 'ISO'),
+    startISO: start,
+    endISO: end,
   };
 }
+
+export default {
+  getOperationDate,
+  getTodayOperationDate,
+  getOperationDateRange,
+  formatOperationDate,
+  validateNightShift,
+  calculateWorkDuration,
+  minutesToHHMM,
+  buildOperationDateFilter,
+  NIGHT_CUTOFF_HOUR,
+};

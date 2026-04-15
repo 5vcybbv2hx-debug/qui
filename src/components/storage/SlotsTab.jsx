@@ -163,7 +163,9 @@ export default function SlotsTab({ permissions }) {
        filteredSlots.length === 0 ? <EmptyState text={search || filterArea !== ALL ? 'Keine Lagerplätze für diesen Filter.' : 'Noch keine Lagerplätze angelegt.'} /> : (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{filteredSlots.length} Plätze</p>
-          {filteredSlots.map(slot => (
+          {filteredSlots.map(slot => {
+            const slotArticles = (assignments || []).filter(a => a.storage_slot_id === slot.id && a.is_active !== false).map(a => a.article_name).filter(Boolean);
+            return (
             <Card key={slot.id} className="p-3 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{slot.full_name || slot.name}</p>
@@ -171,6 +173,16 @@ export default function SlotsTab({ permissions }) {
                   {copiedId === slot.short_code ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
                   {slot.short_code}
                 </button>
+                {slotArticles.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {slotArticles.map((name, i) => (
+                      <span key={i} className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded px-1.5 py-0.5 leading-tight">{name}</span>
+                    ))}
+                  </div>
+                )}
+                {slotArticles.length === 0 && (
+                  <p className="text-[10px] text-muted-foreground/50 mt-1">Keine Artikel zugeordnet</p>
+                )}
               </div>
               <div className="flex gap-1">
                   <Button size="icon" variant="ghost" className="h-8 w-8 text-amber-500 hover:bg-amber-500/10" onClick={() => setLabelSlot(slot)} title="Etikett drucken">
@@ -184,7 +196,8 @@ export default function SlotsTab({ permissions }) {
                   )}
                 </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

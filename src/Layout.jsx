@@ -265,78 +265,86 @@ export default function Layout({ children, currentPageName }) {
                 </aside>
 
                 {/* Mobile Bottom Navigation — Schnellzugriff + Mehr */}
-                <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
-                    <div className="flex items-center justify-around px-1 pt-1 pb-1">
+                {(() => {
+                    const dashboardPage = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'Dashboard');
+                    const guestHubPage  = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'GuestHub');
+                    const todosPage     = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'Todos');
+                    const calendarPage  = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'Calendar');
+                    return (
+                        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
+                            <div className="flex items-center justify-around px-1 pt-1 pb-1">
 
-                        {/* Dashboard */}
-                        {permissions.canViewDashboard && (
-                            <button
-                                onClick={() => { haptics.selection(); navigate(createPageUrl('Dashboard')); }}
-                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    isPageActive('Dashboard') ? 'text-foreground' : 'text-muted-foreground')}
-                            >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Dashboard') && 'bg-foreground/10')}>
-                                    {React.createElement(mainNavigation.find(a=>a.id==='dashboard')?.icon || mainNavigation[0].icon, { className: 'w-5 h-5' })}
-                                </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Dashboard') && 'font-bold')}>Home</span>
-                            </button>
-                        )}
+                                {/* Dashboard */}
+                                {permissions.canViewDashboard && dashboardPage && (
+                                    <button
+                                        onClick={() => { haptics.selection(); navigate(createPageUrl('Dashboard')); }}
+                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                            isPageActive('Dashboard') ? 'text-foreground' : 'text-muted-foreground')}
+                                    >
+                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Dashboard') && 'bg-foreground/10')}>
+                                            <dashboardPage.icon className="w-5 h-5" />
+                                        </div>
+                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Dashboard') && 'font-bold')}>{dashboardPage.name}</span>
+                                    </button>
+                                )}
 
-                        {/* Betrieb - erster Schnellzugriff */}
-                        {permissions.canViewReservations && (
-                            <button
-                                onClick={() => { haptics.selection(); navigate(createPageUrl('GuestHub')); }}
-                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    isPageActive('GuestHub') ? 'text-foreground' : 'text-muted-foreground')}
-                            >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('GuestHub') && 'bg-foreground/10')}>
-                                    {React.createElement(mainNavigation.find(a=>a.id==='betrieb')?.icon || mainNavigation[1].icon, { className: 'w-5 h-5' })}
-                                </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('GuestHub') && 'font-bold')}>Betrieb</span>
-                            </button>
-                        )}
+                                {/* Gäste & Tische */}
+                                {permissions.canViewReservations && guestHubPage && (
+                                    <button
+                                        onClick={() => { haptics.selection(); navigate(createPageUrl('GuestHub')); }}
+                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                            isPageActive('GuestHub') ? 'text-foreground' : 'text-muted-foreground')}
+                                    >
+                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('GuestHub') && 'bg-foreground/10')}>
+                                            <guestHubPage.icon className="w-5 h-5" />
+                                        </div>
+                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('GuestHub') && 'font-bold')}>{guestHubPage.name}</span>
+                                    </button>
+                                )}
 
-                        {/* Aufgaben - zweiter Schnellzugriff */}
-                        {permissions.canViewTodos && (
-                            <button
-                                onClick={() => { haptics.selection(); navigate(createPageUrl('Todos')); }}
-                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    isPageActive('Todos') ? 'text-foreground' : 'text-muted-foreground')}
-                            >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Todos') && 'bg-foreground/10')}>
-                                    {React.createElement(mainNavigation.find(a=>a.id==='betrieb')?.pages.find(p=>p.page==='Todos')?.icon || mainNavigation[1].icon, { className: 'w-5 h-5' })}
-                                </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Todos') && 'font-bold')}>Aufgaben</span>
-                            </button>
-                        )}
+                                {/* Aufgaben */}
+                                {permissions.canViewTodos && todosPage && (
+                                    <button
+                                        onClick={() => { haptics.selection(); navigate(createPageUrl('Todos')); }}
+                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                            isPageActive('Todos') ? 'text-foreground' : 'text-muted-foreground')}
+                                    >
+                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Todos') && 'bg-foreground/10')}>
+                                            <todosPage.icon className="w-5 h-5" />
+                                        </div>
+                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Todos') && 'font-bold')}>{todosPage.name}</span>
+                                    </button>
+                                )}
 
-                        {/* Team - dritter Schnellzugriff */}
-                        {permissions.canViewShifts && (
-                            <button
-                                onClick={() => { haptics.selection(); navigate(createPageUrl('Calendar')); }}
-                                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                    isPageActive('Calendar') ? 'text-foreground' : 'text-muted-foreground')}
-                            >
-                                <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Calendar') && 'bg-foreground/10')}>
-                                    {React.createElement(mainNavigation.find(a=>a.id==='team')?.icon || mainNavigation[4].icon, { className: 'w-5 h-5' })}
-                                </div>
-                                <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Calendar') && 'font-bold')}>Team</span>
-                            </button>
-                        )}
+                                {/* Schichtplan */}
+                                {permissions.canViewShifts && calendarPage && (
+                                    <button
+                                        onClick={() => { haptics.selection(); navigate(createPageUrl('Calendar')); }}
+                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                            isPageActive('Calendar') ? 'text-foreground' : 'text-muted-foreground')}
+                                    >
+                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Calendar') && 'bg-foreground/10')}>
+                                            <calendarPage.icon className="w-5 h-5" />
+                                        </div>
+                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Calendar') && 'font-bold')}>{calendarPage.name}</span>
+                                    </button>
+                                )}
 
-                        {/* Mehr */}
-                        <button
-                            onClick={() => { haptics.selection(); setSettingsOpen(true); }}
-                            className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px] text-muted-foreground')}
-                        >
-                            <div className="flex items-center justify-center w-8 h-8 rounded-xl">
-                                <Settings className="w-5 h-5" />
+                                {/* Mehr */}
+                                <button
+                                    onClick={() => { haptics.selection(); setSettingsOpen(true); }}
+                                    className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px] text-muted-foreground')}
+                                >
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-xl">
+                                        <Settings className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-[10px] leading-tight font-medium">Mehr</span>
+                                </button>
+
                             </div>
-                            <span className="text-[10px] leading-tight font-medium">Mehr</span>
-                        </button>
-
-                    </div>
-                </div>
+                        </div>
+                    );
+                })()}
 
                 {/* Mehr-Drawer — alle Bereiche geordnet */}
                 <Drawer open={settingsOpen} onOpenChange={setSettingsOpen}>

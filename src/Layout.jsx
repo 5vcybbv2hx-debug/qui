@@ -44,7 +44,16 @@ export default function Layout({ children, currentPageName }) {
     // ── Handlers ─────────────────────────────────────────────────────────────
     const handleScan = (code) => {
         setScannerOpen(false);
-        navigate(createPageUrl('Shopping') + `?scan=${code}`);
+        
+        // Auto-detect QR code type: storage location IDs typically are UUID-like or numeric
+        // Artikel barcodes are usually EAN/UPC (12-14 digits) or shorter codes
+        const isStorageQR = code.length > 20 || /^[a-f0-9]{8}-[a-f0-9]{4}/.test(code);
+        
+        if (isStorageQR) {
+            navigate(`/StorageLocationScan/${code}`);
+        } else {
+            navigate(createPageUrl('Shopping') + `?scan=${code}`);
+        }
     };
 
     const handleRefresh = async () => {
@@ -137,6 +146,13 @@ export default function Layout({ children, currentPageName }) {
                             title="Suche (Strg+K)"
                         >
                             <Search className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setScannerOpen(true)}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-foreground transition-all"
+                            title="Scannen"
+                        >
+                            <ScanLine className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => setSettingsOpen(true)}

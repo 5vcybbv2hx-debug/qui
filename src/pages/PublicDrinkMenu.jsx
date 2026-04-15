@@ -135,11 +135,15 @@ export default function PublicDrinkMenu() {
     const companyInfo = companyData[0] || {};
     const barName = companyInfo.company_name || 'Getränkekarte';
 
-    const categories = useMemo(() => ['Alle', ...new Set(items.map(i => i.category).filter(Boolean))], [items]);
+    const categories = useMemo(() => {
+        const cats = new Set(items.map(i => i.category || 'Sonstiges').filter(Boolean));
+        return ['Alle', ...Array.from(cats)];
+    }, [items]);
 
     const filteredItems = useMemo(() => {
         return items.filter(item => {
-            if (selectedCategory !== 'Alle' && item.category !== selectedCategory) return false;
+            const itemCategory = item.category || 'Sonstiges';
+            if (selectedCategory !== 'Alle' && itemCategory !== selectedCategory) return false;
             if (searchTerm) {
                 const q = searchTerm.toLowerCase();
                 if (!item.name.toLowerCase().includes(q) &&

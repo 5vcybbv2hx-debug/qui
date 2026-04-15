@@ -109,38 +109,38 @@ function buildLabelPDF(location, qrPng, configKey) {
 
     // 1. SHORT CODE — Courier Bold
     if (short_code) {
-        y += draw(short_code, 10, 'courier', 'bold', 0, 0, 0);
-        y += 0.8;
+        y += draw(short_code, 11, 'courier', 'bold', 0, 0, 0);
+        y += 0.6;
     }
 
     // 2. FACHNAME — Helvetica Bold
     if (displayName) {
-        y += draw(displayName, 9, 'helvetica', 'bold', 0, 0, 0);
-        y += 0.6;
+        y += draw(displayName, 10, 'helvetica', 'bold', 0, 0, 0);
+        y += 0.5;
     }
 
-    // 3. LAGERPFAD — Helvetica Bold, dark grey
+    // 3. LAGERPFAD — Helvetica Bold, dark grey (only if space allows)
     if (pathStr) {
-        const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
-        y += draw(s, 7, 'helvetica', 'bold', 40, 40, 40);
-        y += 1.0;
+        const s = pathStr.length > 40 ? pathStr.slice(0, 37) + '…' : pathStr;
+        y += draw(s, 7.5, 'helvetica', 'bold', 30, 30, 30);
+        y += 0.8;
     }
 
     // ── Separator ─────────────────────────────────────────────────────────────
-    doc.setDrawColor(180, 180, 180);
-    doc.setLineWidth(0.15);
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineWidth(0.2);
     doc.line(TEXT_X, y, TEXT_X + TEXT_W, y);
-    y += 1.2;
+    y += 1.0;
 
     // 4. INHALT label + articles
     if (articles.length > 0) {
-        y += draw('INHALT', 6, 'helvetica', 'bold', 90, 90, 90);
-        y += 0.4;
-        const MAX = 4;
+        y += draw('INHALT', 6.5, 'helvetica', 'bold', 70, 70, 70);
+        y += 0.3;
+        const MAX = 3;
         const shown = articles.slice(0, MAX);
         const extra = articles.length - MAX;
         const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-        draw(artText, 8, 'helvetica', 'bold', 0, 0, 0);
+        draw(artText, 8.5, 'helvetica', 'bold', 0, 0, 0);
     } else {
         draw('Keine Artikel zugeordnet', 6.5, 'helvetica', 'normal', 170, 170, 170);
     }

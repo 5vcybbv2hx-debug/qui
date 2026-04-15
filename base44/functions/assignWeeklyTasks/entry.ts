@@ -1,8 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
- * Automatische Zuweisung von Wochenaufgaben an die Aushilfe mit frühester Schicht morgen
- * Wird täglich um 17:00 Uhr (Berlin-Zeit) ausgeführt
+ * Automatische Zuweisung von Wochenaufgaben an die Aushilfe mit frühester Schicht
+ * Wird täglich um 17:00 Uhr (Vortag) und 16:00 Uhr (Stichtag) ausgeführt
+ * 
+ * @param {Object} req - Request object
+ * @param {string} req.body.daysOffset - (optional) 0=heute, 1=morgen (default: 1)
  */
 Deno.serve(async (req) => {
   try {
@@ -14,44 +17,61 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    // Morgen's Datum
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
-    
-    // Wochentag morgen (0=Sonntag, 1=Montag, etc.)
-    const tomorrowDayOfWeek = tomorrow.getDay();
-    const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-    const tomorrowDayName = dayNames[tomorrowDayOfWeek];
-
-    // 1. Finde alle Schichten morgen
-    const shiftsForTomorrow = await base44.entities.Shift.filter({
-      date: tomorrowStr
-    });
-
-    if (shiftsForTomorrow.length === 0) {
-      return Response.json({ message: 'Keine Schichten morgen', assigned: 0 });
+    // Parse request body for daysOffset (default: 1 = morgen)
+    let daysOffset = 1;
+    try {
+      const body = await req.json();
+      if (body.daysOffset !== undefined) daysOffset = body.daysOffset;
+    } catch (e) {
+      // Kein Body oder JSON-Parse-Fehler — nutze Default
     }
 
-    // 2. Finde alle Aushilfen mit Schichten morgen
+    // Zieldatum (0 = heute, 1 = morgen)
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + daysOffset);
+    targetDate.setHours(0, 0, 0, 0);
+    const targetDateStr = targetDate.toISOString().split('T')[0];
+    
+    // Wochentag (0=Sonntag, 1=Montag, etc.)
+    const targetDayOfWeek = targetDate.getDay();
+    const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const targetDayName = dayNames[targetDayOfWeek];
+
+    // 1. Finde alle Schichten am Zieldatum
+    const shiftsForTarget = await base44.entities.Shift.filter({
+      date: targetDateStr
+    });
+
+    if (shiftsForTarget.length === 0) {
+      return Response.json({ 
+        message: `Keine Schichten am ${targetDateStr}`, 
+        assigned: 0,
+        date: targetDateStr 
+      });
+    }
+
+    // 2. Finde alle Aushilfen mit Schichten am Zieldatum
     const aushilfen = await base44.entities.Employee.filter({
       role: 'Aushilfe'
     });
 
-    const aushilfeShifts = shiftsForTomorrow
+    const aushilfeShifts = shiftsForTarget
       .filter(s => aushilfen.some(a => a.id === s.employee_id))
       .sort((a, b) => a.start_time.localeCompare(b.start_time)); // Nach Startzeit sortieren
 
     if (aushilfeShifts.length === 0) {
-      return Response.json({ message: 'Keine Aushilfen morgen eingeplant', assigned: 0 });
+      return Response.json({ 
+        message: `Keine Aushilfen am ${targetDateStr} eingeplant`, 
+        assigned: 0,
+        date: targetDateStr 
+      });
     }
 
     // 3. Die Aushilfe mit frühester Schicht
     const earliestAushilfe = aushilfeShifts[0];
     const targetEmployee = aushilfen.find(a => a.id === earliestAushilfe.employee_id);
 
-    // 4. Finde alle Wochenaufgaben (CleaningTasks), die morgen fällig sind
+    // 4. Finde alle Wochenaufgaben (CleaningTasks), die am Zieldatum fällig sind
     const allTasks = await base44.entities.CleaningTask.filter({
       is_active: true
     });
@@ -62,10 +82,10 @@ Deno.serve(async (req) => {
     for (const task of allTasks) {
       const shouldAssignToday = (
         (task.frequency === 'täglich') ||
-        (task.frequency === 'am Wochenende' && (tomorrowDayOfWeek === 0 || tomorrowDayOfWeek === 6)) ||
-        (task.frequency === 'wöchentlich' && task.due_date === tomorrowStr) ||
+        (task.frequency === 'am Wochenende' && (targetDayOfWeek === 0 || targetDayOfWeek === 6)) ||
+        (task.frequency === 'wöchentlich' && task.due_date === targetDateStr) ||
         (task.frequency === 'alle zwei Wochen' && task.biweekly_pattern) ||
-        (task.frequency === 'monatlich' && parseInt(task.due_date?.split('-')[2]) === tomorrow.getDate())
+        (task.frequency === 'monatlich' && parseInt(task.due_date?.split('-')[2]) === targetDate.getDate())
       );
 
       if (shouldAssignToday) {
@@ -73,7 +93,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Weise alle Tasks dieser Aushilfe zu
+    // 5. Lösche alte zuweisungen für dieses Datum und weise neu zu
+    const existingTodos = await base44.entities.TodoItem.filter({
+      due_date: targetDateStr,
+      created_by: 'System (automatisch)'
+    });
+    
+    // Lösche alte automatische Zuweisungen
+    for (const oldTodo of existingTodos) {
+      await base44.entities.TodoItem.delete(oldTodo.id);
+    }
+
+    // 6. Weise alle Tasks dieser Aushilfe zu
     for (const task of tasksToAssign) {
       // Erstelle einen TodoItem basierend auf dem CleaningTask
       const todoData = {
@@ -81,7 +112,7 @@ Deno.serve(async (req) => {
         description: `Reinigungsaufgabe: ${task.area}`,
         priority: 'mittel',
         status: 'offen',
-        due_date: tomorrowStr,
+        due_date: targetDateStr,
         assigned_to: targetEmployee.short_name || targetEmployee.name,
         assigned_to_names: [targetEmployee.name],
         category: 'Sonstiges',
@@ -101,11 +132,12 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      message: `${assignedCount} Aufgaben zugewiesen an ${targetEmployee.name}`,
+      message: `${assignedCount} Aufgaben zugewiesen an ${targetEmployee.name} (${targetDateStr})`,
       assigned_to: targetEmployee.name,
       assigned_count: assignedCount,
-      date: tomorrowStr,
-      shift_start: earliestAushilfe.start_time
+      date: targetDateStr,
+      shift_start: earliestAushilfe.start_time,
+      offset: daysOffset
     });
 
   } catch (error) {

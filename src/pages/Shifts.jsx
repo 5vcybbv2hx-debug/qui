@@ -5,7 +5,6 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Users, Filter, X, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
 import { createPageUrl } from '@/utils';
 import { LoadingState, ErrorState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';

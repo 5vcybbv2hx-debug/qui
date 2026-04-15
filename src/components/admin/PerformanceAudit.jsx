@@ -238,7 +238,7 @@ export default function PerformanceAudit() {
             <Badge variant="default" className="mt-0.5">5</Badge>
             <div>
               <p className="font-bold text-foreground">Re-measure & iterate</p>
-              <p className="text-sm text-muted-foreground">Target: Lighthouse >= 80, LCP less than 2.5s</p>
+              <p className="text-sm text-muted-foreground">Target: Lighthouse {">="} 80, LCP less than 2.5s</p>
             </div>
           </div>
         </Card>

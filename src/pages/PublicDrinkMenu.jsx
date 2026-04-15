@@ -124,7 +124,7 @@ export default function PublicDrinkMenu() {
 
     const { data: items = [], isLoading } = useQuery({
         queryKey: ['public-menu-items'],
-        queryFn: () => base44.asServiceRole.entities.MenuItem.filter({ is_available: true })
+        queryFn: () => base44.asServiceRole.entities.MenuItem.list()
     });
 
     const { data: companyData = [] } = useQuery({

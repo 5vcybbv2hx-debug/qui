@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Zap, Gauge, BarChart3, CheckCircle2, TrendingDown } from 'lucide-react';
 import {

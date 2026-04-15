@@ -70,17 +70,17 @@ export default function PerformanceAudit() {
               <div className="grid grid-cols-3 gap-4 text-xs">
                 <div>
                   <p className="text-muted-foreground font-medium">staleTime</p>
-                  <code className="text-foreground">{(config.staleTime / 60 / 1000).toFixed(0)} min</code>
+                  <p className="text-foreground font-mono">{String((config.staleTime / 60 / 1000).toFixed(0))} min</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground font-medium">gcTime</p>
-                  <code className="text-foreground">{(config.gcTime / 60 / 1000).toFixed(0)} min</code>
+                  <p className="text-foreground font-mono">{String((config.gcTime / 60 / 1000).toFixed(0))} min</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground font-medium">refetch</p>
-                  <code className="text-foreground">
-                    {config.refetchInterval ? `${(config.refetchInterval / 1000).toFixed(0)}s` : 'on-demand'}
-                  </code>
+                  <p className="text-foreground font-mono">
+                    {config.refetchInterval ? `${String((config.refetchInterval / 1000).toFixed(0))}s` : 'on-demand'}
+                  </p>
                 </div>
               </div>
             </div>

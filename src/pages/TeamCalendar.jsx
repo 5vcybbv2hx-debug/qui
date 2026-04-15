@@ -68,7 +68,7 @@ export default function TeamCalendar() {
                     <div className="flex items-center gap-3 mb-6">
                         <Calendar className="w-6 md:w-8 h-6 md:h-8 text-primary" />
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Team-Kalender</h1>
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Teamkalender</h1>
                             <p className="text-muted-foreground text-sm">
                                 Übersicht aller Schichten, Urlaube und Feiertage
                             </p>

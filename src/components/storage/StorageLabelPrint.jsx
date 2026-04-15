@@ -77,9 +77,9 @@ function buildLabelPDF(location, qrPng, configKey) {
     const TEXT_X = DIV_X + 2.0;
     const TEXT_W = W - TEXT_X - PAD;
 
-    // pt → mm
+    // pt → mm (1pt = 0.3528mm)
     const ptMm = (pt) => pt * 0.3528;
-    const lhMm = (pt) => ptMm(pt) * 1.35;
+    const lhMm = (pt) => ptMm(pt) * 1.25;
 
     // ── Background ────────────────────────────────────────────────────────────
     doc.setFillColor(255, 255, 255);
@@ -94,9 +94,11 @@ function buildLabelPDF(location, qrPng, configKey) {
     doc.line(DIV_X, PAD, DIV_X, H - PAD);
 
     // ── Vector text layout ────────────────────────────────────────────────────
-    let y = PAD + ptMm(13); // start at top + first baseline
+    // For 29mm height: PAD(2) + shortcode(~4) + gap(1) + name(~3.5) + gap(0.8)
+    //                  + path(~3) + gap(1) + sep(0.5+1) + inhalt(~2.5) + gap(0.5) + article(~3) + PAD(2) = ~25mm ✓
+    let y = PAD + ptMm(10); // first baseline
 
-    const drawLine = (text, pt, fontName, fontStyle, r, g, b) => {
+    const draw = (text, pt, fontName, fontStyle, r, g, b) => {
         doc.setFont(fontName, fontStyle);
         doc.setFontSize(pt);
         doc.setTextColor(r, g, b);
@@ -105,42 +107,42 @@ function buildLabelPDF(location, qrPng, configKey) {
         return lines.length * lhMm(pt);
     };
 
-    // 1. SHORT CODE — Courier Bold, large
+    // 1. SHORT CODE — Courier Bold
     if (short_code) {
-        y += drawLine(short_code, 14, 'courier', 'bold', 0, 0, 0);
-        y += 1.5;
+        y += draw(short_code, 10, 'courier', 'bold', 0, 0, 0);
+        y += 0.8;
     }
 
     // 2. FACHNAME — Helvetica Bold
     if (displayName) {
-        y += drawLine(displayName, 11, 'helvetica', 'bold', 0, 0, 0);
-        y += 1.0;
+        y += draw(displayName, 9, 'helvetica', 'bold', 0, 0, 0);
+        y += 0.6;
     }
 
     // 3. LAGERPFAD — Helvetica Bold, dark grey
     if (pathStr) {
         const s = pathStr.length > 55 ? pathStr.slice(0, 52) + '…' : pathStr;
-        y += drawLine(s, 8.5, 'helvetica', 'bold', 30, 30, 30);
-        y += 1.5;
+        y += draw(s, 7, 'helvetica', 'bold', 40, 40, 40);
+        y += 1.0;
     }
 
     // ── Separator ─────────────────────────────────────────────────────────────
     doc.setDrawColor(180, 180, 180);
     doc.setLineWidth(0.15);
     doc.line(TEXT_X, y, TEXT_X + TEXT_W, y);
-    y += 1.8;
+    y += 1.2;
 
     // 4. INHALT label + articles
     if (articles.length > 0) {
-        y += drawLine('INHALT', 7, 'helvetica', 'bold', 80, 80, 80);
-        y += 0.5;
+        y += draw('INHALT', 6, 'helvetica', 'bold', 90, 90, 90);
+        y += 0.4;
         const MAX = 4;
         const shown = articles.slice(0, MAX);
         const extra = articles.length - MAX;
         const artText = shown.join(' · ') + (extra > 0 ? ` +${extra}` : '');
-        drawLine(artText, 9, 'helvetica', 'bold', 0, 0, 0);
+        draw(artText, 8, 'helvetica', 'bold', 0, 0, 0);
     } else {
-        drawLine('Keine Artikel zugeordnet', 7, 'helvetica', 'normal', 170, 170, 170);
+        draw('Keine Artikel zugeordnet', 6.5, 'helvetica', 'normal', 170, 170, 170);
     }
 
     return doc;

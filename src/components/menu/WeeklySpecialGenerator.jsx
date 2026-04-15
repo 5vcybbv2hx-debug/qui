@@ -17,7 +17,7 @@ export default function WeeklySpecialGenerator({ menuItems = [] }) {
     const [selectedCount, setSelectedCount] = useState('3');
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [editingItemId, setEditingItemId] = useState(null);
-    const [editValues, setEditValues] = useState({ discount_type: 'percent', discount_value: 0 });
+    const [editValues, setEditValues] = useState({ discount_type: 'fixed', discount_value: 0 });
 
     const { data: activeSpecial = null } = useQuery({
         queryKey: ['active-weekly-special'],
@@ -107,18 +107,19 @@ export default function WeeklySpecialGenerator({ menuItems = [] }) {
             }
 
             // Erstelle neue Items
-            for (let i = 0; i < selected.length; i++) {
-                await base44.entities.WeeklySpecialItem.create({
-                    weekly_special_id: specialId,
-                    menu_item_id: selected[i].id,
-                    menu_item_name: selected[i].name,
-                    original_price: selected[i].price,
-                    discount_type: 'percent',
-                    discount_value: 15,
-                    final_price: (selected[i].price * 0.85).toFixed(2),
-                    display_order: i
-                });
-            }
+             for (let i = 0; i < selected.length; i++) {
+                 const defaultDiscount = Math.round(selected[i].price * 0.15 * 10) / 10; // 15% als festen Rabatt, aufgerundet
+                 await base44.entities.WeeklySpecialItem.create({
+                     weekly_special_id: specialId,
+                     menu_item_id: selected[i].id,
+                     menu_item_name: selected[i].name,
+                     original_price: selected[i].price,
+                     discount_type: 'fixed',
+                     discount_value: defaultDiscount,
+                     final_price: (Math.ceil((selected[i].price - defaultDiscount) * 10) / 10).toFixed(2),
+                     display_order: i
+                 });
+             }
 
             queryClient.invalidateQueries(['active-weekly-special']);
             queryClient.invalidateQueries(['weekly-special-items']);
@@ -156,7 +157,9 @@ export default function WeeklySpecialGenerator({ menuItems = [] }) {
         if (discountType === 'percent') {
             return (original * (1 - discountValue / 100)).toFixed(2);
         }
-        return discountValue.toFixed(2);
+        // Fixed price: round up to next 0.10€
+        const rawPrice = original - discountValue;
+        return (Math.ceil(rawPrice * 10) / 10).toFixed(2);
     };
 
     return (

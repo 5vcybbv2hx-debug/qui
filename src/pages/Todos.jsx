@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, CheckSquare, Tag, Search, X, Brush, ListChecks, ArrowRight } from 'lucide-react';
+import { Plus, CheckSquare, Tag, Search, X, ListChecks } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import TodoCategoryManager, { loadCategories } from '@/components/todos/TodoCategoryManager';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -201,17 +201,12 @@ export default function Todos() {
             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
 
                 {/* Aufgabenbereiche Banner */}
-                <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-card rounded-xl border border-border">
+                <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-card rounded-xl border border-border">
                     <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
                         <CheckSquare className="w-4 h-4 text-amber-400" />
                         <span className="text-[10px] font-bold text-amber-400">Aufgaben</span>
                         <span className="text-[9px] text-muted-foreground">flexibel</span>
                     </div>
-                    <Link to={createPageUrl('Cleaning')} className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card border border-border hover:bg-accent/50 transition-colors text-center">
-                        <Brush className="w-4 h-4 text-teal-400" />
-                        <span className="text-[10px] font-semibold text-foreground">Putzliste</span>
-                        <span className="text-[9px] text-muted-foreground">heute</span>
-                    </Link>
                     <Link to={createPageUrl('WeeklyTasks')} className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card border border-border hover:bg-accent/50 transition-colors text-center">
                         <ListChecks className="w-4 h-4 text-blue-400" />
                         <span className="text-[10px] font-semibold text-foreground">Wochenaufgaben</span>

@@ -295,7 +295,6 @@ export default function Shifts() {
                     selectedDate={selectedDate}
                     setSelectedDate={setSelectedDate}
                     />
-                    )}
 
                     {/* Selected Date Details */}
                 {selectedDate && (

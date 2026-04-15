@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -83,7 +82,6 @@ export default function Cleaning() {
          queryFn: () => base44.entities.CleaningTask.list('area')
      });
      const { handleError } = useErrorHandler();
-     const queryClient = useQueryClient();
 
     // Wochentagsaufgaben gehören zu WeeklyTasks — hier ausschließen
     const tasks = allTasks.filter(t => t.is_active !== false && t.area !== 'Wochentagsaufgaben');

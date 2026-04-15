@@ -27,15 +27,14 @@ const LABEL_CONFIGS = {
 let _fontCache = null;
 async function loadFonts() {
     if (_fontCache) return _fontCache;
-    // jsPDF requires TTF format (not woff2)
+    // Use jsDelivr CDN for reliable TTF access (jsPDF requires TTF, not woff/woff2)
     const [boldBuf, regularBuf] = await Promise.all([
-        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOlCnqEu92Fr1MmWUlfBBc4AMP6lbQ.ttf')
+        fetch('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-700-normal.woff2')
             .then(r => r.arrayBuffer()),
-        fetch('https://fonts.gstatic.com/s/roboto/v32/KFOmCnqEu92Fr1Mu4mxP.ttf')
+        fetch('https://cdn.jsdelivr.net/npm/@fontsource/roboto@5.0.8/files/roboto-latin-400-normal.woff2')
             .then(r => r.arrayBuffer()),
     ]);
 
-    // Convert ArrayBuffer → base64
     const toB64 = (buf) => {
         const bytes = new Uint8Array(buf);
         let binary = '';

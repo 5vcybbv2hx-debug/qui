@@ -77,6 +77,35 @@ export default function BarAssistant({ isManager }) {
         if (open) setTimeout(() => inputRef.current?.focus(), 300);
     }, [open]);
 
+    // ESC to close + swipe down handler
+    useEffect(() => {
+        if (!open) return;
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setOpen(false);
+        };
+
+        let touchStart = null;
+        const handleTouchStart = (e) => {
+            touchStart = e.touches[0].clientY;
+        };
+        const handleTouchEnd = (e) => {
+            if (!touchStart) return;
+            const touchEnd = e.changedTouches[0].clientY;
+            if (touchEnd - touchStart > 80) setOpen(false);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('touchstart', handleTouchStart);
+        window.addEventListener('touchend', handleTouchEnd);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchend', handleTouchEnd);
+        };
+    }, [open]);
+
     // Proactive hint on page change (only for managers)
     useEffect(() => {
         if (!isManager) return;
@@ -246,11 +275,14 @@ export default function BarAssistant({ isManager }) {
                     >
                         {/* Header */}
                         <div className={cn(
-                            'flex items-center gap-3 px-4 py-3 border-b border-border/50 shrink-0',
+                            'flex items-center gap-3 px-4 py-3 border-b border-border/50 shrink-0 cursor-grab active:cursor-grabbing touch-none relative',
                             isManager
                                 ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/5'
                                 : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/5'
                         )}>
+                            {/* Swipe-down indicator for mobile */}
+                            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-border/30 md:hidden" />
+
                             <div className={cn(
                                 'w-8 h-8 rounded-xl flex items-center justify-center',
                                 isManager

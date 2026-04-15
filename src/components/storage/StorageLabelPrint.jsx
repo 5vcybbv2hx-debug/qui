@@ -54,13 +54,13 @@ async function generateQrPng(locationId) {
     return canvas.toDataURL('image/png'); // lossless PNG
 }
 
-// ─── Render text column as high-res canvas (600 DPI equivalent) ──────────────
-// Brother QL-800 = 300 DPI. We render at 2× (600 DPI) for crispness.
-// 1mm = 300/25.4 ≈ 11.81px at 300dpi, × 2 = 23.62px at 600dpi
-const MM_TO_PX = (300 / 25.4) * 2; // ~23.62 px per mm at 600 DPI
+// ─── Render text column as high-res canvas (1200 DPI equivalent) ─────────────
+// Brother QL-800 = 300 DPI. We render at 4× (1200 DPI) for maximum crispness.
+// 1mm = 300/25.4 ≈ 11.81px at 300dpi, × 4 = 47.24px at 1200dpi
+const MM_TO_PX = (300 / 25.4) * 4; // ~47.24 px per mm at 1200 DPI
 
-// pt → canvas px: 1pt = 1/72 inch. At 600dpi: 1pt = 600/72 = 8.33px
-const PT_TO_PX = 600 / 72; // 8.33px per pt
+// pt → canvas px: 1pt = 1/72 inch. At 1200dpi: 1pt = 1200/72 = 16.67px
+const PT_TO_PX = 1200 / 72; // 16.67px per pt
 
 function renderTextColumnToCanvas(location, textXmm, textWmm, Hmm) {
     const { articles, displayName, pathStr, short_code } = getLabelData(location);

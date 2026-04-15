@@ -51,7 +51,8 @@ function getLabelData(location) {
     const displayName = location.position || location.name || '';
     const pathParts = [location.area, location.furniture, location.container].filter(Boolean);
     const pathStr = pathParts.join(' › ');
-    return { articles, displayName, pathStr, short_code: location.short_code || '' };
+    const min_stock = location.min_stock != null ? String(location.min_stock) : '--';
+    return { articles, displayName, pathStr, short_code: location.short_code || '', min_stock };
 }
 
 // ─── Generate QR canvas at given pixel size ───────────────────────────────────
@@ -76,7 +77,7 @@ async function buildLabelPNG(location, configKey) {
     const W = Math.round(cfg.wMM * MM_TO_PX);
     const H = Math.round(cfg.hMM * MM_TO_PX);
 
-    const { articles, displayName, pathStr, short_code } = getLabelData(location);
+    const { articles, displayName, pathStr, short_code, min_stock } = getLabelData(location);
 
     // QR at full canvas resolution
     const QR_PX = Math.round(22 * MM_TO_PX);
@@ -192,6 +193,14 @@ async function buildLabelPNG(location, configKey) {
         ctx.fillText('Keine Artikel zugeordnet', TEXT_X, y);
     }
 
+    // MIN STOCK — bottom right corner
+    const minFs = ptToPx(7);
+    ctx.font = `700 ${minFs}px Arial, sans-serif`;
+    ctx.fillStyle = '#000000';
+    const minLabel = `Min: ${min_stock}`;
+    const minW = ctx.measureText(minLabel).width;
+    ctx.fillText(minLabel, W - PAD - minW, H - PAD - Math.round(1 * MM_TO_PX));
+
     return canvas;
 }
 
@@ -283,7 +292,7 @@ function LabelPreview({ location, qrDataUrl, configKey }) {
     const W = cfg.wMM * SCALE;
     const H = cfg.hMM * SCALE;
     const QR_PX = 22 * SCALE;
-    const { articles, displayName, pathStr, short_code } = getLabelData(location);
+    const { articles, displayName, pathStr, short_code, min_stock } = getLabelData(location);
 
     return (
         <div style={{
@@ -315,6 +324,9 @@ function LabelPreview({ location, qrDataUrl, configKey }) {
                     ) : (
                         <div style={{ fontSize: 7, color: '#ccc' }}>Keine Artikel</div>
                     )}
+                </div>
+                <div style={{ fontSize: 6, fontWeight: 700, color: '#000', marginTop: 'auto', paddingTop: 2, textAlign: 'right' }}>
+                    Min: {min_stock}
                 </div>
             </div>
         </div>

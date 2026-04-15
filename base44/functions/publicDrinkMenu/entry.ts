@@ -7,7 +7,7 @@ Deno.serve(async (req) => {
         const url = new URL(req.url);
         const tableNumber = url.searchParams.get('table');
 
-        const items = await base44.asServiceRole.entities.MenuItem.filter({ is_available: true });
+        const items = await base44.asServiceRole.entities.MenuItem.list();
         const sortedItems = items.sort((a, b) => (a.order_position || 999) - (b.order_position || 999));
 
         const companyData = await base44.asServiceRole.entities.CompanyInfo.list();
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
         // Helper: escape HTML to prevent XSS when rendering user data
         const esc = (str) => String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-        const categories = ['Alle', ...new Set(sortedItems.map(item => item.category).filter(Boolean))];
+        const categories = ['Alle', ...new Set(sortedItems.map(item => item.category || 'Sonstiges').filter(Boolean))];
 
         const html = `<!DOCTYPE html>
 <html lang="de">

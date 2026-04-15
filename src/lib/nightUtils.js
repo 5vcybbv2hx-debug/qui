@@ -143,6 +143,50 @@ export function buildOperationDateFilter(operationDate = null) {
   };
 }
 
+/**
+ * Zusätzliche Legacy-Funktionen (für Kompatibilität)
+ */
+export function getShiftWarning(clockEntry) {
+  if (!clockEntry || !clockEntry.clock_out) return null;
+  const duration = calculateWorkDuration(clockEntry.clock_in, clockEntry.clock_out);
+  const hours = duration / 60;
+  
+  if (hours > 10) return 'Warnung: Schicht über 10h';
+  if (hours > 12) return 'Warnung: ArbZG-Verstoß über 12h';
+  return null;
+}
+
+export function buildTimeEntryFromClock(clockEntry, employeeId) {
+  if (!clockEntry.clock_in || !clockEntry.clock_out) return null;
+  
+  return {
+    employee_id: employeeId,
+    clock_in: clockEntry.clock_in,
+    clock_out: clockEntry.clock_out,
+    duration_minutes: calculateWorkDuration(clockEntry.clock_in, clockEntry.clock_out),
+    status: 'recorded',
+  };
+}
+
+export function isActiveEntry(clockEntry) {
+  return clockEntry && clockEntry.clock_in && !clockEntry.clock_out;
+}
+
+export function calcWorkMinutes(clockIn, clockOut) {
+  if (!clockIn) return 0;
+  return calculateWorkDuration(clockIn, clockOut || new Date());
+}
+
+export function formatDuration(minutes) {
+  return minutesToHHMM(minutes);
+}
+
+export function formatTime(timestamp) {
+  if (!timestamp) return '—';
+  const date = new Date(timestamp);
+  return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+}
+
 export default {
   getOperationDate,
   getTodayOperationDate,
@@ -152,5 +196,11 @@ export default {
   calculateWorkDuration,
   minutesToHHMM,
   buildOperationDateFilter,
+  getShiftWarning,
+  buildTimeEntryFromClock,
+  isActiveEntry,
+  calcWorkMinutes,
+  formatDuration,
+  formatTime,
   NIGHT_CUTOFF_HOUR,
 };

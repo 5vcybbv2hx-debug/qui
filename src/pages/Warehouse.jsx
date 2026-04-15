@@ -24,7 +24,7 @@ export default function WarehousePage() {
             <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="mb-4 sm:mb-6">
-                    <h1 className="text-xl sm:text-2xl font-bold text-foreground">Lagerverwaltung</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-foreground">Bestand</h1>
                     <p className="text-muted-foreground text-xs sm:text-sm mt-1">Artikel, Einkauf, Auffüllen und Inventur</p>
                 </div>
 

@@ -122,14 +122,18 @@ export default function PublicDrinkMenu() {
     const [detailItem, setDetailItem] = useState(null);
     const [showFilters, setShowFilters] = useState(false);
 
-    const { data: items = [], isLoading } = useQuery({
+    const { data: items = [], isLoading, error: itemsError } = useQuery({
         queryKey: ['public-menu-items'],
-        queryFn: () => base44.asServiceRole.entities.MenuItem.list()
+        queryFn: () => base44.asServiceRole.entities.MenuItem.list(),
+        retry: 2,
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
     const { data: companyData = [] } = useQuery({
         queryKey: ['company-info'],
-        queryFn: () => base44.asServiceRole.entities.CompanyInfo.list()
+        queryFn: () => base44.asServiceRole.entities.CompanyInfo.list(),
+        retry: 1,
+        staleTime: 30 * 60 * 1000, // 30 minutes
     });
 
     const companyInfo = companyData[0] || {};
@@ -284,7 +288,20 @@ export default function PublicDrinkMenu() {
                     </div>
                 )}
 
-                {!isLoading && Object.keys(groupedItems).length === 0 && (
+                {itemsError && (
+                    <div className="text-center py-16 text-red-400">
+                        <p className="text-lg font-medium">❌ Fehler beim Laden</p>
+                        <p className="text-sm mt-2">Die Getränkekarte konnte nicht geladen werden. Bitte versuche es später erneut.</p>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="mt-4 text-sm text-amber-500 underline hover:text-amber-400 font-medium"
+                        >
+                            Seite neu laden
+                        </button>
+                    </div>
+                )}
+
+                {!isLoading && !itemsError && Object.keys(groupedItems).length === 0 && (
                     <div className="text-center py-16 text-muted-foreground">
                         <p className="text-lg font-medium">Keine Getränke gefunden</p>
                         <p className="text-sm mt-1">Versuche andere Filter oder einen anderen Suchbegriff.</p>

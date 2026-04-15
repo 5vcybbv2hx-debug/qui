@@ -10,7 +10,6 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PublicWeeklySpecialDisplay from './pages/PublicWeeklySpecialDisplay';
-import PublicDrinkMenu from './pages/PublicDrinkMenu';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -88,19 +87,7 @@ const AuthenticatedApp = () => {
         </LayoutWrapper>
       } />
 
-      {/* Public pages: NO layout wrapper */}
-      {Object.entries(PublicPages).map(([path, Page]) => (
-        <Route key={path} path={`/${path}`} element={<Page />} />
-      ))}
 
-      {/* Storage location scan with dynamic ID */}
-      <Route path="/StorageLocationScan/:id" element={<PublicPages.StorageLocationScan />} />
-
-      {/* Public Drink Menu */}
-      <Route path="/PublicDrinkMenu" element={<PublicDrinkMenu />} />
-
-      {/* Public Weekly Special Display */}
-      <Route path="/PublicWeeklySpecialDisplay" element={<PublicWeeklySpecialDisplay />} />
 
       {/* Redirect old EmployeeHome links to Dashboard */}
       <Route path="/EmployeeHome" element={<Navigate to="/" replace />} />
@@ -126,7 +113,15 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <Router>
           <NavigationTracker />
-          <AuthenticatedApp />
+          <Routes>
+            {/* Public pages (NO auth check, rendered outside AuthenticatedApp) */}
+            <Route path="/PublicDrinkMenu" element={<PublicPages.PublicDrinkMenu />} />
+            <Route path="/PublicWeeklySpecialDisplay" element={<PublicWeeklySpecialDisplay />} />
+            <Route path="/StorageLocationScan/:id" element={<PublicPages.StorageLocationScan />} />
+
+            {/* All authenticated pages */}
+            <Route path="*" element={<AuthenticatedApp />} />
+          </Routes>
         </Router>
         <Toaster />
       </QueryClientProvider>

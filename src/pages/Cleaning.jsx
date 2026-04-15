@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';

@@ -8,8 +8,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/components/utils/haptics';
 import { ArrowLeft, LogOut, Search, ScanLine, Settings } from 'lucide-react';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
-import { mainNavigation, additionalPages } from '@/components/navigation/navigationConfig';
+import { mainNavigation, additionalPages, allPages } from '@/components/navigation/navigationConfig';
 import { useActiveNavigation } from '@/components/navigation/useActiveNavigation';
+import { getTopPages } from '@/hooks/usePageTracking';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -30,6 +31,7 @@ export default function Layout({ children, currentPageName }) {
     const [scannerOpen, setScannerOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [currentUser, setCurrentUser] = React.useState(null);
+    const [mobileNavPages, setMobileNavPages] = React.useState([]);
 
     // ── Hooks (all hooks before any early returns) ────────────────────────────
     const { isPageActive } = useActiveNavigation();
@@ -50,7 +52,21 @@ export default function Layout({ children, currentPageName }) {
 
     // ── Effects ──────────────────────────────────────────────────────────────
     React.useEffect(() => {
-        base44.auth.me().then(setCurrentUser).catch(() => {});
+        base44.auth.me().then(user => {
+            setCurrentUser(user);
+            if (user?.email) {
+                // Build personalized nav from tracked pages
+                const updateNav = () => {
+                    const allNavPages = mainNavigation.flatMap(a => a.pages).concat(additionalPages);
+                    const allowed = allNavPages.map(p => p.page);
+                    const top = getTopPages(user.email, 4, allowed);
+                    if (top.length >= 2) {
+                        setMobileNavPages(top.map(t => allNavPages.find(p => p.page === t.page)).filter(Boolean));
+                    }
+                };
+                updateNav();
+            }
+        }).catch(() => {});
 
         const handleKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -264,71 +280,33 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                 </aside>
 
-                {/* Mobile Bottom Navigation — Schnellzugriff + Mehr */}
+                {/* Mobile Bottom Navigation — personalisiert */}
                 {(() => {
-                    const dashboardPage = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'Dashboard');
-                    const guestHubPage  = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'GuestHub');
-                    const todosPage     = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'Todos');
-                    const calendarPage  = mainNavigation.flatMap(a => a.pages).find(p => p.page === 'TeamCalendar');
+                    const allNavPages = mainNavigation.flatMap(a => a.pages).concat(additionalPages);
+                    // Default pages fallback (Dashboard immer dabei)
+                    const defaultPages = ['Dashboard', 'GuestHub', 'Todos', 'TeamCalendar'];
+                    const navItems = mobileNavPages.length >= 2
+                        ? mobileNavPages
+                        : defaultPages.map(p => allNavPages.find(i => i.page === p)).filter(Boolean);
+
                     return (
                         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
                             <div className="flex items-center justify-around px-1 pt-1 pb-1">
-
-                                {/* Dashboard */}
-                                {permissions.canViewDashboard && dashboardPage && (
-                                    <button
-                                        onClick={() => { haptics.selection(); navigate(createPageUrl('Dashboard')); }}
-                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                            isPageActive('Dashboard') ? 'text-foreground' : 'text-muted-foreground')}
-                                    >
-                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Dashboard') && 'bg-foreground/10')}>
-                                            <dashboardPage.icon className="w-5 h-5" />
-                                        </div>
-                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Dashboard') && 'font-bold')}>{dashboardPage.name}</span>
-                                    </button>
-                                )}
-
-                                {/* Gäste & Tische */}
-                                {permissions.canViewReservations && guestHubPage && (
-                                    <button
-                                        onClick={() => { haptics.selection(); navigate(createPageUrl('GuestHub')); }}
-                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                            isPageActive('GuestHub') ? 'text-foreground' : 'text-muted-foreground')}
-                                    >
-                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('GuestHub') && 'bg-foreground/10')}>
-                                            <guestHubPage.icon className="w-5 h-5" />
-                                        </div>
-                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('GuestHub') && 'font-bold')}>{guestHubPage.name}</span>
-                                    </button>
-                                )}
-
-                                {/* Aufgaben */}
-                                {permissions.canViewTodos && todosPage && (
-                                    <button
-                                        onClick={() => { haptics.selection(); navigate(createPageUrl('Todos')); }}
-                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                            isPageActive('Todos') ? 'text-foreground' : 'text-muted-foreground')}
-                                    >
-                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('Todos') && 'bg-foreground/10')}>
-                                            <todosPage.icon className="w-5 h-5" />
-                                        </div>
-                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('Todos') && 'font-bold')}>{todosPage.name}</span>
-                                    </button>
-                                )}
-
-                                {/* Teamkalender */}
-                                {permissions.canViewShifts && calendarPage && (
-                                    <button
-                                        onClick={() => { haptics.selection(); navigate(createPageUrl('TeamCalendar')); }}
-                                        className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                            isPageActive('TeamCalendar') ? 'text-foreground' : 'text-muted-foreground')}
-                                    >
-                                        <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive('TeamCalendar') && 'bg-foreground/10')}>
-                                            <calendarPage.icon className="w-5 h-5" />
-                                        </div>
-                                        <span className={cn('text-[10px] leading-tight font-medium', isPageActive('TeamCalendar') && 'font-bold')}>{calendarPage.name}</span>
-                                    </button>
-                                )}
+                                {navItems.map(item => (
+                                    permissions[item.permission] && (
+                                        <button
+                                            key={item.page}
+                                            onClick={() => { haptics.selection(); navigate(createPageUrl(item.page)); }}
+                                            className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
+                                                isPageActive(item.page) ? 'text-foreground' : 'text-muted-foreground')}
+                                        >
+                                            <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive(item.page) && 'bg-foreground/10')}>
+                                                <item.icon className="w-5 h-5" />
+                                            </div>
+                                            <span className={cn('text-[10px] leading-tight font-medium', isPageActive(item.page) && 'font-bold')}>{item.name}</span>
+                                        </button>
+                                    )
+                                ))}
 
                                 {/* Mehr */}
                                 <button
@@ -340,7 +318,6 @@ export default function Layout({ children, currentPageName }) {
                                     </div>
                                     <span className="text-[10px] leading-tight font-medium">Mehr</span>
                                 </button>
-
                             </div>
                         </div>
                     );

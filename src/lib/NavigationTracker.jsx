@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { base44 } from '@/api/base44Client';
 import { pagesConfig } from '@/pages.config';
+import { recordPageVisit } from '@/hooks/usePageTracking';
 
 export default function NavigationTracker() {
     const location = useLocation();
@@ -40,6 +41,13 @@ export default function NavigationTracker() {
             } catch (e) {
                 // Silently fail - logging shouldn't break the app
             }
+
+            // Record visit for personalized quick links
+            try {
+                base44.auth.me().then(user => {
+                    if (user?.email) recordPageVisit(user.email, pageName);
+                }).catch(() => {});
+            } catch {}
         }
     }, [location, isAuthenticated, Pages, mainPageKey]);
 

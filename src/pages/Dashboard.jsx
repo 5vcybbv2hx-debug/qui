@@ -26,6 +26,7 @@ export default function Dashboard() {
             currentUser={user}
             currentEmployee={currentEmployee || null}
             isManager={permissions.isManager}
+            permissions={permissions}
         />
     );
 }

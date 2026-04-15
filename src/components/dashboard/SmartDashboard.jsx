@@ -21,6 +21,7 @@ import { format, parseISO, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { isActiveEntry, getTodayOperationDate, formatDuration, calcWorkMinutes, buildTimeEntryFromClock } from '@/lib/nightUtils';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import PersonalizedQuickLinks from '@/components/dashboard/PersonalizedQuickLinks';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -70,9 +71,11 @@ function QuickLink({ page, icon: Icon, label, sub, color }) {
 
 // ─── Tab: HEUTE ─────────────────────────────────────────────────────────────
 
-function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employees, teamNotes, currentUser, isManager, currentEmployee }) {
+function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employees, teamNotes, currentUser, isManager, currentEmployee, permissions }) {
     return (
         <div className="space-y-5">
+            {/* Personalisierte Schnellzugriffe */}
+            <PersonalizedQuickLinks userEmail={currentUser?.email} permissions={permissions} />
             {/* Schichten heute */}
             <section>
                 <div className="flex items-center justify-between mb-3">
@@ -569,7 +572,7 @@ function ClockWidget({ currentEmployee }) {
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
-export default function SmartDashboard({ currentUser, currentEmployee, isManager }) {
+export default function SmartDashboard({ currentUser, currentEmployee, isManager, permissions }) {
     const [activeTab, setActiveTab] = useState('heute');
     const today = format(new Date(), 'yyyy-MM-dd');
     const phase = getOperationPhase();
@@ -724,6 +727,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             currentUser={currentUser}
                             isManager={isManager}
                             currentEmployee={currentEmployee}
+                            permissions={permissions}
                         />
                     )}
                     {activeTab === 'team' && (

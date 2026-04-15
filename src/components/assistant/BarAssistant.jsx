@@ -52,6 +52,8 @@ function ConfirmActionCard({ action, onConfirm, onDismiss, loading }) {
 
 export default function BarAssistant({ isManager }) {
     const [open, setOpen] = useState(false);
+    const [minimized, setMinimized] = useState(true);
+    const [hovering, setHovering] = useState(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -59,8 +61,15 @@ export default function BarAssistant({ isManager }) {
     const [hintDismissed, setHintDismissed] = useState(false);
     const [confirmingAction, setConfirmingAction] = useState(null);
     const [confirmLoading, setConfirmLoading] = useState(false);
+    const [position, setPosition] = useState(() => {
+        const saved = localStorage.getItem('assistantPos');
+        return saved ? JSON.parse(saved) : { right: 16, bottom: 80 };
+    });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+    const buttonRef = useRef(null);
     const location = useLocation();
     const currentPage = getPageName(location.pathname);
 
@@ -74,8 +83,43 @@ export default function BarAssistant({ isManager }) {
     }, [messages]);
 
     useEffect(() => {
-        if (open) setTimeout(() => inputRef.current?.focus(), 300);
-    }, [open]);
+        if (open && !minimized) setTimeout(() => inputRef.current?.focus(), 300);
+    }, [open, minimized]);
+
+    const handleMouseDown = (e) => {
+        if (e.button !== 0) return; // only left click
+        const rect = buttonRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        setIsDragging(true);
+        setDragOffset({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        });
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        const newRight = window.innerWidth - e.clientX + dragOffset.x;
+        const newBottom = window.innerHeight - e.clientY + dragOffset.y;
+        setPosition({ right: Math.max(0, newRight), bottom: Math.max(0, newBottom) });
+    };
+
+    const handleMouseUp = () => {
+        if (isDragging) {
+            setIsDragging(false);
+            localStorage.setItem('assistantPos', JSON.stringify(position));
+        }
+    };
+
+    useEffect(() => {
+        if (!isDragging) return;
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, dragOffset, position]);
 
     // ESC to close + swipe down handler
     useEffect(() => {
@@ -232,20 +276,29 @@ export default function BarAssistant({ isManager }) {
                 )}
             </AnimatePresence>
 
-            {/* Chat Bubble Button */}
+            {/* Chat Bubble Button — Draggable & Minimizable */}
             <motion.button
-                onClick={() => setOpen(o => !o)}
+                ref={buttonRef}
+                onMouseDown={handleMouseDown}
+                onClick={() => minimized ? setMinimized(false) : setOpen(o => !o)}
+                onMouseEnter={() => setHovering(true)}
+                onMouseLeave={() => setHovering(false)}
                 className={cn(
-                    'fixed bottom-[5rem] md:bottom-6 right-4 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all',
-                    open
+                    'fixed z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all cursor-grab active:cursor-grabbing',
+                    isDragging ? 'cursor-grabbing ring-2 ring-amber-400' : '',
+                    open && !minimized
                         ? 'bg-foreground text-background'
                         : isManager
-                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-slate-900'
-                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-slate-900'
+                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-slate-900 hover:shadow-amber-500/40'
+                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-slate-900 hover:shadow-blue-500/40'
                 )}
-                whileHover={{ scale: 1.05 }}
+                style={{
+                    right: `${position.right}px`,
+                    bottom: `${position.bottom}px`,
+                }}
+                whileHover={{ scale: hovering ? 1.05 : 1 }}
                 whileTap={{ scale: 0.95 }}
-                title={isManager ? 'Manager-Assistent' : 'Mitarbeiter-Hilfe'}
+                title={isManager ? 'Manager-Assistent (draggbar)' : 'Mitarbeiter-Hilfe (draggbar)'}
             >
                 <AnimatePresence mode="wait">
                     {open ? (
@@ -263,19 +316,23 @@ export default function BarAssistant({ isManager }) {
                 )}
             </motion.button>
 
-            {/* Chat Window */}
+            {/* Chat Window — Minimizable */}
             <AnimatePresence>
-                {open && (
+                {open && !minimized && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="fixed bottom-[5.5rem] md:bottom-24 right-4 z-50 w-[340px] md:w-[380px] max-h-[72vh] flex flex-col bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+                        className="fixed z-50 w-[340px] md:w-[380px] max-h-[72vh] flex flex-col bg-card border border-border/60 rounded-2xl shadow-2xl overflow-hidden"
+                        style={{
+                            right: `${position.right}px`,
+                            bottom: `${position.bottom + 72}px`,
+                        }}
                     >
                         {/* Header */}
                         <div className={cn(
-                            'flex items-center gap-3 px-4 py-3 border-b border-border/50 shrink-0 cursor-grab active:cursor-grabbing touch-none relative',
+                            'flex items-center gap-3 px-4 py-3 border-b border-border/50 shrink-0 touch-none relative',
                             isManager
                                 ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/5'
                                 : 'bg-gradient-to-r from-blue-500/10 to-cyan-500/5'
@@ -297,6 +354,13 @@ export default function BarAssistant({ isManager }) {
                                     {isManager ? 'Manager-Assistent' : 'Mitarbeiter-Hilfe'} · {currentPage}
                                 </p>
                             </div>
+                            <button
+                                onClick={() => setMinimized(true)}
+                                className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-accent/50 transition-all"
+                                title="Minimieren"
+                            >
+                                −
+                            </button>
                             <button
                                 onClick={() => setMessages([])}
                                 className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-accent/50 transition-all"

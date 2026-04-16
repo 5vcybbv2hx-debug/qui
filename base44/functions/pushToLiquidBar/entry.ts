@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
 
     const reports = await barshift.asServiceRole.entities.DailyRevenue.list('-date', 90);
 
-    const response = await fetch("https://api.base44.com/api/apps/69cc90e7dfcefd0c92a3f68adas/functions/receiveDailyRevenue", {
+    const response = await fetch("https://api.base44.com/api/apps/683073b43e75698c48ae90fc/functions/receiveDailyRevenue", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 

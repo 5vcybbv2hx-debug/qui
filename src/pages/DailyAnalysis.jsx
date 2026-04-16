@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Input } from '@/components/ui/input';
-import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info, Pencil, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info, Pencil, Check, X, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { format, parseISO, addDays, subDays, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
@@ -50,6 +50,16 @@ export default function DailyAnalysis() {
     const [reanalyzingAll, setReanalyzingAll] = useState(false);
     const [reanalyzeProgress, setReanalyzeProgress] = useState({ done: 0, total: 0, errors: [] });
     const [reanalyzeOpen, setReanalyzeOpen] = useState(false);
+    const [pushingToLiquidBar, setPushingToLiquidBar] = useState(false);
+
+    const handlePushToLiquidBar = async () => {
+        setPushingToLiquidBar(true);
+        try {
+            await base44.functions.invoke('pushToLiquidBar', {});
+        } finally {
+            setPushingToLiquidBar(false);
+        }
+    };
     const [viewMode, setViewMode] = useState('tag'); // 'tag' | 'week' | 'month' | 'quarter' | 'year'
     const [editingManual, setEditingManual] = useState(null); // 'daily' | 'fulltime' | null
     const [manualInput, setManualInput] = useState('');
@@ -263,14 +273,24 @@ export default function DailyAnalysis() {
                         <h1 className="text-xl sm:text-2xl font-bold text-foreground">Analyse</h1>
                         <p className="text-sm text-muted-foreground">Z-Abschlag · Personal · Trinkgeld</p>
                     </div>
-                    <Button size="sm" variant="outline"
-                        onClick={handleReanalyzeAll}
-                        disabled={reanalyzingAll || dailyRevenues.filter(r => r.pdf_url).length === 0}
-                        className="shrink-0 text-xs"
-                    >
-                        {reanalyzingAll ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                        PDFs ({dailyRevenues.filter(r => r.pdf_url).length})
-                    </Button>
+                    <div className="flex gap-2 shrink-0">
+                        <Button size="sm" variant="outline"
+                            onClick={handleReanalyzeAll}
+                            disabled={reanalyzingAll || dailyRevenues.filter(r => r.pdf_url).length === 0}
+                            className="text-xs"
+                        >
+                            {reanalyzingAll ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+                            PDFs ({dailyRevenues.filter(r => r.pdf_url).length})
+                        </Button>
+                        <Button size="sm" variant="outline"
+                            onClick={handlePushToLiquidBar}
+                            disabled={pushingToLiquidBar}
+                            className="text-xs border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
+                        >
+                            {pushingToLiquidBar ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                            Liquid Bar
+                        </Button>
+                    </div>
                 </div>
 
                 {/* View mode tabs */}

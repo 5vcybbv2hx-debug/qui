@@ -108,7 +108,10 @@ export default function WeeklySpecialGenerator({ menuItems = [] }) {
 
             // Erstelle neue Items
              for (let i = 0; i < selected.length; i++) {
-                 const defaultDiscount = Math.round(selected[i].price * 0.15 * 10) / 10; // 15% als festen Rabatt, aufgerundet
+                 // Rabatt: ~15% des Preises, auf 10 Cent abgerundet (z.B. 4,80€ → 0,70€ Rabatt → 4,10€)
+                 const rawDiscount = selected[i].price * 0.15;
+                 const defaultDiscount = Math.round(rawDiscount * 10) / 10; // auf 10ct runden
+                 const finalPrice = Math.round((selected[i].price - defaultDiscount) * 10) / 10;
                  await base44.entities.WeeklySpecialItem.create({
                      weekly_special_id: specialId,
                      menu_item_id: selected[i].id,
@@ -116,7 +119,7 @@ export default function WeeklySpecialGenerator({ menuItems = [] }) {
                      original_price: selected[i].price,
                      discount_type: 'fixed',
                      discount_value: defaultDiscount,
-                     final_price: (Math.ceil((selected[i].price - defaultDiscount) * 10) / 10).toFixed(2),
+                     final_price: finalPrice.toFixed(2),
                      display_order: i
                  });
              }
@@ -155,11 +158,10 @@ export default function WeeklySpecialGenerator({ menuItems = [] }) {
 
     const calculatePrice = (original, discountType, discountValue) => {
         if (discountType === 'percent') {
-            return (original * (1 - discountValue / 100)).toFixed(2);
+            return (Math.round(original * (1 - discountValue / 100) * 10) / 10).toFixed(2);
         }
-        // Fixed price: round up to next 0.10€
-        const rawPrice = original - discountValue;
-        return (Math.ceil(rawPrice * 10) / 10).toFixed(2);
+        // Fixed discount: Endpreis auf 10ct runden
+        return (Math.round((original - discountValue) * 10) / 10).toFixed(2);
     };
 
     return (
@@ -192,7 +194,7 @@ export default function WeeklySpecialGenerator({ menuItems = [] }) {
                         <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => window.open('/PublicWeeklySpecialDisplay', '_blank')}
+                            onClick={() => window.open('/PublicDrinkMenu', '_blank')}
                             className="border-blue-600 text-blue-400 hover:bg-blue-600/10"
                         >
                             <ExternalLink className="w-4 h-4 mr-2" />

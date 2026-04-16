@@ -133,7 +133,7 @@ export default function ActiveStaffPanel() {
         const emp = employees.find(e => e.id === entry.employee_id);
         const nowMs = Date.now();
         const totalMinutes = calcWorkMinutes(entry.clock_in, new Date());
-        const opDate = getOperationDate(entry.clock_in);
+        const opDate = getOperationDate(entry.clock_in).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
         const isConfirming = confirmId === entry.id;
 
         return (

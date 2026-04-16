@@ -17,6 +17,11 @@ Deno.serve(async (req) => {
       })
     });
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!response.ok || !contentType.includes('application/json')) {
+      const text = await response.text();
+      return Response.json({ error: `LiquidBar API Fehler (${response.status}): ${text.slice(0, 200)}` }, { status: 502 });
+    }
     const result = await response.json();
     return Response.json(result);
   } catch (error) {

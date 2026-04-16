@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePermissions } from '@/components/auth/usePermissions';
 
+const WEEKDAYS = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+
 export default function TaskManager({ task, areas }) {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
@@ -16,7 +18,8 @@ export default function TaskManager({ task, areas }) {
     const [formData, setFormData] = useState({
         title: task.title,
         area: task.area,
-        frequency: task.frequency
+        frequency: task.frequency,
+        due_weekdays: task.due_weekdays || []
     });
 
     const updateMutation = useMutation({
@@ -125,6 +128,35 @@ export default function TaskManager({ task, areas }) {
                                         <SelectItem value="an Sonderöffnungstagen">An Sonderöffnungstagen</SelectItem>
                                     </SelectContent>
                                 </Select>
+                            </div>
+                        </div>
+
+                        {/* Wochentage einschränken */}
+                        <div className="space-y-2">
+                            <Label className="text-sm">Nur an bestimmten Tagen <span className="text-muted-foreground font-normal">(leer = immer)</span></Label>
+                            <div className="flex flex-wrap gap-2">
+                                {WEEKDAYS.map(day => {
+                                    const selected = formData.due_weekdays.includes(day);
+                                    return (
+                                        <button
+                                            key={day}
+                                            type="button"
+                                            onClick={() => {
+                                                const next = selected
+                                                    ? formData.due_weekdays.filter(d => d !== day)
+                                                    : [...formData.due_weekdays, day];
+                                                setFormData({ ...formData, due_weekdays: next });
+                                            }}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                                                selected
+                                                    ? 'bg-amber-500 text-black border-amber-500'
+                                                    : 'bg-card text-muted-foreground border-border hover:border-amber-500/50'
+                                            }`}
+                                        >
+                                            {day.slice(0, 2)}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 

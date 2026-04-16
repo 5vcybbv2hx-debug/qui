@@ -141,6 +141,11 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                                        • Fällig: {format(new Date(task.due_date), 'dd.MM.yyyy', { locale: de })}
                                                    </span>
                                                )}
+                                               {task.due_weekdays && task.due_weekdays.length > 0 && (
+                                                   <span className="text-[10px] text-amber-400">
+                                                       • {task.due_weekdays.map(d => d.slice(0,2)).join(', ')}
+                                                   </span>
+                                               )}
                                                {task.assigned_to_name && (
                                                    <span className="text-[10px] text-blue-400">
                                                        • {task.assigned_to_name}

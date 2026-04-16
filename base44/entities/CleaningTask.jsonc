@@ -1,0 +1,91 @@
+{
+  "name": "CleaningTask",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Aufgabenbezeichnung"
+    },
+    "area": {
+      "type": "string",
+      "description": "Bereich"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": [
+        "t\u00e4glich",
+        "am Wochenende",
+        "w\u00f6chentlich",
+        "alle zwei Wochen",
+        "monatlich",
+        "an Sonder\u00f6ffnungstagen"
+      ],
+      "description": "H\u00e4ufigkeit"
+    },
+    "due_weekdays": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Montag",
+          "Dienstag",
+          "Mittwoch",
+          "Donnerstag",
+          "Freitag",
+          "Samstag",
+          "Sonntag"
+        ]
+      },
+      "description": "Nur an diesen Wochentagen anzeigen (leer = immer)"
+    },
+    "biweekly_pattern": {
+      "type": "string",
+      "enum": [
+        "mi_1",
+        "do_1",
+        "mi_2",
+        "do_2"
+      ],
+      "description": "Biweekly-Muster (Mittwoch Woche 1/2 oder Donnerstag Woche 1/2)"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "F\u00e4lligkeitsdatum (f\u00fcr Wochentagsaufgaben)"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Zugewiesen an (Mitarbeiter ID)"
+    },
+    "assigned_to_name": {
+      "type": "string",
+      "description": "Zugewiesen an (Mitarbeitername)"
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false
+    },
+    "completed_by": {
+      "type": "string",
+      "description": "Erledigt von"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_reset": {
+      "type": "string",
+      "format": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv/Deaktiviert"
+    }
+  },
+  "required": [
+    "title",
+    "area",
+    "frequency"
+  ]
+}

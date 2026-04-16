@@ -28,10 +28,12 @@ export default function Cleaning() {
     const [qrModalOpen, setQrModalOpen] = useState(false);
     const [pinModalOpen, setPinModalOpen] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
+    const WEEKDAYS = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
     const [formData, setFormData] = useState({
         title: '',
         area: 'Theke',
         frequency: 'täglich',
+        due_weekdays: [],
         due_date: '',
         assigned_to: '',
         assigned_to_name: ''
@@ -84,7 +86,14 @@ export default function Cleaning() {
      const { handleError } = useErrorHandler();
 
     // Wochentagsaufgaben gehören zu WeeklyTasks — hier ausschließen
-    const tasks = allTasks.filter(t => t.is_active !== false && t.area !== 'Wochentagsaufgaben');
+    // due_weekdays: Aufgabe nur am passenden Wochentag zeigen
+    const todayName = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][new Date().getDay()];
+    const tasks = allTasks.filter(t => {
+        if (t.is_active === false) return false;
+        if (t.area === 'Wochentagsaufgaben') return false;
+        if (t.due_weekdays && t.due_weekdays.length > 0 && !t.due_weekdays.includes(todayName)) return false;
+        return true;
+    });
     const deactivatedTasks = allTasks.filter(t => t.is_active === false && t.area !== 'Wochentagsaufgaben');
 
     const { data: allAreas = [] } = useQuery({
@@ -477,6 +486,34 @@ export default function Cleaning() {
                                 </div>
                             </div>
 
+                            {/* Wochentage einschränken */}
+                            <div className="space-y-2">
+                                <Label className="text-sm">Nur an bestimmten Tagen <span className="text-muted-foreground font-normal">(leer = immer)</span></Label>
+                                <div className="flex flex-wrap gap-2">
+                                    {WEEKDAYS.map(day => {
+                                        const selected = formData.due_weekdays.includes(day);
+                                        return (
+                                            <button
+                                                key={day}
+                                                type="button"
+                                                onClick={() => {
+                                                    const next = selected
+                                                        ? formData.due_weekdays.filter(d => d !== day)
+                                                        : [...formData.due_weekdays, day];
+                                                    setFormData({ ...formData, due_weekdays: next });
+                                                }}
+                                                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                                                    selected
+                                                        ? 'bg-amber-500 text-black border-amber-500'
+                                                        : 'bg-card text-muted-foreground border-border hover:border-amber-500/50'
+                                                }`}
+                                            >
+                                                {day.slice(0, 2)}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
 
                             <div className="flex gap-2 pt-4">
                                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">

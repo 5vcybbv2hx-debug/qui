@@ -298,7 +298,6 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
     const handleArchive = (note) => updateMutation.mutate({ id: note.id, data: { status: 'archiviert' } });
     const handleDelete = (id) => { if (confirm('Nachricht löschen?')) deleteMutation.mutate(id); };
     const handleConvertToTask = async (note) => {
-        if (!confirm(`Notiz als Aufgabe anlegen?\n\n"${note.title || note.message.slice(0, 60)}"`)) return;
         await createTaskMutation.mutateAsync({
             title: note.title || note.message.slice(0, 80),
             description: note.message,
@@ -306,8 +305,9 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
             status: 'offen',
             created_by: note.author_name || note.author_email || ''
         });
-        await deleteMutation.mutateAsync(note.id);
-        toast.success('Aufgabe erstellt & Notiz gelöscht');
+        // Notiz archivieren (kein Datenverlust, verschwindet aus aktiver Ansicht)
+        await updateMutation.mutateAsync({ id: note.id, data: { status: 'archiviert' } });
+        toast.success('✅ Aufgabe erstellt — Notiz archiviert');
     };
 
     const today = new Date().toISOString().split('T')[0];

@@ -318,7 +318,7 @@ export default function TimeTracking() {
     });
 
     const activeClockEntry = clockEntries.find(
-        e => e.employee_id === currentEmployee?.id && e.status === 'clocked_in'
+        e => e.employee_id === currentEmployee?.id && (e.status === 'clocked_in' || e.status === 'on_break')
     );
 
     // Filter auf aktive Einträge (unabhängig von Kalendertag, nachtbetriebssicher)

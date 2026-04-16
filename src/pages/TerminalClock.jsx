@@ -56,10 +56,13 @@ export default function TerminalClock() {
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clock-entries-today'],
         queryFn: async () => {
-            // Alle aktiven Einträge (ohne Filter auf Kalendertag)
-            // Nachtbetrieb: zeitstempel entscheidet, nicht das Datum
-            const entries = await base44.entities.ClockEntry.list('-clock_in', 100);
-            return entries;
+            // Nachtbetrieb-sicher: alle Einträge der letzten 24h + aktive
+            // Aktive Einträge (kein clock_out) sind immer relevant, egal welches Datum
+            const entries = await base44.entities.ClockEntry.list('-clock_in', 200);
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            return entries.filter(e =>
+                !e.clock_out || new Date(e.clock_in) >= oneDayAgo
+            );
         }
     });
 
@@ -168,7 +171,8 @@ export default function TerminalClock() {
                     clock_in: new Date().toISOString(),
                     status: 'clocked_in'
                 });
-                const isFirstOfDay = clockEntries.length === 0;
+                // Erste Einstempelung des Betriebstags = keine anderen aktiven Einträge VOR diesem Einstempeln
+                const isFirstOfDay = !clockEntries.some(e => e.status === 'clocked_in' || e.status === 'on_break');
                 if (isFirstOfDay) {
                     setNightWatchModalOpen(true);
                 } else {

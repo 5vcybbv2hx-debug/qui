@@ -50,7 +50,7 @@ class ErrorBoundary extends Component {
               Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.
             </p>
             
-            {import.meta.env.DEV && this.state.error && (
+            {this.state.error && (
               <div className="bg-secondary/50 border border-border rounded p-3 mb-4">
                 <p className="text-xs font-mono text-muted-foreground break-words">
                   {this.state.error.toString()}

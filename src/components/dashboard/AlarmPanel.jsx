@@ -39,8 +39,8 @@ const MIN_SCORE = 60;
 
 // ─── Level config ─────────────────────────────────────────────────────────────
 const LEVEL = {
-    kritisch: { border: 'border-red-500/50', bg: 'bg-red-500/8', dot: 'bg-red-500', text: 'text-red-400', badge: 'bg-red-500/20 text-red-300 border-red-500/30', label: 'KRITISCH' },
-    hoch:     { border: 'border-amber-500/40', bg: 'bg-amber-500/8', dot: 'bg-amber-400', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30', label: 'HOCH' },
+    kritisch: { border: 'border-red-500/50', bg: 'bg-red-500/10', dot: 'bg-red-500', text: 'text-red-400', badge: 'bg-red-500/20 text-red-300 border-red-500/30', label: 'KRITISCH' },
+    hoch:     { border: 'border-amber-500/40', bg: 'bg-amber-500/10', dot: 'bg-amber-400', text: 'text-amber-400', badge: 'bg-amber-500/20 text-amber-300 border-amber-500/30', label: 'HOCH' },
     normal:   { border: 'border-border', bg: 'bg-card', dot: 'bg-muted-foreground', text: 'text-muted-foreground', badge: 'bg-secondary text-muted-foreground border-border', label: 'INFO' },
 };
 

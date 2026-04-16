@@ -44,11 +44,21 @@ export default function Layout({ children, currentPageName }) {
     // ── Handlers ─────────────────────────────────────────────────────────────
     const handleScan = (code) => {
         setScannerOpen(false);
-        
-        // Auto-detect QR code type: storage location IDs typically are UUID-like or numeric
-        // Artikel barcodes are usually EAN/UPC (12-14 digits) or shorter codes
-        const isStorageQR = code.length > 20 || /^[a-f0-9]{8}-[a-f0-9]{4}/.test(code);
-        
+
+        // 1. Vollständige URL vom Lagerplatz-Etikett (z.B. https://…/StorageLocationScan/abc123)
+        try {
+            const url = new URL(code);
+            const storageMatch = url.pathname.match(/\/StorageLocationScan\/(.+)/);
+            if (storageMatch) {
+                navigate(`/StorageLocationScan/${storageMatch[1]}`);
+                return;
+            }
+        } catch (_) {
+            // kein gültiger URL — weiter mit Barcode-Logik
+        }
+
+        // 2. Rohe ID (UUID-Format oder Länge > 20) → Lagerplatz
+        const isStorageQR = /^[a-f0-9]{8}-[a-f0-9]{4}/.test(code) || code.length > 20;
         if (isStorageQR) {
             navigate(`/StorageLocationScan/${code}`);
         } else {

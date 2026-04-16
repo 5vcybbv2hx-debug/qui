@@ -107,7 +107,7 @@ function TimeItems({ entries }) {
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{e.employee_name}</p>
                     <p className="text-xs text-muted-foreground">
-                        {format(parseISO(e.date), 'EEE, dd.MM.', { locale: de })} · {e.start_time}–{e.end_time}
+                        {e.date ? format(parseISO(e.date), 'EEE, dd.MM.', { locale: de }) : '—'} · {e.start_time}–{e.end_time}
                         {e.total_hours != null && <span className="ml-1 font-medium text-foreground">({e.total_hours}h)</span>}
                     </p>
                 </div>

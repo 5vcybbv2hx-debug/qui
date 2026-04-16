@@ -75,7 +75,7 @@ export default function ActiveStaffPanel() {
         employee_name: entry.employee_name,
         date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
         start_time: format(new Date(entry.clock_in), 'HH:mm'),
-        end_time: format(now, 'HH:mm'),
+        end_time: format(new Date(now), 'HH:mm'),
         break_minutes: entry.pause_minutes || 0,
         total_hours: totalHours,
         notes: 'Automatisch von Manager ausstempelt',

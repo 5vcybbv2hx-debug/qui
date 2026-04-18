@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CheckCircle2, Pencil, X, Clock, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, Pencil, X, Clock, AlertTriangle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { formatDuration, getShiftWarning } from '@/lib/nightUtils';
+import { base44 } from '@/api/base44Client';
 
 function StatusBadge({ status }) {
   const cfg = {
@@ -80,6 +81,22 @@ export default function TimeApprovalPanel() {
   const qc = useQueryClient();
   const [editingId, setEditingId] = useState(null);
   const [showApproved, setShowApproved] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await base44.functions.invoke('syncClockEntriesToTimeEntries', {});
+      const { created, skipped } = res.data;
+      toast.success(`${created} Einträge importiert, ${skipped} bereits vorhanden`);
+      qc.invalidateQueries({ queryKey: ['time-entries-all'] });
+      qc.invalidateQueries({ queryKey: ['pending-time-entries'] });
+    } catch (e) {
+      toast.error('Fehler: ' + e.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const { data: allEntries = [], isLoading } = useQuery({
     queryKey: ['time-entries-all'],
@@ -177,6 +194,18 @@ export default function TimeApprovalPanel() {
 
   return (
     <div className="space-y-4">
+      {/* Sync Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground border border-border rounded-lg px-3 py-2 hover:bg-accent/50 transition-all disabled:opacity-50"
+        >
+          <RefreshCw className={cn('w-3.5 h-3.5', syncing && 'animate-spin')} />
+          {syncing ? 'Importiere...' : 'Stempelzeiten nachimportieren'}
+        </button>
+      </div>
+
       {/* Pending */}
       {pending.length === 0 ? (
         <Card className="p-6 text-center bg-card border-border">

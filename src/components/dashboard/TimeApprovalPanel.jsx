@@ -14,7 +14,6 @@ import { CheckCircle2, Pencil, X, Clock, AlertTriangle, ChevronDown, ChevronUp, 
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { formatDuration, getShiftWarning } from '@/lib/nightUtils';
-import { base44 } from '@/api/base44Client';
 
 function StatusBadge({ status }) {
   const cfg = {

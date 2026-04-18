@@ -230,19 +230,17 @@ export default function Cleaning() {
         await base44.entities.CleaningReport.create(report);
         queryClient.invalidateQueries(['cleaning-reports']);
 
-        // Setze tägliche Aufgaben zurück
+        // Setze tägliche Aufgaben zurück — sequenziell um Rate Limit zu vermeiden
         const dailyTasks = tasks.filter(t => t.frequency === 'täglich' && t.is_completed);
-        dailyTasks.forEach(task => {
-            updateMutation.mutate({
-                id: task.id,
-                data: {
-                    is_completed: false,
-                    completed_by: null,
-                    completed_at: null,
-                    last_reset: format(new Date(), 'yyyy-MM-dd')
-                }
+        for (const task of dailyTasks) {
+            await base44.entities.CleaningTask.update(task.id, {
+                is_completed: false,
+                completed_by: null,
+                completed_at: null,
+                last_reset: format(new Date(), 'yyyy-MM-dd')
             });
-        });
+        }
+        queryClient.invalidateQueries(['cleaning']);
 
         alert('Tagesbericht erstellt und tägliche Aufgaben zurückgesetzt!');
     };

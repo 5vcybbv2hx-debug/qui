@@ -93,41 +93,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Lösche alte zuweisungen für dieses Datum und weise neu zu
-    const existingTodos = await base44.entities.TodoItem.filter({
-      due_date: targetDateStr,
-      created_by: 'System (automatisch)'
-    });
-    
-    // Lösche alte automatische Zuweisungen
-    for (const oldTodo of existingTodos) {
-      await base44.entities.TodoItem.delete(oldTodo.id);
-    }
-
-    // 6. Weise alle Tasks dieser Aushilfe zu
+    // 5. Weise alle Tasks direkt in der CleaningTask-Entity zu (kein Todo-Duplikat)
     for (const task of tasksToAssign) {
-      // Erstelle einen TodoItem basierend auf dem CleaningTask
-      const todoData = {
-        title: task.title,
-        description: `Reinigungsaufgabe: ${task.area}`,
-        priority: 'mittel',
-        status: 'offen',
-        due_date: targetDateStr,
-        assigned_to: targetEmployee.short_name || targetEmployee.name,
-        assigned_to_names: [targetEmployee.name],
-        category: 'Sonstiges',
-        created_by: 'System (automatisch)'
-      };
-
-      // Erstelle den Todo-Eintrag
-      await base44.entities.TodoItem.create(todoData);
-      assignedCount++;
-
-      // Optional: Update des Tasks, um zu zeigen, dass er zugewiesen wurde
       await base44.entities.CleaningTask.update(task.id, {
         assigned_to: targetEmployee.id,
         assigned_to_name: targetEmployee.name
       });
+      assignedCount++;
     }
 
     return Response.json({

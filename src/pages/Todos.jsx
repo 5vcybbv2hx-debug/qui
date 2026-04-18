@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
-import { Plus, CheckSquare, Tag, Search, X, ListChecks } from 'lucide-react';
+import { Plus, CheckSquare, Tag, Search, X, ListChecks, Trash2, Archive, CheckCheck, Square } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import TodoCategoryManager, { loadCategories } from '@/components/todos/TodoCategoryManager';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -41,6 +41,8 @@ export default function Todos() {
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('priority');
     const [filtersOpen, setFiltersOpen] = useState(false);
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [selectMode, setSelectMode] = useState(false);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
@@ -187,6 +189,47 @@ export default function Todos() {
 
     const hasActiveFilters = searchQuery || categoryFilter !== 'alle' || priorityFilter !== 'alle' || personFilter !== 'alle' || statusFilter !== 'offen';
 
+    const toggleSelect = (id) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
+    };
+
+    const selectAll = () => setSelectedIds(new Set(filteredTodos.map(t => t.id)));
+    const clearSelection = () => { setSelectedIds(new Set()); setSelectMode(false); };
+
+    const handleBulkDelete = async () => {
+        if (!confirm(`${selectedIds.size} Aufgabe(n) löschen?`)) return;
+        for (const id of selectedIds) {
+            await base44.entities.TodoItem.delete(id);
+        }
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        clearSelection();
+    };
+
+    const handleBulkArchive = async () => {
+        if (!confirm(`${selectedIds.size} Aufgabe(n) archivieren?`)) return;
+        for (const id of selectedIds) {
+            await base44.entities.TodoItem.update(id, { is_archived: true });
+        }
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        clearSelection();
+    };
+
+    const handleBulkDone = async () => {
+        for (const id of selectedIds) {
+            await base44.entities.TodoItem.update(id, {
+                status: 'erledigt',
+                completed_by: user?.full_name || user?.email,
+                completed_at: new Date().toISOString()
+            });
+        }
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        clearSelection();
+    };
+
     const resetFilters = () => {
         setSearchQuery('');
         setCategoryFilter('alle');
@@ -235,10 +278,17 @@ export default function Todos() {
                     </div>
                     <div className="flex gap-2">
                         {permissions.canEditTodos && (
-                            <Button size="sm" variant="outline" onClick={() => setCategoryManagerOpen(true)}
-                                className="h-9 border-border/50 text-muted-foreground">
-                                <Tag className="w-4 h-4" />
-                            </Button>
+                            <>
+                                <Button size="sm" variant="outline" onClick={() => setCategoryManagerOpen(true)}
+                                    className="h-9 border-border/50 text-muted-foreground">
+                                    <Tag className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="outline"
+                                    onClick={() => { setSelectMode(s => !s); setSelectedIds(new Set()); }}
+                                    className={cn('h-9', selectMode ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border/50 text-muted-foreground')}>
+                                    <CheckCheck className="w-4 h-4" />
+                                </Button>
+                            </>
                         )}
                         <Button size="sm" onClick={() => { setSelectedTodo(null); setModalOpen(true); }}
                             className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20 h-9">
@@ -370,6 +420,12 @@ export default function Todos() {
                     <EmptyState text="Keine Aufgaben" />
                 ) : !showArchived ? (
                      <div className="space-y-6">
+                        {/* Auswahlmodus: Alle auswählen */}
+                        {selectMode && (
+                            <button onClick={selectAll} className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                                <CheckCheck className="w-3.5 h-3.5" /> Alle auswählen ({filteredTodos.length})
+                            </button>
+                        )}
                         {['offen', 'in_bearbeitung', 'erledigt'].map(status => {
                             const statusTodos = filteredTodos.filter(t => t.status === status);
                             if (statusTodos.length === 0) return null;
@@ -385,20 +441,30 @@ export default function Todos() {
                                     </h3>
                                     <div className="space-y-2">
                                         {statusTodos.map((todo, idx) => (
-                                            <TodoCard
-                                                key={todo.id}
-                                                todo={todo}
-                                                employees={employees}
-                                                onStatusChange={handleStatusChange}
-                                                onEdit={handleEdit}
-                                                onDelete={handleDelete}
-                                                onArchive={handleArchive}
-                                                onQuickUpdate={handleQuickUpdate}
-                                                showArchiveButton={todo.status === 'erledigt'}
-                                                sortBy={sortBy}
-                                                allTodos={filteredTodos.filter(t => t.status === status)}
-                                                idx={idx}
-                                            />
+                                            <div key={todo.id} className="flex items-center gap-2">
+                                                {selectMode && (
+                                                    <button onClick={() => toggleSelect(todo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center text-amber-400">
+                                                        {selectedIds.has(todo.id)
+                                                            ? <CheckSquare className="w-5 h-5" />
+                                                            : <Square className="w-5 h-5 text-muted-foreground" />}
+                                                    </button>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <TodoCard
+                                                        todo={todo}
+                                                        employees={employees}
+                                                        onStatusChange={selectMode ? null : handleStatusChange}
+                                                        onEdit={selectMode ? null : handleEdit}
+                                                        onDelete={selectMode ? null : handleDelete}
+                                                        onArchive={selectMode ? null : handleArchive}
+                                                        onQuickUpdate={selectMode ? null : handleQuickUpdate}
+                                                        showArchiveButton={!selectMode && todo.status === 'erledigt'}
+                                                        sortBy={sortBy}
+                                                        allTodos={filteredTodos.filter(t => t.status === status)}
+                                                        idx={idx}
+                                                    />
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
@@ -408,17 +474,27 @@ export default function Todos() {
                 ) : (
                     <div className="space-y-2">
                         {filteredTodos.map(todo => (
-                            <TodoCard
-                                key={todo.id}
-                                todo={todo}
-                                employees={employees}
-                                onStatusChange={handleStatusChange}
-                                onEdit={handleEdit}
-                                onDelete={handleDelete}
-                                onArchive={handleArchive}
-                                onQuickUpdate={handleQuickUpdate}
-                                showArchiveButton={false}
-                            />
+                            <div key={todo.id} className="flex items-center gap-2">
+                                {selectMode && (
+                                    <button onClick={() => toggleSelect(todo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center text-amber-400">
+                                        {selectedIds.has(todo.id)
+                                            ? <CheckSquare className="w-5 h-5" />
+                                            : <Square className="w-5 h-5 text-muted-foreground" />}
+                                    </button>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                    <TodoCard
+                                        todo={todo}
+                                        employees={employees}
+                                        onStatusChange={selectMode ? null : handleStatusChange}
+                                        onEdit={selectMode ? null : handleEdit}
+                                        onDelete={selectMode ? null : handleDelete}
+                                        onArchive={selectMode ? null : handleArchive}
+                                        onQuickUpdate={selectMode ? null : handleQuickUpdate}
+                                        showArchiveButton={false}
+                                    />
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}
@@ -430,6 +506,28 @@ export default function Todos() {
                         <p className="text-sm mt-1">
                             {hasActiveFilters ? 'Keine Aufgaben entsprechen den Filtern' : 'Alle Aufgaben erledigt!'}
                         </p>
+                    </div>
+                )}
+
+                {/* Bulk-Aktionsleiste */}
+                {selectMode && selectedIds.size > 0 && (
+                    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-card border border-border rounded-2xl shadow-2xl px-4 py-3">
+                        <span className="text-sm font-medium text-foreground mr-2">{selectedIds.size} ausgewählt</span>
+                        <Button size="sm" variant="outline" onClick={handleBulkDone}
+                            className="gap-1.5 h-9 text-green-400 border-green-500/30 hover:bg-green-500/10">
+                            <CheckSquare className="w-4 h-4" /> Erledigt
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleBulkArchive}
+                            className="gap-1.5 h-9 text-muted-foreground">
+                            <Archive className="w-4 h-4" /> Archivieren
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleBulkDelete}
+                            className="gap-1.5 h-9 text-red-400 border-red-500/30 hover:bg-red-500/10">
+                            <Trash2 className="w-4 h-4" /> Löschen
+                        </Button>
+                        <button onClick={clearSelection} className="ml-1 text-muted-foreground hover:text-foreground">
+                            <X className="w-4 h-4" />
+                        </button>
                     </div>
                 )}
 

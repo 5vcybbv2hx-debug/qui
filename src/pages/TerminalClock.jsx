@@ -243,6 +243,20 @@ export default function TerminalClock() {
                     }
                 });
 
+                // TimeEntry erstellen, damit die Zeit in der Genehmigungsansicht erscheint
+                await base44.entities.TimeEntry.create({
+                    employee_id: employeeToProcess.id,
+                    employee_name: employeeToProcess.name,
+                    date: format(clockIn, 'yyyy-MM-dd'),
+                    start_time: format(clockIn, 'HH:mm'),
+                    end_time: format(clockOut, 'HH:mm'),
+                    break_minutes: accumulatedPause,
+                    total_hours: Math.round(hours * 100) / 100,
+                    status: 'eingereicht',
+                    employee_confirmed: true,
+                    employee_confirmed_at: clockOut.toISOString()
+                });
+
                 const pauseText = pauseMinuten > 0 ? `\n${pauseMinuten}min Pause (bezahlt)` : '';
 
                 // Zeige Verdienst für alle Mitarbeiter mit Stundenlohn

@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import { format } from 'npm:date-fns@3.6.0';
+import { formatInTimeZone } from 'npm:date-fns-tz@3.2.0';
+
+const TZ = 'Europe/Berlin';
 
 Deno.serve(async (req) => {
   try {
@@ -25,11 +27,13 @@ Deno.serve(async (req) => {
     let skipped = 0;
 
     for (const entry of completedEntries) {
-      const clockIn = new Date(entry.clock_in);
-      const clockOut = new Date(entry.clock_out);
-      const date = format(clockIn, 'yyyy-MM-dd');
-      const start_time = format(clockIn, 'HH:mm');
-      const end_time = format(clockOut, 'HH:mm');
+      const clockInDate = new Date(entry.clock_in);
+      const clockOutDate = new Date(entry.clock_out);
+
+      // WICHTIG: Alle Zeiten in Europe/Berlin formatieren, NICHT UTC
+      const date = formatInTimeZone(clockInDate, TZ, 'yyyy-MM-dd');
+      const start_time = formatInTimeZone(clockInDate, TZ, 'HH:mm');
+      const end_time = formatInTimeZone(clockOutDate, TZ, 'HH:mm');
 
       const key = `${entry.employee_id}_${date}_${start_time}`;
 
@@ -38,7 +42,9 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const totalHours = entry.total_hours || Math.round(((clockOut - clockIn) / 3600000 - (entry.pause_minutes || 0) / 60) * 100) / 100;
+      const totalHours = entry.total_hours || Math.round(
+        ((clockOutDate - clockInDate) / 3600000 - (entry.pause_minutes || 0) / 60) * 100
+      ) / 100;
 
       await base44.asServiceRole.entities.TimeEntry.create({
         employee_id: entry.employee_id,

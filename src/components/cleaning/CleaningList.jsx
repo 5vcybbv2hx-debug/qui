@@ -146,11 +146,6 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                                        • {task.due_weekdays.map(d => d.slice(0,2)).join(', ')}
                                                    </span>
                                                )}
-                                               {task.assigned_to_name && (
-                                                   <span className="text-[10px] text-blue-400">
-                                                       • {task.assigned_to_name}
-                                                   </span>
-                                               )}
                                                {task.is_completed && task.completed_by && (
                                                    <Link 
                                                        to={createPageUrl('Employees')}

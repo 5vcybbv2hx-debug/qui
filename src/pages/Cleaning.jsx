@@ -36,7 +36,7 @@ export default function Cleaning() {
         due_weekdays: [],
         due_date: '',
         assigned_to: '',
-        assigned_to_name: ''
+        assigned_to_name: '',
     });
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [pendingUpdates, setPendingUpdates] = useState([]);

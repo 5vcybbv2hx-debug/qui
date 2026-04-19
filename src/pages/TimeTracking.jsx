@@ -141,10 +141,25 @@ export default function TimeTracking() {
         }
     };
 
-    const handleDelete = (id) => {
-        if (confirm('Zeiteintrag wirklich löschen?')) {
-            deleteMutation.mutate(id);
+    const handleDelete = async (id) => {
+        if (!confirm('Zeiteintrag wirklich löschen?\n\nDer zugehörige Stempeluhr-Eintrag (ClockEntry) wird ebenfalls gelöscht.')) return;
+
+        // Finde den passenden ClockEntry und lösche ihn mit
+        const entry = timeEntries.find(e => e.id === id);
+        if (entry) {
+            const matchingClockEntries = clockEntries.filter(ce =>
+                ce.employee_id === entry.employee_id &&
+                ce.clock_in &&
+                format(new Date(ce.clock_in), 'yyyy-MM-dd') === entry.date &&
+                format(new Date(ce.clock_in), 'HH:mm') === entry.start_time
+            );
+            for (const ce of matchingClockEntries) {
+                await base44.entities.ClockEntry.delete(ce.id);
+            }
+            queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
         }
+
+        deleteMutation.mutate(id);
     };
 
     const handleApprove = (id) => {

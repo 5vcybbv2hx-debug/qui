@@ -58,7 +58,7 @@ export default function Cleaning() {
     useEffect(() => {
         const handleOnline = () => {
             setIsOnline(true);
-            syncMutations(base44).then(() => queryClient.invalidateQueries(['cleaning'])).catch(console.error);
+            syncMutations(base44).then(() => queryClient.invalidateQueries({ queryKey: ['cleaning'] })).catch(console.error);
         };
         const handleOffline = () => setIsOnline(false);
         window.addEventListener('online', handleOnline);
@@ -124,9 +124,9 @@ export default function Cleaning() {
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.CleaningTask.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['cleaning']);
+            queryClient.invalidateQueries({ queryKey: ['cleaning'] });
             setModalOpen(false);
-            setFormData({ title: '', area: 'Theke', frequency: 'täglich', due_date: '', assigned_to: '', assigned_to_name: '' });
+            setFormData({ title: '', area: 'Theke', frequency: 'täglich', due_weekdays: [], due_date: '', assigned_to: '', assigned_to_name: '' });
         }
     });
 
@@ -142,7 +142,7 @@ export default function Cleaning() {
             return base44.entities.CleaningTask.update(id, data);
         },
         onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['cleaning']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['cleaning'] });
         }
     });
 
@@ -240,7 +240,7 @@ export default function Cleaning() {
                 last_reset: format(new Date(), 'yyyy-MM-dd')
             });
         }
-        queryClient.invalidateQueries(['cleaning']);
+        queryClient.invalidateQueries({ queryKey: ['cleaning'] });
 
         alert('Tagesbericht erstellt und tägliche Aufgaben zurückgesetzt!');
     };
@@ -454,7 +454,7 @@ export default function Cleaning() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {areas.filter(a => a.name !== 'Wochentagsaufgaben').map(area => (
+                                            {(areas.length > 0 ? areas : allAreas).filter(a => a.name !== 'Wochentagsaufgaben').map(area => (
                                                  <SelectItem key={area.id} value={area.name}>
                                                      <div className="flex items-center gap-2">
                                                          <div 

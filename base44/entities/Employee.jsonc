@@ -27,6 +27,10 @@
       "type": "string",
       "description": "4-stellige PIN f\u00fcr Terminal-Aktionen"
     },
+    "calendar_token": {
+      "type": "string",
+      "description": "Pers\u00f6nlicher Token f\u00fcr Kalender-Abo (ohne Login)"
+    },
     "skills": {
       "type": "array",
       "items": {

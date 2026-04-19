@@ -1,27 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-
-// ─── Auth helpers ─────────────────────────────────────────────────────────────
-// SECURITY: Checks that the requesting user is either:
-//   (a) an admin/manager, or
-//   (b) the employee whose shifts are being requested.
-// Without this check, anyone with a valid login could pass any employee_id
-// and read another person's entire shift history (IDOR vulnerability).
-async function authorise(base44, employeeId) {
-    const user = await base44.auth.me();
-    if (!user) return { ok: false, status: 401, reason: 'Unauthorized' };
-
-    const isPrivileged = user.role === 'admin' || user.role === 'manager';
-    if (isPrivileged) return { ok: true };
-
-    // Regular user: verify they own this employee record
-    const employee = await base44.asServiceRole.entities.Employee.get(employeeId);
-    if (!employee) return { ok: false, status: 404, reason: 'Employee not found' };
-
-    const sameEmail = employee.email?.toLowerCase() === user.email?.toLowerCase();
-    if (!sameEmail) return { ok: false, status: 403, reason: 'Forbidden: not your calendar' };
-
-    return { ok: true, employee };
-}
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // ─── ICS helper ───────────────────────────────────────────────────────────────
 const now8601 = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -43,7 +20,6 @@ function shiftToEvent(shift) {
         `DTEND:${endDate}T${shift.end_time.replace(':', '')}00`,
         `SUMMARY:${shift.shift_type || 'Schicht'}`,
     ];
-    // Include notes only if present — they are not sensitive for the employee themselves
     if (shift.notes) lines.push(`DESCRIPTION:${shift.notes.replace(/\n/g, '\\n')}`);
     lines.push('STATUS:CONFIRMED', 'END:VEVENT');
     return lines.join('\r\n');
@@ -51,26 +27,27 @@ function shiftToEvent(shift) {
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-    const base44 = createClientFromRequest(req);
-
-    // INPUT: employee_id comes from URL param (used by calendar subscription URLs)
     const url        = new URL(req.url);
     const employeeId = url.searchParams.get('employee_id');
+    const token      = url.searchParams.get('token');
 
-    if (!employeeId) {
-        return Response.json({ error: 'employee_id parameter is required' }, { status: 400 });
-    }
-
-    // AUTH + ACCESS CONTROL
-    const auth = await authorise(base44, employeeId);
-    if (!auth.ok) {
-        return Response.json({ error: auth.reason }, { status: auth.status });
+    if (!employeeId || !token) {
+        return Response.json({ error: 'employee_id and token parameters are required' }, { status: 400 });
     }
 
     try {
-        // Fetch employee name for calendar title (may already be loaded in auth step)
-        const employee = auth.employee
-            ?? await base44.asServiceRole.entities.Employee.get(employeeId);
+        const base44 = createClientFromRequest(req);
+
+        // Token-basierte Auth: kein Login nötig — iPhone-Kalender kann jederzeit abrufen
+        const employee = await base44.asServiceRole.entities.Employee.get(employeeId);
+        if (!employee) {
+            return Response.json({ error: 'Employee not found' }, { status: 404 });
+        }
+
+        // Validiere Token gegen den gespeicherten Wert im Employee-Record
+        if (!employee.calendar_token || employee.calendar_token !== token) {
+            return new Response('Invalid token', { status: 403 });
+        }
 
         const shifts = await base44.asServiceRole.entities.Shift.filter(
             { employee_id: employeeId }, '-date', 500
@@ -94,7 +71,6 @@ Deno.serve(async (req) => {
             headers: {
                 'Content-Type': 'text/calendar; charset=utf-8',
                 'Content-Disposition': 'inline; filename="my-shifts.ics"',
-                // SECURITY: private — calendar contains personal work schedule
                 'Cache-Control': 'private, max-age=3600',
             }
         });

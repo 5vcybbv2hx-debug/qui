@@ -412,7 +412,7 @@ export default function MyShiftsPage() {
 
                     {/* Kalender-Sync */}
                     <TabsContent value="sync">
-                        <MyShiftsCalendarSync employeeId={employee.id} />
+                        <MyShiftsCalendarSync employeeId={employee.id} existingToken={employee.calendar_token} />
                     </TabsContent>
                 </Tabs>
             </div>

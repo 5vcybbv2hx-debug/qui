@@ -20,7 +20,7 @@ export default function ServiceWorkerRegistration() {
                         console.log('[App] Service Worker active');
                     }
                 } catch (error) {
-                    console.error('[App] Service Worker registration failed:', error);
+                    // SW registration can fail in sandboxed/preview environments — not critical
                 }
             };
 

@@ -30,6 +30,11 @@ const EVENT_STYLES = {
         dot: 'bg-blue-400',
         text: 'text-blue-200',
     },
+    birthday: {
+        bg: 'bg-purple-500/20 border-l-2 border-purple-500 hover:bg-purple-500/30',
+        dot: 'bg-purple-400',
+        text: 'text-purple-200',
+    },
 };
 
 export default function UnifiedCalendarView({
@@ -89,6 +94,17 @@ export default function UnifiedCalendarView({
         maintenanceTasks.forEach(task => {
             if (task.next_maintenance === dayStr) {
                 dayEvents.push({ type: 'maintenance', id: task.id, data: task });
+            }
+        });
+
+        // Geburtstage: Monat+Tag vergleichen (unabhängig vom Jahr)
+        const dayMD = format(day, 'MM-dd');
+        employees.forEach(emp => {
+            if (emp.birthday) {
+                const bMD = emp.birthday.slice(5); // "YYYY-MM-DD" → "MM-DD"
+                if (bMD === dayMD) {
+                    dayEvents.push({ type: 'birthday', id: `birthday-${emp.id}`, data: emp });
+                }
             }
         });
 
@@ -238,6 +254,8 @@ export default function UnifiedCalendarView({
                                             ? `🏖 ${event.data.employee_name}`
                                             : event.type === 'maintenance'
                                             ? `🔧 ${event.data.equipment_name}`
+                                            : event.type === 'birthday'
+                                            ? `🎂 ${event.data.name}`
                                             : `🎉 ${event.data.name}`;
 
                                         return (
@@ -283,6 +301,10 @@ export default function UnifiedCalendarView({
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-3 h-3 rounded-sm bg-blue-500/30 border-l-2 border-blue-500" />
                     Wartung
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-3 h-3 rounded-sm bg-purple-500/30 border-l-2 border-purple-500" />
+                    Geburtstag
                 </div>
             </div>
 

@@ -55,7 +55,7 @@ export default function GuestHubTablesTab({
                                 STATUS_CONFIG[status].color,
                                 suggested.some(s => s.id === table.id) && 'ring-2 ring-amber-400 ring-offset-2 ring-offset-background')}>
                             <div className="flex items-start justify-between gap-1">
-                                <span className="text-xl font-bold break-words flex-1">{table.name || table.number}</span>
+                                <span className="text-xl font-bold break-words flex-1">{getTableDisplayName(table)}</span>
                                 <span className={cn('w-2.5 h-2.5 rounded-full mt-1 shrink-0', STATUS_CONFIG[status].dot)} />
                             </div>
                             <div>

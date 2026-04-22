@@ -37,7 +37,6 @@ export default function Todos() {
     const [personFilter, setPersonFilter] = useState('alle');
     const [showArchived, setShowArchived] = useState(false);
     const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
-    const [categories, setCategories] = useState(() => loadCategories());
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('priority');
     const [filtersOpen, setFiltersOpen] = useState(false);
@@ -125,10 +124,9 @@ export default function Todos() {
     const activeTodos = visibleTodos.filter(t => !t.is_archived);
     const archivedTodos = visibleTodos.filter(t => t.is_archived);
 
-    const allCategories = Array.from(new Set([
-        ...categories,
-        ...todos.map(t => t.category).filter(Boolean)
-    ])).sort();
+    const allCategories = Array.from(new Set(
+        todos.map(t => t.category).filter(Boolean)
+    )).sort();
 
     const allAssignees = Array.from(new Set(
         todos.flatMap(t => t.assigned_to_names?.length > 0 ? t.assigned_to_names : t.assigned_to ? [t.assigned_to] : [])
@@ -533,7 +531,8 @@ export default function Todos() {
 
                 <TodoCategoryManager
                     open={categoryManagerOpen}
-                    onClose={() => { setCategoryManagerOpen(false); setCategories(loadCategories()); }}
+                    onClose={() => setCategoryManagerOpen(false)}
+                    todos={todos}
                 />
 
                 <TodoModal

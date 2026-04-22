@@ -34,15 +34,28 @@ export const validateArbZG = (timeEntry, allTimeEntries) => {
     }
 
     // 3. Ruhezeit zwischen Arbeitstagen: 11 Stunden (§5 ArbZG)
-    if (allTimeEntries && allTimeEntries.length > 0) {
-        const previousDay = subDays(parseISO(date), 1);
-        const previousDayStr = format(previousDay, 'yyyy-MM-dd');
-        const previousEntry = allTimeEntries.find(e => e.date === previousDayStr);
-        
-        if (previousEntry) {
-            const prevEndDateTime = parseISO(`${previousEntry.date}T${previousEntry.end_time}`);
-            const currentStartDateTime = parseISO(`${date}T${start_time}`);
-            const restHours = differenceInHours(currentStartDateTime, prevEndDateTime);
+    if (allTimeEntries && allTimeEntries.length > 0 && date && start_time) {
+        // Suche den letzten Eintrag vor diesem (Vortag oder früher, aber nicht gleicher Tag)
+        const currentStart = parseISO(`${date}T${start_time}`);
+        const relevantPrevEntries = allTimeEntries.filter(e => {
+            if (!e.date || !e.end_time || e.date === date) return false;
+            // Nachtschicht-safe: end_time < start_time bedeutet Ende am Folgetag
+            let endDateTime = parseISO(`${e.date}T${e.end_time}`);
+            if (e.end_time < e.start_time) {
+                // Nachtschicht: Ende ist am Tag danach
+                endDateTime = new Date(endDateTime.getTime() + 24 * 60 * 60 * 1000);
+            }
+            return endDateTime < currentStart;
+        });
+
+        if (relevantPrevEntries.length > 0) {
+            // Letzten Eintrag vor dem aktuellen finden
+            const previousEntry = relevantPrevEntries.sort((a, b) => b.date.localeCompare(a.date))[0];
+            let prevEndDateTime = parseISO(`${previousEntry.date}T${previousEntry.end_time}`);
+            if (previousEntry.end_time < previousEntry.start_time) {
+                prevEndDateTime = new Date(prevEndDateTime.getTime() + 24 * 60 * 60 * 1000);
+            }
+            const restHours = differenceInHours(currentStart, prevEndDateTime);
             
             if (restHours < 11) {
                 warnings.push({

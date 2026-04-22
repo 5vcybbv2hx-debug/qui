@@ -74,7 +74,7 @@ export default function TerminalClock() {
     const clockMutation = useMutation({
         mutationFn: (data) => base44.entities.ClockEntry.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['clock-entries-today']);
+            queryClient.invalidateQueries({ queryKey: ['clock-entries-today'] });
         }
     });
 
@@ -109,7 +109,7 @@ export default function TerminalClock() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.ClockEntry.update(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['clock-entries-today']);
+            queryClient.invalidateQueries({ queryKey: ['clock-entries-today'] });
         }
     });
 
@@ -244,18 +244,29 @@ export default function TerminalClock() {
                 });
 
                 // TimeEntry erstellen, damit die Zeit in der Genehmigungsansicht erscheint
-                await base44.entities.TimeEntry.create({
-                    employee_id: employeeToProcess.id,
-                    employee_name: employeeToProcess.name,
-                    date: format(clockIn, 'yyyy-MM-dd'),
-                    start_time: format(clockIn, 'HH:mm'),
-                    end_time: format(clockOut, 'HH:mm'),
-                    break_minutes: accumulatedPause,
-                    total_hours: Math.round(hours * 100) / 100,
-                    status: 'eingereicht',
-                    employee_confirmed: true,
-                    employee_confirmed_at: clockOut.toISOString()
+                // Duplikat-Schutz: nur erstellen wenn noch kein TimeEntry für diesen Tag/Mitarbeiter/Startzeit existiert
+                const entryDate = format(clockIn, 'yyyy-MM-dd');
+                const entryStartTime = format(clockIn, 'HH:mm');
+                const existingEntries = await base44.entities.TimeEntry.filter({
+                    employee_id: employeeToProcess.id
                 });
+                const duplicate = existingEntries.find(te =>
+                    te.date === entryDate && te.start_time === entryStartTime
+                );
+                if (!duplicate) {
+                    await base44.entities.TimeEntry.create({
+                        employee_id: employeeToProcess.id,
+                        employee_name: employeeToProcess.name,
+                        date: entryDate,
+                        start_time: entryStartTime,
+                        end_time: format(clockOut, 'HH:mm'),
+                        break_minutes: accumulatedPause,
+                        total_hours: Math.round(hours * 100) / 100,
+                        status: 'eingereicht',
+                        employee_confirmed: true,
+                        employee_confirmed_at: clockOut.toISOString()
+                    });
+                }
 
                 const pauseText = pauseMinuten > 0 ? `\n${pauseMinuten}min Pause (bezahlt)` : '';
 

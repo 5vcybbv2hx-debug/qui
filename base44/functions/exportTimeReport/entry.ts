@@ -40,12 +40,12 @@ Deno.serve(async (req) => {
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
-        const allEntries = await base44.entities.TimeEntry.list('-date');
+        const allEntries = await base44.asServiceRole.entities.TimeEntry.list('-date');
         const entries = allEntries.filter(e => e.date >= startDate && e.date <= endDate);
 
-        const employees = await base44.entities.Employee.filter({ is_active: true });
+        const employees = await base44.asServiceRole.entities.Employee.filter({ is_active: true });
 
-        const allVacations = await base44.entities.VacationRequest.list('-start_date');
+        const allVacations = await base44.asServiceRole.entities.VacationRequest.list('-start_date');
         const vacations = allVacations.filter(v =>
             v.status === 'genehmigt' &&
             v.start_date <= endDate &&

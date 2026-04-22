@@ -14,15 +14,34 @@ export function loadCategories() {
     return DEFAULT_CATEGORIES;
 }
 
-export default function TodoCategoryManager({ open, onClose, todos = [] }) {
+export default function TodoCategoryManager({ open, onClose }) {
     const queryClient = useQueryClient();
     const [newCategory, setNewCategory] = useState('');
 
-    const { data: categories = [], isLoading } = useQuery({
+    const { data: dbCategories = [], isLoading: isLoadingDb } = useQuery({
         queryKey: ['todo-categories'],
         queryFn: () => base44.entities.TodoCategory.list('name'),
         enabled: open
     });
+
+    const { data: allTodoItems = [], isLoading: isLoadingTodos } = useQuery({
+        queryKey: ['todos'],
+        queryFn: () => base44.entities.TodoItem.list('-created_date', 500),
+        enabled: open
+    });
+
+    const isLoading = isLoadingDb || isLoadingTodos;
+
+    // Alle Kategorien aus Todos die nicht in DEFAULT_CATEGORIES sind
+    const todoCategoryNames = Array.from(new Set(
+        allTodoItems.map(t => t.category).filter(Boolean)
+    ));
+    const extraFromTodos = todoCategoryNames
+        .filter(name => !DEFAULT_CATEGORIES.includes(name))
+        .filter(name => !dbCategories.some(c => c.name === name))
+        .map(name => ({ id: null, name, fromTodos: true }));
+
+    const categories = [...dbCategories, ...extraFromTodos];
 
     const createMutation = useMutation({
         mutationFn: (name) => base44.entities.TodoCategory.create({ name, is_active: true }),
@@ -53,7 +72,7 @@ export default function TodoCategoryManager({ open, onClose, todos = [] }) {
     };
 
     const handleDelete = (cat) => {
-        const openTodos = todos.filter(t =>
+        const openTodos = allTodoItems.filter(t =>
             t.category === cat.name && t.status !== 'erledigt' && !t.is_archived
         );
         if (openTodos.length > 0) {
@@ -117,7 +136,7 @@ export default function TodoCategoryManager({ open, onClose, todos = [] }) {
                                 <>
                                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mt-3 mb-1">Eigene</p>
                                     {customCategories.map(cat => {
-                                        const openCount = todos.filter(t =>
+                                        const openCount = allTodoItems.filter(t =>
                                             t.category === cat.name && t.status !== 'erledigt' && !t.is_archived
                                         ).length;
                                         return (
@@ -128,15 +147,19 @@ export default function TodoCategoryManager({ open, onClose, todos = [] }) {
                                                         <span className="ml-2 text-[10px] text-amber-400">{openCount} offen</span>
                                                     )}
                                                 </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(cat)}
-                                                    disabled={deleteMutation.isPending}
-                                                    className="h-7 w-7 text-red-400 hover:text-red-300"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </Button>
+                                                {cat.id ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDelete(cat)}
+                                                        disabled={deleteMutation.isPending}
+                                                        className="h-7 w-7 text-red-400 hover:text-red-300"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                ) : (
+                                                    <span className="text-[10px] text-muted-foreground">aus Todos</span>
+                                                )}
                                             </div>
                                         );
                                     })}

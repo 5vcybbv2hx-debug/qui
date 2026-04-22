@@ -294,7 +294,11 @@ export default function TeamNotes({ isManager, currentUser, compact = false }) {
 
     const openEdit = (note) => { setEditNote(note); setModalOpen(true); };
     const handlePin = (note) => updateMutation.mutate({ id: note.id, data: { is_pinned: !note.is_pinned } });
-    const handleDone = (note) => updateMutation.mutate({ id: note.id, data: { status: 'erledigt' } });
+    const handleDone = (note) => {
+        if (confirm('Notiz als erledigt markieren und löschen?')) {
+            deleteMutation.mutate(note.id);
+        }
+    };
     const handleArchive = (note) => updateMutation.mutate({ id: note.id, data: { status: 'archiviert' } });
     const handleDelete = (id) => { if (confirm('Nachricht löschen?')) deleteMutation.mutate(id); };
     const handleConvertToTask = async (note) => {

@@ -226,34 +226,43 @@ export default function TimeTracking() {
             const clockOutTime = new Date();
             
             const promises = activeClockedIn.map(async (entry) => {
-                const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
-                const breakMinutes = calcLegalBreak(totalMinutes);
-                const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
+            const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
+            const breakMinutes = calcLegalBreak(totalMinutes);
+            const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
+            const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
+            const entryStartTime = format(new Date(entry.clock_in), 'HH:mm');
 
-                const tempEntry = {
-                    date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-                    start_time: format(new Date(entry.clock_in), 'HH:mm'),
-                    end_time: format(clockOutTime, 'HH:mm'),
-                    break_minutes: breakMinutes,
-                    total_hours: totalHours,
-                    employee_id: entry.employee_id
-                };
-                const warnings = validateArbZG(tempEntry, timeEntries);
-                const warningText = formatWarnings(warnings);
+            const tempEntry = {
+                date: entryDate,
+                start_time: entryStartTime,
+                end_time: format(clockOutTime, 'HH:mm'),
+                break_minutes: breakMinutes,
+                total_hours: totalHours,
+                employee_id: entry.employee_id
+            };
+            const warnings = validateArbZG(tempEntry, timeEntries);
+            const warningText = formatWarnings(warnings);
 
-                await base44.entities.ClockEntry.update(entry.id, {
-                    clock_out: clockOutTime.toISOString(),
-                    break_minutes: breakMinutes,
-                    total_hours: totalHours,
-                    status: 'clocked_out',
-                    arbzg_warning: warningText
-                });
+            await base44.entities.ClockEntry.update(entry.id, {
+                clock_out: clockOutTime.toISOString(),
+                break_minutes: breakMinutes,
+                total_hours: totalHours,
+                status: 'clocked_out',
+                arbzg_warning: warningText
+            });
 
+            // Duplikat-Schutz
+            const duplicate = timeEntries.find(te =>
+                te.employee_id === entry.employee_id &&
+                te.date === entryDate &&
+                te.start_time === entryStartTime
+            );
+            if (!duplicate) {
                 await base44.entities.TimeEntry.create({
                     employee_id: entry.employee_id,
                     employee_name: entry.employee_name,
-                    date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-                    start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                    date: entryDate,
+                    start_time: entryStartTime,
                     end_time: format(clockOutTime, 'HH:mm'),
                     break_minutes: breakMinutes,
                     total_hours: totalHours,
@@ -263,6 +272,7 @@ export default function TimeTracking() {
                     employee_confirmed: true,
                     employee_confirmed_at: clockOutTime.toISOString()
                 });
+            }
             });
 
             return Promise.all(promises);
@@ -310,21 +320,30 @@ export default function TimeTracking() {
                 arbzg_warning: warningText
             });
 
-            // Erstelle automatisch einen TimeEntry
-            await base44.entities.TimeEntry.create({
-                employee_id: entry.employee_id,
-                employee_name: entry.employee_name,
-                date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
-                start_time: format(new Date(entry.clock_in), 'HH:mm'),
-                end_time: format(clockOutTime, 'HH:mm'),
-                break_minutes: breakMinutes,
-                total_hours: totalHours,
-                notes: `Automatisch von Stempeluhr übertragen${breakMinutes > 0 ? ` | ${breakMinutes} Min. Pause (gesetzl.) eingerechnet` : ''}`,
-                status: 'eingereicht',
-                arbzg_warning: warningText,
-                employee_confirmed: true,
-                employee_confirmed_at: clockOutTime.toISOString()
-            });
+            // Duplikat-Schutz: nur erstellen wenn noch kein TimeEntry für diesen Tag/Mitarbeiter/Startzeit existiert
+            const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
+            const entryStartTime = format(new Date(entry.clock_in), 'HH:mm');
+            const duplicate = timeEntries.find(te =>
+                te.employee_id === entry.employee_id &&
+                te.date === entryDate &&
+                te.start_time === entryStartTime
+            );
+            if (!duplicate) {
+                await base44.entities.TimeEntry.create({
+                    employee_id: entry.employee_id,
+                    employee_name: entry.employee_name,
+                    date: entryDate,
+                    start_time: entryStartTime,
+                    end_time: format(clockOutTime, 'HH:mm'),
+                    break_minutes: breakMinutes,
+                    total_hours: totalHours,
+                    notes: `Automatisch von Stempeluhr übertragen${breakMinutes > 0 ? ` | ${breakMinutes} Min. Pause (gesetzl.) eingerechnet` : ''}`,
+                    status: 'eingereicht',
+                    arbzg_warning: warningText,
+                    employee_confirmed: true,
+                    employee_confirmed_at: clockOutTime.toISOString()
+                });
+            }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
@@ -470,10 +489,10 @@ export default function TimeTracking() {
                                                         status: 'on_break',
                                                         pause_start: new Date().toISOString()
                                                     });
-                                                    queryClient.invalidateQueries(['clockEntries']);
-                                                }}
-                                                size="lg"
-                                                className="bg-amber-600 hover:bg-amber-700"
+                                                    queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
+                                                        }}
+                                                        size="lg"
+                                                        className="bg-amber-600 hover:bg-amber-700"
                                                 disabled={updateMutation.isPending}
                                             >
                                                 <Pause className="w-5 h-5 mr-2" />
@@ -487,10 +506,10 @@ export default function TimeTracking() {
                                                         status: 'clocked_in',
                                                         pause_end: new Date().toISOString()
                                                     });
-                                                    queryClient.invalidateQueries(['clockEntries']);
-                                                }}
-                                                size="lg"
-                                                className="bg-green-600 hover:bg-green-700"
+                                                    queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
+                                                        }}
+                                                        size="lg"
+                                                        className="bg-green-600 hover:bg-green-700"
                                                 disabled={updateMutation.isPending}
                                             >
                                                 <Play className="w-5 h-5 mr-2" />

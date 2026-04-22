@@ -74,7 +74,7 @@ export const mainNavigation = [
             { name: 'Schichtplan',   page: 'Calendar',       icon: Calendar,       permission: 'canViewShifts'         },
             { name: 'Teamkalender',  page: 'TeamCalendar',   icon: Calendar,       permission: 'canViewShifts'         },
             { name: 'Zeiterfassung', page: 'TimeManagement', icon: Clock,          permission: 'canViewOwnTimeEntries' },
-            { name: 'Urlaub',        page: 'Vacation',       icon: Palmtree,       permission: 'canViewOwnTimeEntries' },
+            { name: 'Urlaub',        page: 'Vacation',       icon: Palmtree,       permission: 'canViewVacation' },
             { name: 'Schichttausch', page: 'ShiftSwaps',     icon: ArrowLeftRight, permission: 'canRequestShiftSwap'   },
             { name: 'Berechtigungen',page: 'Permissions',    icon: Shield,         permission: 'canEditEmployeePermissions'},
             { name: 'Teamsitzung',   page: 'TeamMeeting',    icon: Video,          permission: 'canViewShifts'             },

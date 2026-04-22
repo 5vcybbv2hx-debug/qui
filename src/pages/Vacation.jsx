@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 
 const statusConfig = {
     'beantragt': { label: 'Beantragt', color: 'bg-blue-100 text-blue-700', icon: Clock },
@@ -214,6 +215,10 @@ export default function Vacation() {
     const currentEmployeeStats = currentEmployee ? employeeStats[currentEmployee.id] : null;
     const pendingRequests = visibleRequests.filter(r => r.status === 'beantragt');
     const [showTaxReport, setShowTaxReport] = React.useState(false);
+
+    if (!permissions.isLoading && !permissions.canViewVacation) {
+        return <PermissionDenied message="Urlaub ist für Aushilfen nicht verfügbar. Nutze die 'Nicht verfügbar'-Funktion im Schichtplan." />;
+    }
 
     return (
         <div className="min-h-screen bg-slate-900">

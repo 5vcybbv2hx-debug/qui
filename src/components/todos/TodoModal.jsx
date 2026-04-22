@@ -12,6 +12,7 @@ import { Dialog, DialogContent } from "@/components/ui/mobile-dialog";
 import { MobileModalHeader, MobileModalContent, MobileModalFooter, MobileModalForm } from "@/components/modals/MobileModalWrapper";
 import { cn } from "@/lib/utils";
 import { haptics } from "@/components/utils/haptics";
+import { getUserDisplayName } from '@/lib/userDisplayName';
 
 const PRIORITIES = [
     { value: 'niedrig', label: 'Niedrig', color: 'bg-slate-500' },
@@ -79,7 +80,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                 attachments: todo.attachments || [],
             });
         } else {
-            const defaultAssignee = currentUser?.full_name || currentUser?.email || '';
+            const defaultAssignee = getUserDisplayName({ user: currentUser });
             setFormData({
                 title: '',
                 description: '',

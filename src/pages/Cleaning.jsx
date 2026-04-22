@@ -19,6 +19,7 @@ import CleaningQRGenerator from '@/components/cleaning/CleaningQRGenerator';
 import AreasManager from '@/components/cleaning/AreasManager';
 import PinVerification from '@/components/terminal/PinVerification';
 import { usePermissions } from '@/components/auth/usePermissions';
+import { getUserDisplayName } from '@/lib/userDisplayName';
 
 export default function Cleaning() {
     const queryClient = useQueryClient();
@@ -151,9 +152,7 @@ export default function Cleaning() {
             setSelectedTask(task);
             setPinModalOpen(true);
         } else {
-            const displayName = user?.full_name 
-                ? user.full_name.split(' ').reverse().join(', ')
-                : user?.email;
+            const displayName = getUserDisplayName({ employeeName: permissions.employeeName, user });
             updateMutation.mutate({
             id: task.id,
             data: {
@@ -407,21 +406,21 @@ export default function Cleaning() {
                                     areas={areas}
                                     onComplete={handleComplete}
                                     onReset={handleReset}
-                                    userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
-                                />
-                            )}
-                        </TabsContent>
+                                    userName={getUserDisplayName({ employeeName: permissions.employeeName, user })}
+                                    />
+                                    )}
+                                    </TabsContent>
 
-                        <TabsContent value="deactivated">
-                            {deactivatedTasks.length === 0 ? (
-                                <EmptyState text="Keine deaktivierten Aufgaben" />
-                            ) : (
-                                <CleaningList 
-                                    tasks={deactivatedTasks}
-                                    areas={areas}
-                                    onComplete={handleComplete}
-                                    onReset={handleReset}
-                                    userName={user?.full_name ? user.full_name.split(' ').reverse().join(', ') : user?.email}
+                                    <TabsContent value="deactivated">
+                                    {deactivatedTasks.length === 0 ? (
+                                    <EmptyState text="Keine deaktivierten Aufgaben" />
+                                    ) : (
+                                    <CleaningList 
+                                     tasks={deactivatedTasks}
+                                     areas={areas}
+                                     onComplete={handleComplete}
+                                     onReset={handleReset}
+                                     userName={getUserDisplayName({ employeeName: permissions.employeeName, user })}
                                 />
                             )}
                         </TabsContent>

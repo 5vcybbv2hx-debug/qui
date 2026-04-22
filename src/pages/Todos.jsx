@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TodoCard from '@/components/todos/TodoCard';
 import TodoModal from '@/components/todos/TodoModal';
 import { cn } from '@/lib/utils';
+import { getUserDisplayName } from '@/lib/userDisplayName';
 
 const PRIORITY_ORDER = { dringend: 0, hoch: 1, mittel: 2, niedrig: 3 };
 
@@ -94,7 +95,7 @@ export default function Todos() {
     const handleStatusChange = (todo, newStatus) => {
         const updates = { status: newStatus };
         if (newStatus === 'erledigt') {
-            updates.completed_by = user?.full_name || user?.email;
+            updates.completed_by = getUserDisplayName({ employeeName: permissions.employeeName, user });
             updates.completed_at = new Date().toISOString();
         }
         updateMutation.mutate({ id: todo.id, data: updates });
@@ -117,7 +118,7 @@ export default function Todos() {
         }
     };
 
-    const currentUserName = user?.full_name || user?.email || '';
+    const currentUserName = getUserDisplayName({ employeeName: permissions.employeeName, user });
     const isAdmin = permissions.isAdmin || permissions.isManager;
 
     const visibleTodos = useMemo(() => todos.filter(todo => {
@@ -237,7 +238,7 @@ export default function Todos() {
         for (const id of selectedIds) {
             await base44.entities.TodoItem.update(id, {
                 status: 'erledigt',
-                completed_by: user?.full_name || user?.email,
+                completed_by: getUserDisplayName({ employeeName: permissions.employeeName, user }),
                 completed_at: new Date().toISOString()
             });
         }

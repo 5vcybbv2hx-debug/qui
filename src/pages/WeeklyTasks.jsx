@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import { getUserDisplayName } from '@/lib/userDisplayName';
 import { PageShell, PageHeader, ProgressBar } from '@/components/ui/design-system';
 
 // Weekday config: js getDay() index → label + short pattern prefix
@@ -237,7 +238,7 @@ export default function WeeklyTasks() {
     });
 
     const handleComplete = (task) => {
-        const displayName = user?.full_name ?? user?.email ?? '';
+        const displayName = getUserDisplayName({ employeeName: permissions.employeeName, user });
         updateMutation.mutate({
             id: task.id,
             data: {

@@ -122,9 +122,11 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
     };
 
     const handleSubmit = (e) => {
-        e.preventDefault();
+        if (e?.preventDefault) e.preventDefault();
+        if (!formData.title?.trim()) return;
         haptics.light();
         onSave(formData, todo?.id);
+        onClose();
     };
 
     return (
@@ -311,7 +313,7 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
                     <Button type="button" variant="outline" onClick={onClose} className="h-12 text-base">
                         Abbrechen
                     </Button>
-                    <Button type="submit" form="todo-form" className="h-12 text-base bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold">
+                    <Button type="button" onClick={handleSubmit} className="h-12 text-base bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold">
                         {todo ? 'Speichern' : 'Hinzufügen'}
                     </Button>
                 </MobileModalFooter>

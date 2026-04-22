@@ -5,9 +5,9 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
-import { Plus, CheckSquare, Tag, Search, X, ListChecks, Trash2, Archive, CheckCheck, Square } from 'lucide-react';
+import { Plus, CheckSquare, Tag, Search, X, ListChecks, Trash2, Archive, CheckCheck, Square, FolderInput } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
-import TodoCategoryManager, { loadCategories } from '@/components/todos/TodoCategoryManager';
+import TodoCategoryManager from '@/components/todos/TodoCategoryManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ export default function Todos() {
     const [filtersOpen, setFiltersOpen] = useState(false);
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [selectMode, setSelectMode] = useState(false);
+    const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
@@ -52,6 +53,13 @@ export default function Todos() {
         queryKey: ['current-user'],
         queryFn: () => base44.auth.me()
     });
+
+    const { data: dbCategories = [] } = useQuery({
+        queryKey: ['todo-categories'],
+        queryFn: () => base44.entities.TodoCategory.list('name'),
+    });
+    const DEFAULT_CATEGORIES = ['Einkauf', 'Reparatur', 'Event', 'Bar', 'Lager', 'Küche', 'Sonstiges'];
+    const allAvailableCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCategories.map(c => c.name)]));
 
     const { data: todos = [], isLoading, isError: todosError, error: todosErrorObj } = useQuery({
         queryKey: ['todos'],
@@ -213,6 +221,15 @@ export default function Todos() {
             await base44.entities.TodoItem.update(id, { is_archived: true });
         }
         queryClient.invalidateQueries({ queryKey: ['todos'] });
+        clearSelection();
+    };
+
+    const handleBulkMoveCategory = async (category) => {
+        for (const id of selectedIds) {
+            await base44.entities.TodoItem.update(id, { category });
+        }
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        setBulkCategoryOpen(false);
         clearSelection();
     };
 
@@ -509,24 +526,45 @@ export default function Todos() {
 
                 {/* Bulk-Aktionsleiste */}
                 {selectMode && selectedIds.size > 0 && (
-                    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-card border border-border rounded-2xl shadow-2xl px-4 py-3">
-                        <span className="text-sm font-medium text-foreground mr-2">{selectedIds.size} ausgewählt</span>
-                        <Button size="sm" variant="outline" onClick={handleBulkDone}
-                            className="gap-1.5 h-9 text-green-400 border-green-500/30 hover:bg-green-500/10">
-                            <CheckSquare className="w-4 h-4" /> Erledigt
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleBulkArchive}
-                            className="gap-1.5 h-9 text-muted-foreground">
-                            <Archive className="w-4 h-4" /> Archivieren
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleBulkDelete}
-                            className="gap-1.5 h-9 text-red-400 border-red-500/30 hover:bg-red-500/10">
-                            <Trash2 className="w-4 h-4" /> Löschen
-                        </Button>
-                        <button onClick={clearSelection} className="ml-1 text-muted-foreground hover:text-foreground">
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
+                   <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+                       {/* Kategorie-Picker */}
+                       {bulkCategoryOpen && (
+                           <div className="bg-card border border-border rounded-xl shadow-2xl p-2 flex flex-wrap gap-1.5 max-w-xs">
+                               {allAvailableCategories.map(cat => (
+                                   <button
+                                       key={cat}
+                                       onClick={() => handleBulkMoveCategory(cat)}
+                                       className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary hover:bg-accent text-foreground transition-all"
+                                   >
+                                       {cat}
+                                   </button>
+                               ))}
+                           </div>
+                       )}
+                       <div className="flex items-center gap-2 bg-card border border-border rounded-2xl shadow-2xl px-4 py-3">
+                           <span className="text-sm font-medium text-foreground mr-2">{selectedIds.size} ausgewählt</span>
+                           <Button size="sm" variant="outline" onClick={handleBulkDone}
+                               className="gap-1.5 h-9 text-green-400 border-green-500/30 hover:bg-green-500/10">
+                               <CheckSquare className="w-4 h-4" /> Erledigt
+                           </Button>
+                           <Button size="sm" variant="outline"
+                               onClick={() => setBulkCategoryOpen(o => !o)}
+                               className={cn("gap-1.5 h-9", bulkCategoryOpen ? "bg-blue-500/20 text-blue-400 border-blue-500/40" : "text-blue-400 border-blue-500/30 hover:bg-blue-500/10")}>
+                               <FolderInput className="w-4 h-4" /> Kategorie
+                           </Button>
+                           <Button size="sm" variant="outline" onClick={handleBulkArchive}
+                               className="gap-1.5 h-9 text-muted-foreground">
+                               <Archive className="w-4 h-4" /> Archivieren
+                           </Button>
+                           <Button size="sm" variant="outline" onClick={handleBulkDelete}
+                               className="gap-1.5 h-9 text-red-400 border-red-500/30 hover:bg-red-500/10">
+                               <Trash2 className="w-4 h-4" /> Löschen
+                           </Button>
+                           <button onClick={clearSelection} className="ml-1 text-muted-foreground hover:text-foreground">
+                               <X className="w-4 h-4" />
+                           </button>
+                       </div>
+                   </div>
                 )}
 
                 <TodoCategoryManager

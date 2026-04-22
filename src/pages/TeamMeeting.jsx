@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown, Settings } from 'lucide-react';
+import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown, Settings, Send } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -276,6 +276,33 @@ export default function TeamMeeting() {
                             >
                                 <Settings className="w-4 h-4 mr-2" />
                                 Termin
+                            </Button>
+                        )}
+
+                        {/* WhatsApp Erinnerung – nur Manager, nur wenn Termin vorhanden */}
+                        {permissions.isManager && currentSchedule && (
+                            <Button
+                                onClick={() => {
+                                    const datum = format(new Date(currentSchedule.date), 'EEEE, dd.MM.yyyy', { locale: de });
+                                    const uhrzeit = currentSchedule.time + ' Uhr';
+                                    const ort = currentSchedule.location ? `📍 Ort: ${currentSchedule.location}\n` : '';
+                                    const notizen = currentSchedule.notes ? `\n💬 ${currentSchedule.notes}\n` : '';
+                                    const appUrl = window.location.origin + '/TeamMeeting';
+                                    const text =
+                                        `📋 *Erinnerung: Teamsitzung*\n\n` +
+                                        `📅 ${datum}\n` +
+                                        `🕐 ${uhrzeit}\n` +
+                                        `${ort}${notizen}\n` +
+                                        `Bitte gebt bis spätestens morgen Bescheid, ob ihr teilnehmen könnt.\n\n` +
+                                        `✅ Zusage oder ❌ Absage direkt in der App:\n${appUrl}`;
+                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="border-green-600 text-green-600 hover:bg-green-50"
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                WhatsApp
                             </Button>
                         )}
                         

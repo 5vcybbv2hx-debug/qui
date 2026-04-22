@@ -57,7 +57,23 @@ export default function TodoCategoryManager({ open, onClose }) {
         mutationFn: (id) => base44.entities.TodoCategory.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['todo-categories'] });
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
             toast.success('Kategorie gelöscht');
+        },
+        onError: () => toast.error('Fehler beim Löschen')
+    });
+
+    // Löscht Kategorie aus allen Todos (setzt category auf null)
+    const deleteTodoCategoryMutation = useMutation({
+        mutationFn: async (categoryName) => {
+            const affected = allTodoItems.filter(t => t.category === categoryName);
+            for (const todo of affected) {
+                await base44.entities.TodoItem.update(todo.id, { category: null });
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
+            toast.success('Kategorie entfernt');
         },
         onError: () => toast.error('Fehler beim Löschen')
     });
@@ -147,19 +163,22 @@ export default function TodoCategoryManager({ open, onClose }) {
                                                         <span className="ml-2 text-[10px] text-amber-400">{openCount} offen</span>
                                                     )}
                                                 </div>
-                                                {cat.id ? (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => handleDelete(cat)}
-                                                        disabled={deleteMutation.isPending}
-                                                        className="h-7 w-7 text-red-400 hover:text-red-300"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                ) : (
-                                                    <span className="text-[10px] text-muted-foreground">aus Todos</span>
-                                                )}
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => {
+                                                        if (cat.id) {
+                                                            handleDelete(cat);
+                                                        } else {
+                                                            if (!confirm(`Kategorie "${cat.name}" aus allen Aufgaben entfernen? Die Aufgaben bleiben erhalten, verlieren aber diese Kategorie.`)) return;
+                                                            deleteTodoCategoryMutation.mutate(cat.name);
+                                                        }
+                                                    }}
+                                                    disabled={deleteMutation.isPending || deleteTodoCategoryMutation.isPending}
+                                                    className="h-7 w-7 text-red-400 hover:text-red-300"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </Button>
                                             </div>
                                         );
                                     })}

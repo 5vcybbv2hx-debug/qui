@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
-import { loadCategories } from './TodoCategoryManager';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import SmartCombobox from '@/components/ui/SmartCombobox';
 import AttachmentManager from './AttachmentManager';
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,17 @@ export default function TodoModal({ open, onClose, todo, employees, onSave, curr
         attachments: [],
     });
     const [newSubtask, setNewSubtask] = useState('');
-    const categories = loadCategories();
+
+    const { data: dbCategories = [] } = useQuery({
+        queryKey: ['todo-categories'],
+        queryFn: () => base44.entities.TodoCategory.list('name'),
+    });
+
+    const DEFAULT_CATEGORIES = ['Einkauf', 'Reparatur', 'Event', 'Bar', 'Lager', 'Küche', 'Sonstiges'];
+    const categories = Array.from(new Set([
+        ...DEFAULT_CATEGORIES,
+        ...dbCategories.map(c => c.name)
+    ]));
 
     useEffect(() => {
         if (todo) {

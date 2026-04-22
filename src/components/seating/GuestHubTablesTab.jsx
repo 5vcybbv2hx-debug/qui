@@ -60,7 +60,7 @@ export default function GuestHubTablesTab({
                             </div>
                             <div>
                                 <p className="text-xs font-medium">{STATUS_CONFIG[status].label}</p>
-                                <p className="text-xs opacity-70">{table.capacity} Pl.</p>
+                                <p className="text-xs opacity-70">{table.capacity} Pl.{table.room ? ` · ${table.room}` : ''}</p>
                                 {reservation && <p className="text-xs font-semibold truncate mt-0.5">{reservation.time}</p>}
                             </div>
                         </button>

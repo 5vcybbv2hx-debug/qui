@@ -59,8 +59,9 @@ export default function CompanySettingsPage() {
                 return await base44.entities.CompanyInfo.create(data);
             }
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['company-info'] });
+        onSuccess: (savedData) => {
+            // Update cache directly without triggering a re-fetch that could reset formData
+            queryClient.setQueryData(['company-info'], savedData);
             toast.success('Firmendaten gespeichert');
         },
         onError: (error) => {

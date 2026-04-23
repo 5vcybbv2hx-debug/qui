@@ -27,7 +27,7 @@ export default function ShiftSwapApprovalCard() {
 
     const { data: bids = [] } = useQuery({
         queryKey: ['shift-swap-bids'],
-        queryFn: () => base44.entities.ShiftSwapBid.filter({ status: 'ausstehend' })
+        queryFn: () => base44.entities.ShiftSwapBid.list('-created_date', 500)
     });
 
     const { data: employees = [] } = useQuery({

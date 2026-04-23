@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Upload, Download, Share2, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import DigitalBusinessCard from '@/components/company/DigitalBusinessCard';
+import OpeningHoursEditor from '@/components/company/OpeningHoursEditor';
 
 export default function CompanySettingsPage() {
     const [formData, setFormData] = useState({
@@ -230,13 +231,10 @@ export default function CompanySettingsPage() {
                                             />
                                         </div>
                                         <div>
-                                            <Label className="text-slate-300">Öffnungszeiten</Label>
-                                            <Textarea
+                                            <Label className="text-slate-300 mb-3 block">Öffnungszeiten</Label>
+                                            <OpeningHoursEditor
                                                 value={formData.opening_hours}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, opening_hours: e.target.value }))}
-                                                className="bg-slate-900 border-slate-600 text-white"
-                                                rows={2}
-                                                placeholder="Mo-Fr: 18:00-01:00, Sa: 20:00-03:00"
+                                                onChange={(val) => setFormData(prev => ({ ...prev, opening_hours: val }))}
                                             />
                                         </div>
                                     </CardContent>

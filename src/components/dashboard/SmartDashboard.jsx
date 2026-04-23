@@ -9,6 +9,7 @@ import ActiveStaffPanel from '@/components/dashboard/ActiveStaffPanel';
 import TimeApprovalPanel from '@/components/dashboard/TimeApprovalPanel';
 import TimeEntryReview from '@/components/dashboard/TimeEntryReview';
 import AlarmPanel from '@/components/dashboard/AlarmPanel';
+import ShiftSwapApprovalCard from '@/components/dashboard/ShiftSwapApprovalCard';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -385,6 +386,9 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
 
     return (
         <div className="space-y-5">
+            {/* Schichttausch-Anfragen */}
+            <ShiftSwapApprovalCard />
+
             {/* Aktive Mitarbeiter */}
             <section>
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3 flex items-center gap-2">

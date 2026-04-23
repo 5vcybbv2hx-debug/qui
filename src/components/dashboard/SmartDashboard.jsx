@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamNotes from '@/components/dashboard/TeamNotes';
 import ShiftSwapMarketplaceCard from '@/components/shifts/ShiftSwapMarketplaceCard';
 import ActiveStaffPanel from '@/components/dashboard/ActiveStaffPanel';
+import UpcomingBirthdaysWidget from '@/components/dashboard/UpcomingBirthdaysWidget';
 import TimeApprovalPanel from '@/components/dashboard/TimeApprovalPanel';
 import TimeEntryReview from '@/components/dashboard/TimeEntryReview';
 import AlarmPanel from '@/components/dashboard/AlarmPanel';
@@ -121,6 +122,9 @@ function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employ
                     <ShiftSwapMarketplaceCard currentEmployee={currentEmployee} />
                 </section>
             )}
+
+            {/* Geburtstage */}
+            <UpcomingBirthdaysWidget employees={employees} />
 
             {/* Team-Notizen (kompakt) */}
             <section>

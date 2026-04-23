@@ -44,6 +44,11 @@ export default function TeamCalendar() {
         queryFn: () => base44.entities.MaintenanceTask.filter({ is_active: true })
     });
 
+    const { data: events = [] } = useQuery({
+        queryKey: ['events'],
+        queryFn: () => base44.entities.Event.list('-date', 200)
+    });
+
     // Get holidays for current and next year
     const currentYear = new Date().getFullYear();
     const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
@@ -132,6 +137,7 @@ export default function TeamCalendar() {
                         holidays={holidays}
                         employees={employees}
                         maintenanceTasks={maintenanceTasks}
+                        events={events}
                         onEventClick={handleEventClick}
                         selectedEmployees={selectedEmployees}
                         onEmployeeToggle={setSelectedEmployees}

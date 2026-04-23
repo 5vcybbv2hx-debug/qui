@@ -30,6 +30,11 @@ const EVENT_STYLES = {
         dot: 'bg-blue-400',
         text: 'text-blue-200',
     },
+    event: {
+        bg: 'bg-pink-500/20 border-l-2 border-pink-500 hover:bg-pink-500/30',
+        dot: 'bg-pink-400',
+        text: 'text-pink-200',
+    },
     birthday: {
         bg: 'bg-purple-500/20 border-l-2 border-purple-500 hover:bg-purple-500/30',
         dot: 'bg-purple-400',
@@ -94,6 +99,13 @@ export default function UnifiedCalendarView({
         maintenanceTasks.forEach(task => {
             if (task.next_maintenance === dayStr) {
                 dayEvents.push({ type: 'maintenance', id: task.id, data: task });
+            }
+        });
+
+        // Events
+        events.forEach(ev => {
+            if (ev.date === dayStr) {
+                dayEvents.push({ type: 'event', id: `event-${ev.id}`, data: ev });
             }
         });
 
@@ -256,7 +268,9 @@ export default function UnifiedCalendarView({
                                             ? `🔧 ${event.data.equipment_name}`
                                             : event.type === 'birthday'
                                             ? `🎂 ${event.data.name}`
-                                            : `🎉 ${event.data.name}`;
+                                            : event.type === 'event'
+                                            ? `🎉 ${event.data.title}`
+                                            : event.data.name;
 
                                         return (
                                             <div
@@ -301,6 +315,10 @@ export default function UnifiedCalendarView({
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-3 h-3 rounded-sm bg-blue-500/30 border-l-2 border-blue-500" />
                     Wartung
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-3 h-3 rounded-sm bg-pink-500/30 border-l-2 border-pink-500" />
+                    Event
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-3 h-3 rounded-sm bg-purple-500/30 border-l-2 border-purple-500" />

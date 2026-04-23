@@ -207,11 +207,12 @@ export default function Shopping() {
         if (!eanInput.trim()) return;
 
         const input = eanInput.trim();
-        const article = articles.find(a => 
-            a.barcode === input || 
-            a.name.toLowerCase() === input.toLowerCase() ||
-            a.name.toLowerCase().includes(input.toLowerCase())
-        );
+        const lowerInput = input.toLowerCase();
+        
+        // Priorität: Exact barcode match → Exact name match → Partial name match
+        let article = articles.find(a => a.barcode === input);
+        if (!article) article = articles.find(a => a.name.toLowerCase() === lowerInput);
+        if (!article) article = articles.find(a => a.name.toLowerCase().includes(lowerInput));
 
         if (!article) {
             alert('Artikel nicht gefunden');

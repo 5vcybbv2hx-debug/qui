@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Trash2, TrendingUp, Eye, Download } from 'lucide-react';
 import ReportUploader from '@/components/sales/ReportUploader';
 import SalesAnalyticsDashboard from '@/components/sales/SalesAnalyticsDashboard';
+import ArticleStatisticsDashboard from '@/components/sales/ArticleStatisticsDashboard';
 import ReportDetailsModal from '@/components/sales/ReportDetailsModal';
 import ReportComparison from '@/components/sales/ReportComparison';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ export default function SalesAnalysisPage() {
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [selectedReports, setSelectedReports] = useState([]);
     const [showComparisonModal, setShowComparisonModal] = useState(false);
+    const [articles, setArticles] = useState([]);
 
     const { data: reports = [], refetch } = useQuery({
         queryKey: ['sales-reports'],
@@ -103,6 +105,10 @@ export default function SalesAnalysisPage() {
                             <TrendingUp className="w-4 h-4 mr-2" />
                             Dashboard
                         </TabsTrigger>
+                        <TabsTrigger value="articles" className="data-[state=active]:bg-amber-600">
+                            <FileText className="w-4 h-4 mr-2" />
+                            Artikel-Statistik
+                        </TabsTrigger>
                         <TabsTrigger value="upload" className="data-[state=active]:bg-amber-600">
                             <FileText className="w-4 h-4 mr-2" />
                             Upload
@@ -132,6 +138,10 @@ export default function SalesAnalysisPage() {
                                 </CardContent>
                             </Card>
                         )}
+                    </TabsContent>
+
+                    <TabsContent value="articles">
+                        <ArticleStatisticsDashboard articles={articles} />
                     </TabsContent>
 
                     <TabsContent value="upload">

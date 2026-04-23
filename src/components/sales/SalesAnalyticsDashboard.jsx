@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const COLORS = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export default function SalesAnalyticsDashboard() {
-    const [timeRange, setTimeRange] = useState('30');
+    const [timeRange, setTimeRange] = useState('365');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('all');
     const [drilldownItem, setDrilldownItem] = useState(null);
@@ -232,6 +232,7 @@ export default function SalesAnalyticsDashboard() {
                             <SelectItem value="30">Letzte 30 Tage</SelectItem>
                             <SelectItem value="90">Letzte 90 Tage</SelectItem>
                             <SelectItem value="365">Letztes Jahr</SelectItem>
+                            <SelectItem value="3650">Alle Daten</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

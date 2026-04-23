@@ -279,7 +279,8 @@ function hexToHsl(hex) {
 export async function loadSavedColors() {
     try {
         const companies = await base44.entities.CompanyInfo.list();
-        const info = companies[0];
+        const raw = companies[0];
+        const info = raw?.data ? raw.data : raw;
         if (info?.theme_preset_key) {
             const preset = THEME_PRESETS.find(p => p.key === info.theme_preset_key);
             if (preset) applyThemePreset(preset);
@@ -352,7 +353,8 @@ export default function ColorCustomizer() {
         queryFn: () => base44.entities.CompanyInfo.list(),
     });
 
-    const company = companyList?.[0];
+    const rawCompany = companyList?.[0];
+    const company = rawCompany?.data ? { ...rawCompany.data, id: rawCompany.id } : rawCompany;
 
     useEffect(() => {
         if (company?.theme_preset_key) {

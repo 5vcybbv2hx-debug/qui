@@ -166,7 +166,7 @@ export default function Reports() {
 
                 {/* Header */}
                 <div className="mb-4 sm:mb-6">
-                    <h1 className="text-xl sm:text-2xl font-bold text-foreground">Berichte</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-foreground">Lohnabrechnung</h1>
                     <p className="text-muted-foreground text-xs sm:text-sm mt-1">Auswertungen für {format(selectedMonth, 'MMMM yyyy', { locale: de })}</p>
                 </div>
 

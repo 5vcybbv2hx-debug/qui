@@ -4,7 +4,7 @@ import {
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
-    Palmtree, ListChecks, Video
+    Palmtree, ListChecks, Video, QrCode
 } from 'lucide-react';
 
 /**
@@ -96,6 +96,7 @@ export const additionalPages = [
     { name: 'Einstellungen',  page: 'Settings',         icon: Settings,   permission: 'canViewSettings'         },
     { name: 'Firmendaten',    page: 'CompanySettings',  icon: FileText,   permission: 'canEditCompanySettings'  },
     { name: 'Einarbeitung',   page: 'Onboarding',       icon: Users,      permission: 'canViewOnboarding'       },
+    { name: 'Visitenkarte',   page: 'BusinessCard',     icon: QrCode,     permission: 'canViewDashboard'        },
 ];
 
 /**

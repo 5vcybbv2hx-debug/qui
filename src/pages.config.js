@@ -101,6 +101,7 @@ import StorageLocationScan from './pages/StorageLocationScan';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import WeeklyTasks from './pages/WeeklyTasks';
+import BusinessCard from './pages/BusinessCard';
 
 // Special pages (manual imports — non-standard routing)
 import CleaningChecklist from './pages/CleaningChecklist';
@@ -174,6 +175,7 @@ const CORE_PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "WeeklyTasks": WeeklyTasks,
+    "BusinessCard": BusinessCard,
 };
 
 // Special pages: with Layout wrapper

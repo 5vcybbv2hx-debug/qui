@@ -10,6 +10,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PublicWeeklySpecialDisplay from './pages/PublicWeeklySpecialDisplay';
+import BusinessCard from './pages/BusinessCard';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -88,6 +89,13 @@ const AuthenticatedApp = () => {
       } />
 
 
+
+      {/* Digitale Visitenkarte — für alle Mitarbeiter */}
+      <Route path="/BusinessCard" element={
+        <LayoutWrapper currentPageName="BusinessCard">
+          <BusinessCard />
+        </LayoutWrapper>
+      } />
 
       {/* Redirect old EmployeeHome links to Dashboard */}
       <Route path="/EmployeeHome" element={<Navigate to="/" replace />} />

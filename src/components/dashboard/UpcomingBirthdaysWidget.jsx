@@ -26,7 +26,7 @@ export default function UpcomingBirthdaysWidget({ employees = [] }) {
                     emp, 
                     date: nextBday, 
                     daysUntil,
-                    dateString: format(nextBday, 'd. MMMM', { locale: de })
+                    dateString: format(nextBday, 'EEEE, d. MMMM', { locale: de })
                 };
             })
             .filter(({ daysUntil }) => daysUntil >= 0 && daysUntil <= 7)

@@ -4,6 +4,31 @@ import { Button } from '@/components/ui/button';
 import { Phone, Mail, MapPin, Globe, Download, Share2, QrCode as QrCodeIcon } from 'lucide-react';
 import QRCode from 'qrcode';
 
+const DAYS = [
+    { key: 'mo', label: 'Mo' },
+    { key: 'di', label: 'Di' },
+    { key: 'mi', label: 'Mi' },
+    { key: 'do', label: 'Do' },
+    { key: 'fr', label: 'Fr' },
+    { key: 'sa', label: 'Sa' },
+    { key: 'so', label: 'So' },
+];
+
+function formatOpeningHours(value) {
+    if (!value) return null;
+    try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        if (typeof parsed === 'object' && parsed !== null && 'mo' in parsed) {
+            return DAYS
+                .filter(d => parsed[d.key]?.open)
+                .map(d => `${d.label}: ${parsed[d.key].from} – ${parsed[d.key].to}`)
+                .join('\n') || null;
+        }
+    } catch (_) {}
+    // Freitext fallback
+    return value || null;
+}
+
 export default function DigitalBusinessCard({ companyInfo }) {
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const canvasRef = useRef(null);
@@ -173,11 +198,11 @@ END:VCARD`;
                                 </div>
                             )}
                         </div>
-                        {companyInfo.opening_hours && (
+                        {formatOpeningHours(companyInfo.opening_hours) && (
                             <div className="mt-4 pt-4 border-t border-slate-200">
                                 <p className="text-xs text-slate-600 font-medium mb-1">Öffnungszeiten:</p>
                                 <p className="text-xs text-slate-700 whitespace-pre-line">
-                                    {companyInfo.opening_hours}
+                                    {formatOpeningHours(companyInfo.opening_hours)}
                                 </p>
                             </div>
                         )}

@@ -110,12 +110,17 @@ export default function UnifiedCalendarView({
         });
 
         // Geburtstage: Monat+Tag vergleichen (unabhängig vom Jahr)
+        // Format: "YYYY-MM-DD" → "MM-DD"
         const dayMD = format(day, 'MM-dd');
         employees.forEach(emp => {
-            if (emp.birthday) {
-                const bMD = emp.birthday.slice(5); // "YYYY-MM-DD" → "MM-DD"
-                if (bMD === dayMD) {
-                    dayEvents.push({ type: 'birthday', id: `birthday-${emp.id}`, data: emp });
+            if (emp.birthday && emp.birthday.length >= 10) {
+                try {
+                    const bMD = emp.birthday.slice(5, 10); // "YYYY-MM-DD" → "MM-DD"
+                    if (bMD === dayMD) {
+                        dayEvents.push({ type: 'birthday', id: `birthday-${emp.id}`, data: emp });
+                    }
+                } catch (e) {
+                    // Ungültiges Datumsformat ignorieren
                 }
             }
         });

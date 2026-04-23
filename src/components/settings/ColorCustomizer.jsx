@@ -364,8 +364,9 @@ export default function ColorCustomizer() {
     }, [company]);
 
     const saveMutation = useMutation({
-        mutationFn: (key) => {
-            if (company?.id) return base44.entities.CompanyInfo.update(company.id, { theme_preset_key: key });
+        mutationFn: async (key) => {
+            if (!company?.id) throw new Error('Keine Firmendaten gefunden');
+            return base44.entities.CompanyInfo.update(company.id, { theme_preset_key: key });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['company-info'] });

@@ -74,6 +74,9 @@ export default function Vacation() {
         })
     });
 
+    // Check if current employee is full-time
+    const isFullTimeEmployee = currentEmployee?.contract_type === 'Vollzeit';
+
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.VacationRequest.create(data),
         onSuccess: () => {
@@ -216,7 +219,7 @@ export default function Vacation() {
     const pendingRequests = visibleRequests.filter(r => r.status === 'beantragt');
     const [showTaxReport, setShowTaxReport] = React.useState(false);
 
-    if (!permissions.isLoading && !permissions.canViewVacation) {
+    if (!permissions.isLoading && (!permissions.canViewVacation || (!permissions.isManager && !isFullTimeEmployee))) {
         return <PermissionDenied message="Urlaub ist für Aushilfen nicht verfügbar. Nutze die 'Nicht verfügbar'-Funktion im Schichtplan." />;
     }
 
@@ -252,7 +255,7 @@ export default function Vacation() {
                                 <SelectItem value={(selectedYear + 1).toString()}>{selectedYear + 1}</SelectItem>
                             </SelectContent>
                         </Select>
-                        {currentEmployee && (
+                        {currentEmployee && isFullTimeEmployee && (
                             <Button 
                                 onClick={() => setModalOpen(true)}
                                 className="bg-amber-600 hover:bg-amber-700"

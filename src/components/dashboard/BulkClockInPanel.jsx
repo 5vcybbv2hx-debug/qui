@@ -58,7 +58,7 @@ export default function BulkClockInPanel({ todayShifts, employees, isManager, cu
                     employee_name: emp.name,
                     clock_in: isoTime,
                     status: 'clocked_in',
-                    notes: `Manuell aufgestempelt durch Manager: ${managerName} am ${format(new Date(), 'dd.MM.yyyy HH:mm', { locale: de })}`
+                    notes: `Manuell eingestempelt durch Manager: ${managerName} am ${format(new Date(), 'dd.MM.yyyy HH:mm', { locale: de })}`
                 })
             ));
         },
@@ -87,7 +87,7 @@ export default function BulkClockInPanel({ todayShifts, employees, isManager, cu
             <Card className="border-green-500/40 bg-green-500/8">
                 <CardContent className="p-3 flex items-center gap-3">
                     <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-                    <p className="text-sm text-green-300 font-medium">Alle offenen Schichtstarts wurden aufgestempelt.</p>
+                    <p className="text-sm text-green-300 font-medium">Alle offenen Schichtstarts wurden eingestempelt.</p>
                     <button onClick={() => setDone(false)} className="ml-auto text-muted-foreground hover:text-foreground">
                         <X className="w-4 h-4" />
                     </button>
@@ -115,7 +115,7 @@ export default function BulkClockInPanel({ todayShifts, employees, isManager, cu
                     onClick={() => setOpen(true)}
                     className="h-9 min-w-[72px] bg-orange-600 hover:bg-orange-700 text-white text-xs shrink-0"
                 >
-                    Aufstempeln
+                    Einstempeln
                 </Button>
             </div>
 
@@ -133,7 +133,7 @@ export default function BulkClockInPanel({ todayShifts, employees, isManager, cu
                                 <UserCheck className="w-5 h-5 text-orange-400" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-base font-bold text-foreground">Offene Schichtstarts aufstempeln</h3>
+                                <h3 className="text-base font-bold text-foreground">Offene Schichtstarts einstempeln</h3>
                                 <p className="text-xs text-muted-foreground">Nur für Manager · {format(new Date(), 'dd.MM.yyyy')}</p>
                             </div>
                             <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground p-1 min-h-[44px] min-w-[44px] flex items-center justify-center">
@@ -145,7 +145,7 @@ export default function BulkClockInPanel({ todayShifts, employees, isManager, cu
                         <div className="mx-5 mt-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
                             <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                             <p className="text-xs text-amber-300">
-                                Diese Aktion stempelt {missingEmployees.length} Mitarbeiter auf. Die Aktion wird mit deinem Namen protokolliert und ist nicht automatisch rückgängig zu machen.
+                                Diese Aktion stempelt {missingEmployees.length} Mitarbeiter ein. Die Aktion wird mit deinem Namen protokolliert und ist nicht automatisch rückgängig zu machen.
                             </p>
                         </div>
 
@@ -231,8 +231,8 @@ export default function BulkClockInPanel({ todayShifts, employees, isManager, cu
                                 {bulkClockInMutation.isPending ? (
                                     <><Loader2 className="w-4 h-4 animate-spin" />Stempelt...</>
                                 ) : (
-                                    <><UserCheck className="w-4 h-4" />{missingEmployees.length} aufstempeln</>
-                                )}
+                                    <><UserCheck className="w-4 h-4" />{missingEmployees.length} einstempeln</>
+                                    )}
                             </Button>
                         </div>
                     </div>

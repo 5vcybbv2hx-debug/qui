@@ -40,7 +40,7 @@ export default function ShiftSwaps() {
 
     const { data: bids = [] } = useQuery({
         queryKey: ['shift-swap-bids'],
-        queryFn: () => base44.entities.ShiftSwapBid.list('-created_at', 200)
+        queryFn: () => base44.entities.ShiftSwapBid.list('-created_date', 200)
     });
 
     const { data: currentUser } = useQuery({

@@ -16,7 +16,8 @@ export function sortBidsByTimestamp(bids) {
  */
 export function groupBidsByStatus(bids) {
   return {
-    annehmen: bids.filter(b => b.status === 'annehmen'),
+    // 'ausstehend' = über Marketplace-Button beworben (gleichwertig mit 'annehmen')
+    annehmen: bids.filter(b => b.status === 'annehmen' || b.status === 'ausstehend'),
     unter_umständen: bids.filter(b => b.status === 'unter_umständen'),
     ablehnen: bids.filter(b => b.status === 'ablehnen')
   };
@@ -101,6 +102,7 @@ export async function executeDirectSwap(
  * Format Timestamp für Anzeige
  */
 export function formatBidTime(timestamp) {
+  if (!timestamp) return '';
   return format(parseISO(timestamp), 'dd.MM.yyyy HH:mm', { locale: de });
 }
 

@@ -184,6 +184,8 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                 {/* Team Meeting Reminder */}
                 <TeamMeetingReminder />
 
+                <ShiftSwapApprovalCard />
+
                 {/* Alerts */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {pendingTimeEntries.length > 0 && (
@@ -278,7 +280,6 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                     ))}
                 </div>
 
-                <ShiftSwapApprovalCard />
                 <TodayOverview shifts={todayShifts} events={todayEvents} reservations={todayReservations} employees={employees} maxItems={4} />
 
                 {/* Team-Notizen */}

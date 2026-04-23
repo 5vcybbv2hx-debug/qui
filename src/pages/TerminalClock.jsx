@@ -223,7 +223,7 @@ export default function TerminalClock() {
                 }
                 workingMinutes -= accumulatedPause;
                 
-                const hours = Math.round((workingMinutes / 60) * 100) / 100;
+                const hours = Math.max(0, Math.round((workingMinutes / 60) * 100) / 100);
 
                 // Automatische Pausen nach ArbZG (bezahlt)
                 let pauseMinuten = 0;

@@ -68,14 +68,14 @@ export default function Vacation() {
 
     const { data: allEmployees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ 
-            is_active: true,
-            contract_type: 'Vollzeit'
-        })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
     // Check if current employee is full-time
     const isFullTimeEmployee = currentEmployee?.contract_type === 'Vollzeit';
+    
+    // Filter to show only full-time employees for vacation stats
+    const fullTimeEmployees = allEmployees.filter(e => e.contract_type === 'Vollzeit');
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.VacationRequest.create(data),
@@ -199,9 +199,9 @@ export default function Vacation() {
         ? vacationRequests 
         : vacationRequests.filter(r => r.employee_id === currentEmployee?.id);
 
-    // Calculate stats per employee
+    // Calculate stats per employee (only for full-time)
     const employeeStats = {};
-    allEmployees.forEach(emp => {
+    fullTimeEmployees.forEach(emp => {
         const empRequests = vacationRequests.filter(r => 
             r.employee_id === emp.id && r.status === 'genehmigt' && r.type === 'Urlaub'
         );
@@ -310,7 +310,7 @@ export default function Vacation() {
                     <Card className="p-6 bg-slate-800 border-slate-700 mb-6">
                         <h2 className="text-lg font-semibold text-white mb-4">Mitarbeiter-Übersicht</h2>
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {allEmployees.map(emp => {
+                            {fullTimeEmployees.map(emp => {
                                 const stats = employeeStats[emp.id];
                                 if (!stats) return null;
                                 return (

@@ -49,6 +49,11 @@ export default function TeamCalendar() {
         queryFn: () => base44.entities.Event.list('-date', 200)
     });
 
+    const { data: reservations = [] } = useQuery({
+        queryKey: ['reservations'],
+        queryFn: () => base44.entities.Reservation.filter({ is_archived: false })
+    });
+
     // Get holidays for current and next year
     const currentYear = new Date().getFullYear();
     const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
@@ -138,6 +143,7 @@ export default function TeamCalendar() {
                         employees={employees}
                         maintenanceTasks={maintenanceTasks}
                         events={events}
+                        reservations={reservations}
                         onEventClick={handleEventClick}
                         selectedEmployees={selectedEmployees}
                         onEmployeeToggle={setSelectedEmployees}
@@ -170,6 +176,7 @@ export default function TeamCalendar() {
                 holidays={holidays}
                 employees={employees}
                 maintenanceTasks={maintenanceTasks}
+                reservations={reservations}
             />
 
             {/* Shift Swap Modal */}

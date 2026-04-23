@@ -97,86 +97,118 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                             />
                         </div>
                         
-                        {/* Tasks */}
-                        <div className="divide-y divide-slate-700">
-                            {areaTasks
-                                .sort((a, b) => {
-                                    if (a.is_completed === b.is_completed) return 0;
-                                    return a.is_completed ? 1 : -1;
-                                })
-                                .map((task) => (
-                                <div 
-                                    key={task.id}
-                                    className={cn(
-                                        "px-4 py-3 transition-colors",
-                                        task.is_completed ? "bg-slate-800/50" : "bg-slate-800 hover:bg-slate-750"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <button
-                                            onClick={() => onComplete(task)}
-                                            className={cn(
-                                                "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                                                task.is_completed 
-                                                    ? "border-emerald-500 bg-emerald-500" 
-                                                    : "border-slate-600 hover:border-emerald-500"
-                                            )}
-                                        >
-                                            {task.is_completed && <Check className="w-3 h-3 text-white" />}
-                                        </button>
-                                        
-                                        <div className="flex-1 min-w-0">
-                                            <p className={cn(
-                                               "text-sm font-medium",
-                                               task.is_completed ? "text-slate-500 line-through" : "text-white"
-                                            )}>
-                                               {task.title}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                               <span className="text-[10px] uppercase tracking-wider text-slate-500">
+                        {/* Open Tasks First, Then Completed */}
+                         <div className="divide-y divide-slate-700">
+                             {/* Open Tasks Section */}
+                             {areaTasks
+                                 .filter(t => !t.is_completed)
+                                 .map((task) => (
+                                 <div 
+                                     key={task.id}
+                                     className="px-4 py-4 bg-gradient-to-r from-slate-800 to-slate-800/80 hover:from-slate-750 hover:to-slate-750/80 transition-colors border-l-2 border-amber-500"
+                                 >
+                                     <div className="flex items-center gap-3">
+                                         <button
+                                             onClick={() => onComplete(task)}
+                                             className={cn(
+                                                 "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                                                 "border-amber-500 hover:bg-amber-500/20 hover:border-amber-400"
+                                             )}
+                                         >
+                                         </button>
+
+                                         <div className="flex-1 min-w-0">
+                                             <p className="text-sm font-semibold text-white">
+                                                {task.title}
+                                             </p>
+                                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                               <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-400">
                                                    {frequencyLabels[task.frequency]}
                                                </span>
                                                {task.due_date && (
-                                                   <span className="text-[10px] text-amber-500">
-                                                       • Fällig: {format(new Date(task.due_date), 'dd.MM.yyyy', { locale: de })}
+                                                   <span className="text-[10px] text-amber-500 font-medium">
+                                                       📅 {format(new Date(task.due_date), 'dd.MM.yyyy', { locale: de })}
                                                    </span>
                                                )}
                                                {task.due_weekdays && task.due_weekdays.length > 0 && (
-                                                   <span className="text-[10px] text-amber-400">
-                                                       • {task.due_weekdays.map(d => d.slice(0,2)).join(', ')}
+                                                   <span className="text-[10px] text-amber-300 font-medium">
+                                                       📆 {task.due_weekdays.map(d => d.slice(0,2)).join(', ')}
                                                    </span>
                                                )}
-                                               {task.is_completed && task.completed_by && (
-                                                   <Link 
-                                                       to={createPageUrl('Employees')}
-                                                       className="text-[10px] text-slate-500 hover:text-amber-500 transition-colors flex items-center gap-1"
-                                                       onClick={(e) => e.stopPropagation()}
-                                                   >
-                                                       • {task.completed_by.split(' ')[0]}
-                                                       {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
-                                                       <ExternalLink className="w-2 h-2" />
-                                                   </Link>
-                                               )}
                                             </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-1">
+                                            </div>
+
+                                            <div className="flex items-center gap-1">
                                             <ReportProblemButton task={task} userName={userName} />
                                             <TaskManager task={task} areas={areas} />
-                                            {task.is_completed && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 text-slate-500 hover:text-slate-300 hover:bg-slate-700"
-                                                    onClick={() => onReset(task)}
+                                            </div>
+                                            </div>
+                                            </div>
+                                            ))}
+
+                                            {/* Completed Tasks Section */}
+                                            {areaTasks
+                                            .filter(t => t.is_completed)
+                                            .length > 0 && (
+                                            <>
+                                            <div className="px-4 py-2 bg-slate-700/30 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                            ✓ Erledigt ({areaTasks.filter(t => t.is_completed).length})
+                                            </div>
+                                            {areaTasks
+                                            .filter(t => t.is_completed)
+                                            .map((task) => (
+                                            <div 
+                                            key={task.id}
+                                            className="px-4 py-3 bg-slate-800/40 hover:bg-slate-800/60 transition-colors opacity-75"
+                                            >
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => onComplete(task)}
+                                                    className={cn(
+                                                        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                                                        "border-emerald-500 bg-emerald-500"
+                                                    )}
                                                 >
-                                                    <RotateCcw className="w-3.5 h-3.5" />
-                                                </Button>
+                                                    <Check className="w-3 h-3 text-white" />
+                                                </button>
+
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm text-slate-500 line-through">
+                                                       {task.title}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                       <span className="text-[10px] uppercase tracking-wider text-slate-600">
+                                                           {frequencyLabels[task.frequency]}
+                                                       </span>
+                                                       {task.completed_by && (
+                                                           <Link 
+                                                               to={createPageUrl('Employees')}
+                                                               className="text-[10px] text-slate-500 hover:text-amber-500 transition-colors flex items-center gap-1"
+                                                               onClick={(e) => e.stopPropagation()}
+                                                           >
+                                                               👤 {task.completed_by.split(' ')[0]}
+                                                               {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
+                                                               <ExternalLink className="w-2 h-2" />
+                                                           </Link>
+                                                       )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 text-slate-500 hover:text-slate-300 hover:bg-slate-700"
+                                                        onClick={() => onReset(task)}
+                                                    >
+                                                        <RotateCcw className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            </div>
+                                            ))}
+                                            </>
                                             )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     </Card>
                 );

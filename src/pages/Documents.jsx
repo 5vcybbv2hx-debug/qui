@@ -25,11 +25,17 @@ export default function DocumentsPage() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
 
-    const { data: documents = [], isLoading } = useQuery({
+    const { data: rawDocuments = [], isLoading } = useQuery({
         queryKey: ['documents'],
         queryFn: () => base44.entities.Document.list('-created_date'),
-        initialData: []
     });
+
+    // Normalize: SDK may return data nested under .data or flat
+    const documents = rawDocuments.map(doc => ({
+        id: doc.id,
+        created_date: doc.created_date,
+        ...(doc.data ? doc.data : doc),
+    }));
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Document.delete(id),

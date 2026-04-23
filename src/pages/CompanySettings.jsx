@@ -43,8 +43,10 @@ export default function CompanySettingsPage() {
         }
     });
 
+    const initialized = React.useRef(false);
     useEffect(() => {
-        if (companyInfo) {
+        if (companyInfo && !initialized.current) {
+            initialized.current = true;
             setFormData(companyInfo);
         }
     }, [companyInfo]);

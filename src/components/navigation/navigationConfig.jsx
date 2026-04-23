@@ -90,7 +90,7 @@ export const additionalPages = [
     { name: 'Stationsplan',   page: 'Stationsplan',   icon: MapPin,     permission: 'canViewShifts'           },
     { name: 'Tagesabschluss', page: 'DailyAnalysis',   icon: BarChart2,  permission: 'canViewAnalytics'        },
     { name: 'Lohnabrechnung', page: 'Reports',          icon: FileText,   permission: 'canViewAnalytics'        },
-    { name: 'Umsatz',         page: 'SalesAnalysis',    icon: TrendingUp, permission: 'canViewAnalytics'        },
+    { name: 'Verkaufsanalyse', page: 'SalesAnalysis',    icon: TrendingUp, permission: 'canViewAnalytics'        },
     { name: 'Dokumente',      page: 'Documents',        icon: FolderOpen, permission: 'canViewSettings'         },
     { name: 'Wartung',        page: 'Maintenance',      icon: Wrench,     permission: 'canViewSettings'         },
     { name: 'Einstellungen',  page: 'Settings',         icon: Settings,   permission: 'canViewSettings'         },

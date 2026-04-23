@@ -51,7 +51,8 @@ export default function ReportUploader({ onUploadComplete }) {
 
                     if (extractionResult.status === 'success') {
                         // Extrahiere Datum aus dem Bericht und konvertiere zu ISO Format
-                        const reportDate = formatDateToISO(extractionResult.output.date);
+                        // Für Artikelverkäufe auch aus den Daten oder Dateiname ableiten
+                        const reportDate = formatDateToISO(extractionResult.output.date || extractionResult.output.report_date);
 
                         // 3. Create report record
                         const report = await base44.entities.SalesReport.create({
@@ -179,12 +180,14 @@ export default function ReportUploader({ onUploadComplete }) {
             'Artikelverkäufe': {
                 type: 'object',
                 properties: {
+                    date: { type: 'string', description: 'Datum des Berichts im Format DD.MM.YYYY oder YYYY-MM-DD' },
                     items: {
                         type: 'array',
+                        description: 'Liste aller Artikel. WICHTIG: Wenn ein Artikelname das Wort "Favoriten" enthält und danach etwas in Klammern steht (z.B. "Mojito Favoriten (Mojito Classic)"), dann verwende NUR den Text in den Klammern als name (also "Mojito Classic"). Wenn kein "Favoriten" im Namen steht, verwende den vollständigen Artikelnamen.',
                         items: {
                             type: 'object',
                             properties: {
-                                name: { type: 'string' },
+                                name: { type: 'string', description: 'Artikelname. Bei "X Favoriten (Y)" nur Y verwenden.' },
                                 category: { type: 'string' },
                                 quantity: { type: 'number' },
                                 price: { type: 'number' },
@@ -246,10 +249,19 @@ export default function ReportUploader({ onUploadComplete }) {
             });
         } else if (reportType === 'Artikelverkäufe' && data.items) {
             data.items.forEach(item => {
+                // Fallback: Falls Name "Favoriten" enthält und Klammern vorhanden sind,
+                // nur den Inhalt der Klammern verwenden
+                let cleanName = item.name || '';
+                if (/favoriten/i.test(cleanName)) {
+                    const bracketMatch = cleanName.match(/\(([^)]+)\)/);
+                    if (bracketMatch) {
+                        cleanName = bracketMatch[1].trim();
+                    }
+                }
                 items.push({
                     report_id: reportId,
                     date: reportDate,
-                    item_name: item.name,
+                    item_name: cleanName,
                     category: item.category,
                     quantity_sold: item.quantity,
                     revenue: item.revenue,

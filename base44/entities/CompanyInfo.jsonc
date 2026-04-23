@@ -18,6 +18,11 @@
       "type": "string",
       "description": "Stadt"
     },
+    "country": {
+      "type": "string",
+      "description": "Land",
+      "default": "Deutschland"
+    },
     "email": {
       "type": "string",
       "description": "Kontakt-E-Mail"
@@ -25,6 +30,42 @@
     "phone": {
       "type": "string",
       "description": "Telefonnummer"
+    },
+    "website": {
+      "type": "string",
+      "description": "Webseite"
+    },
+    "description": {
+      "type": "string",
+      "description": "Kurzbeschreibung"
+    },
+    "opening_hours": {
+      "type": "string",
+      "description": "\u00d6ffnungszeiten (JSON)"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "URL des Firmenlogos"
+    },
+    "tax_id": {
+      "type": "string",
+      "description": "Steuernummer"
+    },
+    "vat_id": {
+      "type": "string",
+      "description": "USt-IdNr."
+    },
+    "bank_name": {
+      "type": "string",
+      "description": "Kreditinstitut"
+    },
+    "iban": {
+      "type": "string",
+      "description": "IBAN"
+    },
+    "bic": {
+      "type": "string",
+      "description": "BIC"
     },
     "owner_name": {
       "type": "string",

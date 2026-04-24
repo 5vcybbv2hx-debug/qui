@@ -50,6 +50,7 @@ export default function Articles() {
     const [filterSupplier, setFilterSupplier] = useState('all');
     const [filterStock, setFilterStock] = useState('all');
     const [filterManufacturer, setFilterManufacturer] = useState('all');
+    const [filterMissing, setFilterMissing] = useState('all');
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
@@ -189,9 +190,16 @@ export default function Articles() {
             const matchesStock = filterStock === 'all' ||
                 (filterStock === 'niedrig' && a.current_stock <= (a.min_stock || 0)) ||
                 (filterStock === 'leer' && a.current_stock === 0);
-            return matchesSearch && matchesSupplier && matchesManufacturer && matchesStock;
+            const matchesMissing = filterMissing === 'all' ||
+                (filterMissing === 'kein_bild' && !a.image_url) ||
+                (filterMissing === 'kein_preis' && !a.purchase_price) ||
+                (filterMissing === 'kein_lieferant' && (!a.suppliers || a.suppliers.length === 0)) ||
+                (filterMissing === 'kein_mindestbestand' && (a.min_stock == null || a.min_stock === '')) ||
+                (filterMissing === 'kein_lagerort' && !a.storage_location) ||
+                (filterMissing === 'kein_barcode' && (!a.barcode || a.barcode.startsWith('GEN-')));
+            return matchesSearch && matchesSupplier && matchesManufacturer && matchesStock && matchesMissing;
         }),
-        [articles, searchTerm, filterSupplier, filterManufacturer, filterStock]
+        [articles, searchTerm, filterSupplier, filterManufacturer, filterStock, filterMissing]
     );
 
     // Grouped by category (respects category order)
@@ -408,22 +416,33 @@ export default function Articles() {
                                 </select>
                             )}
                             <select value={filterStock} onChange={(e) => setFilterStock(e.target.value)}
-                                className="flex-1 min-w-[100px] h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
-                                <option value="all">Alle Bestände</option>
-                                <option value="niedrig">Niedrig</option>
-                                <option value="leer">Leer</option>
+                               className="flex-1 min-w-[100px] h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                               <option value="all">Alle Bestände</option>
+                               <option value="niedrig">Niedrig</option>
+                               <option value="leer">Leer</option>
                             </select>
-                        </div>
+                            <select value={filterMissing} onChange={(e) => setFilterMissing(e.target.value)}
+                               className="flex-1 min-w-[140px] h-9 px-3 rounded-md bg-background border border-input text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                               <option value="all">Fehlende Infos</option>
+                               <option value="kein_bild">⚠ Kein Bild</option>
+                               <option value="kein_preis">⚠ Kein Einkaufspreis</option>
+                               <option value="kein_lieferant">⚠ Kein Lieferant</option>
+                               <option value="kein_mindestbestand">⚠ Kein Mindestbestand</option>
+                               <option value="kein_lagerort">⚠ Kein Lagerort</option>
+                               <option value="kein_barcode">⚠ Kein/Auto-Barcode</option>
+                            </select>
+                            </div>
 
                         <SavedFilters
                             storageKey="articles_saved_filters"
-                            currentFilters={{ searchTerm, filterCategory, filterSupplier, filterManufacturer, filterStock }}
+                            currentFilters={{ searchTerm, filterCategory, filterSupplier, filterManufacturer, filterStock, filterMissing }}
                             onApplyFilter={(filters) => {
                                 setSearchTerm(filters.searchTerm || '');
                                 setFilterCategory(filters.filterCategory || 'all');
                                 setFilterSupplier(filters.filterSupplier || 'all');
                                 setFilterManufacturer(filters.filterManufacturer || 'all');
                                 setFilterStock(filters.filterStock || 'all');
+                                setFilterMissing(filters.filterMissing || 'all');
                             }}
                         />
                     </div>

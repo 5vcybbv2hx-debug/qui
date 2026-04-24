@@ -400,7 +400,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                         <Label>Artikelbild</Label>
                         {formData.image_url ? (
                             <div className="relative">
-                                <div className="w-full aspect-square rounded-lg overflow-hidden bg-muted">
+                                <div className="w-full h-48 rounded-lg overflow-hidden bg-muted">
                                     <img
                                         src={formData.image_url}
                                         alt="Vorschau"
@@ -419,7 +419,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                                 </div>
                             </div>
                         ) : (
-                            <div className="border-2 border-dashed border-border rounded-lg aspect-square flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
+                            <div className="border-2 border-dashed border-border rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
                                 <input type="file" accept="image/*" onChange={handleImageUpload}
                                     className="hidden" id="image-upload" disabled={uploading} />
                                 <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center gap-2">

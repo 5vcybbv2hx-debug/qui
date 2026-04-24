@@ -121,7 +121,7 @@ export default function PDFUploadModal({ open, onOpenChange, selectedDate, onSuc
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-slate-800 border-slate-700 max-w-lg">
+            <DialogContent className="bg-slate-800 border-slate-700 max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-white">Z-Abschlag hochladen</DialogTitle>
                 </DialogHeader>

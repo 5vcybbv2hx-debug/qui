@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { FileText, Download, Calendar, TrendingUp, Users, Clock, ChevronLeft, ChevronRight, AlertTriangle, Euro, Percent } from 'lucide-react';
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
+import DatevExportButton from '@/components/reports/DatevExportButton';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -275,21 +276,28 @@ export default function Reports() {
                                     <FileText className="w-4 h-4 text-amber-500 shrink-0" />
                                     <h3 className="font-semibold text-foreground text-sm sm:text-base truncate">Stundenauswertung</h3>
                                 </div>
-                                <Button
-                                    onClick={() => exportCSV(hoursByEmployee.map(r => ({
-                                        Mitarbeiter: r.employee,
-                                        Vertragsart: r.contractType,
-                                        'Stundenlohn €': r.hourlyRate.toFixed(2),
-                                        'Gesamt h': r.totalHours.toFixed(2),
-                                        'Genehmigt h': r.approvedHours.toFixed(2),
-                                        'Ausstehend h': r.pendingHours.toFixed(2),
-                                        'Gehalt €': r.estimatedSalary.toFixed(2)
-                                    })), 'stundenauswertung')}
-                                    variant="outline" size="sm" className="shrink-0 h-8 text-xs gap-1"
-                                >
-                                    <Download className="w-3 h-3" />
-                                    CSV
-                                </Button>
+                                <div className="flex gap-2">
+                                    <DatevExportButton
+                                        hoursByEmployee={hoursByEmployee}
+                                        employees={employees}
+                                        selectedMonth={selectedMonth}
+                                    />
+                                    <Button
+                                        onClick={() => exportCSV(hoursByEmployee.map(r => ({
+                                            Mitarbeiter: r.employee,
+                                            Vertragsart: r.contractType,
+                                            'Stundenlohn €': r.hourlyRate.toFixed(2),
+                                            'Gesamt h': r.totalHours.toFixed(2),
+                                            'Genehmigt h': r.approvedHours.toFixed(2),
+                                            'Ausstehend h': r.pendingHours.toFixed(2),
+                                            'Gehalt €': r.estimatedSalary.toFixed(2)
+                                        })), 'stundenauswertung')}
+                                        variant="outline" size="sm" className="shrink-0 h-8 text-xs gap-1"
+                                    >
+                                        <Download className="w-3 h-3" />
+                                        CSV
+                                    </Button>
+                                </div>
                             </div>
 
                             {hoursByEmployee.length === 0 ? (

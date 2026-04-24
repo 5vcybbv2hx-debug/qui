@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
     Clock, AlertTriangle, Users, MessageSquare, Sparkles,
-    ChevronDown, ChevronUp, Check, ArrowRight, Pin, Wrench, ShieldAlert
+    ChevronDown, ChevronUp, Check, ArrowRight, Pin, Wrench, ShieldAlert,
+    Pencil, Trash2
 } from 'lucide-react';
 import { format, parseISO, isToday, isTomorrow, isPast, differenceInHours } from 'date-fns';
 import BulkClockInPanel from './BulkClockInPanel';
 import { de } from 'date-fns/locale';
+import TimeEntryModal from '@/components/timetracking/TimeEntryModal';
 
 // ─── Scoring engine ───────────────────────────────────────────────────────────
 
@@ -90,8 +92,83 @@ function ApproveButton({ entryId }) {
     );
 }
 
+// ─── EditDeleteButtons ────────────────────────────────────────────────────────
+function EditDeleteButtons({ entry, employees }) {
+    const queryClient = useQueryClient();
+    const [editOpen, setEditOpen] = useState(false);
+
+    const deleteMutation = useMutation({
+        mutationFn: async (e) => {
+            // Delete TimeEntry
+            await base44.entities.TimeEntry.delete(e.id);
+            // Find and delete linked ClockEntry (same employee + same date)
+            if (e.employee_id && e.date) {
+                const clockEntries = await base44.entities.ClockEntry.filter({
+                    employee_id: e.employee_id
+                });
+                const linked = clockEntries.filter(ce => {
+                    if (!ce.clock_in) return false;
+                    const clockDate = ce.clock_in.split('T')[0];
+                    return clockDate === e.date;
+                });
+                for (const ce of linked) {
+                    await base44.entities.ClockEntry.delete(ce.id);
+                }
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] });
+            queryClient.invalidateQueries({ queryKey: ['clock-entries'] });
+        }
+    });
+
+    const saveMutation = useMutation({
+        mutationFn: ({ data, id }) => base44.entities.TimeEntry.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['pending-time-entries'] });
+            setEditOpen(false);
+        }
+    });
+
+    const handleDelete = () => {
+        if (confirm(`Zeiteintrag für ${entry.employee_name} wirklich löschen?`)) {
+            deleteMutation.mutate(entry);
+        }
+    };
+
+    return (
+        <>
+            <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditOpen(true)}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+            >
+                <Pencil className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+            >
+                <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+            <TimeEntryModal
+                open={editOpen}
+                onClose={() => setEditOpen(false)}
+                entry={entry}
+                allEmployees={employees || []}
+                isManager={true}
+                onSave={(data, id) => saveMutation.mutate({ data, id })}
+            />
+        </>
+    );
+}
+
 // ─── 1. Zeiterfassungen ───────────────────────────────────────────────────────
-function TimeItems({ entries }) {
+function TimeItems({ entries, employees }) {
     // Always critical — score = 150
     return entries.map(e => ({
         key: e.id,
@@ -111,7 +188,10 @@ function TimeItems({ entries }) {
                         {e.total_hours != null && <span className="ml-1 font-medium text-foreground">({e.total_hours}h)</span>}
                     </p>
                 </div>
-                <ApproveButton entryId={e.id} />
+                <div className="flex items-center gap-1 shrink-0">
+                    <EditDeleteButtons entry={e} employees={employees} />
+                    <ApproveButton entryId={e.id} />
+                </div>
             </div>
         )
     }));
@@ -236,7 +316,7 @@ export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, today
     });
 
     const allItems = useMemo(() => {
-        const timeI = TimeItems({ entries: pendingTimeEntries });
+        const timeI = TimeItems({ entries: pendingTimeEntries, employees });
         const maintI = maintenanceItems(maintenanceTasks || []);
         const staffI = staffingItem(todayShifts);
         const noteI = noteItems(notes);

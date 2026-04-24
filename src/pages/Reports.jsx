@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { FileText, Download, Calendar, TrendingUp, Users, Clock, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, Users, Clock, ChevronLeft, ChevronRight, AlertTriangle, Euro, Percent } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,12 @@ export default function Reports() {
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name')
+    });
+
+    // Monthly revenue from DailyRevenue
+    const { data: dailyRevenues = [] } = useQuery({
+        queryKey: ['daily-revenues'],
+        queryFn: () => base44.entities.DailyRevenue.list('-date')
     });
 
     // ── Month boundaries ─────────────────────────────────────────────────────
@@ -129,6 +135,15 @@ export default function Reports() {
     const totalApproved    = hoursByEmployee.reduce((s, e) => s + e.approvedHours, 0);
     const totalSalary      = hoursByEmployee.reduce((s, e) => s + e.estimatedSalary, 0);
 
+    // Monthly revenue & staff ratio
+    const monthlyRevenue = useMemo(() => {
+        return dailyRevenues
+            .filter(r => r.date >= monthStart && r.date <= monthEnd)
+            .reduce((s, r) => s + (r.revenue || 0), 0);
+    }, [dailyRevenues, monthStart, monthEnd]);
+
+    const staffRatio = monthlyRevenue > 0 ? (totalSalary / monthlyRevenue) * 100 : null;
+
     if (!permissions.canViewAnalytics) {
         return <PermissionDenied message="Nur Manager haben Zugriff auf Berichte." />;
     }
@@ -217,12 +232,14 @@ export default function Reports() {
                 </Card>
 
                 {/* KPI Summary */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4 mb-4 sm:mb-6">
                     {[
                         { label: 'Gesamtstunden', value: `${totalHoursAll.toFixed(1)}h`, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-500/10' },
                         { label: 'Genehmigt', value: `${totalApproved.toFixed(1)}h`, icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-500/10' },
                         { label: 'Mitarbeiter', value: hoursByEmployee.length, icon: Users, color: 'text-amber-400', bg: 'bg-amber-500/10' },
                         { label: 'Gehaltssumme', value: `${totalSalary.toFixed(0)}€`, icon: FileText, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+                        { label: 'Monatsumsatz', value: monthlyRevenue > 0 ? `${monthlyRevenue.toFixed(0)}€` : '—', icon: Euro, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+                        { label: 'Personalquote', value: staffRatio !== null ? `${staffRatio.toFixed(1)}%` : '—', icon: Percent, color: staffRatio !== null && staffRatio > 35 ? 'text-red-400' : 'text-cyan-400', bg: staffRatio !== null && staffRatio > 35 ? 'bg-red-500/10' : 'bg-cyan-500/10' },
                     ].map(({ label, value, icon: Icon, color, bg }) => (
                         <Card key={label} className="p-3 sm:p-4 bg-card border-border">
                             <div className="flex items-center gap-2 sm:gap-3">

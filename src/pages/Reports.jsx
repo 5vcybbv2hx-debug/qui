@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { FileText, Download, Calendar, TrendingUp, Users, Clock, ChevronLeft, ChevronRight, AlertTriangle, Euro, Percent } from 'lucide-react';
+import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -180,9 +181,12 @@ export default function Reports() {
             <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
 
                 {/* Header */}
-                <div className="mb-4 sm:mb-6">
-                    <h1 className="text-xl sm:text-2xl font-bold text-foreground">Lohnabrechnung</h1>
-                    <p className="text-muted-foreground text-xs sm:text-sm mt-1">Auswertungen für {format(selectedMonth, 'MMMM yyyy', { locale: de })}</p>
+                <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Lohnabrechnung</h1>
+                        <p className="text-muted-foreground text-xs sm:text-sm mt-1">Auswertungen für {format(selectedMonth, 'MMMM yyyy', { locale: de })}</p>
+                    </div>
+                    <HolidayCreditManager />
                 </div>
 
                 {/* Month Selector */}

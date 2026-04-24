@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, LogIn } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 
 // Import existing page components
 import TimeTrackingPage from './TimeTracking';
@@ -20,9 +21,12 @@ export default function TimeManagementPage() {
         <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
-                <div className="mb-4 sm:mb-6">
-                    <h1 className="text-xl sm:text-2xl font-bold text-foreground">Zeiterfassung</h1>
-                    <p className="text-muted-foreground text-xs sm:text-sm mt-1">Arbeitszeiten erfassen und verwalten</p>
+                <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Zeiterfassung</h1>
+                        <p className="text-muted-foreground text-xs sm:text-sm mt-1">Arbeitszeiten erfassen und verwalten</p>
+                    </div>
+                    {permissions.isManager && <HolidayCreditManager />}
                 </div>
 
                 {/* Tabs */}

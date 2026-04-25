@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
-import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive, ContactRound } from 'lucide-react';
 import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
 import EmployeePersonalFormExport from '@/components/employees/EmployeePersonalFormExport';
 import RVBefreiungExport from '@/components/employees/RVBefreiungExport';
@@ -508,6 +508,40 @@ export default function Employees() {
                                     <p className="text-xs text-slate-500 mb-1">E-Mail</p>
                                     <p className="text-xs text-slate-300 truncate">{employee.email}</p>
                                 </div>
+                            )}
+
+                            {/* vCard Download - für alle sichtbar wenn Telefon vorhanden */}
+                            {(employee.phone || employee.email) && (
+                                <button
+                                    onClick={() => {
+                                        const bday = employee.birthday ? employee.birthday.replace(/-/g, '') : '';
+                                        const nameParts = employee.name.trim().split(' ');
+                                        const lastName = nameParts.slice(-1)[0] || '';
+                                        const firstName = nameParts.slice(0, -1).join(' ') || employee.name;
+                                        const vcard = [
+                                            'BEGIN:VCARD',
+                                            'VERSION:3.0',
+                                            `FN:${employee.name}`,
+                                            `N:${lastName};${firstName};;;`,
+                                            employee.phone ? `TEL;TYPE=CELL:${employee.phone}` : '',
+                                            employee.email ? `EMAIL:${employee.email}` : '',
+                                            bday ? `BDAY:${bday}` : '',
+                                            `ORG:Bar Team`,
+                                            `TITLE:${employee.role || ''}`,
+                                            'END:VCARD'
+                                        ].filter(Boolean).join('\r\n');
+                                        const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+                                        const a = document.createElement('a');
+                                        a.href = URL.createObjectURL(blob);
+                                        a.download = `${employee.name.replace(/\s+/g, '_')}.vcf`;
+                                        a.click();
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 mb-2 p-2 rounded-lg bg-secondary/40 border border-border/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all text-xs"
+                                    title="Kontakt als vCard herunterladen"
+                                >
+                                    <ContactRound className="w-3.5 h-3.5" />
+                                    Kontakt speichern (.vcf)
+                                </button>
                             )}
 
                             {/* Contact Icons - visible to all */}

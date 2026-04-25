@@ -9,19 +9,20 @@ const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/FrOmvmQFvvBJvqo4CJaBPA';
 export default function UpcomingBirthdaysWidget({ employees = [] }) {
     const upcomingBirthdays = useMemo(() => {
         const today = new Date();
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         
         return employees
             .filter(emp => emp.birthday)
             .map(emp => {
-                const [year, month, day] = emp.birthday.split('-');
+                const [, month, day] = emp.birthday.split('-');
                 const nextBday = new Date(today.getFullYear(), parseInt(month) - 1, parseInt(day));
                 
-                // Wenn Geburtstag dieses Jahr bereits vorbei, nächstes Jahr
-                if (nextBday < today) {
+                // Vergleich nur auf Tagesbasis — so wird "heute" nicht übersprungen
+                if (nextBday < todayMidnight) {
                     nextBday.setFullYear(nextBday.getFullYear() + 1);
                 }
                 
-                const daysUntil = Math.ceil((nextBday - today) / (1000 * 60 * 60 * 24));
+                const daysUntil = Math.round((nextBday - todayMidnight) / (1000 * 60 * 60 * 24));
                 return { 
                     emp, 
                     date: nextBday, 

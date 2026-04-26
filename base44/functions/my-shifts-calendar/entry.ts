@@ -5,19 +5,22 @@ const now8601 = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0
 
 function shiftToEvent(shift) {
     const d = shift.date.replace(/-/g, '');
-    const startH = parseInt(shift.start_time);
-    const endH   = parseInt(shift.end_time);
+    const [startH] = shift.start_time.split(':').map(Number);
+    const [endH]   = shift.end_time.split(':').map(Number);
     let endDate = d;
-    if (endH < startH) {
-        const next = new Date(shift.date); next.setDate(next.getDate() + 1);
+    if (endH < startH || (endH === startH && endH === 0)) {
+        // Nachtschicht: Endzeit ist am nächsten Tag
+        const next = new Date(shift.date + 'T00:00:00');
+        next.setDate(next.getDate() + 1);
         endDate = next.toISOString().split('T')[0].replace(/-/g, '');
     }
+    // TZID sicherstellen: Europe/Berlin — sonst interpretiert Kalender als UTC
     const lines = [
         'BEGIN:VEVENT',
         `UID:shift-${shift.id}@barmanager.app`,
         `DTSTAMP:${now8601()}`,
-        `DTSTART:${d}T${shift.start_time.replace(':', '')}00`,
-        `DTEND:${endDate}T${shift.end_time.replace(':', '')}00`,
+        `DTSTART;TZID=Europe/Berlin:${d}T${shift.start_time.replace(':', '')}00`,
+        `DTEND;TZID=Europe/Berlin:${endDate}T${shift.end_time.replace(':', '')}00`,
         `SUMMARY:${shift.shift_type || 'Schicht'}`,
     ];
     if (shift.notes) lines.push(`DESCRIPTION:${shift.notes.replace(/\n/g, '\\n')}`);
@@ -53,6 +56,26 @@ Deno.serve(async (req) => {
             { employee_id: employeeId }, '-date', 500
         );
 
+        const vtimezone = [
+            'BEGIN:VTIMEZONE',
+            'TZID:Europe/Berlin',
+            'BEGIN:STANDARD',
+            'DTSTART:19701025T030000',
+            'RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10',
+            'TZOFFSETFROM:+0200',
+            'TZOFFSETTO:+0100',
+            'TZNAME:CET',
+            'END:STANDARD',
+            'BEGIN:DAYLIGHT',
+            'DTSTART:19700329T020000',
+            'RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3',
+            'TZOFFSETFROM:+0100',
+            'TZOFFSETTO:+0200',
+            'TZNAME:CEST',
+            'END:DAYLIGHT',
+            'END:VTIMEZONE',
+        ].join('\r\n');
+
         const ics = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
@@ -63,6 +86,7 @@ Deno.serve(async (req) => {
             'X-WR-TIMEZONE:Europe/Berlin',
             'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
             'X-PUBLISHED-TTL:PT1H',
+            vtimezone,
             ...shifts.map(shiftToEvent),
             'END:VCALENDAR',
         ].join('\r\n');

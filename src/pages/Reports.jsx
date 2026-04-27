@@ -24,19 +24,15 @@ export default function Reports() {
     const monthEnd   = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
     const daysInMonth = getDaysInMonth(selectedMonth);
 
-    // ── Data fetching — monatsgefiltert, kein 50er-Limit ─────────────────────
+    // ── Data fetching — alle Daten laden, clientseitig filtern ───────────────
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries-month', monthStart, monthEnd],
-        queryFn: () => base44.entities.TimeEntry.filter(
-            { date: { $gte: monthStart, $lte: monthEnd } }, '-date', 500
-        )
+        queryKey: ['time-entries-all'],
+        queryFn: () => base44.entities.TimeEntry.list('-date', 2000)
     });
 
     const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts-month', monthStart, monthEnd],
-        queryFn: () => base44.entities.Shift.filter(
-            { date: { $gte: monthStart, $lte: monthEnd } }, '-date', 500
-        )
+        queryKey: ['shifts-all'],
+        queryFn: () => base44.entities.Shift.list('-date', 2000)
     });
 
     const { data: employees = [] } = useQuery({
@@ -45,10 +41,8 @@ export default function Reports() {
     });
 
     const { data: dailyRevenues = [] } = useQuery({
-        queryKey: ['daily-revenues-month', monthStart, monthEnd],
-        queryFn: () => base44.entities.DailyRevenue.filter(
-            { date: { $gte: monthStart, $lte: monthEnd } }, '-date', 100
-        )
+        queryKey: ['daily-revenues-all'],
+        queryFn: () => base44.entities.DailyRevenue.list('-date', 500)
     });
 
     // ── Filtered data ────────────────────────────────────────────────────────

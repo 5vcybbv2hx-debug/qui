@@ -176,9 +176,7 @@ export default function TimeTracking() {
     };
 
     const canEdit = (entry) => {
-        // Genehmigte Einträge dürfen nicht mehr bearbeitet werden (Rechtskonformität)
-        if (entry.status === 'genehmigt') return false;
-        // Manager können nicht-genehmigte Einträge bearbeiten
+        // Manager können alle Einträge bearbeiten (auch genehmigte)
         if (permissions.isManager) return true;
         // Mitarbeiter nur ihre eigenen nicht-genehmigten Einträge
         if (entry.employee_id === currentEmployee?.id && entry.status !== 'genehmigt') return true;

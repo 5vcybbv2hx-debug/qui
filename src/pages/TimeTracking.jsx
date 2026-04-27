@@ -41,7 +41,7 @@ export default function TimeTracking() {
         queryFn: async () => {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
-            const all = await base44.entities.TimeEntry.list('-date');
+            const all = await base44.entities.TimeEntry.list('-date', 2000);
             return all.filter(entry => entry.date >= start && entry.date <= end);
         }
     });

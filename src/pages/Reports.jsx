@@ -19,51 +19,54 @@ export default function Reports() {
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
 
-    // ── Data fetching ────────────────────────────────────────────────────────
-    // Consistent query keys with the rest of the app (TimeTracking uses 'time-entries')
-    const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries'],
-        queryFn: () => base44.entities.TimeEntry.list('-date')
-    });
-
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date')
-    });
-
-    // Only active employees — avoids wrong stats from archived staff
-    const { data: employees = [] } = useQuery({
-        queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name')
-    });
-
-    // Monthly revenue from DailyRevenue
-    const { data: dailyRevenues = [] } = useQuery({
-        queryKey: ['daily-revenues'],
-        queryFn: () => base44.entities.DailyRevenue.list('-date')
-    });
-
     // ── Month boundaries ─────────────────────────────────────────────────────
     const monthStart = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
     const monthEnd   = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
-
-    // Working days in selected month (Mon–Sat for a bar context)
     const daysInMonth = getDaysInMonth(selectedMonth);
 
-    // ── Filtered data ────────────────────────────────────────────────────────
-    let monthTimeEntries = timeEntries.filter(e => e.date >= monthStart && e.date <= monthEnd);
-    let monthShifts      = shifts.filter(s => s.date >= monthStart && s.date <= monthEnd);
+    // ── Data fetching — monatsgefiltert, kein 50er-Limit ─────────────────────
+    const { data: timeEntries = [] } = useQuery({
+        queryKey: ['time-entries-month', monthStart, monthEnd],
+        queryFn: () => base44.entities.TimeEntry.filter(
+            { date: { $gte: monthStart, $lte: monthEnd } }, '-date', 500
+        )
+    });
 
-    if (selectedDay) {
-        monthTimeEntries = monthTimeEntries.filter(e => e.date === selectedDay);
-        monthShifts      = monthShifts.filter(s => s.date === selectedDay);
-    }
+    const { data: shifts = [] } = useQuery({
+        queryKey: ['shifts-month', monthStart, monthEnd],
+        queryFn: () => base44.entities.Shift.filter(
+            { date: { $gte: monthStart, $lte: monthEnd } }, '-date', 500
+        )
+    });
+
+    const { data: employees = [] } = useQuery({
+        queryKey: ['employees'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name', 200)
+    });
+
+    const { data: dailyRevenues = [] } = useQuery({
+        queryKey: ['daily-revenues-month', monthStart, monthEnd],
+        queryFn: () => base44.entities.DailyRevenue.filter(
+            { date: { $gte: monthStart, $lte: monthEnd } }, '-date', 100
+        )
+    });
+
+    // ── Filtered data ────────────────────────────────────────────────────────
+    const monthTimeEntries = useMemo(() => {
+        if (!selectedDay) return timeEntries;
+        return timeEntries.filter(e => e.date === selectedDay);
+    }, [timeEntries, selectedDay]);
+
+    const monthShifts = useMemo(() => {
+        if (!selectedDay) return shifts;
+        return shifts.filter(s => s.date === selectedDay);
+    }, [shifts, selectedDay]);
 
     // Days that have at least one time entry or shift
-    const daysWithEntries = Array.from(new Set([
-        ...timeEntries.filter(e => e.date >= monthStart && e.date <= monthEnd).map(e => e.date),
-        ...shifts.filter(s => s.date >= monthStart && s.date <= monthEnd).map(s => s.date)
-    ])).sort();
+    const daysWithEntries = useMemo(() => Array.from(new Set([
+        ...timeEntries.map(e => e.date),
+        ...shifts.map(s => s.date)
+    ])).sort(), [timeEntries, shifts]);
 
     // ── Hours by employee ────────────────────────────────────────────────────
     const hoursByEmployee = useMemo(() => employees.map(emp => {

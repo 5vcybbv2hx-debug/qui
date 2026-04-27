@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PublicWeeklySpecialDisplay from './pages/PublicWeeklySpecialDisplay';
 import BusinessCard from './pages/BusinessCard';
+import AdminTimeEditor from './pages/AdminTimeEditor';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -99,6 +100,13 @@ const AuthenticatedApp = () => {
 
       {/* Redirect old EmployeeHome links to Dashboard */}
       <Route path="/EmployeeHome" element={<Navigate to="/" replace />} />
+
+      {/* Admin Zeit-Editor */}
+      <Route path="/AdminTimeEditor" element={
+        <LayoutWrapper currentPageName="AdminTimeEditor">
+          <AdminTimeEditor />
+        </LayoutWrapper>
+      } />
 
       {/* Catch-all */}
       <Route path="*" element={<PageNotFound />} />

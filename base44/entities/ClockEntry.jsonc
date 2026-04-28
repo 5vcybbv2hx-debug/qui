@@ -63,18 +63,7 @@
     "clock_in"
   ],
   "rls": {
-    "create": {
-      "$or": [
-        {
-          "data.employee_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "create": true,
     "read": {
       "$or": [
         {

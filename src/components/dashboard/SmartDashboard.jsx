@@ -502,28 +502,53 @@ function ClockWidget({ currentEmployee }) {
     );
 
     const clockInMutation = useMutation({
-        mutationFn: () => base44.entities.ClockEntry.create({
-            employee_id: currentEmployee.id,
-            employee_name: currentEmployee.name,
-            clock_in: new Date().toISOString(),
-            status: 'clocked_in',
-        }),
+        mutationFn: async () => {
+            // Duplikat-Schutz: verhindert mehrfaches Einstempeln
+            const alreadyActive = clockEntries.find(e =>
+                e.employee_id === currentEmployee.id && isActiveEntry(e)
+            );
+            if (alreadyActive) return alreadyActive;
+            return base44.entities.ClockEntry.create({
+                employee_id: currentEmployee.id,
+                employee_name: currentEmployee.name,
+                clock_in: new Date().toISOString(),
+                status: 'clocked_in',
+            });
+        },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clock-entries'] }),
     });
 
     const clockOutMutation = useMutation({
         mutationFn: async (entryId) => {
             const entry = clockEntries.find(e => e.id === entryId);
-            const now = new Date().toISOString();
-            const timeEntryData = buildTimeEntryFromClock(entry, now);
+            const now = new Date();
+            const nowISO = now.toISOString();
             const totalMinutes = calcWorkMinutes(entry.clock_in, now);
-            const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+            const breakMinutes = totalMinutes > 9 * 60 ? 45 : totalMinutes > 6 * 60 ? 30 : 0;
+            const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
+            const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
+            const startTime = format(new Date(entry.clock_in), 'HH:mm');
+            const endTime = format(now, 'HH:mm');
+
             await base44.entities.ClockEntry.update(entryId, {
-                clock_out: now,
+                clock_out: nowISO,
+                break_minutes: breakMinutes,
                 total_hours: totalHours,
                 status: 'clocked_out',
             });
-            await base44.entities.TimeEntry.create(timeEntryData);
+            await base44.entities.TimeEntry.create({
+                employee_id: entry.employee_id,
+                employee_name: entry.employee_name,
+                date: entryDate,
+                start_time: startTime,
+                end_time: endTime,
+                break_minutes: breakMinutes,
+                total_hours: totalHours,
+                notes: `Automatisch von Stempeluhr übertragen${breakMinutes > 0 ? ` | ${breakMinutes} Min. Pause (gesetzl.)` : ''}`,
+                status: 'eingereicht',
+                employee_confirmed: true,
+                employee_confirmed_at: nowISO,
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clock-entries'] });

@@ -201,6 +201,11 @@ export default function TimeTracking() {
     // Stempeluhr functions
     const clockInMutation = useMutation({
         mutationFn: async (employeeId) => {
+            // Duplikat-Schutz: kein doppeltes Einstempeln
+            const alreadyActive = clockEntries.find(e =>
+                e.employee_id === employeeId && (e.status === 'clocked_in' || e.status === 'on_break')
+            );
+            if (alreadyActive) return alreadyActive;
             const employee = allEmployees.find(e => e.id === employeeId);
             return base44.entities.ClockEntry.create({
                 employee_id: employeeId,

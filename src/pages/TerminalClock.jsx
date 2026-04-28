@@ -135,7 +135,9 @@ export default function TerminalClock() {
 
     const handlePinVerified = async (pin) => {
         const hashedInput = await hashPin(pin);
-        if (selectedEmployee.pin !== hashedInput) {
+        // Unterstützt beide Formate: Klartext-PIN (alt) und SHA-256 Hash (neu)
+        const pinMatches = selectedEmployee.pin === hashedInput || selectedEmployee.pin === pin;
+        if (!pinMatches) {
             alert('Falsche PIN!');
             return;
         }

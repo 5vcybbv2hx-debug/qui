@@ -493,7 +493,9 @@ function ClockWidget({ currentEmployee }) {
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clock-entries'],
         queryFn: () => base44.entities.ClockEntry.list('-clock_in', 200),
-        refetchInterval: 60000,
+        refetchInterval: 30000,
+        refetchOnWindowFocus: true,
+        staleTime: 0,
     });
 
     // Night-safe: find active entry by status, not by date

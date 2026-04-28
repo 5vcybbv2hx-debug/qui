@@ -24,6 +24,7 @@ import { de } from 'date-fns/locale';
 import { isActiveEntry, getTodayOperationDate, formatDuration, calcWorkMinutes, buildTimeEntryFromClock } from '@/lib/nightUtils';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import PersonalizedQuickLinks from '@/components/dashboard/PersonalizedQuickLinks';
+import WeeklyHoursChart from '@/components/dashboard/WeeklyHoursChart';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -390,6 +391,9 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
 
     return (
         <div className="space-y-5">
+            {/* Wochenstunden Diagramm */}
+            <WeeklyHoursChart employees={employees} />
+
             {/* Schichttausch-Anfragen */}
             <ShiftSwapApprovalCard />
 

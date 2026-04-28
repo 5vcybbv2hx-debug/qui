@@ -12,6 +12,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PublicWeeklySpecialDisplay from './pages/PublicWeeklySpecialDisplay';
 import BusinessCard from './pages/BusinessCard';
 import AdminTimeEditor from './pages/AdminTimeEditor';
+import DataExport from './pages/DataExport';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -105,6 +106,13 @@ const AuthenticatedApp = () => {
       <Route path="/AdminTimeEditor" element={
         <LayoutWrapper currentPageName="AdminTimeEditor">
           <AdminTimeEditor />
+        </LayoutWrapper>
+      } />
+
+      {/* Datenexport & Migration */}
+      <Route path="/DataExport" element={
+        <LayoutWrapper currentPageName="DataExport">
+          <DataExport />
         </LayoutWrapper>
       } />
 

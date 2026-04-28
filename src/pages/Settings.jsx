@@ -394,6 +394,28 @@ export default function Settings() {
                     </Card>
                 </div>
 
+                {/* Datenmigration — nur für Admin/Manager */}
+                {permissions.isManager && (
+                    <div className="mt-6">
+                        <Link to="/DataExport">
+                            <Card className="p-5 bg-gradient-to-r from-blue-600/10 to-indigo-600/10 border-blue-500/30 hover:border-blue-400/60 hover:bg-blue-600/15 transition-all cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-11 h-11 rounded-xl bg-blue-600/20 flex items-center justify-center shrink-0">
+                                        <Download className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-foreground">Datenexport & Migration</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                            Vollständiger Export aller Systemdaten für Bar Shift Pro 2.0
+                                        </p>
+                                    </div>
+                                    <Download className="w-4 h-4 text-blue-400 shrink-0" />
+                                </div>
+                            </Card>
+                        </Link>
+                    </div>
+                )}
+
                 {/* Über die App Section */}
                 <div className="mt-8">
                     <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">

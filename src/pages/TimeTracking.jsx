@@ -28,7 +28,7 @@ const statusConfig = {
 export default function TimeTracking() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
-    const { data: currentEmployee } = useCurrentEmployee();
+    const { data: currentEmployee, isLoading: isLoadingEmployee } = useCurrentEmployee();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -53,7 +53,10 @@ export default function TimeTracking() {
 
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clockEntries'],
-        queryFn: () => base44.entities.ClockEntry.list('-clock_in', 200)
+        queryFn: () => base44.entities.ClockEntry.list('-clock_in', 500),
+        refetchInterval: 15000, // alle 15 Sekunden aktualisieren
+        refetchOnWindowFocus: true,
+        staleTime: 0,
     });
 
     const createMutation = useMutation({
@@ -454,6 +457,19 @@ export default function TimeTracking() {
                 </div>
 
                 {/* Stempeluhr Section - für alle sichtbar */}
+                {isLoadingEmployee && (
+                    <Card className="p-6 bg-card border-border mb-6">
+                        <div className="flex items-center gap-3 text-muted-foreground">
+                            <div className="w-6 h-6 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
+                            <span className="text-sm">Lade Mitarbeiterdaten...</span>
+                        </div>
+                    </Card>
+                )}
+                {!isLoadingEmployee && !currentEmployee && (
+                    <Card className="p-4 bg-amber-900/20 border-amber-700/30 mb-6">
+                        <p className="text-sm text-amber-300">⚠️ Kein Mitarbeiterprofil gefunden. Bitte wende dich an den Manager, um ein Profil zu erstellen.</p>
+                    </Card>
+                )}
                 {currentEmployee && (
                     <Card className="p-4 sm:p-6 bg-card border-border mb-6">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

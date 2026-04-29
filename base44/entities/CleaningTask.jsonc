@@ -38,6 +38,48 @@
       },
       "description": "Nur an diesen Wochentagen anzeigen (leer = immer)"
     },
+    "special_day_rules": {
+      "type": "object",
+      "description": "Erweiterte Sondertagsregeln",
+      "properties": {
+        "include_special_openings": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_pre_holidays": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_holidays": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_event_days": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_long_nights": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_inventory_days": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_cleaning_only_days": {
+          "type": "boolean",
+          "default": false
+        },
+        "only_special_days": {
+          "type": "boolean",
+          "default": false
+        },
+        "exclude_closed_days": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
     "biweekly_pattern": {
       "type": "string",
       "enum": [
@@ -46,12 +88,12 @@
         "mi_2",
         "do_2"
       ],
-      "description": "Biweekly-Muster (Mittwoch Woche 1/2 oder Donnerstag Woche 1/2)"
+      "description": "Biweekly-Muster"
     },
     "due_date": {
       "type": "string",
       "format": "date",
-      "description": "F\u00e4lligkeitsdatum (f\u00fcr Wochentagsaufgaben)"
+      "description": "F\u00e4lligkeitsdatum"
     },
     "assigned_to": {
       "type": "string",

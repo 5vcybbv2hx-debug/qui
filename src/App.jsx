@@ -15,6 +15,8 @@ import AdminTimeEditor from './pages/AdminTimeEditor';
 import DataExport from './pages/DataExport';
 import MeinTag from './pages/MeinTag';
 import ModuleCenter from './pages/ModuleCenter';
+import OperativeListen from './pages/OperativeListen';
+import BusinessCalendar from './pages/BusinessCalendar';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -129,6 +131,20 @@ const AuthenticatedApp = () => {
       <Route path="/ModuleCenter" element={
         <LayoutWrapper currentPageName="ModuleCenter">
           <ModuleCenter />
+        </LayoutWrapper>
+      } />
+
+      {/* Operative Listen */}
+      <Route path="/OperativeListen" element={
+        <LayoutWrapper currentPageName="OperativeListen">
+          <OperativeListen />
+        </LayoutWrapper>
+      } />
+
+      {/* Betriebskalender & Sondertage */}
+      <Route path="/BusinessCalendar" element={
+        <LayoutWrapper currentPageName="BusinessCalendar">
+          <BusinessCalendar />
         </LayoutWrapper>
       } />
 

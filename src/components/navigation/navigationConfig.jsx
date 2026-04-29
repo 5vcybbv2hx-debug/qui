@@ -98,7 +98,8 @@ export const additionalPages = [
     { name: 'Firmendaten',    page: 'CompanySettings',  icon: FileText,   permission: 'canEditCompanySettings'  },
     { name: 'Einarbeitung',   page: 'Onboarding',       icon: Users,      permission: 'canViewOnboarding'       },
     { name: 'Visitenkarte',   page: 'BusinessCard',     icon: QrCode,     permission: 'canViewDashboard'        },
-    { name: 'Modulcenter',    page: 'ModuleCenter',     icon: Layers,     permission: 'canViewSettings'         },
+    { name: 'Modulcenter',       page: 'ModuleCenter',     icon: Layers,    permission: 'canViewSettings'        },
+    { name: 'Betriebskalender',  page: 'BusinessCalendar', icon: Calendar,  permission: 'canViewSettings'        },
 ];
 
 /**

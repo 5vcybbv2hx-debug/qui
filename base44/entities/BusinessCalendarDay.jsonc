@@ -1,0 +1,114 @@
+{
+  "name": "BusinessCalendarDay",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum des Sondertages"
+    },
+    "day_type": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "sonderoeffnung",
+        "vorfeiertag",
+        "feiertag",
+        "eventtag",
+        "lange_nacht",
+        "inventurtag",
+        "geschlossen",
+        "geschlossen_mit_reinigung",
+        "saisonstart",
+        "saisonende",
+        "betriebsferien",
+        "wartungstag"
+      ],
+      "default": "normal",
+      "description": "Art des Betriebstages"
+    },
+    "title": {
+      "type": "string",
+      "description": "Bezeichnung (z.B. 'Silvester-Sonder\u00f6ffnung')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung / Notiz"
+    },
+    "location_id": {
+      "type": "string",
+      "description": "Standort-ID (leer = gesamter Betrieb)"
+    },
+    "location_name": {
+      "type": "string",
+      "description": "Standortname f\u00fcr Anzeige"
+    },
+    "is_closed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Betrieb geschlossen"
+    },
+    "is_special_opening": {
+      "type": "boolean",
+      "default": false,
+      "description": "Sonder\u00f6ffnung aktiv"
+    },
+    "is_pre_holiday": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vorfeiertag"
+    },
+    "is_holiday": {
+      "type": "boolean",
+      "default": false,
+      "description": "Feiertag"
+    },
+    "is_event_day": {
+      "type": "boolean",
+      "default": false,
+      "description": "Eventtag"
+    },
+    "is_long_night": {
+      "type": "boolean",
+      "default": false,
+      "description": "Lange Nacht aktiv"
+    },
+    "is_inventory_day": {
+      "type": "boolean",
+      "default": false,
+      "description": "Inventurtag"
+    },
+    "is_cleaning_only_day": {
+      "type": "boolean",
+      "default": false,
+      "description": "Nur Reinigung (geschlossen)"
+    },
+    "opening_time_override": {
+      "type": "string",
+      "description": "Sonder-\u00d6ffnungszeit (HH:MM)"
+    },
+    "closing_time_override": {
+      "type": "string",
+      "description": "Sonder-Schlie\u00dfzeit (HH:MM)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Interne Notiz"
+    },
+    "affected_modules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Betroffene Module"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "Zuletzt ge\u00e4ndert von"
+    }
+  },
+  "required": [
+    "date",
+    "day_type"
+  ]
+}

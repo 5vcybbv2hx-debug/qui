@@ -29,6 +29,7 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { isActiveEntry, calcWorkMinutes, formatDuration } from '@/lib/nightUtils';
+import { getCalendarDayForDate, getSpecialDayLabel, getSpecialDayColor } from '@/lib/businessCalendarUtils';
 
 // ── Live-Uhr Hook ──────────────────────────────────────────────────────────
 
@@ -500,7 +501,17 @@ export default function MeinTag() {
         queryFn: () => base44.entities.Shift.list('-date', 100),
     });
 
+    const { data: calendarDays = [] } = useQuery({
+        queryKey: ['business-calendar'],
+        queryFn: () => base44.entities.BusinessCalendarDay.list('-date', 100),
+        staleTime: 60000,
+    });
+
     const employee = employees.find(e => e.email === user?.email);
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const calendarEntry = getCalendarDayForDate(todayStr, calendarDays);
+    const specialLabel = getSpecialDayLabel(calendarEntry);
+    const specialColor = calendarEntry ? getSpecialDayColor(calendarEntry.day_type) : '';
 
     return (
         <div className="min-h-screen bg-background pb-28 md:pb-8">
@@ -529,6 +540,29 @@ export default function MeinTag() {
                         </div>
                     )}
                 </div>
+
+                {/* Sondertag-Banner */}
+                {calendarEntry && calendarEntry.day_type !== 'normal' && (
+                    <Card className="border-amber-500/20 bg-amber-500/5">
+                        <CardContent className="p-3 flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold text-amber-300">
+                                    Heute: {specialLabel}
+                                    {calendarEntry.title ? ` — ${calendarEntry.title}` : ''}
+                                </p>
+                                {calendarEntry.opening_time_override && (
+                                    <p className="text-xs text-amber-400/80">
+                                        Öffnung: {calendarEntry.opening_time_override}{calendarEntry.closing_time_override ? ` – ${calendarEntry.closing_time_override}` : ''}
+                                    </p>
+                                )}
+                            </div>
+                            {calendarEntry.is_closed && (
+                                <Badge className="text-[10px] bg-slate-700 text-slate-300 border-0 shrink-0">Geschlossen</Badge>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Kein Mitarbeiterprofil */}
                 {!employee && !permissions.isLoading && (

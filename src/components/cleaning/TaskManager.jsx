@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { usePermissions } from '@/components/auth/usePermissions';
+import SpecialDayRules from '@/components/business-calendar/SpecialDayRules';
 
 const WEEKDAYS = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
 
@@ -19,7 +20,8 @@ export default function TaskManager({ task, areas }) {
         title: task.title,
         area: task.area,
         frequency: task.frequency,
-        due_weekdays: task.due_weekdays || []
+        due_weekdays: task.due_weekdays || [],
+        special_day_rules: task.special_day_rules || {}
     });
 
     const updateMutation = useMutation({
@@ -159,6 +161,12 @@ export default function TaskManager({ task, areas }) {
                                 })}
                             </div>
                         </div>
+
+                        {/* Sonderregel-Erweiterung */}
+                        <SpecialDayRules
+                            rules={formData.special_day_rules}
+                            onChange={(r) => setFormData({ ...formData, special_day_rules: r })}
+                        />
 
                         <div className="flex flex-col gap-3 pt-4">
                             <div className="flex gap-2">

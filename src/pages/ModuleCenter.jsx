@@ -214,6 +214,16 @@ const MODULE_REGISTRY = [
         page: 'Onboarding',
         requires: ['mitarbeiter'],
     },
+    {
+        id: 'stationsplan',
+        name: 'Stationsplan',
+        description: 'Stationen zuweisen, Mitarbeiter einplanen, Überblick über Positionen',
+        icon: MapPin,
+        color: 'bg-fuchsia-600',
+        category: 'betrieb',
+        page: 'Stationsplan',
+        requires: ['mitarbeiter'],
+    },
 ];
 
 const CATEGORIES = {
@@ -434,10 +444,12 @@ export default function ModuleCenter() {
                         <p className="text-sm font-semibold text-foreground mb-3">Weitere Einstellungen</p>
                         <div className="grid grid-cols-2 gap-2">
                             {[
-                                { to: 'Settings', icon: Settings, label: 'Einstellungen' },
-                                { to: 'CompanySettings', icon: FileText, label: 'Firmendaten' },
-                                { to: 'Permissions', icon: Shield, label: 'Berechtigungen' },
-                                { to: 'DataExport', icon: Package, label: 'Datenexport' },
+                                { to: 'Settings',        icon: Settings,   label: 'Einstellungen'  },
+                                { to: 'CompanySettings', icon: FileText,   label: 'Firmendaten'    },
+                                { to: 'Permissions',     icon: Shield,     label: 'Berechtigungen' },
+                                { to: 'DataExport',      icon: Package,    label: 'Datenexport'    },
+                                { to: 'MeinTag',         icon: Users,      label: 'Mein Tag'       },
+                                { to: 'Dashboard',       icon: ClipboardList, label: 'Dashboard'   },
                             ].map(l => (
                                 <Link key={l.to} to={createPageUrl(l.to)}>
                                     <div className="flex items-center gap-2 p-2.5 rounded-lg bg-secondary/40 hover:bg-secondary transition-all">

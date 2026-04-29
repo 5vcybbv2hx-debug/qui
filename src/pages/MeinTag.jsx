@@ -11,7 +11,7 @@
  * - Eigene Dokumente
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, differenceInMinutes, parseISO, isToday } from 'date-fns';
@@ -30,6 +30,17 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { isActiveEntry, calcWorkMinutes, formatDuration } from '@/lib/nightUtils';
 
+// ── Live-Uhr Hook ──────────────────────────────────────────────────────────
+
+function useLiveClock(intervalMs = 10000) {
+    const [now, setNow] = useState(new Date());
+    useEffect(() => {
+        const id = setInterval(() => setNow(new Date()), intervalMs);
+        return () => clearInterval(id);
+    }, [intervalMs]);
+    return now;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function getGreeting() {
@@ -43,6 +54,7 @@ function getGreeting() {
 
 function ClockWidget({ employee, clockEntries, onRefresh }) {
     const queryClient = useQueryClient();
+    const now = useLiveClock(10000);
     const activeEntry = clockEntries.find(e => e.employee_id === employee?.id && isActiveEntry(e));
     const onBreak = activeEntry?.status === 'on_break';
 
@@ -61,7 +73,7 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
 
     const clockOutMutation = useMutation({
         mutationFn: async () => {
-            const now = new Date();
+            const now = new Date(); // fresh timestamp at click moment
             const totalMinutes = calcWorkMinutes(activeEntry.clock_in, now);
             const breakMinutes = totalMinutes > 9 * 60 ? 45 : totalMinutes > 6 * 60 ? 30 : 0;
             const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
@@ -102,7 +114,7 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meinTag-clock'] }),
     });
 
-    const duration = activeEntry ? formatDuration(calcWorkMinutes(activeEntry.clock_in, new Date())) : null;
+    const duration = activeEntry ? formatDuration(calcWorkMinutes(activeEntry.clock_in, now)) : null;
 
     return (
         <Card className={cn(
@@ -131,9 +143,9 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
                     </div>
                     <div className="text-right">
                         <p className="text-2xl font-bold text-foreground tabular-nums">
-                            {format(new Date(), 'HH:mm')}
+                            {format(now, 'HH:mm')}
                         </p>
-                        <p className="text-xs text-muted-foreground">{format(new Date(), 'EEE, dd. MMM', { locale: de })}</p>
+                        <p className="text-xs text-muted-foreground">{format(now, 'EEE, dd. MMM', { locale: de })}</p>
                     </div>
                 </div>
 

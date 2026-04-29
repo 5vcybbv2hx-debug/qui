@@ -4,7 +4,7 @@ import {
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
-    Palmtree, ListChecks, Video, QrCode
+    Palmtree, ListChecks, Video, QrCode, Sun, Layers
 } from 'lucide-react';
 
 /**
@@ -25,7 +25,8 @@ export const mainNavigation = [
         name: 'Dashboard',
         icon: Home,
         pages: [
-            { name: 'Übersicht', page: 'Dashboard', icon: Home, permission: 'canViewDashboard' },
+            { name: 'Übersicht',  page: 'Dashboard', icon: Home,  permission: 'canViewDashboard' },
+            { name: 'Mein Tag',   page: 'MeinTag',   icon: Sun,   permission: 'canViewDashboard' },
         ]
     },
     {
@@ -97,6 +98,7 @@ export const additionalPages = [
     { name: 'Firmendaten',    page: 'CompanySettings',  icon: FileText,   permission: 'canEditCompanySettings'  },
     { name: 'Einarbeitung',   page: 'Onboarding',       icon: Users,      permission: 'canViewOnboarding'       },
     { name: 'Visitenkarte',   page: 'BusinessCard',     icon: QrCode,     permission: 'canViewDashboard'        },
+    { name: 'Modulcenter',    page: 'ModuleCenter',     icon: Layers,     permission: 'canViewSettings'         },
 ];
 
 /**

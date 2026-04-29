@@ -13,6 +13,8 @@ import PublicWeeklySpecialDisplay from './pages/PublicWeeklySpecialDisplay';
 import BusinessCard from './pages/BusinessCard';
 import AdminTimeEditor from './pages/AdminTimeEditor';
 import DataExport from './pages/DataExport';
+import MeinTag from './pages/MeinTag';
+import ModuleCenter from './pages/ModuleCenter';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -113,6 +115,20 @@ const AuthenticatedApp = () => {
       <Route path="/DataExport" element={
         <LayoutWrapper currentPageName="DataExport">
           <DataExport />
+        </LayoutWrapper>
+      } />
+
+      {/* Mein Tag — Mitarbeiter Tagesansicht */}
+      <Route path="/MeinTag" element={
+        <LayoutWrapper currentPageName="MeinTag">
+          <MeinTag />
+        </LayoutWrapper>
+      } />
+
+      {/* Modulcenter — Admin Modulverwaltung */}
+      <Route path="/ModuleCenter" element={
+        <LayoutWrapper currentPageName="ModuleCenter">
+          <ModuleCenter />
         </LayoutWrapper>
       } />
 

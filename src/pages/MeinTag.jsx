@@ -19,7 +19,7 @@ import { de } from 'date-fns/locale';
 import { 
     LogIn, LogOut, Clock, CheckSquare, Brush, RefreshCw, 
     Calendar, ChevronRight, Play, Pause, Circle, CheckCircle2,
-    Sun, Moon, Zap, AlertTriangle, User, FileText, ArrowRight
+    Sun, Moon, Zap, AlertTriangle, User, FileText, ArrowRight, ListChecks
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -447,10 +447,10 @@ function TimeOverview({ employee }) {
 
 function QuickActions({ permissions }) {
     const actions = [
-        permissions.canViewShifts && { page: 'Calendar', icon: Calendar, label: 'Schichten', color: 'bg-blue-600' },
-        permissions.canViewTodos && { page: 'Todos', icon: CheckSquare, label: 'Aufgaben', color: 'bg-orange-600' },
-        permissions.canViewCleaning && { page: 'Cleaning', icon: Brush, label: 'Putzliste', color: 'bg-teal-600' },
-        permissions.canViewRestock && { page: 'Restock', icon: RefreshCw, label: 'Auffüllen', color: 'bg-amber-600' },
+        permissions.canViewShifts && { page: 'Calendar',        icon: Calendar,   label: 'Schichten',  color: 'bg-blue-600'   },
+        permissions.canViewTodos  && { page: 'OperativeListen', icon: Zap,        label: 'Listen',     color: 'bg-primary'    },
+        permissions.canViewTodos  && { page: 'Todos',           icon: CheckSquare,label: 'Aufgaben',   color: 'bg-orange-600' },
+        permissions.canViewCleaning && { page: 'Cleaning',      icon: Brush,      label: 'Putzliste',  color: 'bg-teal-600'   },
     ].filter(Boolean);
 
     if (actions.length === 0) return null;

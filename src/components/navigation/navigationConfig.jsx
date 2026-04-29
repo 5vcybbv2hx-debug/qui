@@ -4,7 +4,7 @@ import {
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
-    Palmtree, ListChecks, Video, QrCode, Sun, Layers
+    Palmtree, ListChecks, Video, QrCode, Sun, Layers, Zap
 } from 'lucide-react';
 
 /**
@@ -34,13 +34,13 @@ export const mainNavigation = [
         name: 'Betrieb',
         icon: Utensils,
         pages: [
-            { name: 'Gäste & Tische', page: 'GuestHub',    icon: MapPin,       permission: 'canViewReservations' },
-            { name: 'Auffüllliste',   page: 'Restock',     icon: RefreshCw,    permission: 'canViewRestock'      },
-            { name: 'Aufgaben',       page: 'Todos',       icon: CheckSquare,  permission: 'canViewTodos'        },
-            { name: 'Putzliste',      page: 'Cleaning',    icon: Brush,        permission: 'canViewCleaning'     },
-            { name: 'Wochenaufgaben', page: 'WeeklyTasks', icon: ListChecks,   permission: 'canViewCleaning'     },
-            { name: 'Einkaufsliste',  page: 'Shopping',    icon: ShoppingCart, permission: 'canViewShopping'     },
-            { name: 'Events',         page: 'Events',      icon: Star,         permission: 'canViewEvents'       },
+            { name: 'Gäste & Tische',     page: 'GuestHub',        icon: MapPin,       permission: 'canViewReservations' },
+            { name: 'Operative Listen',   page: 'OperativeListen', icon: Zap,          permission: 'canViewTodos'        },
+            { name: 'Aufgaben',           page: 'Todos',           icon: CheckSquare,  permission: 'canViewTodos'        },
+            { name: 'Putzliste',          page: 'Cleaning',        icon: Brush,        permission: 'canViewCleaning'     },
+            { name: 'Auffüllliste',       page: 'Restock',         icon: RefreshCw,    permission: 'canViewRestock'      },
+            { name: 'Einkaufsliste',      page: 'Shopping',        icon: ShoppingCart, permission: 'canViewShopping'     },
+            { name: 'Events',             page: 'Events',          icon: Star,         permission: 'canViewEvents'       },
         ]
     },
     {

@@ -13,7 +13,7 @@ export default function CompanyInfoEditor() {
     const [payrollEmail, setPayrollEmail] = useState('');
     const [isEditing, setIsEditing] = useState(false);
 
-    const { data: company, isLoading } = useQuery({
+    const { data: company, isLoading, refetch } = useQuery({
         queryKey: ['company-info'],
         queryFn: async () => {
             const res = await base44.entities.CompanyInfo.list('last_updated', 1);
@@ -34,8 +34,8 @@ export default function CompanyInfoEditor() {
                 last_updated: new Date().toISOString(),
             });
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['company-info'] });
+        onSuccess: async () => {
+            await refetch();
             toast.success('Lohnbüro-Email gespeichert');
             setIsEditing(false);
         },

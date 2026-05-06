@@ -5,6 +5,7 @@ import { LoadingState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { usePermissions } from '@/components/auth/usePermissions';
 import SmartDashboard from '@/components/dashboard/SmartDashboard';
+import CalendarSyncBanner from '@/components/dashboard/CalendarSyncBanner';
 
 export default function Dashboard() {
     const permissions = usePermissions();
@@ -25,11 +26,14 @@ export default function Dashboard() {
     if (permissions.isLoading) return <LoadingState text="Lade Dashboard…" fullScreen />;
 
     return (
+        <>
+        <CalendarSyncBanner employee={currentEmployee || null} />
         <SmartDashboard
             currentUser={user}
             currentEmployee={currentEmployee || null}
             isManager={permissions.isManager}
             permissions={permissions}
         />
+        </>
     );
 }

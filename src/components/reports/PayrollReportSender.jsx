@@ -45,12 +45,11 @@ export default function PayrollReportSender() {
 
     const sendMutation = useMutation({
         mutationFn: async () => {
-            // Generate PDF first using jsPDF
             const { jsPDF } = await import('jspdf');
             const doc = new jsPDF();
-            const monthName = format(selectedMonth, 'MMMM yyyy', { locale: de });
             const year = selectedMonth.getFullYear();
             const month = selectedMonth.getMonth() + 1;
+            const monthName = format(selectedMonth, 'MMMM yyyy', { locale: de });
 
             // Filter entries for selected month/day
             const filteredEntries = timeEntries.filter(e => {
@@ -84,8 +83,8 @@ export default function PayrollReportSender() {
             const file = new File([pdfBlob], 'payroll-report.pdf', { type: 'application/pdf' });
             const uploadRes = await base44.integrations.Core.UploadFile({ file });
 
-            // Send report
-            const res = await base44.functions.invoke('sendPayrollReport', {
+            // Send report with CSV
+            const res = await base44.functions.invoke('sendPayrollReportWithAttachments', {
                 year,
                 month,
                 pdf_url: uploadRes.file_url,

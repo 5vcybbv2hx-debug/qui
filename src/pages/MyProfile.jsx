@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { UserCircle, Mail, Phone, Calendar, Lock, Shield, Trash2, AlertTriangle } from 'lucide-react';
 import PinManager from '@/components/employees/PinManager';
+import MyShiftsCalendarSync from '@/components/calendar/MyShiftsCalendarSync';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -156,6 +157,11 @@ export default function MyProfilePage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                <MyShiftsCalendarSync
+                    employeeId={myEmployee.id}
+                    existingToken={myEmployee.calendar_token}
+                />
 
                 <Card className="bg-red-900/10 border-red-800/50">
                     <CardHeader>

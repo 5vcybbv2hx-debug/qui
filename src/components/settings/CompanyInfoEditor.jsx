@@ -20,9 +20,7 @@ export default function CompanyInfoEditor() {
             return res?.[0] || null;
         },
         onSuccess: (data) => {
-            if (data?.payroll_email) {
-                setPayrollEmail(data.payroll_email);
-            }
+            setPayrollEmail(data?.payroll_email || '');
         },
     });
 
@@ -101,10 +99,8 @@ export default function CompanyInfoEditor() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => {
+                                    setPayrollEmail(company?.payroll_email || '');
                                     setIsEditing(false);
-                                    if (company.payroll_email) {
-                                        setPayrollEmail(company.payroll_email);
-                                    }
                                 }}
                             >
                                 Abbrechen

@@ -45,9 +45,50 @@ export default function PayrollReportSender() {
 
     const sendMutation = useMutation({
         mutationFn: async () => {
+            // Generate PDF first using jsPDF
+            const { jsPDF } = await import('jspdf');
+            const doc = new jsPDF();
+            const monthName = format(selectedMonth, 'MMMM yyyy', { locale: de });
+            const year = selectedMonth.getFullYear();
+            const month = selectedMonth.getMonth() + 1;
+
+            // Filter entries for selected month/day
+            const filteredEntries = timeEntries.filter(e => {
+                const [y, m, d] = e.date.split('-');
+                if (parseInt(y) !== year || parseInt(m) !== month) return false;
+                if (reportType === 'day' && d !== selectedDay?.split('-')[2]) return false;
+                return true;
+            });
+
+            // Build PDF content
+            doc.setFontSize(16);
+            doc.text(`Zeiterfassungs-Report ${monthName}`, 10, 10);
+            doc.setFontSize(10);
+            doc.text(`Betrieb: ${company.company_name}`, 10, 20);
+
+            let y = 30;
+            doc.text('Mitarbeiter | Datum | Stunden', 10, y);
+            y += 5;
+
+            filteredEntries.forEach(entry => {
+                if (y > 270) {
+                    doc.addPage();
+                    y = 10;
+                }
+                doc.text(`${entry.employee_name} | ${entry.date} | ${entry.total_hours.toFixed(1)}h`, 10, y);
+                y += 5;
+            });
+
+            // Convert to blob and upload
+            const pdfBlob = doc.output('blob');
+            const file = new File([pdfBlob], 'payroll-report.pdf', { type: 'application/pdf' });
+            const uploadRes = await base44.integrations.Core.UploadFile({ file });
+
+            // Send report
             const res = await base44.functions.invoke('sendPayrollReport', {
-                year: selectedMonth.getFullYear(),
-                month: selectedMonth.getMonth() + 1,
+                year,
+                month,
+                pdf_url: uploadRes.file_url,
                 day: reportType === 'day' ? selectedDay : null,
             });
             return res.data;

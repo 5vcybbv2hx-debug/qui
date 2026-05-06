@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
+import SignaturePad from './SignaturePad';
 
 export default function PersonalFormDigital({ onSuccess }) {
     const queryClient = useQueryClient();
@@ -68,6 +69,10 @@ export default function PersonalFormDigital({ onSuccess }) {
         
         // E-Mail für Steuerberater
         steuerberater_email: '',
+        
+        // Unterschriften
+        sig_employee: null,
+        sig_employer: null,
         
         // Bestätigung
         confirmed: false
@@ -192,6 +197,8 @@ BarManager System
             iban: '',
             bic: '',
             steuerberater_email: '',
+            sig_employee: null,
+            sig_employer: null,
             confirmed: false
         });
     };
@@ -200,6 +207,10 @@ BarManager System
         e.preventDefault();
         if (!formData.confirmed) {
             alert('Bitte bestätigen Sie die Richtigkeit der Angaben.');
+            return;
+        }
+        if (!formData.sig_employee || !formData.sig_employer) {
+            alert('Bitte sammeln Sie beide Unterschriften (Arbeitnehmer und Arbeitgeber).');
             return;
         }
         processMutation.mutate(formData);
@@ -660,12 +671,27 @@ BarManager System
                                 </div>
                             )}
 
-                            {/* Schritt 5: Bestätigung */}
+                            {/* Schritt 5: Unterschriften & Bestätigung */}
                             {step === 5 && (
                                 <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Bestätigung & Versand</h3>
+                                    <h3 className="font-semibold text-lg border-b pb-2">Unterschriften & Bestätigung</h3>
                                     
-                                    <div className="space-y-2">
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                                        <p className="text-sm text-blue-900 font-semibold mb-2">Unterschriften erforderlich:</p>
+                                        <p className="text-xs text-blue-800">Bitte sammeln Sie die Unterschriften des Arbeitnehmers und des Arbeitgebers (Manager).</p>
+                                    </div>
+
+                                    <SignaturePad 
+                                        label="Unterschrift Arbeitnehmer *"
+                                        onSign={(signature) => setFormData({...formData, sig_employee: signature})}
+                                    />
+
+                                    <SignaturePad 
+                                        label="Unterschrift Arbeitgeber (Manager) *"
+                                        onSign={(signature) => setFormData({...formData, sig_employer: signature})}
+                                    />
+
+                                    <div className="space-y-2 pt-4 border-t">
                                         <Label>E-Mail Steuerberater *</Label>
                                         <Input
                                             type="email"

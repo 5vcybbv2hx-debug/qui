@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SECTIONS, calculateCompletion, getMissingFields, getSectionCompletion } from '@/lib/employeeCompleteness';
 import { cn } from '@/lib/utils';
 import { User, MapPin, Phone, FileText, CreditCard, AlertCircle, Save, Loader2 } from 'lucide-react';
+import SignaturePad from './SignaturePad';
 
 const SECTION_ICONS = {
   stammdaten: User,
@@ -18,7 +19,8 @@ const SECTION_ICONS = {
   kontakt: Phone,
   steuer: FileText,
   bank: CreditCard,
-  notfall: AlertCircle
+  notfall: AlertCircle,
+  unterschriften: FileText
 };
 
 export default function PersonalBogenForm({ employee, onSave, isLoading = false, isEditable = true }) {
@@ -105,7 +107,7 @@ export default function PersonalBogenForm({ employee, onSave, isLoading = false,
 
       {/* Formular Tabs */}
       <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 w-full gap-1">
+        <TabsList className="grid grid-cols-3 md:grid-cols-7 w-full gap-1">
           {Object.entries(SECTIONS).map(([key, section]) => {
             const sectionCompletion = getSectionCompletion(formData, key);
             const Icon = SECTION_ICONS[key];
@@ -206,27 +208,47 @@ export default function PersonalBogenForm({ employee, onSave, isLoading = false,
         </TabsContent>
 
         {/* Notfallkontakt */}
-        <TabsContent value="notfall" className="space-y-6 mt-6">
+         <TabsContent value="notfall" className="space-y-6 mt-6">
+           <Card>
+             <CardHeader>
+               <CardTitle>Notfallkontakt</CardTitle>
+               <CardDescription>Person die im Notfall kontaktiert werden soll</CardDescription>
+             </CardHeader>
+             <CardContent className="space-y-4">
+               {renderField('Name', 'emergency_contact_name')}
+               {renderField('Telefon', 'emergency_contact_phone', 'tel')}
+               {renderField('Beziehung', 'emergency_contact_relation', 'select', [
+                 { value: 'Ehepartner', label: 'Ehepartner' },
+                 { value: 'Eltern', label: 'Eltern' },
+                 { value: 'Kind', label: 'Kind' },
+                 { value: 'Geschwister', label: 'Geschwister' },
+                 { value: 'Freund', label: 'Freund' },
+                 { value: 'Sonstiges', label: 'Sonstiges' }
+               ])}
+             </CardContent>
+           </Card>
+         </TabsContent>
+
+        {/* Unterschriften */}
+        <TabsContent value="unterschriften" className="space-y-6 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Notfallkontakt</CardTitle>
-              <CardDescription>Person die im Notfall kontaktiert werden soll</CardDescription>
+              <CardTitle>Unterschriften</CardTitle>
+              <CardDescription>Bestätigung durch Arbeitnehmer und Arbeitgeber</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {renderField('Name', 'emergency_contact_name')}
-              {renderField('Telefon', 'emergency_contact_phone', 'tel')}
-              {renderField('Beziehung', 'emergency_contact_relation', 'select', [
-                { value: 'Ehepartner', label: 'Ehepartner' },
-                { value: 'Eltern', label: 'Eltern' },
-                { value: 'Kind', label: 'Kind' },
-                { value: 'Geschwister', label: 'Geschwister' },
-                { value: 'Freund', label: 'Freund' },
-                { value: 'Sonstiges', label: 'Sonstiges' }
-              ])}
+            <CardContent className="space-y-6">
+              <SignaturePad 
+                label="Unterschrift Arbeitnehmer"
+                onSign={(signature) => handleChange('sig_employee', signature)}
+              />
+              <SignaturePad 
+                label="Unterschrift Arbeitgeber (Manager)"
+                onSign={(signature) => handleChange('sig_employer', signature)}
+              />
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
 
       {/* Save Button */}
       {isEditable && (

@@ -11,6 +11,7 @@ import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import { mainNavigation, additionalPages, allPages } from '@/components/navigation/navigationConfig';
 import { useActiveNavigation } from '@/components/navigation/useActiveNavigation';
 import { getTopPages } from '@/hooks/usePageTracking';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
@@ -33,6 +34,8 @@ export default function Layout({ children, currentPageName }) {
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [currentUser, setCurrentUser] = React.useState(null);
     const [mobileNavPages, setMobileNavPages] = React.useState([]);
+    // Optimistic active tab — sofortiges Highlighting beim Tap (vor URL-Wechsel)
+    const [optimisticTab, setOptimisticTab] = React.useState(null);
 
     // ── Hooks (all hooks before any early returns) ────────────────────────────
     const { isPageActive } = useActiveNavigation();
@@ -126,6 +129,24 @@ export default function Layout({ children, currentPageName }) {
     const getPageName = (pageName) => allPages.find(p => p.page === pageName)?.name || 'BarManager';
     const primaryPages = mainNavigation.flatMap(a => a.pages).map(p => p.page);
     const isRootPage = primaryPages.includes(currentPageName);
+
+    // Build current mobile nav items for tab navigation hook
+    const allNavPages = mainNavigation.flatMap(a => a.pages).concat(additionalPages);
+    const defaultPages = ['Dashboard', 'GuestHub', 'Todos', 'TeamCalendar'];
+    const currentNavItems = mobileNavPages.length >= 2
+        ? mobileNavPages
+        : defaultPages.map(p => allNavPages.find(i => i.page === p)).filter(Boolean);
+
+    const { navigateToTab, getActiveTab } = useTabNavigation(currentNavItems);
+
+    // Clear optimistic state when the real URL settles
+    React.useEffect(() => {
+        setOptimisticTab(null);
+    }, [currentPageName]);
+
+    // Determine active tab: use optimistic value first, then real URL
+    const activeTabPage = optimisticTab || getActiveTab();
+    const isTabActive = (page) => activeTabPage === page || (!activeTabPage && isPageActive(page));
 
     return (
         <ErrorBoundary>
@@ -307,48 +328,52 @@ export default function Layout({ children, currentPageName }) {
                     </div>
                 </aside>
 
-                {/* Mobile Bottom Navigation — personalisiert */}
-                {(() => {
-                    const allNavPages = mainNavigation.flatMap(a => a.pages).concat(additionalPages);
-                    // Default pages fallback (Dashboard immer dabei)
-                    const defaultPages = ['Dashboard', 'GuestHub', 'Todos', 'TeamCalendar'];
-                    const navItems = mobileNavPages.length >= 2
-                        ? mobileNavPages
-                        : defaultPages.map(p => allNavPages.find(i => i.page === p)).filter(Boolean);
-
-                    return (
-                        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
-                            <div className="flex items-center justify-around px-1 pt-1 pb-1">
-                                {navItems.map(item => (
-                                    permissions[item.permission] && (
-                                        <button
-                                            key={item.page}
-                                            onClick={() => { haptics.selection(); navigate(createPageUrl(item.page)); }}
-                                            className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px]',
-                                                isPageActive(item.page) ? 'text-foreground' : 'text-muted-foreground')}
-                                        >
-                                            <div className={cn('flex items-center justify-center w-8 h-8 rounded-xl transition-all', isPageActive(item.page) && 'bg-foreground/10')}>
-                                                <item.icon className="w-5 h-5" />
-                                            </div>
-                                            <span className={cn('text-[10px] leading-tight font-medium', isPageActive(item.page) && 'font-bold')}>{item.name}</span>
-                                        </button>
-                                    )
-                                ))}
-
-                                {/* Mehr */}
+                {/* Mobile Bottom Navigation — Stack-aware + Optimistic */}
+                <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 border-t border-border/50 pb-safe shadow-2xl backdrop-blur-xl">
+                    <div className="flex items-center justify-around px-1 pt-1 pb-1">
+                        {currentNavItems.map(item => {
+                            if (!permissions[item.permission]) return null;
+                            const active = isTabActive(item.page);
+                            return (
                                 <button
-                                    onClick={() => { haptics.selection(); setSettingsOpen(true); }}
-                                    className={cn('flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-all min-h-[56px] text-muted-foreground')}
+                                    key={item.page}
+                                    onClick={() => {
+                                        haptics.selection();
+                                        // Optimistic: sofort highlighten
+                                        setOptimisticTab(item.page);
+                                        // Stack-aware navigation
+                                        navigateToTab(item.page);
+                                    }}
+                                    className={cn(
+                                        'flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-colors min-h-[56px]',
+                                        active ? 'text-foreground' : 'text-muted-foreground'
+                                    )}
                                 >
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-xl">
-                                        <Settings className="w-5 h-5" />
+                                    <div className={cn(
+                                        'flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-150',
+                                        active && 'bg-foreground/10'
+                                    )}>
+                                        <item.icon className="w-5 h-5" />
                                     </div>
-                                    <span className="text-[10px] leading-tight font-medium">Mehr</span>
+                                    <span className={cn('text-[10px] leading-tight font-medium', active && 'font-bold')}>
+                                        {item.name}
+                                    </span>
                                 </button>
+                            );
+                        })}
+
+                        {/* Mehr */}
+                        <button
+                            onClick={() => { haptics.selection(); setSettingsOpen(true); }}
+                            className="flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-colors min-h-[56px] text-muted-foreground"
+                        >
+                            <div className="flex items-center justify-center w-8 h-8 rounded-xl">
+                                <Settings className="w-5 h-5" />
                             </div>
-                        </div>
-                    );
-                })()}
+                            <span className="text-[10px] leading-tight font-medium">Mehr</span>
+                        </button>
+                    </div>
+                </div>
 
                 {/* Mehr-Drawer — alle Bereiche geordnet */}
                 <Drawer open={settingsOpen} onOpenChange={setSettingsOpen}>

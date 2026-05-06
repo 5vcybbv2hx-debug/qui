@@ -89,20 +89,24 @@ Deno.serve(async (req) => {
         // ── Shifts: only operational info, no personal data beyond name ──────
         for (const s of shifts) {
             const d = dateStr(s.date);
-            const startH = parseInt(s.start_time);
-            const endH   = parseInt(s.end_time);
+            const [startH] = s.start_time.split(':').map(Number);
+            const [endH]   = s.end_time.split(':').map(Number);
             let endDate = d;
-            if (endH < startH) {
-                const next = new Date(s.date); next.setDate(next.getDate() + 1);
+            if (endH < startH || (endH === startH && endH === 0)) {
+                const next = new Date(s.date + 'T00:00:00');
+                next.setDate(next.getDate() + 1);
                 endDate = next.toISOString().split('T')[0].replace(/-/g, '');
             }
-            events.push(buildEvent({
-                uid: `shift-${s.id}@barmanager.app`,
-                dtstart: `${d}T${s.start_time.replace(':', '')}00`,
-                dtend:   `${endDate}T${s.end_time.replace(':', '')}00`,
-                summary: `${s.employee_name}${s.shift_type ? ' – ' + s.shift_type : ''}`,
-                // PRIVACY: No notes included — may contain sensitive context
-            }));
+            events.push([
+                'BEGIN:VEVENT',
+                `UID:shift-${s.id}@barmanager.app`,
+                `DTSTAMP:${now8601()}`,
+                `DTSTART;TZID=Europe/Berlin:${d}T${s.start_time.replace(':', '')}00`,
+                `DTEND;TZID=Europe/Berlin:${endDate}T${s.end_time.replace(':', '')}00`,
+                `SUMMARY:${s.employee_name}${s.shift_type ? ' – ' + s.shift_type : ''}`,
+                'STATUS:CONFIRMED',
+                'END:VEVENT',
+            ].join('\r\n'));
         }
 
         // ── Reservations: guest count + table only, NO phone/email/notes ─────
@@ -170,6 +174,26 @@ Deno.serve(async (req) => {
             }));
         }
 
+        const vtimezone = [
+            'BEGIN:VTIMEZONE',
+            'TZID:Europe/Berlin',
+            'BEGIN:STANDARD',
+            'DTSTART:19701025T030000',
+            'RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10',
+            'TZOFFSETFROM:+0200',
+            'TZOFFSETTO:+0100',
+            'TZNAME:CET',
+            'END:STANDARD',
+            'BEGIN:DAYLIGHT',
+            'DTSTART:19700329T020000',
+            'RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3',
+            'TZOFFSETFROM:+0100',
+            'TZOFFSETTO:+0200',
+            'TZNAME:CEST',
+            'END:DAYLIGHT',
+            'END:VTIMEZONE',
+        ].join('\r\n');
+
         const ics = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
@@ -178,8 +202,9 @@ Deno.serve(async (req) => {
             'METHOD:PUBLISH',
             'X-WR-CALNAME:Bar Management Live',
             'X-WR-TIMEZONE:Europe/Berlin',
-            'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
-            'X-PUBLISHED-TTL:PT1H',
+            'REFRESH-INTERVAL;VALUE=DURATION:PT15M',
+            'X-PUBLISHED-TTL:PT15M',
+            vtimezone,
             ...events,
             'END:VCALENDAR',
         ].join('\r\n');
@@ -189,7 +214,7 @@ Deno.serve(async (req) => {
                 'Content-Type': 'text/calendar; charset=utf-8',
                 'Content-Disposition': 'inline; filename="calendar.ics"',
                 // SECURITY: private — must not be cached by CDNs or shared proxies
-                'Cache-Control': 'private, max-age=3600',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
             }
         });
 

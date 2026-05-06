@@ -84,8 +84,8 @@ Deno.serve(async (req) => {
             'METHOD:PUBLISH',
             `X-WR-CALNAME:Meine Schichten – ${employee.name}`,
             'X-WR-TIMEZONE:Europe/Berlin',
-            'REFRESH-INTERVAL;VALUE=DURATION:PT1H',
-            'X-PUBLISHED-TTL:PT1H',
+            'REFRESH-INTERVAL;VALUE=DURATION:PT15M',
+            'X-PUBLISHED-TTL:PT15M',
             vtimezone,
             ...shifts.map(shiftToEvent),
             'END:VCALENDAR',
@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
             headers: {
                 'Content-Type': 'text/calendar; charset=utf-8',
                 'Content-Disposition': 'inline; filename="my-shifts.ics"',
-                'Cache-Control': 'private, max-age=3600',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
             }
         });
 

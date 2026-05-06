@@ -7,8 +7,14 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 const getAppBaseUrl = () => {
-    // appBaseUrl is the real published app URL (not the preview sandbox)
-    return (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
+    // Try appBaseUrl from params first (set on published app)
+    if (appParams.appBaseUrl && !appParams.appBaseUrl.includes('preview-sandbox')) {
+        return appParams.appBaseUrl.replace(/\/$/, '');
+    }
+    // Fallback: extract server_url from query params (available in preview)
+    const serverUrl = new URLSearchParams(window.location.search).get('server_url');
+    if (serverUrl) return serverUrl.replace(/\/$/, '');
+    return window.location.origin.replace(/\/$/, '');
 };
 
 const STORAGE_KEY = 'calendarSyncDismissed_v1';
@@ -26,7 +32,7 @@ export default function CalendarSyncBanner({ employee }) {
     }, [employee?.id]);
 
     const calendarUrl = token
-        ? `${getAppBaseUrl()}/api/functions/my-shifts-calendar?employee_id=${employee?.id}&token=${token}`
+        ? `${getAppBaseUrl()}/functions/my-shifts-calendar?employee_id=${employee?.id}&token=${token}`
         : null;
 
     const generateMutation = useMutation({

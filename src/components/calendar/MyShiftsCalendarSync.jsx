@@ -3,7 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Calendar, Copy, Check, RefreshCw, AlertCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 import { toast } from 'sonner';
+
+const getAppBaseUrl = () => {
+    if (appParams.appBaseUrl && !appParams.appBaseUrl.includes('preview-sandbox')) {
+        return appParams.appBaseUrl.replace(/\/$/, '');
+    }
+    const serverUrl = new URLSearchParams(window.location.search).get('server_url');
+    if (serverUrl) return serverUrl.replace(/\/$/, '');
+    return window.location.origin.replace(/\/$/, '');
+};
 
 export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
     const [token, setToken] = useState(existingToken || null);
@@ -11,7 +21,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
     const [loading, setLoading] = useState(false);
 
     const calendarUrl = token
-        ? `${window.location.origin}/api/functions/my-shifts-calendar?employee_id=${employeeId}&token=${token}`
+        ? `${getAppBaseUrl()}/functions/my-shifts-calendar?employee_id=${employeeId}&token=${token}`
         : null;
 
     const generateToken = async () => {

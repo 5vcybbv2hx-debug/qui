@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Mail, Send, AlertCircle, CheckCircle2, Loader } from 'lucide-react';
+import { Mail, Send, AlertCircle, CheckCircle2, Loader, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -16,8 +19,11 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-export default function PayrollReportSender({ pdfUrl, year, month }) {
+export default function PayrollReportSender() {
     const [showDialog, setShowDialog] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(new Date());
+    const [selectedDay, setSelectedDay] = useState(null);
+    const [reportType, setReportType] = useState('month'); // 'month' oder 'day'
 
     const { data: company } = useQuery({
         queryKey: ['company-info'],
@@ -27,12 +33,20 @@ export default function PayrollReportSender({ pdfUrl, year, month }) {
         },
     });
 
+    const { data: timeEntries = [] } = useQuery({
+        queryKey: ['time-entries-for-report'],
+        queryFn: () => base44.entities.TimeEntry.list('-date', 2000)
+    });
+
+    // Verfügbare Tage extrahieren
+    const availableDays = [...new Set(timeEntries.map(e => e.date))].sort().reverse();
+
     const sendMutation = useMutation({
         mutationFn: async () => {
             const res = await base44.functions.invoke('sendPayrollReport', {
-                year,
-                month,
-                pdf_url: pdfUrl,
+                year: selectedMonth.getFullYear(),
+                month: selectedMonth.getMonth() + 1,
+                day: reportType === 'day' ? selectedDay : null,
             });
             return res.data;
         },
@@ -69,39 +83,119 @@ export default function PayrollReportSender({ pdfUrl, year, month }) {
                     Zum Lohnbüro versenden
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-w-md">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2">
                         <Send className="w-5 h-5 text-amber-500" />
-                        Report versendet?
+                        Report zum Lohnbüro
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                        Der Monatsbericht wird als PDF an <strong>{company.payroll_email}</strong> versendet.
+                        Wähle, welcher Report versendet werden soll
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div className="bg-slate-50 p-3 rounded-lg text-sm text-slate-600 space-y-1">
-                    <p><strong>Empfänger:</strong> {company.payroll_email}</p>
-                    <p><strong>Von:</strong> {company.company_name}</p>
-                    <p><strong>Mit:</strong> Professionelle HTML-Signatur & Logo</p>
-                </div>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction
-                    onClick={() => sendMutation.mutate()}
-                    disabled={sendMutation.isPending}
-                    className="bg-amber-600 hover:bg-amber-700"
-                >
-                    {sendMutation.isPending ? (
-                        <>
-                            <Loader className="w-4 h-4 animate-spin mr-2" />
-                            Versende...
-                        </>
-                    ) : (
-                        <>
-                            <Send className="w-4 h-4 mr-2" />
-                            Ja, versenden
-                        </>
+
+                <div className="space-y-4 py-4">
+                    {/* Reporttyp Auswahl */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Reporttyp</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button
+                                variant={reportType === 'month' ? 'default' : 'outline'}
+                                onClick={() => setReportType('month')}
+                                className={cn(reportType === 'month' && 'bg-amber-600 hover:bg-amber-700')}
+                            >
+                                Monatlich
+                            </Button>
+                            <Button
+                                variant={reportType === 'day' ? 'default' : 'outline'}
+                                onClick={() => setReportType('day')}
+                                disabled={availableDays.length === 0}
+                                className={cn(reportType === 'day' && 'bg-amber-600 hover:bg-amber-700')}
+                            >
+                                Täglich
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Monat Auswahl */}
+                    {reportType === 'month' && (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Monat</label>
+                            <div className="flex items-center justify-between gap-2 p-2 bg-secondary/30 rounded-lg">
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1))}
+                                    className="h-8 w-8"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <span className="font-medium text-sm">{format(selectedMonth, 'MMMM yyyy', { locale: de })}</span>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => setSelectedMonth(new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1))}
+                                    className="h-8 w-8"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
                     )}
-                </AlertDialogAction>
+
+                    {/* Tag Auswahl */}
+                    {reportType === 'day' && (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Tag</label>
+                            {availableDays.length === 0 ? (
+                                <p className="text-xs text-muted-foreground p-2 bg-secondary/30 rounded">
+                                    Keine Tage mit Einträgen verfügbar
+                                </p>
+                            ) : (
+                                <div className="max-h-48 overflow-y-auto space-y-1">
+                                    {availableDays.slice(0, 30).map(day => (
+                                        <Button
+                                            key={day}
+                                            variant={selectedDay === day ? 'default' : 'outline'}
+                                            onClick={() => setSelectedDay(day)}
+                                            className={cn('w-full justify-start text-xs', selectedDay === day && 'bg-amber-600 hover:bg-amber-700')}
+                                        >
+                                            <Calendar className="w-3 h-3 mr-2" />
+                                            {format(new Date(day + 'T00:00'), 'EEE, d. MMM yyyy', { locale: de })}
+                                        </Button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Empfänger Info */}
+                    <div className="bg-secondary/20 p-3 rounded-lg text-xs text-foreground space-y-1">
+                        <p><strong>📧 Empfänger:</strong> {company.payroll_email}</p>
+                        <p><strong>🏢 Von:</strong> {company.company_name}</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <AlertDialogCancel className="flex-1">Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={() => sendMutation.mutate()}
+                        disabled={sendMutation.isPending || (reportType === 'day' && !selectedDay)}
+                        className="flex-1 bg-amber-600 hover:bg-amber-700"
+                    >
+                        {sendMutation.isPending ? (
+                            <>
+                                <Loader className="w-4 h-4 animate-spin mr-2" />
+                                Versende...
+                            </>
+                        ) : (
+                            <>
+                                <Send className="w-4 h-4 mr-2" />
+                                Versenden
+                            </>
+                        )}
+                    </AlertDialogAction>
+                </div>
             </AlertDialogContent>
         </AlertDialog>
     );

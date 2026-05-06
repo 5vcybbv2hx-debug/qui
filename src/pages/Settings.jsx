@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info, Palette, Calendar, Bell, CheckSquare, AlertTriangle, Users, Package, Sparkles, Volume2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ColorCustomizer from '@/components/settings/ColorCustomizer';
+import CompanyInfoEditor from '@/components/settings/CompanyInfoEditor';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -295,6 +296,20 @@ export default function Settings() {
                         </p>
                     </Card>
                 </div>
+
+                {/* Betriebsdaten – nur für Manager/Admin */}
+                {permissions.isManager && (
+                    <div className="mt-8">
+                        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                            <Package className="w-5 h-5" />
+                            Betriebsdaten
+                        </h2>
+                        <p className="text-xs text-muted-foreground mb-4">
+                            Konfiguriere Betriebseinstellungen und automatisierte Berichte.
+                        </p>
+                        <CompanyInfoEditor />
+                    </div>
+                )}
 
                 {/* Farbanpassung – nur für Manager/Admin */}
                 {permissions.isManager && (

@@ -63,10 +63,11 @@ Deno.serve(async (req) => {
         const csv = csvLines.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
         const csvBlob = new TextEncoder().encode(csv);
         
-        // Upload CSV to get URL
+        // Upload CSV as private file to get signed download URL
         const csvFile = new File([csvBlob], `payroll-${year}-${String(month).padStart(2, '0')}.csv`, { type: 'text/csv' });
-        const csvRes = await base44.integrations.Core.UploadFile({ file: csvFile });
-        const csvUrl = csvRes.file_url;
+        const csvPrivateRes = await base44.integrations.Core.UploadPrivateFile({ file: csvFile });
+        const csvSignedUrl = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: csvPrivateRes.file_uri, expires_in: 2592000 });
+        const csvUrl = csvSignedUrl.signed_url;
 
         // Build HTML email with professional design
         const htmlBody = `

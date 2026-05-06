@@ -381,7 +381,7 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const lowStock = articles.filter(a => a.min_stock != null && a.current_stock <= a.min_stock);
     const openShopping = shopping.filter(s => s.status === 'offen');
-    const needSignatures = employees.filter(e => !e.sig_employee || !e.sig_employer);
+    const needSignatures = employees.filter(e => !e.sig_employer);
 
     const kpis = [
         { label: 'Mitarbeiter', value: employees.length, icon: Users, color: 'bg-blue-600', to: 'Employees' },

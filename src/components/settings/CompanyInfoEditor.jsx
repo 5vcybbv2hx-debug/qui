@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Mail, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CompanyInfoEditor() {
+    const queryClient = useQueryClient();
     const [payrollEmail, setPayrollEmail] = useState('');
     const [isEditing, setIsEditing] = useState(false);
 
@@ -34,6 +35,7 @@ export default function CompanyInfoEditor() {
             });
         },
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['company-info'] });
             toast.success('Lohnbüro-Email gespeichert');
             setIsEditing(false);
         },

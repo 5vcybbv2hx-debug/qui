@@ -17,6 +17,7 @@ import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
 import { createNotification } from '@/utils/createNotification';
 import TimeEntryModal from '@/components/timetracking/TimeEntryModal';
 import MonthlyReportExport from '@/components/timetracking/MonthlyReportExport';
+import PayrollReportSender from '@/components/reports/PayrollReportSender';
 import { validateArbZG, formatWarnings } from '@/components/timetracking/ArbZGValidator';
 
 const statusConfig = {
@@ -792,7 +793,14 @@ export default function TimeTracking() {
                             Neue Zeiterfassung
                         </Button>
                     )}
-                    <MonthlyReportExport isVisible={permissions.isManager} />
+                    {permissions.isManager && <MonthlyReportExport isVisible />}
+                    {permissions.isManager && selectedMonth && (
+                        <PayrollReportSender 
+                            pdfUrl={`/monthly-report-${format(selectedMonth, 'yyyy-MM')}`}
+                            year={selectedMonth.getFullYear()}
+                            month={selectedMonth.getMonth() + 1}
+                        />
+                    )}
                 </div>
 
                 {/* Entries by Employee */}

@@ -120,11 +120,7 @@ Deno.serve(async (req) => {
                 </div>
             </div>
 
-            <div class="attachment-info">
-                <p><strong>📎 Anhänge:</strong></p>
-                <p>• PDF-Bericht (vollständige Übersicht)</p>
-                <p>• CSV-Datei (für Excel/DATEV)</p>
-            </div>
+            <p>Die detaillierte Übersicht finden Sie im angehängten PDF sowie in der CSV-Datei für die weitere Verarbeitung.</p>
 
             <p>Bei Fragen oder Unstimmigkeiten kontaktieren Sie uns gerne.</p>
 

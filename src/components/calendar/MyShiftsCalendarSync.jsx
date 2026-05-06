@@ -6,13 +6,11 @@ import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { toast } from 'sonner';
 
-const getAppBaseUrl = () => {
-    if (appParams.appBaseUrl && !appParams.appBaseUrl.includes('preview-sandbox')) {
-        return appParams.appBaseUrl.replace(/\/$/, '');
-    }
-    const serverUrl = new URLSearchParams(window.location.search).get('server_url');
-    if (serverUrl) return serverUrl.replace(/\/$/, '');
-    return window.location.origin.replace(/\/$/, '');
+const getFunctionUrl = (functionName) => {
+    const appId = appParams.appId;
+    const base = (appParams.appBaseUrl || '').replace(/\/$/, '');
+    const origin = base || window.location.origin;
+    return `${origin}/api/apps/${appId}/functions/${functionName}`;
 };
 
 export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
@@ -21,7 +19,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
     const [loading, setLoading] = useState(false);
 
     const calendarUrl = token
-        ? `${getAppBaseUrl()}/functions/my-shifts-calendar?employee_id=${employeeId}&token=${token}`
+        ? `${getFunctionUrl('my-shifts-calendar')}?employee_id=${employeeId}&token=${token}`
         : null;
 
     const generateToken = async () => {

@@ -6,15 +6,15 @@ import { Calendar, Copy, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-const getAppBaseUrl = () => {
-    // Try appBaseUrl from params first (set on published app)
-    if (appParams.appBaseUrl && !appParams.appBaseUrl.includes('preview-sandbox')) {
-        return appParams.appBaseUrl.replace(/\/$/, '');
-    }
-    // Fallback: extract server_url from query params (available in preview)
-    const serverUrl = new URLSearchParams(window.location.search).get('server_url');
-    if (serverUrl) return serverUrl.replace(/\/$/, '');
-    return window.location.origin.replace(/\/$/, '');
+// Baut die öffentliche Funktions-URL — nutzt appBaseUrl wenn verfügbar (echte App),
+// sonst aktuelle Origin (funktioniert auf der live veröffentlichten App korrekt)
+const getFunctionUrl = (functionName) => {
+    const appId = appParams.appId;
+    const base = (appParams.appBaseUrl || '').replace(/\/$/, '');
+    // Auf der echten App: appBaseUrl ist die richtige Domain
+    // Auf Preview: window.location.origin — Preview leitet Funktionen korrekt weiter
+    const origin = base || window.location.origin;
+    return `${origin}/api/apps/${appId}/functions/${functionName}`;
 };
 
 const STORAGE_KEY = 'calendarSyncDismissed_v1';
@@ -32,7 +32,7 @@ export default function CalendarSyncBanner({ employee }) {
     }, [employee?.id]);
 
     const calendarUrl = token
-        ? `${getAppBaseUrl()}/functions/my-shifts-calendar?employee_id=${employee?.id}&token=${token}`
+        ? `${getFunctionUrl('my-shifts-calendar')}?employee_id=${employee?.id}&token=${token}`
         : null;
 
     const generateMutation = useMutation({

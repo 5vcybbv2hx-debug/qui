@@ -28,7 +28,6 @@ function shiftToEvent(shift) {
 }
 
 function birthdayToEvent(employee) {
-    // Recurring yearly birthday (all-day)
     if (!employee.birthday) return null;
     const [, month, day] = employee.birthday.split('-');
     const yearlyDate = `${new Date().getFullYear()}${month}${day}`;
@@ -66,9 +65,19 @@ function meetingToEvent(meeting) {
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-    const url        = new URL(req.url);
-    const employeeId = url.searchParams.get('employee_id');
-    const token      = url.searchParams.get('token');
+    // Unterstützt GET (iCal-Abo von Apple/Google) und POST (SDK-Aufruf)
+    const reqUrl = new URL(req.url);
+    let employeeId = reqUrl.searchParams.get('employee_id');
+    let token      = reqUrl.searchParams.get('token');
+
+    // Bei POST: Parameter aus Body lesen
+    if (req.method === 'POST') {
+        try {
+            const body = await req.json();
+            employeeId = employeeId || body.employee_id;
+            token      = token      || body.token;
+        } catch (_) {}
+    }
 
     if (!employeeId || !token) {
         return Response.json({ error: 'employee_id and token parameters are required' }, { status: 400 });
@@ -144,6 +153,7 @@ Deno.serve(async (req) => {
                 'Content-Type': 'text/calendar; charset=utf-8',
                 'Content-Disposition': 'inline; filename="my-shifts.ics"',
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Access-Control-Allow-Origin': '*',
             }
         });
 

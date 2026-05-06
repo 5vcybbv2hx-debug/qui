@@ -43,7 +43,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
                     Kalender Live-Sync
                 </CardTitle>
                 <CardDescription>
-                    Synchronisiere deine Schichten automatisch mit iPhone, Google Calendar oder Outlook
+                    Synchronisiert deine Schichten, Teamgeburtstage und Teamsitzungen mit iPhone, Google Calendar oder Outlook
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

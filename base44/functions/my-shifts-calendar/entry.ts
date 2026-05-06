@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // ─── ICS helper ───────────────────────────────────────────────────────────────
 const now8601 = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+const escapeIcs = (str) => (str || '').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 
 function shiftToEvent(shift) {
     const d = shift.date.replace(/-/g, '');
@@ -9,21 +10,56 @@ function shiftToEvent(shift) {
     const [endH]   = shift.end_time.split(':').map(Number);
     let endDate = d;
     if (endH < startH || (endH === startH && endH === 0)) {
-        // Nachtschicht: Endzeit ist am nächsten Tag
         const next = new Date(shift.date + 'T00:00:00');
         next.setDate(next.getDate() + 1);
         endDate = next.toISOString().split('T')[0].replace(/-/g, '');
     }
-    // TZID sicherstellen: Europe/Berlin — sonst interpretiert Kalender als UTC
     const lines = [
         'BEGIN:VEVENT',
         `UID:shift-${shift.id}@barmanager.app`,
         `DTSTAMP:${now8601()}`,
         `DTSTART;TZID=Europe/Berlin:${d}T${shift.start_time.replace(':', '')}00`,
         `DTEND;TZID=Europe/Berlin:${endDate}T${shift.end_time.replace(':', '')}00`,
-        `SUMMARY:${shift.shift_type || 'Schicht'}`,
+        `SUMMARY:🍺 ${escapeIcs(shift.shift_type || 'Schicht')}`,
     ];
-    if (shift.notes) lines.push(`DESCRIPTION:${shift.notes.replace(/\n/g, '\\n')}`);
+    if (shift.notes) lines.push(`DESCRIPTION:${escapeIcs(shift.notes)}`);
+    lines.push('STATUS:CONFIRMED', 'END:VEVENT');
+    return lines.join('\r\n');
+}
+
+function birthdayToEvent(employee) {
+    // Recurring yearly birthday (all-day)
+    if (!employee.birthday) return null;
+    const [, month, day] = employee.birthday.split('-');
+    const yearlyDate = `${new Date().getFullYear()}${month}${day}`;
+    return [
+        'BEGIN:VEVENT',
+        `UID:birthday-${employee.id}@barmanager.app`,
+        `DTSTAMP:${now8601()}`,
+        `DTSTART;VALUE=DATE:${yearlyDate}`,
+        `DTEND;VALUE=DATE:${yearlyDate}`,
+        `SUMMARY:🎂 Geburtstag: ${escapeIcs(employee.name)}`,
+        'RRULE:FREQ=YEARLY',
+        'STATUS:CONFIRMED',
+        'END:VEVENT',
+    ].join('\r\n');
+}
+
+function meetingToEvent(meeting) {
+    if (!meeting.date) return null;
+    const d = meeting.date.replace(/-/g, '');
+    const startTime = meeting.start_time || '18:00';
+    const endTime   = meeting.end_time   || '19:00';
+    const lines = [
+        'BEGIN:VEVENT',
+        `UID:meeting-${meeting.id}@barmanager.app`,
+        `DTSTAMP:${now8601()}`,
+        `DTSTART;TZID=Europe/Berlin:${d}T${startTime.replace(':', '')}00`,
+        `DTEND;TZID=Europe/Berlin:${d}T${endTime.replace(':', '')}00`,
+        `SUMMARY:📋 Teamsitzung${meeting.title ? ': ' + escapeIcs(meeting.title) : ''}`,
+    ];
+    if (meeting.location) lines.push(`LOCATION:${escapeIcs(meeting.location)}`);
+    if (meeting.description) lines.push(`DESCRIPTION:${escapeIcs(meeting.description)}`);
     lines.push('STATUS:CONFIRMED', 'END:VEVENT');
     return lines.join('\r\n');
 }
@@ -41,20 +77,21 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
 
-        // Token-basierte Auth: kein Login nötig — iPhone-Kalender kann jederzeit abrufen
         const employee = await base44.asServiceRole.entities.Employee.get(employeeId);
         if (!employee) {
             return Response.json({ error: 'Employee not found' }, { status: 404 });
         }
 
-        // Validiere Token gegen den gespeicherten Wert im Employee-Record
         if (!employee.calendar_token || employee.calendar_token !== token) {
             return new Response('Invalid token', { status: 403 });
         }
 
-        const shifts = await base44.asServiceRole.entities.Shift.filter(
-            { employee_id: employeeId }, '-date', 500
-        );
+        // Fetch all data in parallel
+        const [shifts, allEmployees, meetings] = await Promise.all([
+            base44.asServiceRole.entities.Shift.filter({ employee_id: employeeId }, '-date', 500),
+            base44.asServiceRole.entities.Employee.filter({ is_active: true }, 'name', 200),
+            base44.asServiceRole.entities.TeamMeetingSchedule.list('-date', 100).catch(() => []),
+        ]);
 
         const vtimezone = [
             'BEGIN:VTIMEZONE',
@@ -76,18 +113,29 @@ Deno.serve(async (req) => {
             'END:VTIMEZONE',
         ].join('\r\n');
 
+        const birthdayEvents = allEmployees
+            .filter(e => e.birthday && e.id !== employeeId)
+            .map(birthdayToEvent)
+            .filter(Boolean);
+
+        const meetingEvents = meetings
+            .map(meetingToEvent)
+            .filter(Boolean);
+
         const ics = [
             'BEGIN:VCALENDAR',
             'VERSION:2.0',
             'PRODID:-//Bar Manager//My Shifts//DE',
             'CALSCALE:GREGORIAN',
             'METHOD:PUBLISH',
-            `X-WR-CALNAME:Meine Schichten – ${employee.name}`,
+            `X-WR-CALNAME:${employee.name} – Schichten & Team`,
             'X-WR-TIMEZONE:Europe/Berlin',
             'REFRESH-INTERVAL;VALUE=DURATION:PT15M',
             'X-PUBLISHED-TTL:PT15M',
             vtimezone,
             ...shifts.map(shiftToEvent),
+            ...birthdayEvents,
+            ...meetingEvents,
             'END:VCALENDAR',
         ].join('\r\n');
 

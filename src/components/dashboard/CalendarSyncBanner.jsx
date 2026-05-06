@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { appParams } from '@/lib/app-params';
 import { useMutation } from '@tanstack/react-query';
-import { Calendar, Copy, Check, X, ExternalLink } from 'lucide-react';
+import { Calendar, Copy, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+
+const getAppBaseUrl = () => {
+    // appBaseUrl is the real published app URL (not the preview sandbox)
+    return (appParams.appBaseUrl || window.location.origin).replace(/\/$/, '');
+};
 
 const STORAGE_KEY = 'calendarSyncDismissed_v1';
 
@@ -20,7 +26,7 @@ export default function CalendarSyncBanner({ employee }) {
     }, [employee?.id]);
 
     const calendarUrl = token
-        ? `${window.location.origin}/api/functions/my-shifts-calendar?employee_id=${employee?.id}&token=${token}`
+        ? `${getAppBaseUrl()}/api/functions/my-shifts-calendar?employee_id=${employee?.id}&token=${token}`
         : null;
 
     const generateMutation = useMutation({

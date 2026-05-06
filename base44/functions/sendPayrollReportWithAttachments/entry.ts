@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
         // Upload CSV to get URL
         const csvFile = new File([csvBlob], `payroll-${year}-${String(month).padStart(2, '0')}.csv`, { type: 'text/csv' });
         const csvRes = await base44.integrations.Core.UploadFile({ file: csvFile });
+        const csvUrl = csvRes.file_url;
 
         // Build HTML email with professional design
         const htmlBody = `
@@ -120,7 +121,12 @@ Deno.serve(async (req) => {
                 </div>
             </div>
 
-            <p>Die detaillierte Übersicht finden Sie im angehängten PDF sowie in der CSV-Datei für die weitere Verarbeitung.</p>
+            <p>Die detaillierte Übersicht finden Sie in den folgenden Dateien:</p>
+            
+            <div class="attachment-info">
+                <p><a href="${pdf_url}" style="color: #f59e0b; text-decoration: none; font-weight: bold;">📄 PDF-Bericht herunterladen</a></p>
+                <p><a href="${csvUrl}" style="color: #f59e0b; text-decoration: none; font-weight: bold;">📊 CSV-Datei herunterladen</a></p>
+            </div>
 
             <p>Bei Fragen oder Unstimmigkeiten kontaktieren Sie uns gerne.</p>
 

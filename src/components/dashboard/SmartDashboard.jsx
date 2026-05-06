@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Clock, ArrowRight, CheckSquare, Zap, Circle, Sparkles, CalendarCheck,
-    Users, Calendar, Lightbulb, LogIn, LogOut, Wrench, TrendingDown, ShoppingCart
+    Users, Calendar, Lightbulb, LogIn, LogOut, Wrench, TrendingDown, ShoppingCart, FileText
 } from 'lucide-react';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -381,6 +381,7 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const lowStock = articles.filter(a => a.min_stock != null && a.current_stock <= a.min_stock);
     const openShopping = shopping.filter(s => s.status === 'offen');
+    const needSignatures = employees.filter(e => !e.sig_employee || !e.sig_employer);
 
     const kpis = [
         { label: 'Mitarbeiter', value: employees.length, icon: Users, color: 'bg-blue-600', to: 'Employees' },
@@ -393,6 +394,45 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
         <div className="space-y-5">
             {/* Wochenstunden Diagramm */}
             <WeeklyHoursChart employees={employees} />
+
+            {/* Unterschriften erforderlich */}
+            {needSignatures.length > 0 && (
+                <section>
+                    <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-blue-400" />
+                        Unterschriften erforderlich
+                        <span className="ml-auto bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                            {needSignatures.length}
+                        </span>
+                    </h3>
+                    <div className="space-y-2">
+                        {needSignatures.slice(0, 5).map(emp => (
+                            <Link key={emp.id} to={createPageUrl('Employees') + `?employee=${emp.id}`}>
+                                <Card className="bg-card border-border hover:bg-accent/30 transition-colors">
+                                    <CardContent className="p-3 flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                            style={{ backgroundColor: emp.color || '#64748b' }}>
+                                            {emp.name?.charAt(0)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-foreground truncate">{emp.name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {!emp.sig_employee ? '✗ Arbeitnehmer' : '✓ Arbeitnehmer'} · {!emp.sig_employer ? '✗ Arbeitgeber' : '✓ Arbeitgeber'}
+                                            </p>
+                                        </div>
+                                        <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
+                        {needSignatures.length > 5 && (
+                            <p className="text-xs text-muted-foreground text-center py-2">
+                                +{needSignatures.length - 5} weitere
+                            </p>
+                        )}
+                    </div>
+                </section>
+            )}
 
             {/* Schichttausch-Anfragen */}
             <ShiftSwapApprovalCard />

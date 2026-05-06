@@ -88,7 +88,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
                                         <li>„Account hinzufügen" → „Andere"</li>
                                         <li>„Kalender-Abo hinzufügen"</li>
                                         <li>Obigen Link einfügen → Weiter → Speichern</li>
-                                        <li>Aktualisierung auf „Jede Stunde" stellen</li>
+                                        <li>Aktualisierung auf „Alle 15 Minuten" oder „Stündlich" stellen</li>
                                     </ol>
                                 </div>
                                 <div>
@@ -107,7 +107,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
                                 <span className="text-amber-500 mt-0.5">ℹ️</span>
                                 <p className="text-xs text-muted-foreground">
                                     Der Link ist <strong>persönlich und dauerhaft gültig</strong> — kein erneuter Login nötig. 
-                                    iPhone aktualisiert alle 1–3 Stunden automatisch.
+                                    iPhone aktualisiert ca. alle 15 Minuten automatisch.
                                 </p>
                             </div>
                             <Button

@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { appParams } from '@/lib/app-params';
 
 export default function LiveSyncInstructions() {
     const [copied, setCopied] = useState(false);
     
-    // Get the calendar feed URL
-    const calendarUrl = `${window.location.origin}/api/functions/calendar-feed`;
+    // Korrekte kanonische URL — funktioniert in Preview und auf der echten App
+    const appId = appParams.appId;
+    const base = (appParams.appBaseUrl || '').replace(/\/$/, '');
+    const origin = base || window.location.origin;
+    const calendarUrl = `${origin}/api/apps/${appId}/functions/calendar-feed`;
     
     const copyUrl = () => {
         navigator.clipboard.writeText(calendarUrl);

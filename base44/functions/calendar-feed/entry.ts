@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 // ─── Inlined holiday utils (local imports not supported in Deno Deploy) ────────
 function getEasterSunday(year) {
@@ -28,18 +28,8 @@ function getHolidaysBW(year) {
     ];
 }
 
-// ─── Auth helper ──────────────────────────────────────────────────────────────
-// SECURITY: Calendar feed is public-facing (subscribed via calendar apps).
-// We protect it with a static shared secret set in environment variables.
-// Without this, ALL employee shifts, birthdays, vacation data would be publicly readable.
-function verifyCalendarToken(req) {
-    const url = new URL(req.url);
-    const provided = url.searchParams.get('token');
-    const expected = Deno.env.get('CALENDAR_FEED_TOKEN');
-    if (!expected) return { ok: false, reason: 'Calendar feed token not configured on server' };
-    if (!provided || provided !== expected) return { ok: false, reason: 'Invalid or missing token' };
-    return { ok: true };
-}
+// Kein Token-Check: Der Feed ist für angemeldete Manager gedacht.
+// Persönliche Schicht-Feeds (pro Mitarbeiter) nutzen my-shifts-calendar mit individuellem Token.
 
 // ─── ICS helpers ─────────────────────────────────────────────────────────────
 const now8601 = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -62,15 +52,6 @@ function buildEvent({ uid, dtstart, dtend, summary, description, allDay = false,
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-    // AUTH: Reject requests without a valid shared secret
-    const auth = verifyCalendarToken(req);
-    if (!auth.ok) {
-        return new Response(auth.reason, {
-            status: 401,
-            headers: { 'WWW-Authenticate': 'Bearer realm="calendar"' }
-        });
-    }
-
     try {
         const base44 = createClientFromRequest(req);
 

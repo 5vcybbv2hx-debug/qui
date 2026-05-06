@@ -109,6 +109,10 @@
       "default": false,
       "description": "Ist das Legal-Setup abgeschlossen?"
     },
+    "payroll_email": {
+      "type": "string",
+      "description": "Email-Adresse f\u00fcr Lohnb\u00fcro-Reports"
+    },
     "last_updated": {
       "type": "string",
       "format": "date-time",

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,12 +18,14 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import PayrollReportHistory from './PayrollReportHistory';
 
 export default function PayrollReportSender() {
     const [showDialog, setShowDialog] = useState(false);
     const [selectedMonth, setSelectedMonth] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(null);
     const [reportType, setReportType] = useState('month'); // 'month' oder 'day'
+    const queryClient = useQueryClient();
 
     const { data: company } = useQuery({
         queryKey: ['company-info'],
@@ -53,6 +55,7 @@ export default function PayrollReportSender() {
         onSuccess: (data) => {
             toast.success(`✉️ Report versendet an ${data.recipient}`);
             setShowDialog(false);
+            queryClient.invalidateQueries({ queryKey: ['payroll-report-logs'] });
         },
         onError: (err) => {
             toast.error('Fehler: ' + (err.response?.data?.error || err.message));
@@ -76,6 +79,7 @@ export default function PayrollReportSender() {
     }
 
     return (
+        <div className="space-y-4">
         <AlertDialog open={showDialog} onOpenChange={setShowDialog}>
             <AlertDialogTrigger asChild>
                 <Button className="gap-2 bg-amber-600 hover:bg-amber-700">
@@ -198,5 +202,8 @@ export default function PayrollReportSender() {
                 </div>
             </AlertDialogContent>
         </AlertDialog>
+
+        <PayrollReportHistory />
+        </div>
     );
 }

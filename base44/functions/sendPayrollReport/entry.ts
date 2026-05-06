@@ -130,19 +130,49 @@ Deno.serve(async (req) => {
         `;
 
         // Send email
-        const res = await base44.integrations.Core.SendEmail({
-            to: company.payroll_email,
-            subject: `Monatsbericht Zeiterfassung – ${monthName}`,
-            body: htmlBody,
-            from_name: company.company_name,
-        });
+        try {
+            await base44.integrations.Core.SendEmail({
+                to: company.payroll_email,
+                subject: `Monatsbericht Zeiterfassung – ${monthName}`,
+                body: htmlBody,
+                from_name: company.company_name,
+            });
 
-        return Response.json({
-            success: true,
-            message: `Report erfolgreich an ${company.payroll_email} versendet`,
-            month: monthName,
-            recipient: company.payroll_email,
-        });
+            // Log successful send
+            await base44.asServiceRole.entities.PayrollReportLog.create({
+                year,
+                month,
+                day: body.day || null,
+                report_type: body.day ? 'daily' : 'monthly',
+                recipient_email: company.payroll_email,
+                company_name: company.company_name,
+                status: 'success',
+                sent_by: user.email,
+                sent_at: new Date().toISOString(),
+            });
+
+            return Response.json({
+                success: true,
+                message: `Report erfolgreich an ${company.payroll_email} versendet`,
+                month: monthName,
+                recipient: company.payroll_email,
+            });
+        } catch (emailError) {
+            // Log failed send
+            await base44.asServiceRole.entities.PayrollReportLog.create({
+                year,
+                month,
+                day: body.day || null,
+                report_type: body.day ? 'daily' : 'monthly',
+                recipient_email: company.payroll_email,
+                company_name: company.company_name,
+                status: 'failed',
+                error_message: emailError.message,
+                sent_by: user.email,
+                sent_at: new Date().toISOString(),
+            });
+            throw emailError;
+        }
 
     } catch (error) {
         console.error('Payroll report error:', error);

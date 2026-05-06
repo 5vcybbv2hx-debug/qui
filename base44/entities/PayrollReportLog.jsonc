@@ -1,0 +1,64 @@
+{
+  "name": "PayrollReportLog",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number",
+      "description": "Jahr des Reports"
+    },
+    "month": {
+      "type": "number",
+      "description": "Monat des Reports (1-12)"
+    },
+    "day": {
+      "type": "number",
+      "description": "Tag des Reports (optional, f\u00fcr Tagesberichte)"
+    },
+    "report_type": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "daily"
+      ],
+      "description": "Typ des Reports"
+    },
+    "recipient_email": {
+      "type": "string",
+      "description": "Email-Adresse des Empf\u00e4ngers"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "Name der Betriebsst\u00e4tte"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "failed"
+      ],
+      "default": "success",
+      "description": "Status des Versands"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Fehlermeldung bei Fehler"
+    },
+    "sent_by": {
+      "type": "string",
+      "description": "Email des Benutzers, der versendet hat"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Versands"
+    }
+  },
+  "required": [
+    "year",
+    "month",
+    "recipient_email",
+    "company_name",
+    "status",
+    "sent_by"
+  ]
+}

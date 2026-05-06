@@ -77,6 +77,22 @@ function QuickLink({ page, icon: Icon, label, sub, color }) {
 function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employees, teamNotes, currentUser, isManager, currentEmployee, permissions }) {
     return (
         <div className="space-y-5">
+            {/* Unterschrift erforderlich - nur für eigene Person */}
+            {currentEmployee && !currentEmployee.sig_employee && (
+                <Link to={createPageUrl('Employees') + `?employee=${currentEmployee.id}`}>
+                    <Card className="bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/15 transition-colors">
+                        <CardContent className="p-4 flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-blue-400 shrink-0" />
+                            <div className="flex-1">
+                                <p className="text-sm font-semibold text-blue-400">Unterschrift erforderlich</p>
+                                <p className="text-xs text-blue-300 mt-0.5">Bitte unterzeichne deinen Personalbogen</p>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-blue-300 shrink-0" />
+                        </CardContent>
+                    </Card>
+                </Link>
+            )}
+
             {/* Personalisierte Schnellzugriffe */}
             <PersonalizedQuickLinks userEmail={currentUser?.email} permissions={permissions} />
             {/* Schichten heute */}

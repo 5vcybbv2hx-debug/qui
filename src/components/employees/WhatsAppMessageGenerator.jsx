@@ -244,7 +244,7 @@ Regeln:
                     <div className="space-y-2">
                         <Label>Ton</Label>
                         <div className="flex gap-2 flex-wrap">
-                            {['freundlich', 'professionell', 'dringend', 'locker'].map(t => (
+                            {['freundlich', 'professionell', 'dringend', 'locker', 'glücklich'].map(t => (
                                 <button
                                     key={t}
                                     onClick={() => setTone(t)}

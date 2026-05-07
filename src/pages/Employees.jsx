@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { createNotification } from '@/utils/createNotification';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import SignaturePad from '@/components/employees/SignaturePad';
 
 const COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#84cc16', 
@@ -205,7 +206,8 @@ export default function Employees() {
                 bank_name: employee.bank_name || '',
                 iban: employee.iban || '',
                 bic: employee.bic || '',
-                is_active: employee.is_active !== false
+                is_active: employee.is_active !== false,
+                sig_employee: employee.sig_employee || ''
             });
         } else {
             setSelectedEmployee(null);
@@ -1183,6 +1185,33 @@ export default function Employees() {
                                             />
                                         </div>
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Unterschrift Arbeitnehmer - für eigenes Profil */}
+                            {selectedEmployee && isOwnProfile(selectedEmployee) && !permissions.isManager && (
+                                <div className="pt-4 border-t space-y-3">
+                                    <h4 className="font-semibold text-foreground">Unterschrift</h4>
+                                    {formData.sig_employee ? (
+                                        <div className="space-y-2">
+                                            <p className="text-xs text-green-400">✓ Unterschrift bereits hinterlegt</p>
+                                            <img src={formData.sig_employee} alt="Unterschrift" className="max-h-20 border border-border rounded-lg p-2 bg-white" />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setFormData({ ...formData, sig_employee: '' })}
+                                                className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                            >
+                                                Unterschrift löschen und neu zeichnen
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <SignaturePad
+                                            label="Unterschrift Arbeitnehmer"
+                                            onSign={(sig) => setFormData({ ...formData, sig_employee: sig })}
+                                        />
+                                    )}
                                 </div>
                             )}
 

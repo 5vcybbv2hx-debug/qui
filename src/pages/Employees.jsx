@@ -30,6 +30,7 @@ import { createNotification } from '@/utils/createNotification';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import SignaturePad from '@/components/employees/SignaturePad';
+import WhatsAppMessageGenerator from '@/components/employees/WhatsAppMessageGenerator';
 
 const COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#84cc16', 
@@ -392,6 +393,7 @@ export default function Employees() {
                     <div className="flex gap-1 sm:gap-2 flex-wrap">
                          {permissions.isManager && (
                              <>
+                                 <WhatsAppMessageGenerator employees={employees} />
                                  <WorkTimeModelsManager />
                                  <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries(['employees'])} />
                                  <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />

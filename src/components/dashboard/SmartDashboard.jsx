@@ -25,6 +25,7 @@ import { isActiveEntry, getTodayOperationDate, formatDuration, calcWorkMinutes, 
 import { useDashboardData } from '@/hooks/useDashboardData';
 import PersonalizedQuickLinks from '@/components/dashboard/PersonalizedQuickLinks';
 import WeeklyHoursChart from '@/components/dashboard/WeeklyHoursChart';
+import WhatsAppMessageGenerator from '@/components/employees/WhatsAppMessageGenerator';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -514,6 +515,12 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                     </div>
                 </section>
             )}
+
+            {/* WhatsApp Nachricht */}
+            <section>
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">Kommunikation</h3>
+                <WhatsAppMessageGenerator employees={employees} />
+            </section>
 
             {/* Schnellaktionen */}
             <section>

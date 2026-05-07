@@ -516,12 +516,6 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                 </section>
             )}
 
-            {/* WhatsApp Nachricht */}
-            <section>
-                <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">Kommunikation</h3>
-                <WhatsAppMessageGenerator employees={employees} />
-            </section>
-
             {/* Schnellaktionen */}
             <section>
                 <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">Schnellaktionen</h3>
@@ -752,9 +746,12 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                                 {format(new Date(), "EEEE, d. MMMM yyyy", { locale: de })}
                             </p>
                         </div>
-                        <div className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold shrink-0', phase.bg, phase.color)}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                            {phase.label}
+                        <div className="flex items-center gap-2 shrink-0">
+                            {isManager && <WhatsAppMessageGenerator employees={employees} />}
+                            <div className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold', phase.bg, phase.color)}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                                {phase.label}
+                            </div>
                         </div>
                     </div>
 

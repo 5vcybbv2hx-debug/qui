@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MessageCircle, Sparkles, Copy, ExternalLink, Loader2, X } from 'lucide-react';
+import { MessageCircle, Sparkles, Copy, ExternalLink, Loader2, Check, Users, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -20,45 +20,69 @@ const QUICK_TOPICS = [
     'Einladung',
 ];
 
+// mode: 'group' | 'single' | 'multi'
 export default function WhatsAppMessageGenerator({ employees = [] }) {
     const [open, setOpen] = useState(false);
     const [keywords, setKeywords] = useState('');
-    const [recipient, setRecipient] = useState('group'); // 'group' | employee.id
-    const [generatedMessage, setGeneratedMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [mode, setMode] = useState('group'); // 'group' | 'single' | 'multi'
+    const [selectedIds, setSelectedIds] = useState([]); // for single: max 1, for multi: many
     const [tone, setTone] = useState('freundlich');
+    const [isLoading, setIsLoading] = useState(false);
+
+    // For single: one message string
+    // For multi: array of { employee, message, copied }
+    const [singleMessage, setSingleMessage] = useState('');
+    const [multiMessages, setMultiMessages] = useState([]); // [{employee, message, copied}]
+    const [groupMessage, setGroupMessage] = useState('');
+
+    const [showEmployeeList, setShowEmployeeList] = useState(false);
 
     const activeEmployees = employees.filter(e => e.is_active !== false && e.phone);
 
-    const selectedEmployee = recipient !== 'group'
-        ? employees.find(e => e.id === recipient)
-        : null;
+    const toggleEmployee = (id) => {
+        if (mode === 'single') {
+            setSelectedIds([id]);
+        } else {
+            setSelectedIds(prev =>
+                prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+            );
+        }
+    };
 
     const handleGenerate = async () => {
         if (!keywords.trim()) return;
         setIsLoading(true);
-        setGeneratedMessage('');
+        setSingleMessage('');
+        setMultiMessages([]);
+        setGroupMessage('');
+
         try {
-            const recipientDesc = selectedEmployee
-                ? `an ${selectedEmployee.name}`
-                : 'an die gesamte Team-WhatsApp-Gruppe';
+            if (mode === 'group') {
+                const result = await base44.integrations.Core.InvokeLLM({
+                    prompt: buildPrompt('die gesamte Team-WhatsApp-Gruppe', null, keywords, tone)
+                });
+                setGroupMessage(result);
 
-            const result = await base44.integrations.Core.InvokeLLM({
-                prompt: `Erstelle eine WhatsApp-Nachricht für ein Bar-Team.
-Empfänger: ${recipientDesc}
-Ton: ${tone}
-Stichwörter / Anlass: ${keywords}
+            } else if (mode === 'single') {
+                const emp = activeEmployees.find(e => e.id === selectedIds[0]);
+                if (!emp) return;
+                const result = await base44.integrations.Core.InvokeLLM({
+                    prompt: buildPrompt(`${emp.name}`, emp.name, keywords, tone)
+                });
+                setSingleMessage(result);
 
-Regeln:
-- WhatsApp-Formatierung verwenden (*fett*, _kursiv_)
-- Kurz und prägnant (max. 5-8 Sätze)
-- Passende Emojis einsetzen
-- Auf Deutsch
-- Keine Betreffzeile, direkt die Nachricht
-- Am Ende eine kurze Handlungsaufforderung wenn sinnvoll`
-            });
-
-            setGeneratedMessage(result);
+            } else if (mode === 'multi') {
+                // Generate all in parallel
+                const emps = activeEmployees.filter(e => selectedIds.includes(e.id));
+                const results = await Promise.all(
+                    emps.map(emp =>
+                        base44.integrations.Core.InvokeLLM({
+                            prompt: buildPrompt(`${emp.name}`, emp.name, keywords, tone)
+                        }).then(msg => ({ employee: emp, message: msg, copied: false }))
+                    )
+                );
+                setMultiMessages(results);
+            }
         } catch (e) {
             toast.error('Fehler beim Generieren der Nachricht');
         } finally {
@@ -66,19 +90,35 @@ Regeln:
         }
     };
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(generatedMessage);
+    const buildPrompt = (recipientDesc, name, kw, t) => `Erstelle eine WhatsApp-Nachricht für ein Bar-Team.
+Empfänger: ${recipientDesc}${name ? ` (persönlich ansprechen mit Vorname: ${name.split(' ')[0]})` : ''}
+Ton: ${t}
+Stichwörter / Anlass: ${kw}
+
+Regeln:
+- WhatsApp-Formatierung verwenden (*fett*, _kursiv_)
+- Kurz und prägnant (max. 5-8 Sätze)
+- Passende Emojis einsetzen
+- Auf Deutsch
+- Keine Betreffzeile, direkt die Nachricht
+- Am Ende eine kurze Handlungsaufforderung wenn sinnvoll`;
+
+    const copyMessage = (text, index = null) => {
+        navigator.clipboard.writeText(text);
         toast.success('Nachricht kopiert!');
+        if (index !== null) {
+            setMultiMessages(prev => prev.map((m, i) => i === index ? { ...m, copied: true } : m));
+            setTimeout(() => setMultiMessages(prev => prev.map((m, i) => i === index ? { ...m, copied: false } : m)), 2000);
+        }
     };
 
-    const handleOpenWhatsApp = () => {
-        const encoded = encodeURIComponent(generatedMessage);
-        if (selectedEmployee?.phone) {
-            const phone = selectedEmployee.phone.replace(/\D/g, '');
+    const openWhatsApp = (message, employee = null) => {
+        const encoded = encodeURIComponent(message);
+        if (employee?.phone) {
+            const phone = employee.phone.replace(/\D/g, '');
             window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
         } else {
-            // Gruppe: erst kopieren, dann Gruppe öffnen
-            navigator.clipboard.writeText(generatedMessage);
+            navigator.clipboard.writeText(message);
             toast.success('Nachricht kopiert! WhatsApp-Gruppe wird geöffnet...');
             setTimeout(() => window.open(WHATSAPP_GROUP_LINK, '_blank'), 800);
         }
@@ -86,10 +126,22 @@ Regeln:
 
     const handleReset = () => {
         setKeywords('');
-        setGeneratedMessage('');
-        setRecipient('group');
+        setSingleMessage('');
+        setMultiMessages([]);
+        setGroupMessage('');
+        setSelectedIds([]);
+        setMode('group');
         setTone('freundlich');
+        setShowEmployeeList(false);
     };
+
+    const canGenerate = keywords.trim() && (
+        mode === 'group' ||
+        (mode === 'single' && selectedIds.length === 1) ||
+        (mode === 'multi' && selectedIds.length >= 2)
+    );
+
+    const selectedEmployees = activeEmployees.filter(e => selectedIds.includes(e.id));
 
     return (
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) handleReset(); }}>
@@ -112,40 +164,81 @@ Regeln:
                 </DialogHeader>
 
                 <div className="space-y-4 mt-2">
-                    {/* Empfänger */}
+                    {/* Mode Selection */}
                     <div className="space-y-2">
                         <Label>Empfänger</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                onClick={() => setRecipient('group')}
-                                className={cn(
-                                    'p-3 rounded-xl border text-sm font-medium transition-all text-left',
-                                    recipient === 'group'
-                                        ? 'border-green-500/60 bg-green-500/10 text-green-400'
-                                        : 'border-border bg-card text-muted-foreground hover:bg-accent/30'
-                                )}
-                            >
-                                👥 Team-Gruppe
-                            </button>
-                            <div className="relative">
-                                <select
-                                    value={recipient === 'group' ? '' : recipient}
-                                    onChange={(e) => setRecipient(e.target.value || 'group')}
+                        <div className="grid grid-cols-3 gap-2">
+                            {[
+                                { id: 'group', icon: Users, label: 'Team-Gruppe' },
+                                { id: 'single', icon: User, label: 'Einzelperson' },
+                                { id: 'multi', icon: Users, label: 'Mehrere Personen' },
+                            ].map(({ id, icon: Icon, label }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => { setMode(id); setSelectedIds([]); setSingleMessage(''); setMultiMessages([]); setGroupMessage(''); }}
                                     className={cn(
-                                        'w-full h-full p-3 rounded-xl border text-sm font-medium transition-all appearance-none bg-card',
-                                        recipient !== 'group'
+                                        'p-2.5 rounded-xl border text-xs font-medium transition-all flex flex-col items-center gap-1',
+                                        mode === id
                                             ? 'border-green-500/60 bg-green-500/10 text-green-400'
-                                            : 'border-border text-muted-foreground'
+                                            : 'border-border bg-card text-muted-foreground hover:bg-accent/30'
                                     )}
                                 >
-                                    <option value="">👤 Einzelperson...</option>
-                                    {activeEmployees.map(emp => (
-                                        <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                    ))}
-                                </select>
-                            </div>
+                                    <Icon className="w-4 h-4" />
+                                    {label}
+                                </button>
+                            ))}
                         </div>
                     </div>
+
+                    {/* Employee Picker */}
+                    {(mode === 'single' || mode === 'multi') && (
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => setShowEmployeeList(v => !v)}
+                                className="w-full flex items-center justify-between p-3 rounded-xl border border-border bg-card hover:bg-accent/30 transition-all"
+                            >
+                                <span className="text-sm text-foreground">
+                                    {selectedIds.length === 0
+                                        ? 'Mitarbeiter auswählen...'
+                                        : mode === 'single'
+                                            ? selectedEmployees[0]?.name
+                                            : `${selectedIds.length} Personen ausgewählt`}
+                                </span>
+                                {showEmployeeList ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                            </button>
+
+                            {showEmployeeList && (
+                                <div className="rounded-xl border border-border bg-card overflow-hidden max-h-48 overflow-y-auto">
+                                    {activeEmployees.map(emp => {
+                                        const selected = selectedIds.includes(emp.id);
+                                        return (
+                                            <button
+                                                key={emp.id}
+                                                onClick={() => { toggleEmployee(emp.id); if (mode === 'single') setShowEmployeeList(false); }}
+                                                className={cn(
+                                                    'w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-all hover:bg-accent/30',
+                                                    selected ? 'bg-green-500/10 text-green-400' : 'text-foreground'
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    'w-5 h-5 rounded border flex items-center justify-center shrink-0',
+                                                    selected ? 'bg-green-500 border-green-500' : 'border-border'
+                                                )}>
+                                                    {selected && <Check className="w-3 h-3 text-white" />}
+                                                </div>
+                                                <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                                                    style={{ backgroundColor: emp.color || '#64748b' }}>
+                                                    {emp.name?.charAt(0)}
+                                                </div>
+                                                <span className="flex-1 text-left">{emp.name}</span>
+                                                <span className="text-xs text-muted-foreground">{emp.role}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Ton */}
                     <div className="space-y-2">
@@ -168,7 +261,7 @@ Regeln:
                         </div>
                     </div>
 
-                    {/* Schnell-Themen */}
+                    {/* Thema */}
                     <div className="space-y-2">
                         <Label>Thema / Stichwörter</Label>
                         <div className="flex gap-1.5 flex-wrap mb-2">
@@ -192,57 +285,94 @@ Regeln:
 
                     <Button
                         onClick={handleGenerate}
-                        disabled={!keywords.trim() || isLoading}
+                        disabled={!canGenerate || isLoading}
                         className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                     >
                         {isLoading ? (
-                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generiere...</>
+                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            {mode === 'multi' ? `Generiere ${selectedIds.length} Nachrichten...` : 'Generiere...'}</>
                         ) : (
-                            <><Sparkles className="w-4 h-4 mr-2" />Nachricht generieren</>
+                            <><Sparkles className="w-4 h-4 mr-2" />
+                            {mode === 'multi' ? `${selectedIds.length} Nachrichten generieren` : 'Nachricht generieren'}</>
                         )}
                     </Button>
 
-                    {/* Generierte Nachricht */}
-                    {generatedMessage && (
-                        <div className="space-y-3">
-                            <div className="relative">
-                                <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
-                                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                                        {generatedMessage}
-                                    </p>
-                                </div>
-                            </div>
+                    {/* Single / Group Message */}
+                    {(singleMessage || groupMessage) && (
+                        <MessageCard
+                            message={singleMessage || groupMessage}
+                            employee={mode === 'single' ? selectedEmployees[0] : null}
+                            onCopy={() => copyMessage(singleMessage || groupMessage)}
+                            onOpen={() => openWhatsApp(singleMessage || groupMessage, mode === 'single' ? selectedEmployees[0] : null)}
+                            onRegenerate={handleGenerate}
+                            isLoading={isLoading}
+                        />
+                    )}
 
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={handleGenerate}
-                                    disabled={isLoading}
-                                    className="flex-1 text-xs"
-                                >
-                                    <Sparkles className="w-3 h-3 mr-1" />
-                                    Neu generieren
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={handleCopy}
-                                    className="flex-1 text-xs border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
-                                >
-                                    <Copy className="w-3 h-3 mr-1" />
-                                    Kopieren
-                                </Button>
-                                <Button
-                                    onClick={handleOpenWhatsApp}
-                                    className="flex-1 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
-                                >
-                                    <ExternalLink className="w-3 h-3 mr-1" />
-                                    {selectedEmployee ? 'Senden' : 'Zur Gruppe'}
-                                </Button>
-                            </div>
+                    {/* Multi Messages */}
+                    {multiMessages.length > 0 && (
+                        <div className="space-y-3">
+                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                                {multiMessages.length} personalisierte Nachrichten
+                            </p>
+                            {multiMessages.map((item, idx) => (
+                                <MessageCard
+                                    key={item.employee.id}
+                                    message={item.message}
+                                    employee={item.employee}
+                                    copied={item.copied}
+                                    onCopy={() => copyMessage(item.message, idx)}
+                                    onOpen={() => openWhatsApp(item.message, item.employee)}
+                                    compact
+                                />
+                            ))}
                         </div>
                     )}
                 </div>
             </DialogContent>
         </Dialog>
+    );
+}
+
+function MessageCard({ message, employee, onCopy, onOpen, onRegenerate, isLoading, compact = false, copied = false }) {
+    return (
+        <div className="space-y-2">
+            {employee && (
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                        style={{ backgroundColor: employee.color || '#64748b' }}>
+                        {employee.name?.charAt(0)}
+                    </div>
+                    <span className="text-sm font-medium text-foreground">{employee.name}</span>
+                </div>
+            )}
+            <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                    {message}
+                </p>
+            </div>
+            <div className="flex gap-2">
+                {onRegenerate && !compact && (
+                    <Button variant="outline" onClick={onRegenerate} disabled={isLoading} className="flex-1 text-xs">
+                        <Sparkles className="w-3 h-3 mr-1" />Neu
+                    </Button>
+                )}
+                <Button
+                    variant="outline"
+                    onClick={onCopy}
+                    className={cn('flex-1 text-xs transition-all', copied ? 'border-green-500/40 text-green-400' : 'border-blue-500/30 text-blue-400 hover:bg-blue-500/10')}
+                >
+                    {copied ? <Check className="w-3 h-3 mr-1" /> : <Copy className="w-3 h-3 mr-1" />}
+                    {copied ? 'Kopiert!' : 'Kopieren'}
+                </Button>
+                <Button
+                    onClick={onOpen}
+                    className="flex-1 text-xs bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
+                >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    {employee ? 'Senden' : 'Zur Gruppe'}
+                </Button>
+            </div>
+        </div>
     );
 }

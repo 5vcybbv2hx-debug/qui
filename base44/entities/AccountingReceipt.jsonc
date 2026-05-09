@@ -1,0 +1,119 @@
+{
+  "name": "AccountingReceipt",
+  "type": "object",
+  "properties": {
+    "receipt_number": {
+      "type": "string",
+      "description": "Belegnummer"
+    },
+    "receipt_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Belegdatum"
+    },
+    "receipt_type": {
+      "type": "string",
+      "enum": [
+        "Eingangsrechnung",
+        "Ausgangsrechnung",
+        "Kassenbeleg",
+        "Sonstiges"
+      ],
+      "description": "Belegart"
+    },
+    "supplier_name": {
+      "type": "string",
+      "description": "Lieferant / Absender"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Lieferant (ID)"
+    },
+    "amount_gross": {
+      "type": "number",
+      "description": "Bruttobetrag"
+    },
+    "amount_net": {
+      "type": "number",
+      "description": "Nettobetrag"
+    },
+    "tax_rate": {
+      "type": "number",
+      "description": "Steuersatz %"
+    },
+    "tax_amount": {
+      "type": "number",
+      "description": "Steuerbetrag"
+    },
+    "category": {
+      "type": "string",
+      "description": "Kostenkategorie"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "Bar",
+        "EC",
+        "\u00dcberweisung",
+        "Kreditkarte",
+        "Sonstiges"
+      ]
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "bezahlt",
+        "\u00fcberf\u00e4llig"
+      ],
+      "default": "offen"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "F\u00e4lligkeitsdatum"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL der hochgeladenen Belegdatei"
+    },
+    "ai_extracted": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wurde per KI extrahiert?"
+    },
+    "ai_confidence": {
+      "type": "number",
+      "description": "KI-Konfidenz 0-100"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "neu",
+        "ki_erkannt",
+        "pruefung",
+        "freigegeben",
+        "exportiert"
+      ],
+      "default": "neu"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "cashbook_entry_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Kassenbucheintrag"
+    },
+    "month_closing_id": {
+      "type": "string"
+    },
+    "is_cash_relevant": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "receipt_date",
+    "receipt_type"
+  ]
+}

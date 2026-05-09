@@ -4,7 +4,8 @@ import {
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
-    Palmtree, ListChecks, Video, QrCode, Sun, Layers, Zap
+    Palmtree, ListChecks, Video, QrCode, Sun, Layers, Zap,
+    Receipt, TrendingDown, Download, Euro
 } from 'lucide-react';
 
 /**
@@ -64,6 +65,20 @@ export const mainNavigation = [
             { name: 'Getränkekarte', page: 'DrinkMenu',       icon: Wine,       permission: 'canViewDrinkMenu'      },
             { name: 'Rezepte',       page: 'Recipes',         icon: BookOpen,   permission: 'canViewRecipes'        },
             { name: 'Preisrechner',  page: 'PriceCalculator', icon: TrendingUp, permission: 'canViewPriceCalculator'},
+        ]
+    },
+    {
+        id: 'buchhaltung',
+        name: 'Buchhaltung',
+        icon: Euro,
+        pages: [
+            { name: 'Buchhaltung',    page: 'AccountingDashboard',      icon: Euro,         permission: 'canViewAnalytics' },
+            { name: 'Kassenbuch',     page: 'AccountingCashbook',       icon: BookOpen,     permission: 'canViewAnalytics' },
+            { name: 'Belege',         page: 'AccountingReceipts',       icon: Receipt,      permission: 'canViewAnalytics' },
+            { name: 'Kreditoren',     page: 'AccountingCreditors',      icon: TrendingDown, permission: 'canViewAnalytics' },
+            { name: 'Debitoren',      page: 'AccountingDebitors',       icon: TrendingUp,   permission: 'canViewAnalytics' },
+            { name: 'Export',         page: 'AccountingExport',         icon: Download,     permission: 'canViewAnalytics' },
+            { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canViewAnalytics' },
         ]
     },
     {

@@ -1,0 +1,73 @@
+{
+  "name": "CreditorInvoice",
+  "type": "object",
+  "properties": {
+    "invoice_number": {
+      "type": "string"
+    },
+    "invoice_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "supplier_id": {
+      "type": "string"
+    },
+    "supplier_name": {
+      "type": "string"
+    },
+    "amount_net": {
+      "type": "number"
+    },
+    "amount_gross": {
+      "type": "number"
+    },
+    "tax_rate": {
+      "type": "number"
+    },
+    "tax_amount": {
+      "type": "number"
+    },
+    "category": {
+      "type": "string"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "teilbezahlt",
+        "bezahlt",
+        "\u00fcberf\u00e4llig"
+      ],
+      "default": "offen"
+    },
+    "paid_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "receipt_id": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "datev_account": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "invoice_date",
+    "supplier_name",
+    "amount_gross"
+  ]
+}

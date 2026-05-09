@@ -1,0 +1,102 @@
+{
+  "name": "CashbookEntry",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Buchungsdatum"
+    },
+    "time": {
+      "type": "string",
+      "description": "Uhrzeit (HH:MM)"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "Einnahme",
+        "Ausgabe",
+        "Privatentnahme",
+        "Privateinlage",
+        "Trinkgeld",
+        "Kassensturz",
+        "Sonstiges"
+      ],
+      "description": "Buchungsart"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Betrag (brutto)"
+    },
+    "amount_net": {
+      "type": "number",
+      "description": "Nettobetrag"
+    },
+    "tax_rate": {
+      "type": "number",
+      "description": "Steuersatz in %"
+    },
+    "tax_amount": {
+      "type": "number",
+      "description": "Steuerbetrag"
+    },
+    "category": {
+      "type": "string",
+      "description": "Buchungskategorie"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung / Buchungstext"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "Bar",
+        "EC",
+        "Kreditkarte",
+        "\u00dcberweisung",
+        "Sonstiges"
+      ],
+      "description": "Zahlungsart"
+    },
+    "receipt_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Beleg (ID)"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Mitarbeiter"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "gepr\u00fcft",
+        "freigegeben",
+        "exportiert"
+      ],
+      "default": "offen"
+    },
+    "daily_revenue_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Tagesabschluss (ID)"
+    },
+    "balance_after": {
+      "type": "number",
+      "description": "Kassenstand nach Buchung"
+    },
+    "month_closing_id": {
+      "type": "string",
+      "description": "Monatsabschluss-ID"
+    }
+  },
+  "required": [
+    "date",
+    "entry_type",
+    "amount"
+  ]
+}

@@ -10,6 +10,13 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import PublicWeeklySpecialDisplay from './pages/PublicWeeklySpecialDisplay';
+import AccountingDashboard from './pages/AccountingDashboard';
+import AccountingCashbook from './pages/AccountingCashbook';
+import AccountingReceipts from './pages/AccountingReceipts';
+import AccountingCreditors from './pages/AccountingCreditors';
+import AccountingDebitors from './pages/AccountingDebitors';
+import AccountingExport from './pages/AccountingExport';
+import AccountingMonthlyClosing from './pages/AccountingMonthlyClosing';
 import BusinessCard from './pages/BusinessCard';
 import AdminTimeEditor from './pages/AdminTimeEditor';
 import DataExport from './pages/DataExport';
@@ -147,6 +154,15 @@ const AuthenticatedApp = () => {
           <BusinessCalendar />
         </LayoutWrapper>
       } />
+
+      {/* Buchhaltungsmodul */}
+      <Route path="/AccountingDashboard" element={<LayoutWrapper currentPageName="AccountingDashboard"><AccountingDashboard /></LayoutWrapper>} />
+      <Route path="/AccountingCashbook" element={<LayoutWrapper currentPageName="AccountingCashbook"><AccountingCashbook /></LayoutWrapper>} />
+      <Route path="/AccountingReceipts" element={<LayoutWrapper currentPageName="AccountingReceipts"><AccountingReceipts /></LayoutWrapper>} />
+      <Route path="/AccountingCreditors" element={<LayoutWrapper currentPageName="AccountingCreditors"><AccountingCreditors /></LayoutWrapper>} />
+      <Route path="/AccountingDebitors" element={<LayoutWrapper currentPageName="AccountingDebitors"><AccountingDebitors /></LayoutWrapper>} />
+      <Route path="/AccountingExport" element={<LayoutWrapper currentPageName="AccountingExport"><AccountingExport /></LayoutWrapper>} />
+      <Route path="/AccountingMonthlyClosing" element={<LayoutWrapper currentPageName="AccountingMonthlyClosing"><AccountingMonthlyClosing /></LayoutWrapper>} />
 
       {/* Catch-all */}
       <Route path="*" element={<PageNotFound />} />

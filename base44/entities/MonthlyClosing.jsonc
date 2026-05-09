@@ -1,0 +1,65 @@
+{
+  "name": "MonthlyClosing",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "number"
+    },
+    "month": {
+      "type": "number",
+      "description": "Monat 1-12"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "in_bearbeitung",
+        "abgeschlossen",
+        "gesperrt"
+      ],
+      "default": "offen"
+    },
+    "total_revenue": {
+      "type": "number"
+    },
+    "total_expenses": {
+      "type": "number"
+    },
+    "total_receipts": {
+      "type": "number"
+    },
+    "missing_receipts": {
+      "type": "number"
+    },
+    "open_invoices": {
+      "type": "number"
+    },
+    "cash_balance_start": {
+      "type": "number"
+    },
+    "cash_balance_end": {
+      "type": "number"
+    },
+    "checklist": {
+      "type": "object",
+      "description": "Checklisten-Status"
+    },
+    "closed_by": {
+      "type": "string"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "export_url": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "year",
+    "month"
+  ]
+}

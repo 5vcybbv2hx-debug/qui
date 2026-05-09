@@ -17,6 +17,8 @@ import SavedFilters from '@/components/filters/SavedFilters';
 import IngredientSelector from '@/components/recipes/IngredientSelector';
 import PDFExportButton from '@/components/export/PDFExportButton';
 import QRCodeGenerator from '@/components/qr/QRCodeGenerator';
+import SlushyRecipeCard from '@/components/recipes/SlushyRecipeCard';
+import { Snowflake } from 'lucide-react';
 
 const categoryColors = {
     'Cocktail': 'bg-pink-100 text-pink-700',
@@ -39,9 +41,13 @@ export default function Recipes() {
     const [selectedRecipes, setSelectedRecipes] = useState(new Set());
     const [similarRecipesModal, setSimilarRecipesModal] = useState(false);
     const [currentRecipeForSimilar, setCurrentRecipeForSimilar] = useState(null);
+    const [activeTab, setActiveTab] = useState('standard'); // 'standard' | 'slushy'
     const [formData, setFormData] = useState({
         name: '',
         category: 'Cocktail',
+        recipe_type: 'standard',
+        slushy_spirit_base: '',
+        slushy_original_volume_liters: '',
         servings: 1,
         ingredients: [],
         preparation: '',
@@ -108,6 +114,9 @@ export default function Recipes() {
             setFormData({
                 name: recipe.name,
                 category: recipe.category,
+                recipe_type: recipe.recipe_type || 'standard',
+                slushy_spirit_base: recipe.slushy_spirit_base || '',
+                slushy_original_volume_liters: recipe.slushy_original_volume_liters || '',
                 servings: recipe.servings || 1,
                 ingredients: recipe.ingredients || [],
                 preparation: recipe.preparation || '',
@@ -121,6 +130,9 @@ export default function Recipes() {
             setFormData({
                 name: '',
                 category: categoryFilter !== 'alle' ? categoryFilter : 'Cocktail',
+                recipe_type: activeTab === 'slushy' ? 'slushy' : 'standard',
+                slushy_spirit_base: '',
+                slushy_original_volume_liters: '',
                 servings: 1,
                 ingredients: [],
                 preparation: '',
@@ -309,7 +321,10 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
         }
     };
 
-    const filteredRecipes = recipes.filter(recipe => {
+    const standardRecipes = recipes.filter(r => !r.recipe_type || r.recipe_type === 'standard');
+    const slushyRecipes = recipes.filter(r => r.recipe_type === 'slushy');
+
+    const filteredRecipes = standardRecipes.filter(recipe => {
         const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = categoryFilter === 'alle' || recipe.category === categoryFilter;
         const matchesIngredient = !ingredientFilter || 
@@ -317,6 +332,12 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                 ing.article_name?.toLowerCase().includes(ingredientFilter.toLowerCase())
             );
         return matchesSearch && matchesCategory && matchesIngredient;
+    });
+
+    const filteredSlushyRecipes = slushyRecipes.filter(recipe => {
+        const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSpirit = categoryFilter === 'alle' || recipe.slushy_spirit_base === categoryFilter;
+        return matchesSearch && matchesSpirit;
     });
 
     const toggleRecipeSelection = (recipeId) => {
@@ -500,6 +521,34 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                     </Card>
                 )}
 
+                {/* Tab Switcher */}
+                <div className="flex gap-1 p-1 bg-card border border-border rounded-xl mb-5">
+                    <button
+                        onClick={() => setActiveTab('standard')}
+                        className={cn(
+                            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all',
+                            activeTab === 'standard'
+                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        )}
+                    >
+                        <Wine className="w-4 h-4" />
+                        Cocktails ({standardRecipes.length})
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('slushy')}
+                        className={cn(
+                            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all',
+                            activeTab === 'slushy'
+                                ? 'bg-cyan-600 text-white shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                        )}
+                    >
+                        <Snowflake className="w-4 h-4" />
+                        Slushy ({slushyRecipes.length})
+                    </button>
+                </div>
+
                 {/* Search and Filter */}
                 <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
                     <div className="space-y-3">
@@ -518,13 +567,28 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                 onChange={(e) => setCategoryFilter(e.target.value)}
                                 className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
                             >
-                                <option value="alle">Alle Kategorien</option>
-                                <option value="Cocktail">Cocktail</option>
-                                <option value="Shot">Shot</option>
-                                <option value="Longdrink">Longdrink</option>
-                                <option value="Mocktail">Mocktail</option>
-                                <option value="Moonshiner-Cocktails">Moonshiner-Cocktails</option>
-                                <option value="Sonstiges">Sonstiges</option>
+                                {activeTab === 'standard' ? (
+                                    <>
+                                        <option value="alle">Alle Kategorien</option>
+                                        <option value="Cocktail">Cocktail</option>
+                                        <option value="Shot">Shot</option>
+                                        <option value="Longdrink">Longdrink</option>
+                                        <option value="Mocktail">Mocktail</option>
+                                        <option value="Moonshiner-Cocktails">Moonshiner-Cocktails</option>
+                                        <option value="Sonstiges">Sonstiges</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="alle">Alle Spirituosen</option>
+                                        <option value="Vodka">Vodka</option>
+                                        <option value="Rum">Rum</option>
+                                        <option value="Gin">Gin</option>
+                                        <option value="Whiskey">Whiskey</option>
+                                        <option value="Likör">Likör</option>
+                                        <option value="Alkoholfrei">Alkoholfrei</option>
+                                        <option value="Sonstiges">Sonstiges</option>
+                                    </>
+                                )}
                             </select>
                             <div className="relative flex-1 sm:max-w-[200px]">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -548,8 +612,33 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                     </div>
                 </Card>
 
-                {/* Recipes Grid */}
-                {filteredRecipes.length > 0 ? (
+                {/* Slushy Grid */}
+                {activeTab === 'slushy' && (
+                    filteredSlushyRecipes.length > 0 ? (
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredSlushyRecipes.map(recipe => (
+                                <SlushyRecipeCard
+                                    key={recipe.id}
+                                    recipe={recipe}
+                                    onEdit={openModal}
+                                    onDelete={(id) => { if (confirm('Slushy-Rezept wirklich löschen?')) deleteMutation.mutate(id); }}
+                                    isManager={permissions.isManager}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <Card className="p-12 bg-card border-border">
+                            <div className="text-center text-muted-foreground">
+                                <Snowflake className="w-16 h-16 mx-auto mb-4 opacity-50 text-cyan-400" />
+                                <p className="text-lg font-medium">Keine Slushy-Rezepte gefunden</p>
+                                <p className="text-sm mt-1">Füge dein erstes Slushy-Rezept hinzu</p>
+                            </div>
+                        </Card>
+                    )
+                )}
+
+                {/* Standard Recipes Grid */}
+                {activeTab === 'standard' && filteredRecipes.length > 0 ? (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {filteredRecipes.map(recipe => (
                             <Card key={recipe.id} className="overflow-hidden bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow">
@@ -788,7 +877,7 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                     </Card>
                         ))}
                     </div>
-                ) : (
+                ) : activeTab === 'standard' ? (
                     <Card className="p-12 bg-slate-800 border-slate-700 shadow-sm">
                         <div className="text-center text-slate-400">
                             <Wine className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -798,7 +887,7 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                             </p>
                         </div>
                     </Card>
-                )}
+                ) : null}
 
                 {/* Modal */}
                 <Dialog open={modalOpen} onOpenChange={closeModal}>
@@ -810,16 +899,64 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                         </DialogHeader>
                         
                         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                            {/* Recipe Type Toggle */}
+                            <div className="flex gap-1 p-1 bg-secondary/50 rounded-lg">
+                                <button type="button"
+                                    onClick={() => setFormData({...formData, recipe_type: 'standard'})}
+                                    className={cn('flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
+                                        formData.recipe_type !== 'slushy' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                                    )}>
+                                    <Wine className="w-3.5 h-3.5" /> Standard-Cocktail
+                                </button>
+                                <button type="button"
+                                    onClick={() => setFormData({...formData, recipe_type: 'slushy'})}
+                                    className={cn('flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
+                                        formData.recipe_type === 'slushy' ? 'bg-cyan-600 text-white shadow-sm' : 'text-muted-foreground'
+                                    )}>
+                                    <Snowflake className="w-3.5 h-3.5" /> Slushy-Rezept
+                                </button>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label>Name *</Label>
                                 <Input
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="z.B. Mojito"
+                                    placeholder={formData.recipe_type === 'slushy' ? 'z.B. Frozen Mojito' : 'z.B. Mojito'}
                                     required
                                 />
                             </div>
 
+                            {formData.recipe_type === 'slushy' ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Basis-Spirituose</Label>
+                                        <Select value={formData.slushy_spirit_base} onValueChange={(v) => setFormData({ ...formData, slushy_spirit_base: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Wählen..." /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Vodka">Vodka</SelectItem>
+                                                <SelectItem value="Rum">Rum</SelectItem>
+                                                <SelectItem value="Gin">Gin</SelectItem>
+                                                <SelectItem value="Whiskey">Whiskey</SelectItem>
+                                                <SelectItem value="Likör">Likör</SelectItem>
+                                                <SelectItem value="Alkoholfrei">Alkoholfrei</SelectItem>
+                                                <SelectItem value="Sonstiges">Sonstiges</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Original-Menge (Liter)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.1"
+                                            value={formData.slushy_original_volume_liters}
+                                            onChange={(e) => setFormData({ ...formData, slushy_original_volume_liters: parseFloat(e.target.value) || '' })}
+                                            placeholder="z.B. 9.5"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">Wird automatisch auf 3,5L skaliert</p>
+                                    </div>
+                                </div>
+                            ) : (
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                     <Label>Kategorie</Label>
@@ -847,6 +984,7 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                     />
                                 </div>
                             </div>
+                            )}
 
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">

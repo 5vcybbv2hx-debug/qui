@@ -1,0 +1,101 @@
+{
+  "name": "Recipe",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Rezepts/Cocktails"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Cocktail",
+        "Longdrink",
+        "Shot",
+        "Mocktail",
+        "Moonshiner-Cocktails",
+        "Sonstiges"
+      ],
+      "description": "Kategorie"
+    },
+    "recipe_type": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "slushy"
+      ],
+      "default": "standard",
+      "description": "Art des Rezepts: standard = normaler Cocktail, slushy = Slushy-Maschinen-Rezept"
+    },
+    "slushy_spirit_base": {
+      "type": "string",
+      "enum": [
+        "Vodka",
+        "Rum",
+        "Gin",
+        "Whiskey",
+        "Lik\u00f6r",
+        "Alkoholfrei",
+        "Sonstiges"
+      ],
+      "description": "Basis-Spirituose f\u00fcr Slushy-Rezepte"
+    },
+    "slushy_original_volume_liters": {
+      "type": "number",
+      "description": "Originalmenge in Litern (z.B. 9.5 f\u00fcr ein 9,5L-Rezept)"
+    },
+    "servings": {
+      "type": "number",
+      "default": 1,
+      "description": "Anzahl der Portionen"
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "article_id": {
+            "type": "string",
+            "description": "ID des Artikels"
+          },
+          "article_name": {
+            "type": "string",
+            "description": "Name des Artikels"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Menge als Zahl"
+          },
+          "unit": {
+            "type": "string",
+            "description": "Einheit (ml, g, Stk, cl, l, kg)"
+          }
+        }
+      },
+      "description": "Liste der Artikel-Zutaten mit Menge und Einheit"
+    },
+    "preparation": {
+      "type": "string",
+      "description": "Zubereitung"
+    },
+    "glass_type": {
+      "type": "string",
+      "description": "Glasart (z.B. Highball, Tumbler)"
+    },
+    "garnish": {
+      "type": "string",
+      "description": "Garnitur"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Bild-URL des Rezepts"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

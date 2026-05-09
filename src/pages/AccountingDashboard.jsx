@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import {
     BookOpen, Receipt, TrendingUp, TrendingDown, AlertTriangle,
     CheckCircle2, Clock, ArrowRight, Download, FileText, Layers,
-    BarChart2, Euro, CreditCard, Calendar
+    BarChart2, Euro, CreditCard, Calendar, RefreshCw
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -97,6 +97,16 @@ export default function AccountingDashboard() {
         queryFn: () => base44.entities.MonthlyClosing.list('-year')
     });
 
+    const { data: recurringExpenses = [] } = useQuery({
+        queryKey: ['recurring-expenses'],
+        queryFn: () => base44.entities.RecurringExpense.list('title')
+    });
+
+    const { data: recurringOccurrences = [] } = useQuery({
+        queryKey: ['recurring-expense-occurrences'],
+        queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month')
+    });
+
     const stats = useMemo(() => {
         const thisMonthRevenues = dailyRevenues.filter(r => {
             const d = new Date(r.date);
@@ -129,12 +139,23 @@ export default function AccountingDashboard() {
 
         const currentClosing = closings.find(c => c.year === now.getFullYear() && c.month === now.getMonth() + 1);
 
+        const thisMonthKey = format(now, 'yyyy-MM');
+        const activeExpenses = recurringExpenses.filter(e => e.active !== false);
+        const thisMonthOccurrences = recurringOccurrences.filter(o => o.month === thisMonthKey);
+        const totalFixedCosts = activeExpenses
+            .filter(e => e.interval === 'monatlich')
+            .reduce((s, e) => s + (e.amount_gross || 0), 0);
+        const missingFixedCostReceipts = thisMonthOccurrences.filter(o =>
+            o.status !== 'bezahlt' || (activeExpenses.find(e => e.id === o.recurring_expense_id)?.receipt_required && !o.receipt_id)
+        ).length;
+
         return {
             totalRevenue, totalExpenses, openReceipts, openCreditors,
             overdueCreditors, openDebitors, openCreditorAmount, openDebitorAmount,
-            currentClosing, thisMonthRevenues
+            currentClosing, thisMonthRevenues,
+            totalFixedCosts, missingFixedCostReceipts, activeExpenses
         };
-    }, [cashbookEntries, receipts, creditorInvoices, debitorInvoices, dailyRevenues, closings]);
+    }, [cashbookEntries, receipts, creditorInvoices, debitorInvoices, dailyRevenues, closings, recurringExpenses, recurringOccurrences]);
 
     const recentReceipts = receipts.slice(0, 5);
 
@@ -214,6 +235,15 @@ export default function AccountingDashboard() {
                             {stats.overdueCreditors} überfällig
                         </Badge>
                     </StatusRow>
+                    <StatusRow
+                        label="Fixkosten"
+                        ok={stats.missingFixedCostReceipts === 0 && stats.activeExpenses.length > 0}
+                        warn={stats.missingFixedCostReceipts > 0}
+                    >
+                        <Badge variant="outline" className={cn('text-xs', stats.missingFixedCostReceipts > 0 && 'border-amber-500/40 text-amber-400')}>
+                            {stats.missingFixedCostReceipts > 0 ? `${stats.missingFixedCostReceipts} offen` : `${fmt(stats.totalFixedCosts)} €/Mo.`}
+                        </Badge>
+                    </StatusRow>
                     <StatusRow label="Monatsabschluss" ok={stats.currentClosing?.status === 'abgeschlossen'} warn={false}>
                         <Badge variant="outline" className="text-xs">
                             {stats.currentClosing?.status || 'nicht gestartet'}
@@ -230,6 +260,7 @@ export default function AccountingDashboard() {
                             { label: 'Belege', icon: Receipt, href: '/AccountingReceipts', color: 'text-blue-400', bg: 'bg-blue-500/10' },
                             { label: 'Kreditoren', icon: TrendingDown, href: '/AccountingCreditors', color: 'text-red-400', bg: 'bg-red-500/10' },
                             { label: 'Debitoren', icon: TrendingUp, href: '/AccountingDebitors', color: 'text-green-400', bg: 'bg-green-500/10' },
+                            { label: 'Fixkosten', icon: RefreshCw, href: '/AccountingFixedCosts', color: 'text-orange-400', bg: 'bg-orange-500/10' },
                             { label: 'Export', icon: Download, href: '/AccountingExport', color: 'text-purple-400', bg: 'bg-purple-500/10' },
                             { label: 'Monatsabschluss', icon: Calendar, href: '/AccountingMonthlyClosing', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
                         ].map(item => (

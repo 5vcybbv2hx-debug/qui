@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 import {
     CheckCircle2, AlertTriangle, Clock, Lock, Calendar,
-    TrendingUp, TrendingDown, Receipt, Building, FileText, Download, ArrowRight
+    TrendingUp, TrendingDown, Receipt, Building, FileText, Download, ArrowRight, RefreshCw
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -63,6 +63,8 @@ export default function AccountingMonthlyClosing() {
     const { data: creditorInvoices = [] } = useQuery({ queryKey: ['creditor-invoices'], queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date') });
     const { data: dailyRevenues = [] } = useQuery({ queryKey: ['daily-revenues'], queryFn: () => base44.entities.DailyRevenue.list('-date') });
     const { data: closings = [] } = useQuery({ queryKey: ['monthly-closings'], queryFn: () => base44.entities.MonthlyClosing.list('-year') });
+    const { data: recurringExpenses = [] } = useQuery({ queryKey: ['recurring-expenses'], queryFn: () => base44.entities.RecurringExpense.list('title') });
+    const { data: recurringOccurrences = [] } = useQuery({ queryKey: ['recurring-expense-occurrences'], queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month') });
 
     const createClosingMutation = useMutation({
         mutationFn: (data) => base44.entities.MonthlyClosing.create(data),
@@ -85,6 +87,18 @@ export default function AccountingMonthlyClosing() {
         const totalRevenue = monthRevenues.reduce((s, r) => s + (r.revenue || 0), 0);
         const totalExpenses = cashbookEntries.filter(e => e.date >= format(monthStart, 'yyyy-MM-dd') && e.date <= format(monthEnd, 'yyyy-MM-dd') && e.entry_type === 'Ausgabe').reduce((s, e) => s + (e.amount || 0), 0);
 
+        const monthStr = format(monthStart, 'yyyy-MM');
+        const monthOccurrences = recurringOccurrences.filter(o => o.month === monthStr);
+        const activeExpenses = recurringExpenses.filter(e => e.active !== false && e.interval === 'monatlich');
+        const missingFixedCosts = activeExpenses.filter(exp => {
+            const occ = monthOccurrences.find(o => o.recurring_expense_id === exp.id);
+            return !occ || occ.status !== 'bezahlt';
+        });
+        const missingReceipts = activeExpenses.filter(exp => {
+            const occ = monthOccurrences.find(o => o.recurring_expense_id === exp.id);
+            return exp.receipt_required && (!occ || !occ.receipt_id);
+        });
+
         return {
             monthRevenues,
             monthReceipts,
@@ -92,14 +106,17 @@ export default function AccountingMonthlyClosing() {
             monthCreditorsOpen,
             totalRevenue,
             totalExpenses,
+            missingFixedCosts,
+            missingReceipts,
             revenueCheck: monthRevenues.length >= Math.floor(daysInMonth * 0.6),
             receiptsCheck: openReceipts.length === 0,
             creditorsCheck: monthCreditorsOpen.length === 0,
+            fixedCostsCheck: missingFixedCosts.length === 0,
         };
-    }, [cashbookEntries, receipts, creditorInvoices, dailyRevenues, selectedYear, selectedMonth]);
+    }, [cashbookEntries, receipts, creditorInvoices, dailyRevenues, recurringExpenses, recurringOccurrences, selectedYear, selectedMonth]);
 
-    const checksPassed = [checks.revenueCheck, checks.receiptsCheck, checks.creditorsCheck].filter(Boolean).length;
-    const progress = Math.round((checksPassed / 3) * 100);
+    const checksPassed = [checks.revenueCheck, checks.receiptsCheck, checks.creditorsCheck, checks.fixedCostsCheck].filter(Boolean).length;
+    const progress = Math.round((checksPassed / 4) * 100);
 
     const handleClose = () => {
         const data = {
@@ -107,7 +124,7 @@ export default function AccountingMonthlyClosing() {
             total_revenue: checks.totalRevenue, total_expenses: checks.totalExpenses,
             total_receipts: checks.monthReceipts.length, missing_receipts: checks.openReceipts.length,
             open_invoices: checks.monthCreditorsOpen.length, closed_by: 'Manager', closed_at: new Date().toISOString(),
-            notes, checklist: { revenue: checks.revenueCheck, receipts: checks.receiptsCheck, creditors: checks.creditorsCheck }
+            notes, checklist: { revenue: checks.revenueCheck, receipts: checks.receiptsCheck, creditors: checks.creditorsCheck, fixedCosts: checks.fixedCostsCheck }
         };
         if (currentClosing) {
             updateClosingMutation.mutate({ id: currentClosing.id, data: { ...data, status: 'gesperrt' } });
@@ -158,7 +175,7 @@ export default function AccountingMonthlyClosing() {
                 <Card className="p-4 bg-card border-border">
                     <div className="flex items-center justify-between mb-2">
                         <p className="text-sm font-medium text-foreground">Fortschritt</p>
-                        <p className="text-sm font-bold text-foreground">{checksPassed}/3 Checks</p>
+                        <p className="text-sm font-bold text-foreground">{checksPassed}/4 Checks</p>
                     </div>
                     <Progress value={progress} className="h-2" />
                     <p className="text-xs text-muted-foreground mt-2">
@@ -220,6 +237,20 @@ export default function AccountingMonthlyClosing() {
                             <Link to="/AccountingCreditors">
                                 <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
                                     Öffnen <ArrowRight className="w-3 h-3" />
+                                </Button>
+                            </Link>
+                        )}
+                    />
+                    <CheckItem
+                        label="Fixkosten vollständig"
+                        status={checks.fixedCostsCheck ? 'ok' : checks.missingFixedCosts.length > 0 ? 'warn' : 'pending'}
+                        detail={checks.missingFixedCosts.length > 0
+                            ? `${checks.missingFixedCosts.length} Fixkosten noch offen${checks.missingReceipts.length > 0 ? `, ${checks.missingReceipts.length} Belege fehlen` : ''}`
+                            : 'Alle Fixkosten bezahlt'}
+                        action={!checks.fixedCostsCheck && (
+                            <Link to="/AccountingFixedCosts">
+                                <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                                    <RefreshCw className="w-3 h-3" /> Öffnen
                                 </Button>
                             </Link>
                         )}

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, Table, Archive, CheckCircle2, Loader2, BookOpen, TrendingDown, TrendingUp, Calendar } from 'lucide-react';
+import { Download, FileText, Table, Archive, CheckCircle2, Loader2, BookOpen, TrendingDown, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,8 @@ export default function AccountingExport() {
     const { data: creditorInvoices = [] } = useQuery({ queryKey: ['creditor-invoices'], queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date') });
     const { data: debitorInvoices = [] } = useQuery({ queryKey: ['debitor-invoices'], queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date') });
     const { data: dailyRevenues = [] } = useQuery({ queryKey: ['daily-revenues'], queryFn: () => base44.entities.DailyRevenue.list('-date') });
+    const { data: recurringExpenses = [] } = useQuery({ queryKey: ['recurring-expenses'], queryFn: () => base44.entities.RecurringExpense.list('title') });
+    const { data: recurringOccurrences = [] } = useQuery({ queryKey: ['recurring-expense-occurrences'], queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month') });
 
     const filtered = {
         cashbook: cashbookEntries.filter(e => e.date?.startsWith(selectedMonth)),
@@ -44,6 +46,7 @@ export default function AccountingExport() {
         creditors: creditorInvoices.filter(i => i.invoice_date?.startsWith(selectedMonth)),
         debitors: debitorInvoices.filter(i => i.invoice_date?.startsWith(selectedMonth)),
         revenues: dailyRevenues.filter(r => r.date?.startsWith(selectedMonth)),
+        fixedCostOccurrences: recurringOccurrences.filter(o => o.month === selectedMonth),
     };
 
     const exportCashbook = () => {
@@ -103,6 +106,23 @@ export default function AccountingExport() {
         downloadCSV(rows, `DATEV_Buchungsstapel_${selectedMonth}.csv`);
     };
 
+    const exportFixedCosts = () => {
+        const rows = [
+            ['Bezeichnung', 'Kategorie', 'Lieferant', 'Intervall', 'Fälligkeit', 'Brutto (€)', 'Netto (€)', 'USt (%)', 'Zahlungsart', 'Status', 'Beleg-ID', 'DATEV-Konto'],
+            ...filtered.fixedCostOccurrences.map(occ => {
+                const exp = recurringExpenses.find(e => e.id === occ.recurring_expense_id) || {};
+                return [
+                    exp.title || '', exp.category || '', exp.supplier_name || '', exp.interval || '',
+                    occ.due_date || '', (occ.expected_amount || 0).toFixed(2),
+                    exp.amount_net ? exp.amount_net.toFixed(2) : '',
+                    exp.vat_rate || '', exp.payment_method || '', occ.status || '',
+                    occ.receipt_id || '', exp.accounting_mapping || ''
+                ];
+            })
+        ];
+        downloadCSV(rows, `Fixkosten_${selectedMonth}.csv`);
+    };
+
     const exportRevenues = () => {
         const rows = [
             ['Datum', 'Umsatz Gesamt (€)', 'Davon Bar (€)', 'Davon EC (€)', 'USt (€)', 'Notizen'],
@@ -130,6 +150,8 @@ export default function AccountingExport() {
         exportDatev();
         await new Promise(r => setTimeout(r, 200));
         exportRevenues();
+        await new Promise(r => setTimeout(r, 200));
+        exportFixedCosts();
         setIsExporting(false);
         setDone(true);
         setTimeout(() => setDone(false), 4000);
@@ -145,6 +167,7 @@ export default function AccountingExport() {
         { label: 'Debitoren CSV', icon: TrendingUp, color: 'text-green-400 bg-green-500/10', action: exportDebitors, count: filtered.debitors.length },
         { label: 'DATEV Buchungsstapel', icon: FileText, color: 'text-purple-400 bg-purple-500/10', action: exportDatev, count: filtered.creditors.length + filtered.debitors.length },
         { label: 'Tagesumsätze CSV', icon: Calendar, color: 'text-blue-400 bg-blue-500/10', action: exportRevenues, count: filtered.revenues.length },
+        { label: 'Fixkosten CSV', icon: RefreshCw, color: 'text-orange-400 bg-orange-500/10', action: exportFixedCosts, count: filtered.fixedCostOccurrences.length },
     ];
 
     return (
@@ -175,6 +198,7 @@ export default function AccountingExport() {
                             ['Debitoren', filtered.debitors.length],
                             ['Tagesumsätze', filtered.revenues.length],
                             ['Gesamtumsatz', `${fmt(filtered.revenues.reduce((s, r) => s + (r.revenue || 0), 0))} €`],
+                            ['Fixkosten', filtered.fixedCostOccurrences.length],
                         ].map(([k, v]) => (
                             <div key={k} className="flex justify-between py-1.5 border-b border-border last:border-0">
                                 <span className="text-muted-foreground">{k}</span>

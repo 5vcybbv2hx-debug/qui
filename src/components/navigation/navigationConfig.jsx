@@ -79,6 +79,7 @@ export const mainNavigation = [
             { name: 'Debitoren',      page: 'AccountingDebitors',       icon: TrendingUp,   permission: 'canViewAccountingDebitors' },
             { name: 'Export',         page: 'AccountingExport',         icon: Download,     permission: 'canExportAccounting' },
             { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canCloseAccountingMonth' },
+            { name: 'Fixkosten',      page: 'AccountingFixedCosts',    icon: RefreshCw,    permission: 'canViewAccounting' },
         ]
     },
     {

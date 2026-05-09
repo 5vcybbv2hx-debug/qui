@@ -1,0 +1,55 @@
+{
+  "name": "RecurringExpenseOccurrence",
+  "type": "object",
+  "properties": {
+    "recurring_expense_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte RecurringExpense (ID)"
+    },
+    "month": {
+      "type": "string",
+      "description": "Monat im Format YYYY-MM"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "F\u00e4lligkeitsdatum"
+    },
+    "expected_amount": {
+      "type": "number",
+      "description": "Erwarteter Betrag (brutto)"
+    },
+    "actual_amount": {
+      "type": "number",
+      "description": "Tats\u00e4chlich gezahlter Betrag"
+    },
+    "receipt_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Beleg (AccountingReceipt ID)"
+    },
+    "creditor_invoice_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte Kreditorenrechnung (ID)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "erwartet",
+        "bezahlt",
+        "beleg_fehlt",
+        "\u00fcberfallig"
+      ],
+      "default": "erwartet",
+      "description": "Ampelstatus"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": [
+    "recurring_expense_id",
+    "month",
+    "expected_amount"
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "name": "RecurringExpense",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Bezeichnung der Fixkosten"
+    },
+    "supplier_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Lieferant (ID)"
+    },
+    "supplier_name": {
+      "type": "string",
+      "description": "Lieferantenname (denormalisiert)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Pacht/Miete",
+        "Strom",
+        "Gas",
+        "Wasser",
+        "Internet/Telefon",
+        "Versicherungen",
+        "GEMA",
+        "Software-Abos",
+        "Leasing",
+        "Reinigung",
+        "Steuerberater",
+        "M\u00fcllentsorgung",
+        "Wartungsvertrag",
+        "Sonstiges"
+      ],
+      "description": "Kostenkategorie"
+    },
+    "amount_net": {
+      "type": "number",
+      "description": "Nettobetrag"
+    },
+    "amount_gross": {
+      "type": "number",
+      "description": "Bruttobetrag"
+    },
+    "vat_rate": {
+      "type": "number",
+      "description": "USt-Satz in %",
+      "default": 19
+    },
+    "interval": {
+      "type": "string",
+      "enum": [
+        "monatlich",
+        "quartalsweise",
+        "halbj\u00e4hrlich",
+        "j\u00e4hrlich"
+      ],
+      "default": "monatlich",
+      "description": "Wiederholungsintervall"
+    },
+    "due_day": {
+      "type": "number",
+      "description": "F\u00e4lligkeitstag im Monat (1-31)"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "\u00dcberweisung",
+        "Lastschrift",
+        "Bar",
+        "Kreditkarte",
+        "Sonstiges"
+      ],
+      "default": "\u00dcberweisung"
+    },
+    "receipt_required": {
+      "type": "boolean",
+      "default": true,
+      "description": "Beleg erforderlich?"
+    },
+    "accounting_mapping": {
+      "type": "string",
+      "description": "DATEV-Kontonummer / Buchungsschl\u00fcssel"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv?"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": [
+    "title",
+    "category",
+    "amount_gross",
+    "interval"
+  ]
+}

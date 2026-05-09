@@ -100,6 +100,8 @@ export default function TimeApprovalPanel() {
   const { data: allEntries = [], isLoading } = useQuery({
     queryKey: ['time-entries-all'],
     queryFn: () => base44.entities.TimeEntry.list('-date', 200),
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 
   const pending = allEntries.filter(e => e.status === 'eingereicht');

@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, Snowflake, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit, Trash2, Snowflake, ChevronDown, ChevronUp, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { base44 } from '@/api/base44Client';
+import { useQueryClient } from '@tanstack/react-query';
+import { Textarea } from '@/components/ui/textarea';
 
 const TARGET_VOLUME = 3.5; // Liter
 
@@ -26,6 +29,92 @@ const spiritDots = {
     'Alkoholfrei': 'bg-green-400',
     'Sonstiges': 'bg-slate-400',
 };
+
+function StarRating({ recipe, isManager }) {
+    const queryClient = useQueryClient();
+    const [hovered, setHovered] = useState(0);
+    const [saving, setSaving] = useState(false);
+    const [showNotes, setShowNotes] = useState(false);
+    const [notesValue, setNotesValue] = useState(recipe.slushy_rating_notes || '');
+    const current = recipe.slushy_rating || 0;
+
+    const handleRate = async (stars) => {
+        if (!isManager) return;
+        setSaving(true);
+        await base44.entities.Recipe.update(recipe.id, { slushy_rating: stars });
+        queryClient.invalidateQueries(['recipes']);
+        setSaving(false);
+    };
+
+    const handleSaveNotes = async () => {
+        setSaving(true);
+        await base44.entities.Recipe.update(recipe.id, { slushy_rating_notes: notesValue });
+        queryClient.invalidateQueries(['recipes']);
+        setSaving(false);
+        setShowNotes(false);
+    };
+
+    return (
+        <div className="mt-3 pt-3 border-t border-border">
+            <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Bewertung:</span>
+                <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map(star => (
+                        <button
+                            key={star}
+                            disabled={!isManager || saving}
+                            onMouseEnter={() => isManager && setHovered(star)}
+                            onMouseLeave={() => setHovered(0)}
+                            onClick={() => handleRate(star)}
+                            className={cn('transition-colors', isManager ? 'cursor-pointer' : 'cursor-default')}
+                        >
+                            <Star className={cn(
+                                'w-4 h-4 transition-colors',
+                                (hovered || current) >= star
+                                    ? 'fill-amber-400 text-amber-400'
+                                    : 'text-muted-foreground/40'
+                            )} />
+                        </button>
+                    ))}
+                </div>
+                {current > 0 && (
+                    <span className="text-xs text-amber-400 font-semibold">{current}/5</span>
+                )}
+                {isManager && (
+                    <button
+                        onClick={() => setShowNotes(v => !v)}
+                        className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        {showNotes ? 'Schließen' : '+ Notiz'}
+                    </button>
+                )}
+            </div>
+            {recipe.slushy_rating_notes && !showNotes && (
+                <p className="text-xs text-muted-foreground mt-1.5 italic">📝 {recipe.slushy_rating_notes}</p>
+            )}
+            {showNotes && (
+                <div className="mt-2 space-y-2">
+                    <Textarea
+                        value={notesValue}
+                        onChange={e => setNotesValue(e.target.value)}
+                        placeholder="Feedback zum Rezept, z.B. zu süß, mehr Zitrone, Gäste mochten es sehr..."
+                        className="text-xs min-h-[60px]"
+                    />
+                    <div className="flex gap-2">
+                        <Button size="sm" onClick={handleSaveNotes} disabled={saving}
+                            className="h-7 text-xs bg-amber-600 hover:bg-amber-700 text-white">
+                            Speichern
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setShowNotes(false)}
+                            className="h-7 text-xs">
+                            Abbrechen
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function SlushyRecipeCard({ recipe, onEdit, onDelete, isManager }) {
     const [expanded, setExpanded] = useState(false);
@@ -135,6 +224,8 @@ export default function SlushyRecipeCard({ recipe, onEdit, onDelete, isManager }
                         {recipe.preparation}
                     </p>
                 )}
+
+                <StarRating recipe={recipe} isManager={isManager} />
             </div>
         </Card>
     );

@@ -25,7 +25,7 @@
         "slushy"
       ],
       "default": "standard",
-      "description": "Art des Rezepts: standard = normaler Cocktail, slushy = Slushy-Maschinen-Rezept"
+      "description": "Art des Rezepts"
     },
     "slushy_spirit_base": {
       "type": "string",
@@ -42,7 +42,15 @@
     },
     "slushy_original_volume_liters": {
       "type": "number",
-      "description": "Originalmenge in Litern (z.B. 9.5 f\u00fcr ein 9,5L-Rezept)"
+      "description": "Originalmenge in Litern"
+    },
+    "slushy_rating": {
+      "type": "number",
+      "description": "Bewertung des Slushy-Rezepts (1-5 Sterne)"
+    },
+    "slushy_rating_notes": {
+      "type": "string",
+      "description": "Notizen zur Bewertung (z.B. Feedback, Verbesserungen)"
     },
     "servings": {
       "type": "number",
@@ -55,24 +63,20 @@
         "type": "object",
         "properties": {
           "article_id": {
-            "type": "string",
-            "description": "ID des Artikels"
+            "type": "string"
           },
           "article_name": {
-            "type": "string",
-            "description": "Name des Artikels"
+            "type": "string"
           },
           "amount": {
-            "type": "number",
-            "description": "Menge als Zahl"
+            "type": "number"
           },
           "unit": {
-            "type": "string",
-            "description": "Einheit (ml, g, Stk, cl, l, kg)"
+            "type": "string"
           }
         }
       },
-      "description": "Liste der Artikel-Zutaten mit Menge und Einheit"
+      "description": "Zutaten"
     },
     "preparation": {
       "type": "string",
@@ -80,7 +84,7 @@
     },
     "glass_type": {
       "type": "string",
-      "description": "Glasart (z.B. Highball, Tumbler)"
+      "description": "Glasart"
     },
     "garnish": {
       "type": "string",
@@ -92,7 +96,7 @@
     },
     "image_url": {
       "type": "string",
-      "description": "Bild-URL des Rezepts"
+      "description": "Bild-URL"
     }
   },
   "required": [

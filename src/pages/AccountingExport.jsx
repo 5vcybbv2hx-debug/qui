@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +26,7 @@ function downloadCSV(rows, filename) {
 }
 
 export default function AccountingExport() {
+    const permissions = usePermissions();
     const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
     const [exportProgress, setExportProgress] = useState(0);
     const [isExporting, setIsExporting] = useState(false);
@@ -131,6 +134,8 @@ export default function AccountingExport() {
         setDone(true);
         setTimeout(() => setDone(false), 4000);
     };
+
+    if (!permissions.canExportAccounting) return <PermissionDenied message="Kein Zugriff auf das Exportcenter." />;
 
     const label = format(new Date(selectedMonth + '-01'), 'MMMM yyyy', { locale: de });
 

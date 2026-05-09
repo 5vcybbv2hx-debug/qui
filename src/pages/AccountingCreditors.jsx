@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +31,7 @@ const EMPTY_FORM = {
 };
 
 export default function AccountingCreditors() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -73,6 +76,8 @@ export default function AccountingCreditors() {
         const overdue = enriched.filter(i => i.payment_status === 'überfällig').reduce((s, i) => s + (i.amount_gross || 0), 0);
         return { open, overdue };
     }, [enriched]);
+
+    if (!permissions.canViewAccountingCreditors) return <PermissionDenied message="Kein Zugriff auf Kreditoren." />;
 
     const handleSubmit = (e) => {
         e.preventDefault();

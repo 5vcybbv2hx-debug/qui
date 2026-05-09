@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +45,7 @@ function CheckItem({ label, status, detail, action }) {
 }
 
 export default function AccountingMonthlyClosing() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const now = new Date();
     const [selectedYear, setSelectedYear] = useState(now.getFullYear());
@@ -112,6 +115,8 @@ export default function AccountingMonthlyClosing() {
             createClosingMutation.mutate(data);
         }
     };
+
+    if (!permissions.canViewAccounting && !permissions.canCloseAccountingMonth) return <PermissionDenied message="Kein Zugriff auf den Monatsabschluss." />;
 
     const months = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: format(new Date(2024, i), 'MMMM', { locale: de }) }));
 

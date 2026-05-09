@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +61,7 @@ function StatusRow({ label, ok, warn, children }) {
 }
 
 export default function AccountingDashboard() {
+    const permissions = usePermissions();
     const now = new Date();
     const monthStart = startOfMonth(now);
     const monthEnd = endOfMonth(now);
@@ -134,6 +137,8 @@ export default function AccountingDashboard() {
     }, [cashbookEntries, receipts, creditorInvoices, debitorInvoices, dailyRevenues, closings]);
 
     const recentReceipts = receipts.slice(0, 5);
+
+    if (!permissions.canViewAccounting) return <PermissionDenied message="Kein Zugriff auf das Buchhaltungsmodul." />;
 
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-6">

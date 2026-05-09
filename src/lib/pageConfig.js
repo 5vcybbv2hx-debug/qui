@@ -15,7 +15,7 @@ import {
   CheckSquare, MapPin, ShoppingCart, RefreshCw,
   Settings, FileText, BarChart2, Trash2, ClipboardList,
   ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
-  Palmtree, ListChecks, Video
+  Palmtree, ListChecks, Video, Euro, Receipt, TrendingDown, Download
 } from 'lucide-react';
 
 /**
@@ -306,6 +306,64 @@ export const PAGE_REGISTRY = {
     section: 'additional',
     permission: 'canViewOnboarding',
   },
+
+  // Buchhaltung
+  accountingDashboard: {
+    path: 'AccountingDashboard',
+    displayName: 'Buchhaltung',
+    shortName: 'Buchhaltung',
+    icon: Euro,
+    section: 'accounting',
+    permission: 'canViewAccounting',
+  },
+  accountingCashbook: {
+    path: 'AccountingCashbook',
+    displayName: 'Kassenbuch',
+    shortName: 'Kasse',
+    icon: BookOpen,
+    section: 'accounting',
+    permission: 'canViewAccountingCashbook',
+  },
+  accountingReceipts: {
+    path: 'AccountingReceipts',
+    displayName: 'Belege',
+    shortName: 'Belege',
+    icon: Receipt,
+    section: 'accounting',
+    permission: 'canViewAccountingReceipts',
+  },
+  accountingCreditors: {
+    path: 'AccountingCreditors',
+    displayName: 'Kreditoren',
+    shortName: 'Kreditoren',
+    icon: TrendingDown,
+    section: 'accounting',
+    permission: 'canViewAccountingCreditors',
+  },
+  accountingDebitors: {
+    path: 'AccountingDebitors',
+    displayName: 'Debitoren',
+    shortName: 'Debitoren',
+    icon: TrendingUp,
+    section: 'accounting',
+    permission: 'canViewAccountingDebitors',
+  },
+  accountingExport: {
+    path: 'AccountingExport',
+    displayName: 'Exportcenter',
+    shortName: 'Export',
+    icon: Download,
+    section: 'accounting',
+    permission: 'canExportAccounting',
+  },
+  accountingMonthlyClosing: {
+    path: 'AccountingMonthlyClosing',
+    displayName: 'Monatsabschluss',
+    shortName: 'Abschluss',
+    icon: Calendar,
+    section: 'accounting',
+    permission: 'canCloseAccountingMonth',
+  },
 };
 
 /**
@@ -336,6 +394,11 @@ export const NAVIGATION_GROUPS = [
     id: 'team',
     groupName: 'Team',
     pages: ['employees', 'calendar', 'teamCalendar', 'timeManagement', 'vacation', 'shiftSwaps', 'permissions', 'teamMeeting'],
+  },
+  {
+    id: 'accounting',
+    groupName: 'Buchhaltung',
+    pages: ['accountingDashboard', 'accountingCashbook', 'accountingReceipts', 'accountingCreditors', 'accountingDebitors', 'accountingExport', 'accountingMonthlyClosing'],
   },
 ];
 

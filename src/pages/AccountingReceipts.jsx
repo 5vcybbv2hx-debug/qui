@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,7 @@ const statusConfig = {
 const RECEIPT_TYPES = ['Eingangsrechnung', 'Ausgangsrechnung', 'Kassenbeleg', 'Sonstiges'];
 
 export default function AccountingReceipts() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [uploadOpen, setUploadOpen] = useState(false);
     const [detailOpen, setDetailOpen] = useState(false);
@@ -126,6 +129,8 @@ Gib folgende Felder zurück:
     });
 
     const pendingCount = receipts.filter(r => r.status === 'neu' || r.status === 'pruefung').length;
+
+    if (!permissions.canViewAccountingReceipts) return <PermissionDenied message="Kein Zugriff auf Belege." />;
 
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-6">

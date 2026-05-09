@@ -854,6 +854,207 @@ export const PERMISSION_REGISTRY = {
       },
     },
   },
+
+  // ────────────────────────────────────────────────────────────────
+  // BUCHHALTUNG
+  // ────────────────────────────────────────────────────────────────
+  accountingDashboard: {
+    pageKey: 'AccountingDashboard',
+    displayName: 'Buchhaltung Dashboard',
+    description: 'Übersicht über alle Buchhaltungsdaten und -aufgaben',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_dashboard',
+        displayName: 'Dashboard ansehen',
+        description: 'Buchhaltungs-Dashboard anschauen',
+        actions: ['view'],
+      },
+    },
+  },
+
+  accountingCashbook: {
+    pageKey: 'AccountingCashbook',
+    displayName: 'Kassenbuch',
+    description: 'Kassenein- und -ausgaben erfassen und verwalten',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_cashbook_view',
+        displayName: 'Kassenbuch ansehen',
+        description: 'Kassenbuch-Einträge einsehen',
+        actions: ['view'],
+      },
+      edit: {
+        key: 'accounting_cashbook_edit',
+        displayName: 'Kassenbuch bearbeiten',
+        description: 'Einträge erstellen und bearbeiten',
+        actions: ['view', 'edit'],
+      },
+      export: {
+        key: 'accounting_cashbook_export',
+        displayName: 'Kassenbuch exportieren',
+        description: 'Kassenbuch als CSV/DATEV exportieren',
+        actions: ['view', 'export'],
+      },
+    },
+  },
+
+  accountingReceipts: {
+    pageKey: 'AccountingReceipts',
+    displayName: 'Belege',
+    description: 'Eingangs- und Ausgangsbelege hochladen, prüfen und freigeben',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_receipts_view',
+        displayName: 'Belege ansehen',
+        description: 'Belege einsehen und durchsuchen',
+        actions: ['view'],
+      },
+      upload: {
+        key: 'accounting_receipts_upload',
+        displayName: 'Belege hochladen',
+        description: 'Neue Belege hochladen und KI-Erkennung starten',
+        actions: ['view', 'edit'],
+      },
+      approve: {
+        key: 'accounting_receipts_approve',
+        displayName: 'Belege freigeben',
+        description: 'Belege prüfen und für Export freigeben',
+        actions: ['view', 'edit', 'approve'],
+      },
+      export: {
+        key: 'accounting_receipts_export',
+        displayName: 'Belege exportieren',
+        description: 'Belege als CSV exportieren',
+        actions: ['view', 'export'],
+      },
+    },
+  },
+
+  accountingCreditors: {
+    pageKey: 'AccountingCreditors',
+    displayName: 'Kreditoren',
+    description: 'Eingangsrechnungen von Lieferanten verwalten',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_creditors_view',
+        displayName: 'Kreditoren ansehen',
+        description: 'Eingangsrechnungen einsehen',
+        actions: ['view'],
+      },
+      edit: {
+        key: 'accounting_creditors_edit',
+        displayName: 'Kreditoren bearbeiten',
+        description: 'Rechnungen erfassen und Zahlungsstatus aktualisieren',
+        actions: ['view', 'edit', 'delete'],
+      },
+      export: {
+        key: 'accounting_creditors_export',
+        displayName: 'Kreditoren exportieren',
+        description: 'Kreditoren-Daten exportieren',
+        actions: ['view', 'export'],
+      },
+    },
+  },
+
+  accountingDebitors: {
+    pageKey: 'AccountingDebitors',
+    displayName: 'Debitoren',
+    description: 'Ausgangsrechnungen an Kunden verwalten',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_debitors_view',
+        displayName: 'Debitoren ansehen',
+        description: 'Ausgangsrechnungen einsehen',
+        actions: ['view'],
+      },
+      edit: {
+        key: 'accounting_debitors_edit',
+        displayName: 'Debitoren bearbeiten',
+        description: 'Rechnungen erstellen und Zahlungsstatus aktualisieren',
+        actions: ['view', 'edit', 'delete'],
+      },
+      export: {
+        key: 'accounting_debitors_export',
+        displayName: 'Debitoren exportieren',
+        description: 'Debitoren-Daten exportieren',
+        actions: ['view', 'export'],
+      },
+    },
+  },
+
+  accountingExport: {
+    pageKey: 'AccountingExport',
+    displayName: 'Exportcenter',
+    description: 'DATEV- und CSV-Exporte erstellen und herunterladen',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_export_view',
+        displayName: 'Export ansehen',
+        description: 'Exportcenter einsehen',
+        actions: ['view'],
+      },
+      export: {
+        key: 'accounting_export_run',
+        displayName: 'Exporte erstellen',
+        description: 'DATEV- und CSV-Exporte generieren und herunterladen',
+        actions: ['view', 'export'],
+      },
+    },
+  },
+
+  accountingMonthlyClosing: {
+    pageKey: 'AccountingMonthlyClosing',
+    displayName: 'Monatsabschluss',
+    description: 'Monat prüfen, abschließen und sperren',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_closing_view',
+        displayName: 'Monatsabschluss ansehen',
+        description: 'Status und Checkliste einsehen',
+        actions: ['view'],
+      },
+      close: {
+        key: 'accounting_closing_close',
+        displayName: 'Monat abschließen',
+        description: 'Monat als abgeschlossen markieren',
+        actions: ['view', 'edit', 'close'],
+      },
+      lock: {
+        key: 'accounting_closing_lock',
+        displayName: 'Monat sperren',
+        description: 'Monat endgültig sperren (nur Admin)',
+        actions: ['view', 'edit', 'lock'],
+      },
+    },
+  },
+
+  accountingDatev: {
+    pageKey: 'AccountingExport',
+    displayName: 'DATEV Export',
+    description: 'DATEV-konforme Buchungsdaten exportieren',
+    category: 'Buchhaltung',
+    sections: {
+      view: {
+        key: 'accounting_datev_view',
+        displayName: 'DATEV ansehen',
+        description: 'DATEV-Export einsehen',
+        actions: ['view'],
+      },
+      export: {
+        key: 'accounting_datev_export',
+        displayName: 'DATEV exportieren',
+        description: 'DATEV-Datei generieren und herunterladen',
+        actions: ['view', 'export'],
+      },
+    },
+  },
 };
 
 /**
@@ -920,6 +1121,28 @@ export const STANDARD_ROLES = {
       shopping_articles: 'view',
       shopping_suppliers: 'view',
 
+      // Buchhaltung (Manager: alles außer Sperren)
+      accounting_dashboard: 'view',
+      accounting_cashbook_view: 'view',
+      accounting_cashbook_edit: 'edit',
+      accounting_cashbook_export: 'edit',
+      accounting_receipts_view: 'view',
+      accounting_receipts_upload: 'edit',
+      accounting_receipts_approve: 'edit',
+      accounting_receipts_export: 'edit',
+      accounting_creditors_view: 'view',
+      accounting_creditors_edit: 'edit',
+      accounting_creditors_export: 'edit',
+      accounting_debitors_view: 'view',
+      accounting_debitors_edit: 'edit',
+      accounting_debitors_export: 'edit',
+      accounting_export_view: 'view',
+      accounting_export_run: 'edit',
+      accounting_closing_view: 'view',
+      accounting_closing_close: 'edit',
+      accounting_datev_view: 'view',
+      accounting_datev_export: 'edit',
+
       // Weitere Standardrechte
       myarea_overview: 'view',
       myshifts_overview: 'view',
@@ -965,9 +1188,34 @@ export const STANDARD_ROLES = {
       // Teamsitzung
       teammeeting_topics: 'view',
 
+      // Buchhaltung: Belege hochladen, eigene ansehen
+      accounting_receipts_view: 'view',
+      accounting_receipts_upload: 'edit',
+
       // Settings
       settings_profile: 'edit',
       settings_notifications: 'edit',
+    },
+  },
+
+  taxAdvisor: {
+    displayName: 'Steuerberater',
+    description: 'Nur-Lese-Zugriff auf Buchhaltungsdaten, Export, Kommentare',
+    permissions: {
+      accounting_dashboard: 'view',
+      accounting_cashbook_view: 'view',
+      accounting_cashbook_export: 'view',
+      accounting_receipts_view: 'view',
+      accounting_receipts_export: 'view',
+      accounting_creditors_view: 'view',
+      accounting_creditors_export: 'view',
+      accounting_debitors_view: 'view',
+      accounting_debitors_export: 'view',
+      accounting_export_view: 'view',
+      accounting_export_run: 'view',
+      accounting_closing_view: 'view',
+      accounting_datev_view: 'view',
+      accounting_datev_export: 'edit',
     },
   },
 };

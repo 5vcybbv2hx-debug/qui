@@ -15,7 +15,7 @@ import {
     RefreshCw, ShoppingCart, Wine, BookOpen, TrendingUp,
     FileText, BarChart2, Wrench, Star, Shield, Settings,
     ChevronRight, AlertTriangle, CheckCircle2, Info, Lock,
-    MapPin, ClipboardList, Trash2
+    MapPin, ClipboardList, Trash2, Euro
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -187,6 +187,17 @@ const MODULE_REGISTRY = [
         sensitive: true,
     },
     {
+        id: 'buchhaltung',
+        name: 'Buchhaltung',
+        description: 'KI-gestützte Buchhaltungsvorbereitung mit Kassenbuch, Belegen, Debitoren, Kreditoren, Monatsabschluss und DATEV-Export',
+        icon: Euro,
+        color: 'bg-emerald-600',
+        category: 'verwaltung',
+        page: 'AccountingDashboard',
+        sensitive: true,
+        requires: ['analytics'],
+    },
+    {
         id: 'wartung',
         name: 'Wartung & Instandhaltung',
         description: 'Wartungsaufgaben, Reparaturen, Kontakte, Kalender',
@@ -235,6 +246,7 @@ const CATEGORIES = {
     karte:      { name: 'Karte & Rezepte', color: 'text-red-400'    },
     analytics:  { name: 'Analytik & Reports', color: 'text-violet-400' },
     verwaltung: { name: 'Verwaltung', color: 'text-cyan-400'  },
+    buchhaltung: { name: 'Buchhaltung', color: 'text-emerald-400' },
 };
 
 // Lokal gespeicherter Aktivierungsstatus (könnte später in DB)

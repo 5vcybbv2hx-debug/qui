@@ -162,6 +162,23 @@ export const PERMISSION_MATRIX = {
 
     // ── Einarbeitung ──────────────────────────────────────────────────────────
     canViewOnboarding:           { roles: [M.MANAGER],                                       terminal: false },
+
+    // ── Buchhaltung ───────────────────────────────────────────────────────────
+    canViewAccounting:           { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canViewAccountingCashbook:   { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canEditAccountingCashbook:   { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canViewAccountingReceipts:   { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canUploadAccountingReceipts: { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canApproveAccountingReceipts:{ roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canViewAccountingCreditors:  { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canEditAccountingCreditors:  { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canViewAccountingDebitors:   { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canEditAccountingDebitors:   { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canExportAccounting:         { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canCloseAccountingMonth:     { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canLockAccountingMonth:      { roles: [],   adminOnly: true,                              terminal: false },
+    canViewDatevExport:          { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canViewTaxAdvisorArea:       { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
 };
 
 // ── Core permission resolver ──────────────────────────────────────────────────

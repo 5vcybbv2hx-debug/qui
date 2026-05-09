@@ -72,13 +72,13 @@ export const mainNavigation = [
         name: 'Buchhaltung',
         icon: Euro,
         pages: [
-            { name: 'Buchhaltung',    page: 'AccountingDashboard',      icon: Euro,         permission: 'canViewAnalytics' },
-            { name: 'Kassenbuch',     page: 'AccountingCashbook',       icon: BookOpen,     permission: 'canViewAnalytics' },
-            { name: 'Belege',         page: 'AccountingReceipts',       icon: Receipt,      permission: 'canViewAnalytics' },
-            { name: 'Kreditoren',     page: 'AccountingCreditors',      icon: TrendingDown, permission: 'canViewAnalytics' },
-            { name: 'Debitoren',      page: 'AccountingDebitors',       icon: TrendingUp,   permission: 'canViewAnalytics' },
-            { name: 'Export',         page: 'AccountingExport',         icon: Download,     permission: 'canViewAnalytics' },
-            { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canViewAnalytics' },
+            { name: 'Buchhaltung',    page: 'AccountingDashboard',      icon: Euro,         permission: 'canViewAccounting' },
+            { name: 'Kassenbuch',     page: 'AccountingCashbook',       icon: BookOpen,     permission: 'canViewAccountingCashbook' },
+            { name: 'Belege',         page: 'AccountingReceipts',       icon: Receipt,      permission: 'canViewAccountingReceipts' },
+            { name: 'Kreditoren',     page: 'AccountingCreditors',      icon: TrendingDown, permission: 'canViewAccountingCreditors' },
+            { name: 'Debitoren',      page: 'AccountingDebitors',       icon: TrendingUp,   permission: 'canViewAccountingDebitors' },
+            { name: 'Export',         page: 'AccountingExport',         icon: Download,     permission: 'canExportAccounting' },
+            { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canCloseAccountingMonth' },
         ]
     },
     {

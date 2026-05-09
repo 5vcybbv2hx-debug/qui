@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +46,7 @@ const EMPTY_FORM = {
 };
 
 export default function AccountingCashbook() {
+    const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [modalOpen, setModalOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -119,6 +122,8 @@ export default function AccountingCashbook() {
         const expense = filtered.filter(e => !isIncome(e.entry_type)).reduce((s, e) => s + (e.amount || 0), 0);
         return { income, expense, balance: income - expense };
     }, [filtered]);
+
+    if (!permissions.canViewAccountingCashbook) return <PermissionDenied message="Kein Zugriff auf das Kassenbuch." />;
 
     const handleSubmit = (ev) => {
         ev.preventDefault();

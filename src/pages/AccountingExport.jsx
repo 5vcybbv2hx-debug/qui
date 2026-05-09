@@ -39,6 +39,8 @@ export default function AccountingExport() {
     const { data: dailyRevenues = [] } = useQuery({ queryKey: ['daily-revenues'], queryFn: () => base44.entities.DailyRevenue.list('-date') });
     const { data: recurringExpenses = [] } = useQuery({ queryKey: ['recurring-expenses'], queryFn: () => base44.entities.RecurringExpense.list('title') });
     const { data: recurringOccurrences = [] } = useQuery({ queryKey: ['recurring-expense-occurrences'], queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month') });
+    const { data: liabilities = [] } = useQuery({ queryKey: ['liabilities'], queryFn: () => base44.entities.Liability.list('-due_date') });
+    const { data: liabilityPayments = [] } = useQuery({ queryKey: ['liability-payments'], queryFn: () => base44.entities.LiabilityPayment.list('-payment_date') });
 
     const filtered = {
         cashbook: cashbookEntries.filter(e => e.date?.startsWith(selectedMonth)),
@@ -47,6 +49,8 @@ export default function AccountingExport() {
         debitors: debitorInvoices.filter(i => i.invoice_date?.startsWith(selectedMonth)),
         revenues: dailyRevenues.filter(r => r.date?.startsWith(selectedMonth)),
         fixedCostOccurrences: recurringOccurrences.filter(o => o.month === selectedMonth),
+        liabilitiesOpen: liabilities.filter(l => l.status !== 'bezahlt'),
+        liabilityPaymentsMonth: liabilityPayments.filter(p => p.payment_date?.startsWith(selectedMonth)),
     };
 
     const exportCashbook = () => {
@@ -123,6 +127,22 @@ export default function AccountingExport() {
         downloadCSV(rows, `Fixkosten_${selectedMonth}.csv`);
     };
 
+    const exportLiabilities = () => {
+        const rows = [
+            ['Bezeichnung', 'Gläubiger', 'Kategorie', 'Ursprungsbetrag (€)', 'Bezahlt (€)', 'Restbetrag (€)', 'Status', 'Priorität', 'Fällig', 'Mahnstufe', 'Ratenzahlung', 'Rate (€)', 'Nächste Zahlung'],
+            ...filtered.liabilitiesOpen.map(l => [
+                l.title, l.creditor_name || '', l.category || '',
+                (l.original_amount || 0).toFixed(2), (l.paid_amount || 0).toFixed(2),
+                ((l.original_amount || 0) - (l.paid_amount || 0)).toFixed(2),
+                l.status, l.priority || '', l.due_date || '', l.dunning_level || 0,
+                l.payment_plan_enabled ? 'Ja' : 'Nein',
+                l.installment_amount ? l.installment_amount.toFixed(2) : '',
+                l.next_payment_date || ''
+            ])
+        ];
+        downloadCSV(rows, `Verbindlichkeiten_${selectedMonth}.csv`);
+    };
+
     const exportRevenues = () => {
         const rows = [
             ['Datum', 'Umsatz Gesamt (€)', 'Davon Bar (€)', 'Davon EC (€)', 'USt (€)', 'Notizen'],
@@ -152,6 +172,8 @@ export default function AccountingExport() {
         exportRevenues();
         await new Promise(r => setTimeout(r, 200));
         exportFixedCosts();
+        await new Promise(r => setTimeout(r, 200));
+        exportLiabilities();
         setIsExporting(false);
         setDone(true);
         setTimeout(() => setDone(false), 4000);
@@ -168,6 +190,7 @@ export default function AccountingExport() {
         { label: 'DATEV Buchungsstapel', icon: FileText, color: 'text-purple-400 bg-purple-500/10', action: exportDatev, count: filtered.creditors.length + filtered.debitors.length },
         { label: 'Tagesumsätze CSV', icon: Calendar, color: 'text-blue-400 bg-blue-500/10', action: exportRevenues, count: filtered.revenues.length },
         { label: 'Fixkosten CSV', icon: RefreshCw, color: 'text-orange-400 bg-orange-500/10', action: exportFixedCosts, count: filtered.fixedCostOccurrences.length },
+        { label: 'Verbindlichkeiten CSV', icon: TrendingDown, color: 'text-rose-400 bg-rose-500/10', action: exportLiabilities, count: filtered.liabilitiesOpen.length },
     ];
 
     return (
@@ -199,6 +222,7 @@ export default function AccountingExport() {
                             ['Tagesumsätze', filtered.revenues.length],
                             ['Gesamtumsatz', `${fmt(filtered.revenues.reduce((s, r) => s + (r.revenue || 0), 0))} €`],
                             ['Fixkosten', filtered.fixedCostOccurrences.length],
+                            ['Verbindlichkeiten (offen)', filtered.liabilitiesOpen.length],
                         ].map(([k, v]) => (
                             <div key={k} className="flex justify-between py-1.5 border-b border-border last:border-0">
                                 <span className="text-muted-foreground">{k}</span>

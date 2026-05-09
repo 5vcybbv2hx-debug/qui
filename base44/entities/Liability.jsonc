@@ -1,0 +1,120 @@
+{
+  "name": "Liability",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Bezeichnung der Verbindlichkeit"
+    },
+    "creditor_name": {
+      "type": "string",
+      "description": "Gl\u00e4ubiger/Kreditor"
+    },
+    "creditor_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Lieferant (ID)"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte Kreditorenrechnung (ID)"
+    },
+    "receipt_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Beleg (ID)"
+    },
+    "original_amount": {
+      "type": "number",
+      "description": "Urspr\u00fcnglicher Betrag (brutto)"
+    },
+    "paid_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Bereits bezahlter Betrag"
+    },
+    "remaining_amount": {
+      "type": "number",
+      "description": "Restbetrag (berechnet)"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "F\u00e4lligkeitsdatum"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Entstehungsdatum"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "teilbezahlt",
+        "ratenzahlung",
+        "ueberfaellig",
+        "bezahlt",
+        "gestundet"
+      ],
+      "default": "offen"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "mittel",
+        "hoch",
+        "kritisch"
+      ],
+      "default": "mittel"
+    },
+    "dunning_level": {
+      "type": "number",
+      "default": 0,
+      "description": "Mahnstufe (0 = keine Mahnung)"
+    },
+    "payment_terms": {
+      "type": "string",
+      "description": "Zahlungskonditionen (z.B. 30 Tage netto)"
+    },
+    "payment_plan_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "installment_amount": {
+      "type": "number",
+      "description": "Monatliche Rate"
+    },
+    "installment_interval": {
+      "type": "string",
+      "enum": [
+        "w\u00f6chentlich",
+        "zweiw\u00f6chentlich",
+        "monatlich"
+      ],
+      "default": "monatlich"
+    },
+    "next_payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "final_payment_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "category": {
+      "type": "string",
+      "description": "Kategorie (z.B. Lieferant, Finanzamt, Bank)"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "title",
+    "original_amount"
+  ]
+}

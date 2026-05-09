@@ -65,6 +65,7 @@ export default function AccountingMonthlyClosing() {
     const { data: closings = [] } = useQuery({ queryKey: ['monthly-closings'], queryFn: () => base44.entities.MonthlyClosing.list('-year') });
     const { data: recurringExpenses = [] } = useQuery({ queryKey: ['recurring-expenses'], queryFn: () => base44.entities.RecurringExpense.list('title') });
     const { data: recurringOccurrences = [] } = useQuery({ queryKey: ['recurring-expense-occurrences'], queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month') });
+    const { data: liabilities = [] } = useQuery({ queryKey: ['liabilities'], queryFn: () => base44.entities.Liability.list('-due_date') });
 
     const createClosingMutation = useMutation({
         mutationFn: (data) => base44.entities.MonthlyClosing.create(data),
@@ -99,6 +100,11 @@ export default function AccountingMonthlyClosing() {
             return exp.receipt_required && (!occ || !occ.receipt_id);
         });
 
+        const overdueLiabilities = liabilities.filter(l =>
+            l.status !== 'bezahlt' && l.status !== 'gestundet' && l.due_date &&
+            l.due_date <= format(monthEnd, 'yyyy-MM-dd')
+        );
+
         return {
             monthRevenues,
             monthReceipts,
@@ -108,15 +114,17 @@ export default function AccountingMonthlyClosing() {
             totalExpenses,
             missingFixedCosts,
             missingReceipts,
+            overdueLiabilities,
             revenueCheck: monthRevenues.length >= Math.floor(daysInMonth * 0.6),
             receiptsCheck: openReceipts.length === 0,
             creditorsCheck: monthCreditorsOpen.length === 0,
             fixedCostsCheck: missingFixedCosts.length === 0,
+            liabilitiesCheck: overdueLiabilities.length === 0,
         };
-    }, [cashbookEntries, receipts, creditorInvoices, dailyRevenues, recurringExpenses, recurringOccurrences, selectedYear, selectedMonth]);
+    }, [cashbookEntries, receipts, creditorInvoices, dailyRevenues, recurringExpenses, recurringOccurrences, liabilities, selectedYear, selectedMonth]);
 
-    const checksPassed = [checks.revenueCheck, checks.receiptsCheck, checks.creditorsCheck, checks.fixedCostsCheck].filter(Boolean).length;
-    const progress = Math.round((checksPassed / 4) * 100);
+    const checksPassed = [checks.revenueCheck, checks.receiptsCheck, checks.creditorsCheck, checks.fixedCostsCheck, checks.liabilitiesCheck].filter(Boolean).length;
+    const progress = Math.round((checksPassed / 5) * 100);
 
     const handleClose = () => {
         const data = {
@@ -175,7 +183,7 @@ export default function AccountingMonthlyClosing() {
                 <Card className="p-4 bg-card border-border">
                     <div className="flex items-center justify-between mb-2">
                         <p className="text-sm font-medium text-foreground">Fortschritt</p>
-                        <p className="text-sm font-bold text-foreground">{checksPassed}/4 Checks</p>
+                        <p className="text-sm font-bold text-foreground">{checksPassed}/5 Checks</p>
                     </div>
                     <Progress value={progress} className="h-2" />
                     <p className="text-xs text-muted-foreground mt-2">
@@ -237,6 +245,20 @@ export default function AccountingMonthlyClosing() {
                             <Link to="/AccountingCreditors">
                                 <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
                                     Öffnen <ArrowRight className="w-3 h-3" />
+                                </Button>
+                            </Link>
+                        )}
+                    />
+                    <CheckItem
+                        label="Verbindlichkeiten geprüft"
+                        status={checks.liabilitiesCheck ? 'ok' : 'warn'}
+                        detail={checks.overdueLiabilities.length > 0
+                            ? `${checks.overdueLiabilities.length} überfällige Verbindlichkeiten`
+                            : 'Keine überfälligen Verbindlichkeiten'}
+                        action={!checks.liabilitiesCheck && (
+                            <Link to="/AccountingLiabilities">
+                                <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+                                    <TrendingDown className="w-3 h-3" /> Öffnen
                                 </Button>
                             </Link>
                         )}

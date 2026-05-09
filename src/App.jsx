@@ -18,6 +18,7 @@ import AccountingDebitors from './pages/AccountingDebitors';
 import AccountingExport from './pages/AccountingExport';
 import AccountingMonthlyClosing from './pages/AccountingMonthlyClosing';
 import AccountingFixedCosts from './pages/AccountingFixedCosts';
+import AccountingLiabilities from './pages/AccountingLiabilities';
 import BusinessCard from './pages/BusinessCard';
 import AdminTimeEditor from './pages/AdminTimeEditor';
 import DataExport from './pages/DataExport';
@@ -165,6 +166,7 @@ const AuthenticatedApp = () => {
       <Route path="/AccountingExport" element={<LayoutWrapper currentPageName="AccountingExport"><AccountingExport /></LayoutWrapper>} />
       <Route path="/AccountingMonthlyClosing" element={<LayoutWrapper currentPageName="AccountingMonthlyClosing"><AccountingMonthlyClosing /></LayoutWrapper>} />
       <Route path="/AccountingFixedCosts" element={<LayoutWrapper currentPageName="AccountingFixedCosts"><AccountingFixedCosts /></LayoutWrapper>} />
+      <Route path="/AccountingLiabilities" element={<LayoutWrapper currentPageName="AccountingLiabilities"><AccountingLiabilities /></LayoutWrapper>} />
 
       {/* Catch-all */}
       <Route path="*" element={<PageNotFound />} />

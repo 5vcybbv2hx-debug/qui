@@ -179,6 +179,13 @@ export const PERMISSION_MATRIX = {
     canLockAccountingMonth:      { roles: [],   adminOnly: true,                              terminal: false },
     canViewDatevExport:          { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
     canViewTaxAdvisorArea:       { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+
+    // ── Verbindlichkeiten ─────────────────────────────────────────────────────
+    canViewLiabilities:          { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canEditLiabilities:          { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canCreatePaymentPlans:       { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canMarkLiabilityPaid:        { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
+    canExportLiabilities:        { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
 };
 
 // ── Core permission resolver ──────────────────────────────────────────────────

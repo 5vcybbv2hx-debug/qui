@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, TrendingUp, TrendingDown, BookOpen, Search, Calendar } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, BookOpen, Search, Calendar, FileText, Import, CheckCircle2, ArrowDownToLine, ExternalLink } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -55,6 +55,11 @@ export default function AccountingCashbook() {
         queryFn: () => base44.entities.CashbookEntry.list('-date')
     });
 
+    const { data: dailyRevenues = [] } = useQuery({
+        queryKey: ['daily-revenues'],
+        queryFn: () => base44.entities.DailyRevenue.list('-date')
+    });
+
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.CashbookEntry.create(data),
         onSuccess: () => { queryClient.invalidateQueries(['cashbook-entries']); setModalOpen(false); setFormData(EMPTY_FORM); }
@@ -68,6 +73,46 @@ export default function AccountingCashbook() {
             return monthMatch && searchMatch;
         });
     }, [entries, selectedMonth, search]);
+
+    // Z-Abschlüsse des gewählten Monats, die noch nicht importiert wurden
+    const importedDates = useMemo(() => new Set(
+        entries.filter(e => e.daily_revenue_id).map(e => e.daily_revenue_id)
+    ), [entries]);
+
+    const pendingRevenues = useMemo(() => {
+        return dailyRevenues.filter(r =>
+            r.date?.startsWith(selectedMonth) &&
+            r.revenue > 0 &&
+            !importedDates.has(r.id)
+        );
+    }, [dailyRevenues, selectedMonth, importedDates]);
+
+    const importRevenue = async (revenue) => {
+        const entries = [];
+        // Gesamtumsatz als Einnahme
+        entries.push({
+            date: revenue.date,
+            time: '23:59',
+            entry_type: 'Einnahme',
+            amount: revenue.revenue,
+            amount_net: revenue.vat ? Math.round((revenue.revenue - revenue.vat) * 100) / 100 : revenue.revenue,
+            tax_amount: revenue.vat || 0,
+            tax_rate: revenue.vat && revenue.revenue ? Math.round((revenue.vat / (revenue.revenue - revenue.vat)) * 100) : 7,
+            category: 'Tagesumsatz',
+            description: `Z-Abschlag ${revenue.date}`,
+            payment_method: 'Bar',
+            status: 'freigegeben',
+            daily_revenue_id: revenue.id,
+        });
+        await base44.entities.CashbookEntry.create(entries[0]);
+        queryClient.invalidateQueries(['cashbook-entries']);
+    };
+
+    const importAllPending = async () => {
+        for (const r of pendingRevenues) {
+            await importRevenue(r);
+        }
+    };
 
     const totals = useMemo(() => {
         const income = filtered.filter(e => isIncome(e.entry_type)).reduce((s, e) => s + (e.amount || 0), 0);
@@ -124,6 +169,54 @@ export default function AccountingCashbook() {
                     </Card>
                 </div>
 
+                {/* Z-Abschluss Import Banner */}
+                {pendingRevenues.length > 0 && (
+                    <Card className="p-3 bg-amber-500/10 border-amber-500/30">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2">
+                                <FileText className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="text-sm font-semibold text-amber-400">
+                                        {pendingRevenues.length} Z-Abschluss{pendingRevenues.length > 1 ? 'läge' : ''} nicht importiert
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        Tagesabschlüsse automatisch als Kassenbucheinträge übernehmen
+                                    </p>
+                                </div>
+                            </div>
+                            <Button size="sm" onClick={importAllPending}
+                                className="bg-amber-600 hover:bg-amber-700 text-white h-8 text-xs gap-1 shrink-0">
+                                <ArrowDownToLine className="w-3.5 h-3.5" /> Alle importieren
+                            </Button>
+                        </div>
+                        <div className="mt-2 space-y-1">
+                            {pendingRevenues.slice(0, 3).map(r => (
+                                <div key={r.id} className="flex items-center justify-between text-xs py-1 border-t border-amber-500/20">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground">{r.date}</span>
+                                        {r.pdf_url && (
+                                            <a href={r.pdf_url} target="_blank" rel="noopener noreferrer"
+                                                className="text-blue-400 hover:underline flex items-center gap-0.5">
+                                                PDF <ExternalLink className="w-2.5 h-2.5" />
+                                            </a>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-green-400">{r.revenue?.toFixed(2)} €</span>
+                                        <Button size="sm" variant="ghost" onClick={() => importRevenue(r)}
+                                            className="h-6 text-[10px] px-2 text-amber-400 hover:bg-amber-500/10">
+                                            Import
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                            {pendingRevenues.length > 3 && (
+                                <p className="text-xs text-muted-foreground pt-1">+ {pendingRevenues.length - 3} weitere...</p>
+                            )}
+                        </div>
+                    </Card>
+                )}
+
                 {/* Search */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -164,6 +257,16 @@ export default function AccountingCashbook() {
                                                     {entry.entry_type}
                                                 </Badge>
                                                 {entry.category && <Badge variant="outline" className="text-[10px]">{entry.category}</Badge>}
+                                                {entry.daily_revenue_id && (() => {
+                                                    const rev = dailyRevenues.find(r => r.id === entry.daily_revenue_id);
+                                                    return rev?.pdf_url ? (
+                                                        <a href={rev.pdf_url} target="_blank" rel="noopener noreferrer"
+                                                            className="text-[10px] text-blue-400 hover:underline flex items-center gap-0.5"
+                                                            onClick={e => e.stopPropagation()}>
+                                                            <FileText className="w-2.5 h-2.5" /> Z-Abschlag PDF
+                                                        </a>
+                                                    ) : null;
+                                                })()}
                                             </div>
                                         </div>
                                     </div>

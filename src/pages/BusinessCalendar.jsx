@@ -6,12 +6,12 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isSameDay, getDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
     ChevronLeft, ChevronRight, Plus, X, Save, Calendar,
     Star, Moon, Package, Wrench, Palmtree, Zap, AlertTriangle,
-    CheckCircle2, Clock, Info, Edit2, Trash2
+    CheckCircle2, Clock, Info, Edit2, Trash2, Wand2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -323,11 +323,70 @@ export default function BusinessCalendar() {
     const [view, setView] = useState('kalender'); // 'kalender' | 'liste'
 
     const canEdit = permissions.isManager || permissions.isAdmin;
+    const [autoFilling, setAutoFilling] = useState(false);
 
     const { data: specialDays = [] } = useQuery({
         queryKey: ['business-calendar'],
         queryFn: () => base44.entities.BusinessCalendarDay.list('-date', 500),
     });
+
+    const { data: openingHours = [] } = useQuery({
+        queryKey: ['opening-hours'],
+        queryFn: () => base44.entities.OpeningHours.list(),
+        enabled: canEdit,
+    });
+
+    // Wochentag-Index (0=So, 1=Mo...) → OpeningHours-Eintrag
+    const DE_DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+
+    const handleAutoFill = async () => {
+        if (openingHours.length === 0) {
+            alert('Keine Standardöffnungszeiten hinterlegt. Bitte zuerst unter Einstellungen → Öffnungszeiten eintragen.');
+            return;
+        }
+        setAutoFilling(true);
+        const monthDays = eachDayOfInterval({
+            start: startOfMonth(currentMonth),
+            end: endOfMonth(currentMonth),
+        });
+        const existingDates = new Set(specialDays.map(d => d.date));
+        const toCreate = [];
+
+        for (const day of monthDays) {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            if (existingDates.has(dateStr)) continue; // bereits eingetragen
+
+            const weekdayName = DE_DAYS[getDay(day)];
+            const oh = openingHours.find(o => o.day_of_week === weekdayName);
+            if (!oh) continue;
+
+            toCreate.push({
+                date: dateStr,
+                day_type: oh.is_closed ? 'geschlossen' : 'normal',
+                title: '',
+                is_closed: oh.is_closed || false,
+                is_special_opening: false,
+                is_pre_holiday: false,
+                is_holiday: false,
+                is_event_day: false,
+                is_long_night: false,
+                is_inventory_day: false,
+                is_cleaning_only_day: false,
+                opening_time_override: oh.is_closed ? '' : (oh.open_time || ''),
+                closing_time_override: oh.is_closed ? '' : (oh.close_time || ''),
+                notes: oh.is_closed ? 'Regulär geschlossen' : '',
+                updated_by: permissions.employeeName || 'Auto-Befüllung',
+            });
+        }
+
+        // In Batches von 10 erstellen
+        for (let i = 0; i < toCreate.length; i += 10) {
+            await Promise.all(toCreate.slice(i, i + 10).map(d => base44.entities.BusinessCalendarDay.create(d)));
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['business-calendar'] });
+        setAutoFilling(false);
+    };
 
     const saveMutation = useMutation({
         mutationFn: async (data) => {
@@ -372,13 +431,26 @@ export default function BusinessCalendar() {
                         <p className="text-xs text-muted-foreground">Sondertage & besondere Öffnungszeiten</p>
                     </div>
                     {canEdit && (
-                        <Button
-                            onClick={() => handleDayClick(new Date(), null)}
-                            size="sm"
-                            className="bg-primary gap-1"
-                        >
-                            <Plus className="w-4 h-4" /> Sondertag
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={handleAutoFill}
+                                disabled={autoFilling}
+                                size="sm"
+                                variant="outline"
+                                className="gap-1 text-xs border-primary/40 text-primary hover:bg-primary/10"
+                                title="Monat anhand Standardöffnungszeiten automatisch befüllen"
+                            >
+                                <Wand2 className="w-3.5 h-3.5" />
+                                {autoFilling ? 'Befülle...' : 'Auto'}
+                            </Button>
+                            <Button
+                                onClick={() => handleDayClick(new Date(), null)}
+                                size="sm"
+                                className="bg-primary gap-1"
+                            >
+                                <Plus className="w-4 h-4" /> Sondertag
+                            </Button>
+                        </div>
                     )}
                 </div>
 

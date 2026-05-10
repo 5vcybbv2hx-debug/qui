@@ -394,7 +394,7 @@ function PlanningTab({ upcomingEvents, upcomingShifts }) {
 
 // ─── Tab: MANAGER ────────────────────────────────────────────────────────────
 
-function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries, maintenanceTasks, todayShifts, todayEvents, isManager, currentUser, activeStaffCount }) {
+function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendingTimeEntries, maintenanceTasks, todayShifts, todayEvents, isManager, currentUser, activeStaffCount, isTodayClosed, todayCalendarEntry }) {
     const urgentTodos = todos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const lowStock = articles.filter(a => a.min_stock != null && a.current_stock <= a.min_stock);
     const openShopping = shopping.filter(s => s.status === 'offen');
@@ -484,13 +484,15 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
 
             {/* Alarm-Panel */}
             <AlarmPanel
-                pendingTimeEntries={pendingTimeEntries}
-                maintenanceTasks={maintenanceTasks}
-                todayShifts={todayShifts}
-                employees={employees}
-                todayEvents={todayEvents}
-                isManager={isManager}
-                currentUser={currentUser}
+            pendingTimeEntries={pendingTimeEntries}
+            maintenanceTasks={maintenanceTasks}
+            todayShifts={todayShifts}
+            employees={employees}
+            todayEvents={todayEvents}
+            isManager={isManager}
+            currentUser={currentUser}
+            isTodayClosed={isTodayClosed}
+            todayCalendarEntry={todayCalendarEntry}
             />
 
             {/* Wichtige Hinweise */}
@@ -700,6 +702,16 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
         urgentMaintenance,
     } = useDashboardData({ isManager, currentEmployee });
 
+    const { data: businessCalendarDays = [] } = useQuery({
+        queryKey: ['business-calendar-today'],
+        queryFn: () => base44.entities.BusinessCalendarDay.list('-date', 60),
+        staleTime: 300000,
+        enabled: isManager,
+    });
+    const todayCalendarEntry = businessCalendarDays.find(d => d.date === today);
+    const isTodayClosed = todayCalendarEntry?.is_closed === true ||
+        ['geschlossen', 'geschlossen_mit_reinigung', 'betriebsferien'].includes(todayCalendarEntry?.day_type);
+
     // Night-safe today = operation date (not calendar date)
     const todayOperationDate = getTodayOperationDate();
 
@@ -858,6 +870,8 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             isManager={isManager}
                             currentUser={currentUser}
                             activeStaffCount={0}
+                            isTodayClosed={isTodayClosed}
+                            todayCalendarEntry={todayCalendarEntry}
                         />
                     )}
                 </div>

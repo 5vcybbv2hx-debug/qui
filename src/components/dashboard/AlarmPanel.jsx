@@ -220,7 +220,10 @@ function maintenanceItems(tasks) {
 }
 
 // ─── 3. Personal ──────────────────────────────────────────────────────────────
-function staffingItem(todayShifts) {
+function staffingItem(todayShifts, isTodayClosed) {
+    // Kein Alarm wenn heute laut Betriebskalender geschlossen ist
+    if (isTodayClosed) return [];
+
     if (todayShifts.length === 0) {
         return [{
             key: 'staffing-none',
@@ -253,13 +256,22 @@ function staffingItem(todayShifts) {
 }
 
 // ─── 4. Team-Notizen ──────────────────────────────────────────────────────────
+// Gepinnte Notizen älter als 60 Tage werden nicht mehr im Alarm angezeigt
+// (sie bleiben in TeamNotes sichtbar, aber lösen keinen Alarm mehr aus)
+const NOTE_MAX_AGE_DAYS = 60;
+
 function noteItems(notes) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - NOTE_MAX_AGE_DAYS);
+
     return notes
-        .filter(n =>
-            n.status !== 'archiviert' &&
-            n.status !== 'erledigt' &&
-            (n.is_pinned || n.priority === 'dringend' || n.priority === 'wichtig')
-        )
+        .filter(n => {
+            if (n.status === 'archiviert' || n.status === 'erledigt') return false;
+            if (!n.is_pinned && n.priority !== 'dringend' && n.priority !== 'wichtig') return false;
+            // Alte Notizen ausschließen (verhindern dass Jan-Einträge ewig erscheinen)
+            if (n.created_date && new Date(n.created_date) < cutoff) return false;
+            return true;
+        })
         .map(n => {
             const prio = n.priority === 'dringend' ? 'kritisch' : 'hoch';
             const s = calcScore(n.is_pinned ? 'hoch' : prio, n.created_date);
@@ -279,7 +291,10 @@ function noteItems(notes) {
                             <div className="flex-1 min-w-0">
                                 {n.title && <p className="text-xs font-bold text-foreground mb-0.5">{n.title}</p>}
                                 <p className="text-sm text-foreground/90 line-clamp-2">{n.message}</p>
-                                <p className="text-[10px] text-muted-foreground mt-1">{n.author_name}</p>
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                    {n.author_name}
+                                    {n.created_date && ` · ${format(new Date(n.created_date), 'dd.MM.yyyy')}`}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -306,7 +321,7 @@ function eventItems(todayEvents) {
 }
 
 // ─── MAIN EXPORT ─────────────────────────────────────────────────────────────
-export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, todayShifts, employees, todayEvents, isManager, currentUser }) {
+export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, todayShifts, employees, todayEvents, isManager, currentUser, isTodayClosed, todayCalendarEntry }) {
     const [showAll, setShowAll] = useState(false);
 
     const { data: notes = [] } = useQuery({
@@ -318,7 +333,7 @@ export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, today
     const allItems = useMemo(() => {
         const timeI = TimeItems({ entries: pendingTimeEntries, employees });
         const maintI = maintenanceItems(maintenanceTasks || []);
-        const staffI = staffingItem(todayShifts);
+        const staffI = staffingItem(todayShifts, isTodayClosed);
         const noteI = noteItems(notes);
         const eventI = eventItems(todayEvents);
 

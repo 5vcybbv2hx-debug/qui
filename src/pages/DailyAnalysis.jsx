@@ -102,6 +102,16 @@ export default function DailyAnalysis() {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['time-entries'] }),
     });
 
+    const deleteRevenueMutation = useMutation({
+        mutationFn: (id) => base44.entities.DailyRevenue.delete(id),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['daily-revenues'] }),
+    });
+
+    const handleDeleteRevenue = (day) => {
+        const rev = dailyRevenues.find(r => r.date === day.date);
+        if (rev?.id) deleteRevenueMutation.mutate(rev.id);
+    };
+
     const { data: tipDistributions = [] } = useQuery({
         queryKey: ['tip-distributions'],
         queryFn: () => base44.entities.TipDistribution.list('-date'),
@@ -705,6 +715,7 @@ export default function DailyAnalysis() {
                 employees={employees}
                 onSelectDate={(d) => { setSelectedDate(d); setViewMode('tag'); }}
                 selectedDate={selectedDate}
+                onDelete={handleDeleteRevenue}
             />
 
             {/* Modals */}

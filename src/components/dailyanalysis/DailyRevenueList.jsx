@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Search, SlidersHorizontal, ChevronDown, ChevronRight, FileText, Users, Gift, TrendingDown, X } from 'lucide-react';
+import { Search, SlidersHorizontal, ChevronDown, ChevronRight, FileText, Users, Gift, TrendingDown, X, Trash2 } from 'lucide-react';
 import DayDetailModal from './DayDetailModal';
 import { cn } from '@/lib/utils';
 
@@ -79,7 +79,7 @@ function MonthHeader({ label, count, open, onToggle }) {
 }
 
 // ── Day Card (mobile-first) ────────────────────────────────────────────────
-function DayCard({ day, isSelected, onClick }) {
+function DayCard({ day, isSelected, onClick, onDelete }) {
     const net = day.revenue > 0 ? day.revenue - day.laborCost : null;
     return (
         <Card
@@ -147,6 +147,19 @@ function DayCard({ day, isSelected, onClick }) {
                         {day.notes}
                     </p>
                 )}
+
+                {/* Delete button */}
+                {onDelete && (
+                    <div className="border-t border-border/40 pt-1.5 flex justify-end">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(day); }}
+                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-400 transition-colors px-1 py-0.5 rounded"
+                        >
+                            <Trash2 className="w-3 h-3" />
+                            Löschen
+                        </button>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -170,8 +183,9 @@ function Chip({ label, active, onClick }) {
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
-export default function DailyRevenueList({ revenues, timeEntries, tipDistributions, employees = [], onSelectDate, selectedDate }) {
+export default function DailyRevenueList({ revenues, timeEntries, tipDistributions, employees = [], onSelectDate, selectedDate, onDelete }) {
     const [detailRevenue, setDetailRevenue] = useState(null);
+    const [confirmDelete, setConfirmDelete] = useState(null);
     const [search, setSearch] = useState('');
     const [showFilters, setShowFilters] = useState(false);
     const [filter, setFilter] = useState('all'); // all | warnings | pdf | tips | no-pdf
@@ -308,6 +322,7 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
                                                     setDetailRevenue(day);
                                                     onSelectDate?.(day.date);
                                                 }}
+                                                onDelete={onDelete ? (d) => setConfirmDelete(d) : null}
                                             />
                                         ))}
                                     </div>
@@ -330,6 +345,42 @@ export default function DailyRevenueList({ revenues, timeEntries, tipDistributio
                 laborCost={detailRevenue?.laborCost || 0}
                 staffCount={detailRevenue?.staffCount || 0}
             />
+
+            {/* Delete confirmation */}
+            {confirmDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                    <div className="bg-card border border-border rounded-2xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center">
+                                <Trash2 className="w-5 h-5 text-red-400" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-foreground">Eintrag löschen?</p>
+                                <p className="text-sm text-muted-foreground">
+                                    {format(parseISO(confirmDelete.date), 'EEE, dd. MMMM yyyy', { locale: de })}
+                                </p>
+                            </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Dieser Tagesabschluss wird dauerhaft gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.
+                        </p>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setConfirmDelete(null)}
+                                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-accent/50 transition-colors"
+                            >
+                                Abbrechen
+                            </button>
+                            <button
+                                onClick={() => { onDelete(confirmDelete); setConfirmDelete(null); }}
+                                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium transition-colors"
+                            >
+                                Löschen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

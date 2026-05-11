@@ -26,8 +26,23 @@ const statusConfig = {
 };
 
 const TAX_RATES = ['0', '7', '19'];
-const RECEIPT_TYPES = ['Eingangsrechnung', 'Ausgangsrechnung', 'Kassenbeleg', 'Sonstiges'];
+const RECEIPT_TYPES = ['Eingangsrechnung', 'Ausgangsrechnung', 'Kassenbeleg', 'Einzahlungsquittung', 'Sonstiges'];
 const PAYMENT_METHODS = ['Bar', 'EC', 'Überweisung', 'Kreditkarte', 'Sonstiges'];
+
+// Zuordnungsoptionen inkl. Übertrag
+const ASSIGNMENT_OPTIONS = [
+    { key: 'kreditor',  label: 'Kreditor',  sub: 'Eingangsrechnung' },
+    { key: 'debitor',   label: 'Debitor',   sub: 'Ausgangsrechnung' },
+    { key: 'uebertrag', label: 'Übertrag',  sub: 'Kasse → Bank' },
+    { key: 'both',      label: 'Beides',    sub: 'Kred. & Deb.' },
+];
+
+const ASSIGNMENT_LABELS = {
+    kreditor: 'Kreditor',
+    debitor: 'Debitor',
+    uebertrag: 'Übertrag',
+    both: 'Kred. & Deb.',
+};
 const CATEGORIES = ['Getränke', 'Lebensmittel', 'Reinigung', 'Personal', 'Miete', 'Energie', 'GEMA', 'Versicherung', 'Software', 'Marketing', 'Sonstiges'];
 
 // Native select — works perfectly on mobile
@@ -95,31 +110,32 @@ function ReceiptForm({ data, onChange }) {
                 />
             </div>
 
-            {/* Kreditor / Debitor Zuordnung */}
+            {/* Zuordnung */}
             <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Zuordnung</Label>
-                <div className="flex gap-2">
-                    {[
-                        { key: 'kreditor', label: 'Kreditor', sub: 'Eingang' },
-                        { key: 'debitor', label: 'Debitor', sub: 'Ausgang' },
-                        { key: 'both', label: 'Beides', sub: '' },
-                    ].map(opt => (
+                <div className="grid grid-cols-2 gap-2">
+                    {ASSIGNMENT_OPTIONS.map(opt => (
                         <button
                             key={opt.key}
                             type="button"
                             onClick={() => onChange({ ...data, assignment: opt.key })}
                             className={cn(
-                                'flex-1 py-2 px-2 rounded-xl border text-xs font-semibold transition-all',
+                                'py-2 px-2 rounded-xl border text-xs font-semibold transition-all text-center',
                                 data.assignment === opt.key
                                     ? 'bg-blue-600 border-blue-600 text-white'
                                     : 'border-border text-muted-foreground hover:border-blue-500/50'
                             )}
                         >
                             {opt.label}
-                            {opt.sub && <span className="block text-[10px] font-normal opacity-70">{opt.sub}</span>}
+                            <span className="block text-[10px] font-normal opacity-70">{opt.sub}</span>
                         </button>
                     ))}
                 </div>
+                {data.assignment === 'uebertrag' && (
+                    <p className="text-xs text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 leading-relaxed">
+                        💡 Übertrag = Kasse-Ausgabe + Bank-Einnahme (kein Aufwand). Wird im Kassenbuch als Ausgabe &amp; auf dem Bankkonto als Einzahlung gebucht — kein MwSt.-Ansatz.
+                    </p>
+                )}
             </div>
 
             <div className="space-y-1.5">
@@ -321,8 +337,8 @@ Gib folgende Felder zurück:
                                                         <Icon className="w-3 h-3" />{sc.label}
                                                     </Badge>
                                                     {r.assignment && (
-                                                        <Badge variant="outline" className="text-[10px]">
-                                                            {r.assignment === 'both' ? 'Kred. & Deb.' : r.assignment === 'kreditor' ? 'Kreditor' : 'Debitor'}
+                                                        <Badge variant="outline" className={cn('text-[10px]', r.assignment === 'uebertrag' && 'border-sky-500/40 text-sky-400')}>
+                                                            {ASSIGNMENT_LABELS[r.assignment] || r.assignment}
                                                         </Badge>
                                                     )}
                                                     {r.ai_confidence && <span className="text-[10px] text-muted-foreground">KI {r.ai_confidence}%</span>}
@@ -539,12 +555,8 @@ Gib folgende Felder zurück:
                                     {/* Zuordnung — Pflicht für Freigabe */}
                                     <div className="space-y-2">
                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Zuordnung wählen <span className="text-red-400">*</span></p>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {[
-                                                { key: 'kreditor', label: 'Kreditor', sub: 'Eingangsrechnung' },
-                                                { key: 'debitor', label: 'Debitor', sub: 'Ausgangsrechnung' },
-                                                { key: 'both', label: 'Beides', sub: 'Kred. & Deb.' },
-                                            ].map(opt => (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {ASSIGNMENT_OPTIONS.map(opt => (
                                                 <button key={opt.key} type="button"
                                                     onClick={() => setEditData({ ...editData, assignment: opt.key })}
                                                     className={cn(
@@ -558,6 +570,11 @@ Gib folgende Felder zurück:
                                                 </button>
                                             ))}
                                         </div>
+                                        {editData.assignment === 'uebertrag' && (
+                                            <p className="text-xs text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 leading-relaxed">
+                                                💡 Übertrag = Kasse-Ausgabe + Bank-Einnahme (kein Aufwand, kein MwSt.-Ansatz). Bitte Steuersatz auf 0% setzen.
+                                            </p>
+                                        )}
                                         {!editData.assignment && (
                                             <p className="text-xs text-amber-400 flex items-center gap-1">
                                                 <AlertTriangle className="w-3 h-3" /> Zuordnung ist Pflicht für die Freigabe

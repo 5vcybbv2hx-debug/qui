@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Clock, ArrowRight, CheckSquare, Zap, Circle, Sparkles, CalendarCheck,
-    Users, Calendar, Lightbulb, LogIn, LogOut, Wrench, TrendingDown, ShoppingCart, FileText, Download
+    Users, Calendar, Lightbulb, LogIn, LogOut, Wrench, TrendingDown, ShoppingCart, FileText
 } from 'lucide-react';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -529,7 +529,6 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                         { page: 'Todos', icon: CheckSquare, label: 'Aufgaben', color: 'bg-orange-600' },
                         { page: 'Shopping', icon: ShoppingCart, label: 'Einkauf', color: 'bg-amber-600' },
                         { page: 'Cleaning', icon: Sparkles, label: 'Reinigung', color: 'bg-teal-600' },
-                        { page: 'DataExport', icon: Download, label: 'Code Export', color: 'bg-slate-600' },
                     ].map(({ page, icon: Icon, label, color }) => (
                         <Link key={label} to={createPageUrl(page)}>
                             <Card className="bg-card border-border hover:bg-accent/30 active:scale-95 transition-all">

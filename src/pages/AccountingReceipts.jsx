@@ -428,7 +428,8 @@ Gib folgende Felder zurück:
             {/* ── Detail / Bearbeiten Modal ── */}
             {detailOpen && selected && (
                 <div className="fixed inset-0 z-50 flex flex-col bg-background">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card shrink-0">
                         <span className="font-bold text-foreground">Beleg bearbeiten</span>
                         <button onClick={() => setDetailOpen(false)}
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent">
@@ -436,30 +437,41 @@ Gib folgende Felder zurück:
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                        {/* Belegbild */}
+                    {/* Body — side-by-side on desktop, stacked on mobile */}
+                    <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+
+                        {/* LEFT: Belegbild — groß */}
                         {selected.file_url && (
-                            <div className="relative">
-                                <img src={selected.file_url} alt="Beleg" className="w-full rounded-xl border border-border object-contain max-h-48" />
-                                <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
-                                    className="absolute top-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded-lg text-xs text-blue-400 flex items-center gap-1">
-                                    <ExternalLink className="w-3 h-3" /> Öffnen
-                                </a>
+                            <div className="md:w-1/2 bg-black/20 flex items-start justify-center overflow-y-auto p-3 md:p-4 shrink-0 max-h-[45vh] md:max-h-none">
+                                <div className="relative w-full">
+                                    <img
+                                        src={selected.file_url}
+                                        alt="Beleg"
+                                        className="w-full rounded-xl border border-border object-contain"
+                                        style={{ maxHeight: 'calc(100vh - 200px)' }}
+                                    />
+                                    <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
+                                        className="absolute top-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded-lg text-xs text-blue-400 flex items-center gap-1">
+                                        <ExternalLink className="w-3 h-3" /> Öffnen
+                                    </a>
+                                </div>
                             </div>
                         )}
 
-                        {/* Status */}
-                        <NativeSelect
-                            label="Status"
-                            value={editData.status || 'neu'}
-                            onChange={v => setEditData({ ...editData, status: v })}
-                            options={Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label }))}
-                        />
-
-                        <ReceiptForm data={editData} onChange={setEditData} />
+                        {/* RIGHT: Formular */}
+                        <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 ${!selected.file_url ? 'md:max-w-xl md:mx-auto' : ''}`}>
+                            <NativeSelect
+                                label="Status"
+                                value={editData.status || 'neu'}
+                                onChange={v => setEditData({ ...editData, status: v })}
+                                options={Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label }))}
+                            />
+                            <ReceiptForm data={editData} onChange={setEditData} />
+                        </div>
                     </div>
 
-                    <div className="px-4 py-3 border-t border-border bg-card flex gap-3">
+                    {/* Footer */}
+                    <div className="px-4 py-3 border-t border-border bg-card flex gap-3 shrink-0">
                         <button
                             onClick={() => { if (confirm('Beleg wirklich löschen?')) deleteMutation.mutate(selected.id); }}
                             className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 shrink-0"

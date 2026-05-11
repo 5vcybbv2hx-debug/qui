@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, TrendingUp, Search, AlertTriangle, CheckCircle2, Clock, Users } from 'lucide-react';
+import { Plus, TrendingUp, Search, AlertTriangle, CheckCircle2, Clock, Users, Receipt, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter } from 'date-fns';
 import MonthNavigator from '@/components/accounting/MonthNavigator';
@@ -44,6 +44,17 @@ export default function AccountingDebitors() {
         queryKey: ['debitor-invoices'],
         queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date')
     });
+
+    const { data: receipts = [] } = useQuery({
+        queryKey: ['accounting-receipts'],
+        queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date')
+    });
+
+    // Belege die als Debitor oder Beides markiert sind
+    const debitorReceipts = useMemo(() =>
+        receipts.filter(r => r.assignment === 'debitor' || r.assignment === 'both'),
+        [receipts]
+    );
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.DebitorInvoice.create(data),
@@ -172,6 +183,34 @@ export default function AccountingDebitors() {
                                 </Card>
                             );
                         })}
+                    </div>
+                )}
+
+                {/* Verknüpfte Belege */}
+                {debitorReceipts.filter(r => r.receipt_date?.startsWith(selectedMonth)).length > 0 && (
+                    <div className="mt-4">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                            <Receipt className="w-3.5 h-3.5" /> Verknüpfte Belege
+                        </p>
+                        <div className="space-y-2">
+                            {debitorReceipts.filter(r => r.receipt_date?.startsWith(selectedMonth)).map(r => (
+                                <Card key={r.id} className="p-3 bg-card border-border flex items-center gap-3">
+                                    {r.file_url ? (
+                                        <img src={r.file_url} alt="Beleg" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                                            <FileText className="w-5 h-5 text-muted-foreground" />
+                                        </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium text-foreground truncate">{r.supplier_name || 'Unbekannt'}</p>
+                                        <p className="text-xs text-muted-foreground">{r.receipt_date} · {r.receipt_type}</p>
+                                        {r.assignment === 'both' && <Badge variant="outline" className="text-[10px] mt-0.5">Auch Kreditor</Badge>}
+                                    </div>
+                                    <p className="text-sm font-bold text-green-400 shrink-0">{r.amount_gross?.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</p>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

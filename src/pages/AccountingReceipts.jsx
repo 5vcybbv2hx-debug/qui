@@ -211,7 +211,7 @@ Gib folgende Felder zurück:
                 }
             });
 
-            const detected = { ...result, file_url, status: result.confidence > 80 ? 'ki_erkannt' : 'pruefung', ai_extracted: true, ai_confidence: result.confidence };
+            const detected = { ...result, file_url, status: result.confidence > 80 ? 'ki_erkannt' : 'pruefung', ai_extracted: true, ai_confidence: result.confidence, assignment: 'kreditor' };
             setAiResult(detected);
             setEditData(detected);
         } catch (e) {

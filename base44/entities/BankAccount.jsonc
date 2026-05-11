@@ -1,0 +1,53 @@
+{
+  "name": "BankAccount",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Bezeichnung (z.B. Gesch\u00e4ftskonto)"
+    },
+    "bank_name": {
+      "type": "string",
+      "description": "Kreditinstitut"
+    },
+    "iban": {
+      "type": "string",
+      "description": "IBAN"
+    },
+    "bic": {
+      "type": "string",
+      "description": "BIC"
+    },
+    "account_type": {
+      "type": "string",
+      "enum": [
+        "Girokonto",
+        "Sparkonto",
+        "Tagesgeld",
+        "Kreditkarte",
+        "Sonstiges"
+      ],
+      "default": "Girokonto"
+    },
+    "current_balance": {
+      "type": "number",
+      "description": "Aktueller Kontostand"
+    },
+    "balance_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Stand-Datum"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "bank_name"
+  ]
+}

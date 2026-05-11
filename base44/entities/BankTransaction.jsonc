@@ -1,0 +1,87 @@
+{
+  "name": "BankTransaction",
+  "type": "object",
+  "properties": {
+    "bank_account_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpftes Bankkonto (ID)"
+    },
+    "bank_account_name": {
+      "type": "string",
+      "description": "Kontoname (denormalisiert)"
+    },
+    "booking_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Buchungsdatum"
+    },
+    "value_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Wertstellungsdatum"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Betrag (positiv = Eingang, negativ = Ausgang)"
+    },
+    "counterpart_name": {
+      "type": "string",
+      "description": "Auftraggeber / Empf\u00e4nger"
+    },
+    "counterpart_iban": {
+      "type": "string",
+      "description": "IBAN Gegenpartei"
+    },
+    "reference": {
+      "type": "string",
+      "description": "Verwendungszweck"
+    },
+    "transaction_type": {
+      "type": "string",
+      "enum": [
+        "Eingang",
+        "Ausgang",
+        "Lastschrift",
+        "\u00dcberweisung",
+        "Geb\u00fchr",
+        "Zinsen",
+        "Sonstiges"
+      ],
+      "description": "Buchungsart"
+    },
+    "category": {
+      "type": "string",
+      "description": "Kostenkategorie (manuell oder KI)"
+    },
+    "matched_receipt_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfter Beleg (ID)"
+    },
+    "matched_invoice_id": {
+      "type": "string",
+      "description": "Verkn\u00fcpfte Rechnung (ID)"
+    },
+    "match_status": {
+      "type": "string",
+      "enum": [
+        "unmatched",
+        "matched",
+        "ignored"
+      ],
+      "default": "unmatched",
+      "description": "Abgleichstatus"
+    },
+    "import_source": {
+      "type": "string",
+      "description": "Importquelle (CSV-Dateiname)"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "bank_account_id",
+    "booking_date",
+    "amount"
+  ]
+}

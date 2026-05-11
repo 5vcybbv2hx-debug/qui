@@ -5,7 +5,7 @@ import {
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
     Palmtree, ListChecks, Video, QrCode, Sun, Layers, Zap,
-    Receipt, TrendingDown, Download, Euro
+    Receipt, TrendingDown, Download, Euro, Building2
 } from 'lucide-react';
 
 /**
@@ -81,6 +81,7 @@ export const mainNavigation = [
             { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canCloseAccountingMonth' },
             { name: 'Fixkosten',         page: 'AccountingFixedCosts',    icon: RefreshCw,    permission: 'canViewAccounting' },
             { name: 'Verbindlichkeiten', page: 'AccountingLiabilities',  icon: TrendingDown, permission: 'canViewLiabilities' },
+            { name: 'Bankkonten',        page: 'AccountingBank',          icon: Building2,    permission: 'canViewAccounting' },
         ]
     },
     {

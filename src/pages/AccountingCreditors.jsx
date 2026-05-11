@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, TrendingDown, Search, AlertTriangle, CheckCircle2, Clock, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter } from 'date-fns';
+import MonthNavigator from '@/components/accounting/MonthNavigator';
 
 const fmt = (n) => n?.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00';
 
@@ -36,6 +37,7 @@ export default function AccountingCreditors() {
     const [modalOpen, setModalOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('alle');
+    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
     const [formData, setFormData] = useState(EMPTY_FORM);
 
     const { data: invoices = [] } = useQuery({
@@ -66,9 +68,10 @@ export default function AccountingCreditors() {
     }, [invoices]);
 
     const filtered = enriched.filter(inv => {
+        const matchMonth = inv.invoice_date?.startsWith(selectedMonth);
         const matchSearch = !search || inv.supplier_name?.toLowerCase().includes(search.toLowerCase()) || inv.invoice_number?.includes(search);
         const matchStatus = statusFilter === 'alle' || inv.payment_status === statusFilter;
-        return matchSearch && matchStatus;
+        return matchMonth && matchSearch && matchStatus;
     });
 
     const totals = useMemo(() => {
@@ -90,14 +93,17 @@ export default function AccountingCreditors() {
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-6">
             <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
                         <TrendingDown className="w-5 h-5 text-red-400" />
                         <h1 className="text-lg font-bold text-foreground">Kreditoren</h1>
                     </div>
-                    <Button size="sm" onClick={() => setModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white gap-1 h-8">
-                        <Plus className="w-4 h-4" /> Rechnung
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
+                        <Button size="sm" onClick={() => setModalOpen(true)} className="bg-red-600 hover:bg-red-700 text-white gap-1 h-8">
+                            <Plus className="w-4 h-4" /> Rechnung
+                        </Button>
+                    </div>
                 </div>
             </div>
 

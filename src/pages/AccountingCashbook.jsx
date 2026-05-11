@@ -11,10 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, TrendingUp, TrendingDown, BookOpen, Search, Calendar, FileText, Import, CheckCircle2, ArrowDownToLine, ExternalLink } from 'lucide-react';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { Plus, TrendingUp, TrendingDown, BookOpen, Search, FileText, CheckCircle2, ArrowDownToLine, ExternalLink } from 'lucide-react';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import MonthNavigator from '@/components/accounting/MonthNavigator';
 
 const fmt = (n) => n?.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00';
 
@@ -144,12 +144,7 @@ export default function AccountingCashbook() {
                         <h1 className="text-lg font-bold text-foreground">Kassenbuch</h1>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Input
-                            type="month"
-                            value={selectedMonth}
-                            onChange={e => setSelectedMonth(e.target.value)}
-                            className="h-8 text-xs w-36"
-                        />
+                        <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
                         <Button size="sm" onClick={() => setModalOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white h-8 gap-1">
                             <Plus className="w-4 h-4" />
                         </Button>

@@ -15,6 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Plus, Receipt, Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, Clock, FileText, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import MonthNavigator from '@/components/accounting/MonthNavigator';
 
 const fmt = (n) => n?.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00';
 
@@ -36,6 +37,7 @@ export default function AccountingReceipts() {
     const [selected, setSelected] = useState(null);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('alle');
+    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
     const [uploading, setUploading] = useState(false);
     const [aiProcessing, setAiProcessing] = useState(false);
     const [aiResult, setAiResult] = useState(null);
@@ -123,9 +125,10 @@ Gib folgende Felder zurück:
     };
 
     const filtered = receipts.filter(r => {
+        const matchMonth = r.receipt_date?.startsWith(selectedMonth);
         const matchSearch = !search || r.supplier_name?.toLowerCase().includes(search.toLowerCase()) || r.receipt_number?.includes(search);
         const matchStatus = statusFilter === 'alle' || r.status === statusFilter;
-        return matchSearch && matchStatus;
+        return matchMonth && matchSearch && matchStatus;
     });
 
     const pendingCount = receipts.filter(r => r.status === 'neu' || r.status === 'pruefung').length;
@@ -144,9 +147,12 @@ Gib folgende Felder zurück:
                             <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20 text-xs">{pendingCount}</Badge>
                         )}
                     </div>
-                    <Button size="sm" onClick={() => setUploadOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-1">
-                        <Plus className="w-4 h-4" /> Beleg
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
+                        <Button size="sm" onClick={() => setUploadOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-1">
+                            <Plus className="w-4 h-4" /> Beleg
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filter bar */}

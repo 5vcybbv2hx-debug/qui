@@ -8,11 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Receipt, Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, Clock, FileText, Search, X } from 'lucide-react';
+import { Plus, Receipt, Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, Clock, FileText, Search, ExternalLink, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import MonthNavigator from '@/components/accounting/MonthNavigator';
@@ -27,7 +25,110 @@ const statusConfig = {
     'exportiert': { label: 'Exportiert', color: 'bg-purple-500/15 text-purple-400 border-purple-500/20', icon: CheckCircle2 },
 };
 
+const TAX_RATES = ['0', '7', '19'];
 const RECEIPT_TYPES = ['Eingangsrechnung', 'Ausgangsrechnung', 'Kassenbeleg', 'Sonstiges'];
+const PAYMENT_METHODS = ['Bar', 'EC', 'Überweisung', 'Kreditkarte', 'Sonstiges'];
+const CATEGORIES = ['Getränke', 'Lebensmittel', 'Reinigung', 'Personal', 'Miete', 'Energie', 'GEMA', 'Versicherung', 'Software', 'Marketing', 'Sonstiges'];
+
+// Native select — works perfectly on mobile
+function NativeSelect({ label, value, onChange, options }) {
+    return (
+        <div className="space-y-1.5">
+            {label && <Label className="text-xs text-muted-foreground">{label}</Label>}
+            <select
+                value={value || ''}
+                onChange={e => onChange(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+                {options.map(o => (
+                    <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
+// Vollständiges Beleg-Formular (Upload + Detail)
+function ReceiptForm({ data, onChange }) {
+    return (
+        <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 col-span-2">
+                    <Label className="text-xs text-muted-foreground">Lieferant / Absender</Label>
+                    <Input value={data.supplier_name || ''} onChange={e => onChange({ ...data, supplier_name: e.target.value })} placeholder="Firmenname..." />
+                </div>
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Belegdatum</Label>
+                    <Input type="date" value={data.receipt_date || ''} onChange={e => onChange({ ...data, receipt_date: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Belegnummer</Label>
+                    <Input value={data.receipt_number || ''} onChange={e => onChange({ ...data, receipt_number: e.target.value })} placeholder="RE-2024-001" />
+                </div>
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Brutto (€)</Label>
+                    <Input type="number" step="0.01" value={data.amount_gross || ''} onChange={e => onChange({ ...data, amount_gross: parseFloat(e.target.value) || '' })} placeholder="0,00" />
+                </div>
+                <NativeSelect
+                    label="Steuersatz"
+                    value={String(data.tax_rate ?? 19)}
+                    onChange={v => onChange({ ...data, tax_rate: Number(v) })}
+                    options={TAX_RATES.map(r => ({ value: r, label: r + '%' }))}
+                />
+                <NativeSelect
+                    label="Belegart"
+                    value={data.receipt_type || 'Eingangsrechnung'}
+                    onChange={v => onChange({ ...data, receipt_type: v })}
+                    options={RECEIPT_TYPES}
+                />
+                <NativeSelect
+                    label="Zahlungsart"
+                    value={data.payment_method || 'Bar'}
+                    onChange={v => onChange({ ...data, payment_method: v })}
+                    options={PAYMENT_METHODS}
+                />
+                <NativeSelect
+                    label="Kategorie"
+                    value={data.category || ''}
+                    onChange={v => onChange({ ...data, category: v })}
+                    options={[{ value: '', label: '— wählen —' }, ...CATEGORIES]}
+                />
+            </div>
+
+            {/* Kreditor / Debitor Zuordnung */}
+            <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Zuordnung</Label>
+                <div className="flex gap-2">
+                    {[
+                        { key: 'kreditor', label: 'Kreditor', sub: 'Eingang' },
+                        { key: 'debitor', label: 'Debitor', sub: 'Ausgang' },
+                        { key: 'both', label: 'Beides', sub: '' },
+                    ].map(opt => (
+                        <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => onChange({ ...data, assignment: opt.key })}
+                            className={cn(
+                                'flex-1 py-2 px-2 rounded-xl border text-xs font-semibold transition-all',
+                                data.assignment === opt.key
+                                    ? 'bg-blue-600 border-blue-600 text-white'
+                                    : 'border-border text-muted-foreground hover:border-blue-500/50'
+                            )}
+                        >
+                            {opt.label}
+                            {opt.sub && <span className="block text-[10px] font-normal opacity-70">{opt.sub}</span>}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Notizen</Label>
+                <Textarea value={data.notes || ''} onChange={e => onChange({ ...data, notes: e.target.value })} rows={2} placeholder="Interne Anmerkungen..." />
+            </div>
+        </div>
+    );
+}
 
 export default function AccountingReceipts() {
     const permissions = usePermissions();
@@ -52,11 +153,16 @@ export default function AccountingReceipts() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.AccountingReceipt.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['accounting-receipts']); setUploadOpen(false); setAiResult(null); }
+        onSuccess: () => { queryClient.invalidateQueries(['accounting-receipts']); setUploadOpen(false); setAiResult(null); setEditData({}); }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.AccountingReceipt.update(id, data),
+        onSuccess: () => { queryClient.invalidateQueries(['accounting-receipts']); setDetailOpen(false); }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id) => base44.entities.AccountingReceipt.delete(id),
         onSuccess: () => { queryClient.invalidateQueries(['accounting-receipts']); setDetailOpen(false); }
     });
 
@@ -105,17 +211,14 @@ Gib folgende Felder zurück:
                 }
             });
 
-            setAiResult({ ...result, file_url });
-            setEditData({ ...result, file_url, status: result.confidence > 80 ? 'ki_erkannt' : 'pruefung', ai_extracted: true, ai_confidence: result.confidence });
+            const detected = { ...result, file_url, status: result.confidence > 80 ? 'ki_erkannt' : 'pruefung', ai_extracted: true, ai_confidence: result.confidence };
+            setAiResult(detected);
+            setEditData(detected);
         } catch (e) {
             alert('Fehler beim Verarbeiten: ' + e.message);
         } finally {
             setAiProcessing(false);
         }
-    };
-
-    const handleSave = () => {
-        createMutation.mutate(editData);
     };
 
     const openDetail = (r) => {
@@ -149,22 +252,17 @@ Gib folgende Felder zurück:
                     </div>
                     <div className="flex items-center gap-2">
                         <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
-                        <Button size="sm" onClick={() => setUploadOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-1">
-                            <Plus className="w-4 h-4" /> Beleg
+                        <Button size="sm" onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="bg-blue-600 hover:bg-blue-700 text-white gap-1">
+                            <Camera className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
-
-                {/* Filter bar */}
                 <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
                     {['alle', 'neu', 'ki_erkannt', 'pruefung', 'freigegeben', 'exportiert'].map(s => (
-                        <button
-                            key={s}
-                            onClick={() => setStatusFilter(s)}
+                        <button key={s} onClick={() => setStatusFilter(s)}
                             className={cn('px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all',
                                 statusFilter === s ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:bg-accent'
-                            )}
-                        >
+                            )}>
                             {s === 'alle' ? 'Alle' : statusConfig[s]?.label}
                         </button>
                     ))}
@@ -180,9 +278,9 @@ Gib folgende Felder zurück:
                 {filtered.length === 0 ? (
                     <Card className="p-12 text-center text-muted-foreground bg-card border-border">
                         <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p className="font-medium">Keine Belege gefunden</p>
-                        <Button onClick={() => setUploadOpen(true)} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white">
-                            <Camera className="w-4 h-4 mr-2" />Beleg hochladen
+                        <p className="font-medium">Keine Belege für diesen Monat</p>
+                        <Button onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white">
+                            <Camera className="w-4 h-4 mr-2" />Beleg scannen
                         </Button>
                     </Card>
                 ) : (
@@ -191,29 +289,31 @@ Gib folgende Felder zurück:
                             const sc = statusConfig[r.status] || statusConfig['neu'];
                             const Icon = sc.icon;
                             return (
-                                <Card key={r.id} onClick={() => openDetail(r)} className="p-4 bg-card border-border hover:border-border/80 cursor-pointer transition-all">
+                                <Card key={r.id} onClick={() => openDetail(r)} className="p-4 bg-card border-border hover:border-border/80 cursor-pointer transition-all active:scale-[0.99]">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex items-center gap-3 min-w-0">
                                             {r.file_url ? (
-                                                <div className="w-10 h-10 rounded-lg bg-secondary overflow-hidden shrink-0">
+                                                <div className="w-12 h-12 rounded-xl bg-secondary overflow-hidden shrink-0">
                                                     <img src={r.file_url} alt="Beleg" className="w-full h-full object-cover" />
                                                 </div>
                                             ) : (
-                                                <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                                                    <FileText className="w-5 h-5 text-muted-foreground" />
+                                                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                                                    <FileText className="w-6 h-6 text-muted-foreground" />
                                                 </div>
                                             )}
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-foreground truncate">{r.supplier_name || 'Unbekannt'}</p>
-                                                <div className="flex items-center gap-1.5 mt-0.5">
-                                                    <p className="text-xs text-muted-foreground">{r.receipt_date}</p>
-                                                    {r.category && <span className="text-xs text-muted-foreground">· {r.category}</span>}
-                                                </div>
-                                                <div className="flex items-center gap-1 mt-1">
+                                                <p className="text-sm font-semibold text-foreground truncate">{r.supplier_name || 'Unbekannt'}</p>
+                                                <p className="text-xs text-muted-foreground mt-0.5">{r.receipt_date} {r.category ? `· ${r.category}` : ''}</p>
+                                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                                                     <Badge className={cn('text-[10px] border gap-1', sc.color)}>
                                                         <Icon className="w-3 h-3" />{sc.label}
                                                     </Badge>
-                                                    {r.ai_confidence && <span className="text-[10px] text-muted-foreground">KI: {r.ai_confidence}%</span>}
+                                                    {r.assignment && (
+                                                        <Badge variant="outline" className="text-[10px]">
+                                                            {r.assignment === 'both' ? 'Kred. & Deb.' : r.assignment === 'kreditor' ? 'Kreditor' : 'Debitor'}
+                                                        </Badge>
+                                                    )}
+                                                    {r.ai_confidence && <span className="text-[10px] text-muted-foreground">KI {r.ai_confidence}%</span>}
                                                 </div>
                                             </div>
                                         </div>
@@ -231,166 +331,150 @@ Gib folgende Felder zurück:
 
             {/* FAB */}
             <button
-                onClick={() => setUploadOpen(true)}
+                onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }}
                 className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
             >
                 <Camera className="w-6 h-6" />
             </button>
 
-            {/* Upload Modal */}
-            <Dialog open={uploadOpen} onOpenChange={v => { setUploadOpen(v); if (!v) { setAiResult(null); setEditData({}); } }}>
-                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
+            {/* ── Upload / Scanner Modal ── */}
+            {uploadOpen && (
+                <div className="fixed inset-0 z-50 flex flex-col bg-background">
+                    {/* Scanner Header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+                        <div className="flex items-center gap-2">
                             <Sparkles className="w-5 h-5 text-blue-400" />
-                            KI-Belegupload
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    {!aiResult && !uploading && !aiProcessing && (
-                        <div className="space-y-3 mt-2">
-                            <p className="text-sm text-muted-foreground">Lade einen Beleg hoch – die KI erkennt automatisch alle relevanten Daten.</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                <label className="cursor-pointer">
-                                    <div className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-border hover:border-blue-500/50 transition-colors text-center">
-                                        <Camera className="w-8 h-8 text-blue-400" />
-                                        <span className="text-sm font-medium">Kamera</span>
-                                    </div>
-                                    <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileUpload(e.target.files?.[0])} />
-                                </label>
-                                <label className="cursor-pointer">
-                                    <div className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-border hover:border-blue-500/50 transition-colors text-center">
-                                        <Upload className="w-8 h-8 text-blue-400" />
-                                        <span className="text-sm font-medium">Datei wählen</span>
-                                    </div>
-                                    <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={e => handleFileUpload(e.target.files?.[0])} />
-                                </label>
-                            </div>
+                            <span className="font-bold text-foreground">Beleg scannen</span>
                         </div>
-                    )}
+                        <button onClick={() => { setUploadOpen(false); setAiResult(null); setEditData({}); }}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent">
+                            ✕
+                        </button>
+                    </div>
 
-                    {(uploading || aiProcessing) && (
-                        <div className="py-8 text-center space-y-4">
-                            <div className="w-16 h-16 rounded-2xl bg-blue-500/15 flex items-center justify-center mx-auto">
-                                <Sparkles className="w-8 h-8 text-blue-400 animate-pulse" />
-                            </div>
-                            <div>
-                                <p className="font-semibold text-foreground">{uploading ? 'Wird hochgeladen...' : 'KI analysiert Beleg...'}</p>
-                                <p className="text-sm text-muted-foreground mt-1">{aiProcessing ? 'Lieferant, Betrag & Steuer werden erkannt' : ''}</p>
-                            </div>
-                            <Progress value={uploading ? 40 : 80} className="h-1.5" />
-                        </div>
-                    )}
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                        {/* Step 1 — Aufnahme */}
+                        {!uploading && !aiProcessing && !aiResult && (
+                            <>
+                                <p className="text-sm text-muted-foreground text-center">Fotografiere oder lade einen Beleg hoch. Die KI erkennt automatisch alle Daten.</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <label className="cursor-pointer">
+                                        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-dashed border-blue-500/40 bg-blue-500/5 active:bg-blue-500/10 transition-colors text-center">
+                                            <Camera className="w-10 h-10 text-blue-400" />
+                                            <span className="text-sm font-semibold text-foreground">Kamera</span>
+                                            <span className="text-xs text-muted-foreground">Foto aufnehmen</span>
+                                        </div>
+                                        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileUpload(e.target.files?.[0])} />
+                                    </label>
+                                    <label className="cursor-pointer">
+                                        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-dashed border-border bg-secondary/30 active:bg-secondary/60 transition-colors text-center">
+                                            <Upload className="w-10 h-10 text-muted-foreground" />
+                                            <span className="text-sm font-semibold text-foreground">Datei</span>
+                                            <span className="text-xs text-muted-foreground">Bild oder PDF</span>
+                                        </div>
+                                        <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={e => handleFileUpload(e.target.files?.[0])} />
+                                    </label>
+                                </div>
+                            </>
+                        )}
 
+                        {/* Step 2 — Loading */}
+                        {(uploading || aiProcessing) && (
+                            <div className="flex flex-col items-center justify-center py-16 gap-6">
+                                <div className="w-20 h-20 rounded-3xl bg-blue-500/15 flex items-center justify-center">
+                                    <Sparkles className="w-10 h-10 text-blue-400 animate-pulse" />
+                                </div>
+                                <div className="text-center">
+                                    <p className="font-bold text-foreground text-lg">{uploading ? 'Wird hochgeladen…' : 'KI analysiert…'}</p>
+                                    <p className="text-sm text-muted-foreground mt-1">{aiProcessing ? 'Lieferant, Betrag & Steuer werden erkannt' : ''}</p>
+                                </div>
+                                <Progress value={uploading ? 35 : 75} className="h-2 w-48" />
+                            </div>
+                        )}
+
+                        {/* Step 3 — Ergebnis bearbeiten */}
+                        {aiResult && (
+                            <>
+                                <div className={cn('flex items-center gap-2 p-3 rounded-xl text-sm font-medium',
+                                    aiResult.confidence > 80 ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'
+                                )}>
+                                    {aiResult.confidence > 80 ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+                                    KI-Konfidenz: {aiResult.confidence}% — {aiResult.confidence > 80 ? 'Hohe Sicherheit' : 'Bitte prüfen'}
+                                </div>
+
+                                {aiResult.file_url && (
+                                    <img src={aiResult.file_url} alt="Beleg" className="w-full rounded-xl border border-border object-contain max-h-40" />
+                                )}
+
+                                <ReceiptForm data={editData} onChange={setEditData} />
+                            </>
+                        )}
+                    </div>
+
+                    {/* Sticky Footer */}
                     {aiResult && (
-                        <div className="space-y-4 mt-2">
-                            {/* Confidence */}
-                            <div className={cn('flex items-center gap-2 p-3 rounded-xl text-sm font-medium',
-                                aiResult.confidence > 80 ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'
-                            )}>
-                                {aiResult.confidence > 80
-                                    ? <CheckCircle2 className="w-4 h-4 shrink-0" />
-                                    : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                                KI-Konfidenz: {aiResult.confidence}% — {aiResult.confidence > 80 ? 'Hohe Sicherheit' : 'Bitte prüfen'}
-                            </div>
-
-                            {/* Editable Fields */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Lieferant</Label>
-                                    <Input value={editData.supplier_name || ''} onChange={e => setEditData({ ...editData, supplier_name: e.target.value })} className="h-8 text-sm" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Datum</Label>
-                                    <Input type="date" value={editData.receipt_date || ''} onChange={e => setEditData({ ...editData, receipt_date: e.target.value })} className="h-8 text-sm" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Brutto (€)</Label>
-                                    <Input type="number" value={editData.amount_gross || ''} onChange={e => setEditData({ ...editData, amount_gross: parseFloat(e.target.value) })} className="h-8 text-sm" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Steuersatz (%)</Label>
-                                    <Select value={String(editData.tax_rate || 19)} onValueChange={v => setEditData({ ...editData, tax_rate: Number(v) })}>
-                                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="0">0%</SelectItem>
-                                            <SelectItem value="7">7%</SelectItem>
-                                            <SelectItem value="19">19%</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Kategorie</Label>
-                                    <Input value={editData.category || ''} onChange={e => setEditData({ ...editData, category: e.target.value })} className="h-8 text-sm" />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Belegart</Label>
-                                    <Select value={editData.receipt_type || 'Eingangsrechnung'} onValueChange={v => setEditData({ ...editData, receipt_type: v })}>
-                                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            {RECEIPT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => { setAiResult(null); setEditData({}); }} className="flex-1">Neu hochladen</Button>
-                                <Button onClick={handleSave} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={createMutation.isPending}>
-                                    {createMutation.isPending ? 'Speichern...' : 'Freigeben & Speichern'}
-                                </Button>
-                            </div>
+                        <div className="px-4 py-3 border-t border-border bg-card flex gap-3">
+                            <Button variant="outline" onClick={() => { setAiResult(null); setEditData({}); }} className="flex-1">
+                                Neu scannen
+                            </Button>
+                            <Button onClick={() => createMutation.mutate(editData)} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={createMutation.isPending}>
+                                {createMutation.isPending ? 'Speichern…' : 'Speichern'}
+                            </Button>
                         </div>
                     )}
-                </DialogContent>
-            </Dialog>
+                </div>
+            )}
 
-            {/* Detail Modal */}
-            <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Beleg bearbeiten</DialogTitle>
-                    </DialogHeader>
-                    {selected && (
-                        <div className="space-y-4 mt-2">
-                            {selected.file_url && (
+            {/* ── Detail / Bearbeiten Modal ── */}
+            {detailOpen && selected && (
+                <div className="fixed inset-0 z-50 flex flex-col bg-background">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+                        <span className="font-bold text-foreground">Beleg bearbeiten</span>
+                        <button onClick={() => setDetailOpen(false)}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent">
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                        {/* Belegbild */}
+                        {selected.file_url && (
+                            <div className="relative">
                                 <img src={selected.file_url} alt="Beleg" className="w-full rounded-xl border border-border object-contain max-h-48" />
-                            )}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Lieferant</Label>
-                                    <Input value={editData.supplier_name || ''} onChange={e => setEditData({ ...editData, supplier_name: e.target.value })} />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs">Brutto (€)</Label>
-                                    <Input type="number" value={editData.amount_gross || ''} onChange={e => setEditData({ ...editData, amount_gross: parseFloat(e.target.value) })} />
-                                </div>
-                                <div className="space-y-1.5 col-span-2">
-                                    <Label className="text-xs">Status</Label>
-                                    <Select value={editData.status || 'neu'} onValueChange={v => setEditData({ ...editData, status: v })}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            {Object.entries(statusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1.5 col-span-2">
-                                    <Label className="text-xs">Notizen</Label>
-                                    <Textarea value={editData.notes || ''} onChange={e => setEditData({ ...editData, notes: e.target.value })} rows={2} />
-                                </div>
+                                <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
+                                    className="absolute top-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded-lg text-xs text-blue-400 flex items-center gap-1">
+                                    <ExternalLink className="w-3 h-3" /> Öffnen
+                                </a>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => setDetailOpen(false)} className="flex-1">Abbrechen</Button>
-                                <Button onClick={() => updateMutation.mutate({ id: selected.id, data: editData })}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                                    disabled={updateMutation.isPending}>
-                                    Speichern
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+                        )}
+
+                        {/* Status */}
+                        <NativeSelect
+                            label="Status"
+                            value={editData.status || 'neu'}
+                            onChange={v => setEditData({ ...editData, status: v })}
+                            options={Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label }))}
+                        />
+
+                        <ReceiptForm data={editData} onChange={setEditData} />
+                    </div>
+
+                    <div className="px-4 py-3 border-t border-border bg-card flex gap-3">
+                        <button
+                            onClick={() => { if (confirm('Beleg wirklich löschen?')) deleteMutation.mutate(selected.id); }}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 shrink-0"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                        <Button variant="outline" onClick={() => setDetailOpen(false)} className="flex-1">Abbrechen</Button>
+                        <Button onClick={() => updateMutation.mutate({ id: selected.id, data: editData })}
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                            disabled={updateMutation.isPending}>
+                            {updateMutation.isPending ? 'Speichern…' : 'Speichern'}
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

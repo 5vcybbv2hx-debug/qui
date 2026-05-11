@@ -22,6 +22,22 @@
       "type": "string",
       "description": "Verkn\u00fcpfter Beleg (ID)"
     },
+    "customer_number": {
+      "type": "string",
+      "description": "Kundennummer beim Gl\u00e4ubiger"
+    },
+    "creditor_iban": {
+      "type": "string",
+      "description": "IBAN des Gl\u00e4ubigers"
+    },
+    "creditor_bic": {
+      "type": "string",
+      "description": "BIC des Gl\u00e4ubigers"
+    },
+    "creditor_bank_name": {
+      "type": "string",
+      "description": "Kreditinstitut des Gl\u00e4ubigers"
+    },
     "original_amount": {
       "type": "number",
       "description": "Urspr\u00fcnglicher Betrag (brutto)"

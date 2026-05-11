@@ -35,7 +35,8 @@ const EMPTY_FORM = {
     title: '', supplier_name: '', category: 'Sonstiges',
     amount_gross: '', vat_rate: 19, interval: 'monatlich',
     due_day: 1, payment_method: 'Überweisung',
-    receipt_required: true, accounting_mapping: '', active: true, notes: ''
+    receipt_required: true, accounting_mapping: '', active: true, notes: '',
+    customer_number: '', creditor_iban: '', creditor_bic: '', creditor_bank_name: '', mandate_reference: ''
 };
 
 function statusConfig(status) {
@@ -425,9 +426,38 @@ export default function AccountingFixedCosts() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label>Lieferant</Label>
-                            <Input value={form.supplier_name} onChange={e => setForm({ ...form, supplier_name: e.target.value })} placeholder="Lieferantenname" />
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                <Label>Lieferant / Anbieter</Label>
+                                <Input value={form.supplier_name} onChange={e => setForm({ ...form, supplier_name: e.target.value })} placeholder="Lieferantenname" />
+                            </div>
+                            <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                <Label>Kundennummer</Label>
+                                <Input value={form.customer_number} onChange={e => setForm({ ...form, customer_number: e.target.value })} placeholder="Ihre Kundennummer" />
+                            </div>
+                        </div>
+
+                        {/* Bankdaten / SEPA */}
+                        <div className="space-y-2 p-3 rounded-lg bg-secondary/50 border border-border">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bankdaten / SEPA</p>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">IBAN des Empfängers</Label>
+                                <Input value={form.creditor_iban} onChange={e => setForm({ ...form, creditor_iban: e.target.value })} placeholder="DE12 3456 7890 1234 5678 90" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">BIC</Label>
+                                    <Input value={form.creditor_bic} onChange={e => setForm({ ...form, creditor_bic: e.target.value })} placeholder="XXXXDEXX" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Kreditinstitut</Label>
+                                    <Input value={form.creditor_bank_name} onChange={e => setForm({ ...form, creditor_bank_name: e.target.value })} placeholder="z.B. Sparkasse" />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">SEPA-Mandatsreferenz (bei Lastschrift)</Label>
+                                <Input value={form.mandate_reference} onChange={e => setForm({ ...form, mandate_reference: e.target.value })} placeholder="Mandatsreferenz" />
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">

@@ -45,7 +45,8 @@ const EMPTY_FORM = {
     due_date: '', start_date: format(new Date(), 'yyyy-MM-dd'), status: 'offen',
     priority: 'mittel', dunning_level: 0, payment_terms: '',
     payment_plan_enabled: false, installment_amount: '', installment_interval: 'monatlich',
-    next_payment_date: '', final_payment_date: '', notes: '', active: true
+    next_payment_date: '', final_payment_date: '', notes: '', active: true,
+    customer_number: '', creditor_iban: '', creditor_bic: '', creditor_bank_name: ''
 };
 
 const EMPTY_PAYMENT = {
@@ -145,6 +146,14 @@ function LiabilityCard({ liability, payments, onEdit, onPayment, onStatusChange 
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Bankdaten / Kundennummer */}
+                    {(liability.customer_number || liability.creditor_iban) && (
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                            {liability.customer_number && <p>Kundennr.: <span className="text-foreground font-medium">{liability.customer_number}</span></p>}
+                            {liability.creditor_iban && <p>IBAN: <span className="text-foreground font-medium">{liability.creditor_iban}</span>{liability.creditor_bank_name && ` (${liability.creditor_bank_name})`}</p>}
                         </div>
                     )}
 
@@ -526,13 +535,38 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                             <Label>Bezeichnung *</Label>
                             <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
                         </div>
-                        <div className="space-y-1.5">
-                            <Label>Gläubiger/Kreditor</Label>
-                            <Input value={form.creditor_name} onChange={e => setForm({ ...form, creditor_name: e.target.value })} />
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                <Label>Gläubiger/Kreditor</Label>
+                                <Input value={form.creditor_name} onChange={e => setForm({ ...form, creditor_name: e.target.value })} />
+                            </div>
+                            <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                                <Label>Kundennummer</Label>
+                                <Input value={form.customer_number} onChange={e => setForm({ ...form, customer_number: e.target.value })} placeholder="Ihre Kundennummer beim Gläubiger" />
+                            </div>
                         </div>
                         <div className="space-y-1.5">
                             <Label>Kategorie</Label>
                             <Input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="z.B. Lieferant, Finanzamt..." />
+                        </div>
+
+                        {/* Bankdaten des Gläubigers */}
+                        <div className="space-y-2 p-3 rounded-lg bg-secondary/50 border border-border">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bankdaten des Gläubigers</p>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">IBAN</Label>
+                                <Input value={form.creditor_iban} onChange={e => setForm({ ...form, creditor_iban: e.target.value })} placeholder="DE12 3456 7890 1234 5678 90" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">BIC</Label>
+                                    <Input value={form.creditor_bic} onChange={e => setForm({ ...form, creditor_bic: e.target.value })} placeholder="XXXXDEXX" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Kreditinstitut</Label>
+                                    <Input value={form.creditor_bank_name} onChange={e => setForm({ ...form, creditor_bank_name: e.target.value })} placeholder="z.B. Sparkasse" />
+                                </div>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">

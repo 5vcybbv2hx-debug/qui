@@ -18,9 +18,52 @@
       "type": "string",
       "description": "Kundennummer beim Anbieter"
     },
+    "contract_number": {
+      "type": "string",
+      "description": "Vertragsnummer"
+    },
+    "contract_start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Vertragsbeginn"
+    },
+    "contract_end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Vertragsende"
+    },
+    "notice_period_days": {
+      "type": "number",
+      "description": "K\u00fcndigungsfrist in Tagen"
+    },
+    "auto_renewal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatische Verl\u00e4ngerung?"
+    },
+    "auto_renewal_period_months": {
+      "type": "number",
+      "description": "Verl\u00e4ngerungszeitraum in Monaten"
+    },
+    "price_adjustment_clause": {
+      "type": "string",
+      "description": "Preisanpassungsklausel (z.B. VPI-gebunden, j\u00e4hrlich +3%)"
+    },
+    "contact_person": {
+      "type": "string",
+      "description": "Kontaktperson / Kundendienst"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Telefon Kontaktperson"
+    },
+    "contact_email": {
+      "type": "string",
+      "description": "E-Mail Kontaktperson"
+    },
     "creditor_iban": {
       "type": "string",
-      "description": "IBAN des Empf\u00e4ngers / Gl\u00e4ubigers"
+      "description": "IBAN des Empf\u00e4ngers"
     },
     "creditor_bic": {
       "type": "string",
@@ -33,6 +76,25 @@
     "mandate_reference": {
       "type": "string",
       "description": "SEPA-Mandatsreferenz (bei Lastschrift)"
+    },
+    "reminder_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Erinnerungsdatum (z.B. vor K\u00fcndigung)"
+    },
+    "document_url": {
+      "type": "string",
+      "description": "URL des Vertragsdokuments"
+    },
+    "tax_treatment": {
+      "type": "string",
+      "enum": [
+        "Betriebsausgabe",
+        "Nicht abzugsf\u00e4hig",
+        "Gemischt",
+        "Privatanteil"
+      ],
+      "description": "Steuerliche Behandlung"
     },
     "category": {
       "type": "string",

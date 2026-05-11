@@ -46,7 +46,11 @@ const EMPTY_FORM = {
     priority: 'mittel', dunning_level: 0, payment_terms: '',
     payment_plan_enabled: false, installment_amount: '', installment_interval: 'monatlich',
     next_payment_date: '', final_payment_date: '', notes: '', active: true,
-    customer_number: '', creditor_iban: '', creditor_bic: '', creditor_bank_name: ''
+    customer_number: '', contract_type: 'Einmalrechnung', contract_number: '',
+    contact_person: '', contact_phone: '', contact_email: '',
+    creditor_iban: '', creditor_bic: '', creditor_bank_name: '',
+    late_payment_fee: '', default_interest_rate: '', tax_treatment: 'Betriebsausgabe',
+    reminder_date: ''
 };
 
 const EMPTY_PAYMENT = {
@@ -548,6 +552,70 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                         <div className="space-y-1.5">
                             <Label>Kategorie</Label>
                             <Input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="z.B. Lieferant, Finanzamt..." />
+                        </div>
+
+                        {/* Vertragsinfos */}
+                        <div className="space-y-2 p-3 rounded-lg bg-secondary/50 border border-border">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vertrag</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Vertragsart</Label>
+                                    <Select value={form.contract_type} onValueChange={v => setForm({ ...form, contract_type: v })}>
+                                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {['Einmalrechnung','Dauervertrag','Darlehen','Leasing','Sonstiges'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Vertragsnummer</Label>
+                                    <Input value={form.contract_number} onChange={e => setForm({ ...form, contract_number: e.target.value })} placeholder="V-2024-001" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Steuerl. Behandlung</Label>
+                                    <Select value={form.tax_treatment} onValueChange={v => setForm({ ...form, tax_treatment: v })}>
+                                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {['Betriebsausgabe','Nicht abzugsfähig','Gemischt','Privatanteil'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Erinnerungsdatum</Label>
+                                    <Input type="date" value={form.reminder_date} onChange={e => setForm({ ...form, reminder_date: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Mahngebühren (€)</Label>
+                                    <Input type="number" step="0.01" value={form.late_payment_fee} onChange={e => setForm({ ...form, late_payment_fee: e.target.value })} placeholder="0,00" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Verzugszinsen (% p.a.)</Label>
+                                    <Input type="number" step="0.01" value={form.default_interest_rate} onChange={e => setForm({ ...form, default_interest_rate: e.target.value })} placeholder="5,00" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Kontaktperson */}
+                        <div className="space-y-2 p-3 rounded-lg bg-secondary/50 border border-border">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kontaktperson beim Gläubiger</p>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">Name</Label>
+                                <Input value={form.contact_person} onChange={e => setForm({ ...form, contact_person: e.target.value })} placeholder="Max Mustermann" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Telefon</Label>
+                                    <Input value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} placeholder="+49 ..." />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">E-Mail</Label>
+                                    <Input type="email" value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} placeholder="kontakt@..." />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Bankdaten des Gläubigers */}

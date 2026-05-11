@@ -36,7 +36,13 @@ const EMPTY_FORM = {
     amount_gross: '', vat_rate: 19, interval: 'monatlich',
     due_day: 1, payment_method: 'Überweisung',
     receipt_required: true, accounting_mapping: '', active: true, notes: '',
-    customer_number: '', creditor_iban: '', creditor_bic: '', creditor_bank_name: '', mandate_reference: ''
+    customer_number: '', contract_number: '',
+    contract_start_date: '', contract_end_date: '', notice_period_days: '',
+    auto_renewal: false, auto_renewal_period_months: '',
+    price_adjustment_clause: '',
+    contact_person: '', contact_phone: '', contact_email: '',
+    creditor_iban: '', creditor_bic: '', creditor_bank_name: '', mandate_reference: '',
+    reminder_date: '', document_url: '', tax_treatment: 'Betriebsausgabe'
 };
 
 function statusConfig(status) {
@@ -320,6 +326,12 @@ export default function AccountingFixedCosts() {
                                                             <span className="text-xs text-muted-foreground">{exp.category}</span>
                                                             {occ.due_date && <span className="text-xs text-muted-foreground">· Fällig: {occ.due_date?.slice(8)}.{occ.due_date?.slice(5, 7)}.</span>}
                                                             {exp.payment_method && <span className="text-xs text-muted-foreground">· {exp.payment_method}</span>}
+                                                            {exp.contract_end_date && (
+                                                                <span className={cn('text-xs', new Date(exp.contract_end_date) < new Date(Date.now() + 60*24*60*60*1000) ? 'text-amber-400 font-medium' : 'text-muted-foreground')}>
+                                                                    · Vertragsende: {exp.contract_end_date}
+                                                                    {exp.auto_renewal && ' (Auto-Verlängerung)'}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -379,6 +391,12 @@ export default function AccountingFixedCosts() {
                                                 <span>{exp.category}</span>
                                                 <span>· {exp.payment_method}</span>
                                                 {exp.due_day && <span>· Fällig: {exp.due_day}. d.M.</span>}
+                                                {exp.customer_number && <span>· Kd-Nr: {exp.customer_number}</span>}
+                                                {exp.contract_end_date && (
+                                                    <span className={cn(new Date(exp.contract_end_date) < new Date(Date.now() + 60*24*60*60*1000) ? 'text-amber-400 font-medium' : '')}>
+                                                        · Ende: {exp.contract_end_date}{exp.auto_renewal ? ' ↺' : ''}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 shrink-0">
@@ -434,6 +452,81 @@ export default function AccountingFixedCosts() {
                             <div className="space-y-1.5 col-span-2 sm:col-span-1">
                                 <Label>Kundennummer</Label>
                                 <Input value={form.customer_number} onChange={e => setForm({ ...form, customer_number: e.target.value })} placeholder="Ihre Kundennummer" />
+                            </div>
+                        </div>
+
+                        {/* Vertrag */}
+                        <div className="space-y-2 p-3 rounded-lg bg-secondary/50 border border-border">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vertrag</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Vertragsnummer</Label>
+                                    <Input value={form.contract_number} onChange={e => setForm({ ...form, contract_number: e.target.value })} placeholder="V-2024-001" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Kündigungsfrist (Tage)</Label>
+                                    <Input type="number" value={form.notice_period_days} onChange={e => setForm({ ...form, notice_period_days: e.target.value })} placeholder="30" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Vertragsbeginn</Label>
+                                    <Input type="date" value={form.contract_start_date} onChange={e => setForm({ ...form, contract_start_date: e.target.value })} />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Vertragsende</Label>
+                                    <Input type="date" value={form.contract_end_date} onChange={e => setForm({ ...form, contract_end_date: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between py-1">
+                                <Label className="text-xs cursor-pointer">Automatische Verlängerung</Label>
+                                <Switch checked={form.auto_renewal} onCheckedChange={v => setForm({ ...form, auto_renewal: v })} />
+                            </div>
+                            {form.auto_renewal && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Verlängerung um (Monate)</Label>
+                                    <Input type="number" value={form.auto_renewal_period_months} onChange={e => setForm({ ...form, auto_renewal_period_months: e.target.value })} placeholder="12" />
+                                </div>
+                            )}
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">Preisanpassungsklausel</Label>
+                                <Input value={form.price_adjustment_clause} onChange={e => setForm({ ...form, price_adjustment_clause: e.target.value })} placeholder="z.B. VPI-gebunden, jährlich +3%" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Steuerl. Behandlung</Label>
+                                    <Select value={form.tax_treatment} onValueChange={v => setForm({ ...form, tax_treatment: v })}>
+                                        <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {['Betriebsausgabe','Nicht abzugsfähig','Gemischt','Privatanteil'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Erinnerungsdatum</Label>
+                                    <Input type="date" value={form.reminder_date} onChange={e => setForm({ ...form, reminder_date: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">Vertragsdokument (URL)</Label>
+                                <Input value={form.document_url} onChange={e => setForm({ ...form, document_url: e.target.value })} placeholder="https://..." />
+                            </div>
+                        </div>
+
+                        {/* Kontaktperson */}
+                        <div className="space-y-2 p-3 rounded-lg bg-secondary/50 border border-border">
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Kontaktperson / Kundendienst</p>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs">Name</Label>
+                                <Input value={form.contact_person} onChange={e => setForm({ ...form, contact_person: e.target.value })} placeholder="Max Mustermann" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">Telefon</Label>
+                                    <Input value={form.contact_phone} onChange={e => setForm({ ...form, contact_phone: e.target.value })} placeholder="+49 ..." />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs">E-Mail</Label>
+                                    <Input type="email" value={form.contact_email} onChange={e => setForm({ ...form, contact_email: e.target.value })} placeholder="kontakt@..." />
+                                </div>
                             </div>
                         </div>
 

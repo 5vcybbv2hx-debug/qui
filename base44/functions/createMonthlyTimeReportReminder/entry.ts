@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
         // Create notification for managers
         await base44.asServiceRole.entities.Notification.create({
             type: 'general',
+            category: 'general',
             title: 'Zeiterfassungsbericht erstellen',
             message: `Bitte erstelle den Zeiterfassungsbericht für ${monthName} ${year} und sende ihn an das Lohnbüro. Gehe zu Zeit & Stempeluhr → Bericht erstellen.`,
             target_roles: ['admin', 'Manager'],

@@ -50,6 +50,9 @@ function EmployeeQualitySection({ employees }) {
                                     <p className="text-sm font-semibold text-foreground">{emp.name}</p>
                                     <p className="text-xs text-muted-foreground">{emp.role}</p>
                                 </div>
+                                <Link to={`/EmployeeProfile/${emp.id}`} className="text-xs text-primary hover:underline shrink-0 mr-2">
+                                    Öffnen
+                                </Link>
                                 <span className={cn(
                                     'text-xs font-bold px-2 py-0.5 rounded-full',
                                     emp.completion >= 75 ? 'bg-amber-500/20 text-amber-400' :

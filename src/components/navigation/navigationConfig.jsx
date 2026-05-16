@@ -5,7 +5,7 @@ import {
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
     Palmtree, ListChecks, Video, QrCode, Sun, Layers, Zap,
-    Receipt, TrendingDown, Download, Euro, Building2
+    Receipt, TrendingDown, Download, Euro, Building2, AlertTriangle
 } from 'lucide-react';
 
 /**
@@ -117,7 +117,8 @@ export const additionalPages = [
     { name: 'Einarbeitung',   page: 'Onboarding',       icon: Users,      permission: 'canViewOnboarding'       },
     { name: 'Visitenkarte',   page: 'BusinessCard',     icon: QrCode,     permission: 'canViewDashboard'        },
     { name: 'Modulcenter',       page: 'ModuleCenter',     icon: Layers,    permission: 'canViewSettings'        },
-    { name: 'Betriebskalender',  page: 'BusinessCalendar', icon: Calendar,  permission: 'canViewSettings'        },
+    { name: 'Betriebskalender',  page: 'BusinessCalendar', icon: Calendar,       permission: 'canViewSettings'  },
+    { name: 'Datenqualität',     page: 'DataQuality',      icon: AlertTriangle,  permission: 'isManager'        },
 ];
 
 /**

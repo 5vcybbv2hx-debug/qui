@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, AlertCircle, Calendar, Mail } from 'lucide-react';
+import { Check, AlertCircle, Mail, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export default function PayrollReportHistory() {
+    const [open, setOpen] = useState(false);
     const { data: logs = [], isLoading } = useQuery({
         queryKey: ['payroll-report-logs'],
         queryFn: () => base44.entities.PayrollReportLog.list('-created_date', 20),
@@ -50,13 +51,19 @@ export default function PayrollReportHistory() {
 
     return (
         <Card className="border-border">
-            <CardHeader>
+            <CardHeader
+                className="cursor-pointer select-none"
+                onClick={() => setOpen(o => !o)}
+            >
                 <CardTitle className="flex items-center gap-2 text-base">
                     <Mail className="w-5 h-5" />
                     Versandverlauf
+                    <span className="ml-auto text-muted-foreground">
+                        {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </span>
                 </CardTitle>
             </CardHeader>
-            <CardContent>
+            {open && <CardContent>
                 <div className="space-y-3">
                     {logs.map((log) => (
                         <div
@@ -106,7 +113,7 @@ export default function PayrollReportHistory() {
                         </div>
                     ))}
                 </div>
-            </CardContent>
+            </CardContent>}
         </Card>
     );
 }

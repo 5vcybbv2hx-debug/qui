@@ -26,6 +26,7 @@ import { loadSavedColors } from '@/components/settings/ColorCustomizer';
 import ErrorBoundary from '@/components/error/ErrorBoundary';
 import { useAnalytics } from '@/components/analytics/useAnalytics';
 import BarAssistant from '@/components/assistant/BarAssistant';
+import DesktopQuickBar from '@/components/navigation/DesktopQuickBar';
 
 export default function Layout({ children, currentPageName }) {
     // ── State ────────────────────────────────────────────────────────────────
@@ -453,8 +454,11 @@ export default function Layout({ children, currentPageName }) {
                 {/* KI-Assistent (nur Manager) */}
                 <BarAssistant isManager={permissions.isManager} />
 
+                {/* Desktop Schnellzugriff-Leiste */}
+                <DesktopQuickBar />
+
                 {/* Main Content */}
-                <main className="md:pl-72 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+                <main className="md:pl-72 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-12">
                     <PullToRefresh onRefresh={handleRefresh}>
                         <AnimatePresence mode="wait">
                             <motion.div

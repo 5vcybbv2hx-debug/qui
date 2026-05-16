@@ -91,38 +91,24 @@ export default function WeeklyHoursChart({ employees = [] }) {
                 {chartData.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">Noch keine Einträge diese Woche</p>
                 ) : (
-                    <ResponsiveContainer width="100%" height={180}>
-                        <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                            <XAxis
-                                dataKey="shortName"
-                                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                                axisLine={false}
-                                tickLine={false}
-                            />
-                            <YAxis
-                                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                                axisLine={false}
-                                tickLine={false}
-                                unit="h"
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    background: 'hsl(var(--card))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: 8,
-                                    fontSize: 12,
-                                    color: 'hsl(var(--foreground))',
-                                }}
-                                formatter={(val, _, props) => [`${val}h`, props.payload.name]}
-                                labelFormatter={() => ''}
-                            />
-                            <Bar dataKey="hours" radius={[4, 4, 0, 0]}>
-                                {chartData.map((_, i) => (
-                                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <div className="space-y-2">
+                        {chartData.map((emp, i) => {
+                            const maxHours = chartData[0].hours || 1;
+                            const pct = Math.round((emp.hours / maxHours) * 100);
+                            return (
+                                <div key={emp.id} className="flex items-center gap-2">
+                                    <span className="text-xs text-foreground font-medium w-20 shrink-0 truncate">{emp.shortName}</span>
+                                    <div className="flex-1 bg-secondary rounded-full h-2 overflow-hidden">
+                                        <div
+                                            className="h-2 rounded-full transition-all"
+                                            style={{ width: `${pct}%`, backgroundColor: COLORS[i % COLORS.length] }}
+                                        />
+                                    </div>
+                                    <span className="text-xs font-semibold text-foreground w-10 text-right shrink-0">{emp.hours}h</span>
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
 
                 {/* Last 4 weeks mini-summary */}

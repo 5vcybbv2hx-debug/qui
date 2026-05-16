@@ -41,7 +41,7 @@ export function canViewPage(employee, pageKey) {
  * @returns {Array} Gefilterte Tabs
  */
 export function getVisibleTabs(employee, tabs) {
-  return tabs.filter(tab => canAccessSection(employee, tab.key || tab.key));
+  return tabs.filter(tab => canAccessSection(employee, tab.permissionKey || tab.key));
 }
 
 /**

@@ -3,15 +3,15 @@
  * Mobile-first, einfache Bedienung für Betreiber/Manager
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isSameDay, getDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, getDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
-    ChevronLeft, ChevronRight, Plus, X, Save, Calendar,
-    Star, Moon, Package, Wrench, Palmtree, Zap, AlertTriangle,
-    CheckCircle2, Clock, Info, Edit2, Trash2, Wand2
+    ChevronLeft, ChevronRight, Plus, Save,
+    Palmtree, AlertTriangle,
+    Clock, Info, Trash2, Wand2, Leaf
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { getHolidaysBW, getHolidayName } from '@/components/shifts/getHolidays';
 
 // ── Konfiguration ──────────────────────────────────────────────────────────
 
@@ -44,8 +45,9 @@ export function getDayTypeConfig(id) {
 
 // ── Tag-Drawer ─────────────────────────────────────────────────────────────
 
-function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit }) {
-    const dateStr = day ? format(day, 'yyyy-MM-dd') : '';
+function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cleaningTasks = [] }) {
+    const initialDate = day ? format(day, 'yyyy-MM-dd') : '';
+    const [dateStr, setDateStr] = useState(initialDate);
     const [form, setForm] = useState({
         day_type: existing?.day_type || 'normal',
         title: existing?.title || '',
@@ -54,8 +56,11 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit }) 
         closing_time_override: existing?.closing_time_override || '',
         notes: existing?.notes || '',
     });
+    // Terrassen-Aufgaben für Saisonstart/-ende
+    const [selectedTasks, setSelectedTasks] = useState([]);
 
-    React.useEffect(() => {
+    useEffect(() => {
+        setDateStr(day ? format(day, 'yyyy-MM-dd') : '');
         setForm({
             day_type: existing?.day_type || 'normal',
             title: existing?.title || '',
@@ -64,10 +69,17 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit }) 
             closing_time_override: existing?.closing_time_override || '',
             notes: existing?.notes || '',
         });
+        setSelectedTasks([]);
     }, [existing, day]);
 
     const cfg = getDayTypeConfig(form.day_type);
     const isClosed = ['geschlossen', 'geschlossen_mit_reinigung', 'betriebsferien'].includes(form.day_type);
+    const isSaison = ['saisonstart', 'saisonende'].includes(form.day_type);
+
+    // Terrassen-Reinigungsaufgaben
+    const terrassenTasks = cleaningTasks.filter(t =>
+        t.area?.toLowerCase().includes('terrasse') || t.area?.toLowerCase().includes('außen')
+    );
 
     const handleSave = () => {
         onSave({
@@ -81,6 +93,7 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit }) 
             is_long_night: form.day_type === 'lange_nacht',
             is_inventory_day: form.day_type === 'inventurtag',
             is_cleaning_only_day: form.day_type === 'geschlossen_mit_reinigung',
+            season_tasks: isSaison ? selectedTasks : [],
         });
     };
 
@@ -91,10 +104,23 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit }) 
             <DrawerContent className="bg-card border-border max-h-[90vh]">
                 <DrawerHeader className="border-b border-border pb-3">
                     <DrawerTitle className="text-foreground">
-                        {format(day, "EEEE, d. MMMM yyyy", { locale: de })}
+                        {existing ? 'Sondertag bearbeiten' : 'Neuer Sondertag'}
                     </DrawerTitle>
                 </DrawerHeader>
                 <div className="overflow-y-auto p-4 space-y-4 pb-8">
+
+                    {/* Datum änderbar */}
+                    {canEdit && (
+                        <div>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Datum</p>
+                            <input
+                                type="date"
+                                value={dateStr}
+                                onChange={e => setDateStr(e.target.value)}
+                                className="w-full px-3 py-2.5 rounded-xl bg-secondary/50 border border-border text-foreground text-sm"
+                            />
+                        </div>
+                    )}
 
                     {!canEdit && existing && (
                         <div className={cn('px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2', cfg.color, 'text-white')}>
@@ -167,6 +193,37 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit }) 
                                 </div>
                             )}
 
+                            {/* Terrassen-Aufgaben bei Saisonstart/-ende */}
+                            {isSaison && terrassenTasks.length > 0 && (
+                                <div>
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                        <Leaf className="w-3.5 h-3.5 text-green-400" />
+                                        Terrassen-Aufgaben aktivieren
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mb-2">
+                                        {form.day_type === 'saisonstart' ? 'Welche Aufgaben sollen zum Saisonstart erledigt werden?' : 'Welche Aufgaben sollen zum Saisonende erledigt werden?'}
+                                    </p>
+                                    <div className="space-y-1.5">
+                                        {terrassenTasks.map(task => (
+                                            <label key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedTasks.includes(task.id)}
+                                                    onChange={e => setSelectedTasks(prev =>
+                                                        e.target.checked ? [...prev, task.id] : prev.filter(id => id !== task.id)
+                                                    )}
+                                                    className="rounded"
+                                                />
+                                                <div>
+                                                    <p className="text-sm text-foreground">{task.title}</p>
+                                                    <p className="text-xs text-muted-foreground">{task.area}</p>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Notiz */}
                             <div>
                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Notiz</p>
@@ -214,7 +271,7 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit }) 
 
 // ── Monatskalender ─────────────────────────────────────────────────────────
 
-function MonthCalendar({ currentMonth, specialDays, onDayClick }) {
+function MonthCalendar({ currentMonth, specialDays, onDayClick, openingHours }) {
     const days = eachDayOfInterval({
         start: startOfMonth(currentMonth),
         end: endOfMonth(currentMonth),
@@ -223,8 +280,18 @@ function MonthCalendar({ currentMonth, specialDays, onDayClick }) {
     const firstDayOfWeek = startOfMonth(currentMonth).getDay();
     const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
-    const getSpecialDay = (date) =>
-        specialDays.find(s => s.date === format(date, 'yyyy-MM-dd'));
+    const DE_DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const holidays = [
+        ...getHolidaysBW(currentMonth.getFullYear()),
+        ...getHolidaysBW(currentMonth.getFullYear() + 1),
+    ];
+
+    const getSpecialDay = (date) => specialDays.find(s => s.date === format(date, 'yyyy-MM-dd'));
+    const getHoliday = (date) => getHolidayName(date, holidays);
+    const getOpeningHour = (date) => {
+        const weekdayName = DE_DAYS[date.getDay()];
+        return openingHours?.find(o => o.day_of_week === weekdayName);
+    };
 
     return (
         <div>
@@ -238,8 +305,12 @@ function MonthCalendar({ currentMonth, specialDays, onDayClick }) {
                 {Array.from({ length: offset }).map((_, i) => <div key={`e-${i}`} />)}
                 {days.map(day => {
                     const special = getSpecialDay(day);
+                    const holiday = getHoliday(day);
+                    const oh = getOpeningHour(day);
                     const cfg = special ? getDayTypeConfig(special.day_type) : null;
                     const today = isToday(day);
+                    const isRegularClosed = !special && oh?.is_closed;
+                    const isHolidayDay = !special && !!holiday;
 
                     return (
                         <button
@@ -247,18 +318,51 @@ function MonthCalendar({ currentMonth, specialDays, onDayClick }) {
                             onClick={() => onDayClick(day, special)}
                             className={cn(
                                 'relative aspect-square flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 text-xs font-medium',
-                                today && !special ? 'ring-2 ring-primary bg-primary/10 text-primary font-bold' : '',
-                                special ? `${cfg.color} text-white` : 'hover:bg-accent/50 text-foreground',
+                                today && !special && !isHolidayDay ? 'ring-2 ring-primary bg-primary/10 text-primary font-bold' : '',
+                                special ? `${cfg.color} text-white` :
+                                isHolidayDay ? 'bg-red-500/20 text-red-300' :
+                                isRegularClosed ? 'bg-slate-700/40 text-muted-foreground' :
+                                'hover:bg-accent/50 text-foreground',
                             )}
+                            title={holiday || (oh?.is_closed ? 'Regulär geschlossen' : oh ? `${oh.open_time || ''}–${oh.close_time || ''}` : '')}
                         >
                             <span>{format(day, 'd')}</span>
-                            {special && special.title && (
+                            {/* Dot für Feiertag */}
+                            {isHolidayDay && (
+                                <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-red-400" />
+                            )}
+                            {/* Dot für Sondertag mit Titel */}
+                            {special && special.title && !isHolidayDay && (
                                 <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/60" />
                             )}
                         </button>
                     );
                 })}
             </div>
+            {/* Öffnungszeiten-Legende */}
+            {openingHours && openingHours.length > 0 && (
+                <div className="mt-4 pt-3 border-t border-border">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Öffnungszeiten dieser Woche</p>
+                    <div className="grid grid-cols-7 gap-0.5 text-center">
+                        {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((label, idx) => {
+                            const dayName = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][idx];
+                            const oh = openingHours.find(o => o.day_of_week === dayName);
+                            return (
+                                <div key={label}>
+                                    <p className="text-[9px] text-muted-foreground">{label}</p>
+                                    {oh?.is_closed ? (
+                                        <p className="text-[9px] text-slate-500 font-medium">–</p>
+                                    ) : oh ? (
+                                        <p className="text-[9px] text-green-400 font-medium leading-tight">{oh.open_time?.slice(0,5) || '?'}</p>
+                                    ) : (
+                                        <p className="text-[9px] text-muted-foreground/40">–</p>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -311,6 +415,38 @@ function UpcomingList({ specialDays, onDayClick }) {
     );
 }
 
+// ── Feiertage ─────────────────────────────────────────────────────────────
+
+function HolidayList() {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const year = new Date().getFullYear();
+    const holidays = [
+        ...getHolidaysBW(year),
+        ...getHolidaysBW(year + 1),
+    ]
+    .filter(h => format(h.date, 'yyyy-MM-dd') >= today)
+    .slice(0, 8);
+
+    return (
+        <div className="mt-4">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Nächste Feiertage (BW)</p>
+            <div className="space-y-1.5">
+                {holidays.map((h, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                        <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+                            <span className="text-xs font-bold text-red-300">{format(h.date, 'd')}</span>
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-foreground">{h.name}</p>
+                            <p className="text-xs text-muted-foreground">{format(h.date, "EEEE, d. MMMM yyyy", { locale: de })}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // ── MAIN ──────────────────────────────────────────────────────────────────
 
 export default function BusinessCalendar() {
@@ -333,6 +469,12 @@ export default function BusinessCalendar() {
     const { data: openingHours = [] } = useQuery({
         queryKey: ['opening-hours'],
         queryFn: () => base44.entities.OpeningHours.list(),
+        enabled: canEdit,
+    });
+
+    const { data: cleaningTasks = [] } = useQuery({
+        queryKey: ['cleaning-tasks-all'],
+        queryFn: () => base44.entities.CleaningTask.list(),
         enabled: canEdit,
     });
 
@@ -514,6 +656,7 @@ export default function BusinessCalendar() {
                                 currentMonth={currentMonth}
                                 specialDays={specialDays}
                                 onDayClick={handleDayClick}
+                                openingHours={openingHours}
                             />
                         </CardContent>
                     </Card>
@@ -521,7 +664,11 @@ export default function BusinessCalendar() {
 
                 {/* Liste View */}
                 {view === 'liste' && (
-                    <UpcomingList specialDays={specialDays} onDayClick={handleDayClick} />
+                    <>
+                        <UpcomingList specialDays={specialDays} onDayClick={handleDayClick} />
+                        {/* Nächste Feiertage */}
+                        <HolidayList />
+                    </>
                 )}
 
                 {/* Legende */}
@@ -557,6 +704,7 @@ export default function BusinessCalendar() {
                 onSave={(data) => saveMutation.mutate(data)}
                 onDelete={(id) => deleteMutation.mutate(id)}
                 canEdit={canEdit}
+                cleaningTasks={cleaningTasks}
             />
         </div>
     );

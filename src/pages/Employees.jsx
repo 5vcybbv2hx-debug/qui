@@ -990,38 +990,26 @@ export default function Employees() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div className="space-y-2">
                                         <Label>T-Shirt (Dienstkleidung)</Label>
-                                        <Select value={formData.tshirt_size} onValueChange={(v) => setFormData({ ...formData, tshirt_size: v })}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Größe" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="XS">XS</SelectItem>
-                                                <SelectItem value="S">S</SelectItem>
-                                                <SelectItem value="M">M</SelectItem>
-                                                <SelectItem value="L">L</SelectItem>
-                                                <SelectItem value="XL">XL</SelectItem>
-                                                <SelectItem value="XXL">XXL</SelectItem>
-                                                <SelectItem value="XXXL">XXXL</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <select
+                                            value={formData.tshirt_size}
+                                            onChange={(e) => setFormData({ ...formData, tshirt_size: e.target.value })}
+                                            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                        >
+                                            <option value="">Größe wählen...</option>
+                                            {['XS','S','M','L','XL','XXL','XXXL'].map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label>Pullover (Dienstkleidung)</Label>
-                                        <Select value={formData.pullover_size} onValueChange={(v) => setFormData({ ...formData, pullover_size: v })}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Größe" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="XS">XS</SelectItem>
-                                                <SelectItem value="S">S</SelectItem>
-                                                <SelectItem value="M">M</SelectItem>
-                                                <SelectItem value="L">L</SelectItem>
-                                                <SelectItem value="XL">XL</SelectItem>
-                                                <SelectItem value="XXL">XXL</SelectItem>
-                                                <SelectItem value="XXXL">XXXL</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <select
+                                            value={formData.pullover_size}
+                                            onChange={(e) => setFormData({ ...formData, pullover_size: e.target.value })}
+                                            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                        >
+                                            <option value="">Größe wählen...</option>
+                                            {['XS','S','M','L','XL','XXL','XXXL'].map(s => <option key={s} value={s}>{s}</option>)}
+                                        </select>
                                     </div>
                                 </div>
 

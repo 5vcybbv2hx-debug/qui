@@ -151,8 +151,8 @@ export function getShiftWarning(clockEntry) {
   const duration = calculateWorkDuration(clockEntry.clock_in, clockEntry.clock_out);
   const hours = duration / 60;
   
-  if (hours > 10) return 'Warnung: Schicht über 10h';
   if (hours > 12) return 'Warnung: ArbZG-Verstoß über 12h';
+  if (hours > 10) return 'Warnung: Schicht über 10h';
   return null;
 }
 

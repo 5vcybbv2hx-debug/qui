@@ -36,7 +36,6 @@ export const mainNavigation = [
         icon: Utensils,
         pages: [
             { name: 'Gäste & Tische',     page: 'GuestHub',        icon: MapPin,       permission: 'canViewReservations' },
-            { name: 'Operative Listen',   page: 'OperativeListen', icon: Zap,          permission: 'canViewTodos'        },
             { name: 'Aufgaben',           page: 'Todos',           icon: CheckSquare,  permission: 'canViewTodos'        },
             { name: 'Putzliste',          page: 'Cleaning',        icon: Brush,        permission: 'canViewCleaning'     },
             { name: 'Auffüllliste',       page: 'Restock',         icon: RefreshCw,    permission: 'canViewRestock'      },

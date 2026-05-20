@@ -62,17 +62,16 @@ export default function TimeTracking() {
         staleTime: 0,
     });
 
+    // Invalidiert ALLE time-entries Queries (inkl. mit selectedMonth-Key)
+    const invalidateTimeEntries = () => queryClient.invalidateQueries({ queryKey: ['time-entries'], exact: false });
+
     const createMutation = useMutation({
         mutationFn: async (data) => {
-            // ArbZG Validierung
             const warnings = validateArbZG(data, timeEntries);
             if (warnings.length > 0) {
                 data.arbzg_warning = formatWarnings(warnings);
             }
-            
             await base44.entities.TimeEntry.create(data);
-            
-            // Create notification for managers when employee submits time entry
             if (data.status === 'eingereicht' && !permissions.isManager) {
                 await createNotification({
                     type: 'general',
@@ -83,7 +82,7 @@ export default function TimeTracking() {
             }
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            invalidateTimeEntries();
             setModalOpen(false);
             setSelectedEntry(null);
         }
@@ -92,7 +91,7 @@ export default function TimeTracking() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.TimeEntry.update(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            invalidateTimeEntries();
             setModalOpen(false);
             setSelectedEntry(null);
         }
@@ -101,7 +100,7 @@ export default function TimeTracking() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.TimeEntry.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            invalidateTimeEntries();
         }
     });
 
@@ -130,7 +129,7 @@ export default function TimeTracking() {
             return Promise.all(promises);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            invalidateTimeEntries();
         }
     });
 
@@ -197,7 +196,7 @@ export default function TimeTracking() {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            invalidateTimeEntries();
         }
     });
 
@@ -288,7 +287,7 @@ export default function TimeTracking() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
-            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            invalidateTimeEntries();
         }
     });
 
@@ -356,7 +355,7 @@ export default function TimeTracking() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
-            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            invalidateTimeEntries();
         }
     });
 

@@ -44,12 +44,13 @@ export function useDashboardData({ isManager, currentEmployee }) {
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries'],
         queryFn: () => base44.entities.TimeEntry.list('-date', 100),
-        enabled: !!currentEmployee
+        staleTime: 2 * 60 * 1000,
     });
     const { data: pendingTimeEntries = [] } = useQuery({
         queryKey: ['pending-time-entries'],
         queryFn: () => base44.entities.TimeEntry.filter({ status: 'eingereicht' }),
-        enabled: isManager
+        enabled: isManager,
+        staleTime: 2 * 60 * 1000,
     });
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],

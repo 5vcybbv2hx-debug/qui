@@ -44,7 +44,9 @@ export default function TimeTracking() {
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             const all = await base44.entities.TimeEntry.list('-date', 2000);
             return all.filter(entry => entry.date >= start && entry.date <= end);
-        }
+        },
+        staleTime: 2 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     const { data: allEmployees = [] } = useQuery({

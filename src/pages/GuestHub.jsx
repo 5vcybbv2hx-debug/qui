@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
     Plus, Search, Download, Clock, Grid2x2, X, List,
-    Calendar, Users, Settings
+    Calendar, Users, Settings, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,10 +45,18 @@ function suggestTables(tables, reservations, guestCount, date, time) {
 
 const STATUS_FILTERS = [
     { value: 'alle', label: 'Alle' },
-    { value: 'bestätigt', label: 'Bestätigt' },
-    { value: 'vorgemerkt', label: 'Vorgemerkt' },
-    { value: 'storniert', label: 'Storniert' },
+    { value: 'vorgemerkt', label: '🔵 Vorgemerkt' },
+    { value: 'bestätigt', label: '🟡 Bestätigt' },
+    { value: 'erschienen', label: '🟢 Erschienen' },
+    { value: 'no-show', label: '🔴 No-Show' },
+    { value: 'storniert', label: '⚪ Storniert' },
 ];
+
+function addDays(dateStr, days) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+}
 
 export default function GuestHub() {
     const permissions = usePermissions();
@@ -282,9 +290,43 @@ export default function GuestHub() {
 
                     {/* Table plan sub-controls */}
                     {tab === 'tables' && (
-                        <div className="flex items-center gap-2 px-4 pb-3 pt-2 overflow-x-auto border-t border-border/50">
-                            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-                                className="h-9 px-3 rounded-xl border border-input bg-transparent text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring shrink-0" />
+                    <div className="border-t border-border/50">
+                        {/* Date navigation row */}
+                        <div className="flex items-center gap-2 px-4 pt-2 pb-2">
+                            <button onClick={() => setFilterDate(addDays(filterDate, -1))}
+                                className="h-9 w-9 rounded-xl border border-input flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent shrink-0">
+                                <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <div className="relative flex-1">
+                                <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                                    className="w-full h-9 px-3 rounded-xl border border-input bg-transparent text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring text-center" />
+                            </div>
+                            <button onClick={() => setFilterDate(addDays(filterDate, 1))}
+                                className="h-9 w-9 rounded-xl border border-input flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent shrink-0">
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                            {/* Reservierungen-Badge für den Tag */}
+                            {(() => {
+                                const dayCount = allReservations.filter(r => r.date === filterDate && r.status !== 'storniert' && !r.is_archived).length;
+                                return dayCount > 0 ? (
+                                    <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 font-semibold">
+                                        {dayCount} Res.
+                                    </span>
+                                ) : (
+                                    <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-secondary border border-border text-muted-foreground">
+                                        Keine
+                                    </span>
+                                );
+                            })()}
+                            {filterDate !== todayStr && (
+                                <button onClick={() => setFilterDate(todayStr)}
+                                    className="shrink-0 text-xs px-2.5 py-1 h-9 rounded-xl border border-input text-muted-foreground hover:text-foreground hover:bg-accent">
+                                    Heute
+                                </button>
+                            )}
+                        </div>
+                        {/* Time + guests + view row */}
+                        <div className="flex items-center gap-2 px-4 pb-3 overflow-x-auto">
                             <input type="time" value={filterTime} onChange={e => setFilterTime(e.target.value)}
                                 className="h-9 px-3 rounded-xl border border-input bg-transparent text-sm text-foreground focus:outline-none w-28 shrink-0" />
                             <div className="relative shrink-0">
@@ -298,6 +340,7 @@ export default function GuestHub() {
                                 <button onClick={() => setPlanView('list')} className={cn('h-9 w-9 rounded-xl border flex items-center justify-center', planView === 'list' ? 'bg-foreground text-background border-foreground' : 'border-border text-muted-foreground')}><List className="w-4 h-4" /></button>
                             </div>
                         </div>
+                    </div>
                     )}
 
                     {/* Room filter for table plan */}
@@ -373,6 +416,7 @@ export default function GuestHub() {
                     reservations={allReservations}
                     checkDate={filterDate}
                     checkTime={filterTime}
+                    isManager={permissions.isManager}
                     onClose={() => setSelectedTable(null)}
                     onEditReservation={(res) => { setSelectedRes(res); setModalOpen(true); setSelectedTable(null); }}
                 />

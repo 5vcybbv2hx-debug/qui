@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
     X, Calendar, Clock, Users, CheckCircle2, Phone, Pencil,
-    ChevronRight, Sparkles, AlertCircle
+    ChevronRight, Sparkles, AlertCircle, ChevronDown
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -60,9 +60,41 @@ export const STATUS_CONFIG = {
     inactive: { label: 'Gesperrt',     color: 'bg-secondary/50 border-border text-muted-foreground', dot: 'bg-muted-foreground' },
 };
 
-export default function QuickReservationSheet({ table, reservations, tables, onClose, onEditReservation, checkDate, checkTime }) {
+// Reservierungsstatus-Farben für Tischkarten
+export const RES_STATUS_CONFIG = {
+    vorgemerkt: { label: 'Vorgemerkt', emoji: '🔵', color: 'bg-blue-500/20 border-blue-500/50 text-blue-400',   dot: 'bg-blue-400' },
+    bestätigt:  { label: 'Bestätigt',  emoji: '🟡', color: 'bg-amber-400/20 border-amber-400/50 text-amber-300', dot: 'bg-amber-300' },
+    erschienen: { label: 'Erschienen', emoji: '🟢', color: 'bg-green-500/20 border-green-500/50 text-green-400', dot: 'bg-green-400' },
+    'no-show':  { label: 'No-Show',    emoji: '🔴', color: 'bg-red-600/20 border-red-600/50 text-red-400',       dot: 'bg-red-500' },
+    storniert:  { label: 'Storniert',  emoji: '⚪', color: 'bg-secondary/50 border-border text-muted-foreground', dot: 'bg-muted-foreground' },
+};
+
+export const STATUS_CYCLE = ['vorgemerkt', 'bestätigt', 'erschienen', 'no-show', 'storniert'];
+
+// Hilfsfunktionen für effektive Tischfarbe/-label (re-used in GuestHubTablesTab)
+export function getEffectiveTableColor(tableStatus, reservation) {
+    if ((tableStatus === 'reserved' || tableStatus === 'soon') && reservation?.status) {
+        return RES_STATUS_CONFIG[reservation.status]?.color || STATUS_CONFIG[tableStatus].color;
+    }
+    return STATUS_CONFIG[tableStatus].color;
+}
+export function getEffectiveTableDot(tableStatus, reservation) {
+    if ((tableStatus === 'reserved' || tableStatus === 'soon') && reservation?.status) {
+        return RES_STATUS_CONFIG[reservation.status]?.dot || STATUS_CONFIG[tableStatus].dot;
+    }
+    return STATUS_CONFIG[tableStatus].dot;
+}
+export function getEffectiveTableLabel(tableStatus, reservation) {
+    if ((tableStatus === 'reserved' || tableStatus === 'soon') && reservation?.status) {
+        return RES_STATUS_CONFIG[reservation.status]?.label || STATUS_CONFIG[tableStatus].label;
+    }
+    return STATUS_CONFIG[tableStatus].label;
+}
+
+export default function QuickReservationSheet({ table, reservations, tables, onClose, onEditReservation, checkDate, checkTime, isManager }) {
     const queryClient = useQueryClient();
     const status = getTableStatus(table, reservations, checkDate, checkTime);
+    const [statusMenuOpen, setStatusMenuOpen] = useState(null);
 
     // Alle Reservierungen des Tages für diesen Tisch (chronologisch)
     const dayReservations = useMemo(() =>
@@ -76,10 +108,6 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
             .sort((a, b) => (a.time || '').localeCompare(b.time || '')),
         [reservations, checkDate, table.table_number]
     );
-
-    // Nächste/aktive Reservierung für Rückwärtskompatibilität
-    const activeReservation = dayReservations.find(r => timesOverlap(r.time, checkTime, 90))
-        || (dayReservations.length > 0 ? dayReservations[0] : null);
 
     const [mode, setMode] = useState(status === 'free' ? 'new' : 'info');
     const [form, setForm] = useState({
@@ -101,21 +129,36 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
         onError: (e) => toast.error('Fehler: ' + e.message)
     });
 
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.Reservation.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['reservations'] });
+            toast.success('Status aktualisiert');
+            setStatusMenuOpen(null);
+        },
+        onError: (e) => toast.error('Fehler: ' + e.message)
+    });
+
     const handleCreate = () => {
         if (!form.customer_name.trim()) { toast.error('Name erforderlich'); return; }
         createMutation.mutate({
             ...form,
             guests: Number(form.guests),
-            table: table.table_number,  // Exakt wie in Table-Entity gespeichert
+            table: table.table_number,
             status: 'vorgemerkt',
             source: 'intern'
         });
     };
 
+    const handleStatusChange = (res, newStatus) => {
+        updateMutation.mutate({ id: res.id, data: { status: newStatus } });
+    };
+
     return (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+        <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative z-10 bg-card border-t border-border rounded-t-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="relative z-10 bg-card border-t border-border rounded-t-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+                onClick={e => { e.stopPropagation(); if (statusMenuOpen) setStatusMenuOpen(null); }}>
                 {/* Handle bar */}
                 <div className="flex justify-center pt-3 pb-1">
                     <div className="w-10 h-1 rounded-full bg-border" />
@@ -156,23 +199,57 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                         )}
                         {dayReservations.map(res => {
                             const isActive = timesOverlap(res.time, checkTime, 90);
+                            const resStatusCfg = RES_STATUS_CONFIG[res.status] || { emoji: '⚪', label: res.status };
                             return (
                                 <div key={res.id} className={cn(
                                     'rounded-xl border p-4 space-y-3',
-                                    isActive
-                                        ? 'border-red-500/40 bg-red-500/10'
-                                        : 'border-border bg-secondary/30'
+                                    isActive ? 'border-red-500/40 bg-red-500/10' : 'border-border bg-secondary/30'
                                 )}>
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
                                             <Users className="w-4 h-4 text-muted-foreground" />
                                             <span className="font-semibold text-foreground">{res.customer_name}</span>
                                         </div>
-                                        {isActive && (
-                                            <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">Jetzt</span>
-                                        )}
+                                        <div className="flex items-center gap-2">
+                                            {isActive && (
+                                                <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">Jetzt</span>
+                                            )}
+                                            {/* Status-Badge mit Dropdown (nur Manager) */}
+                                            <div className="relative" onClick={e => e.stopPropagation()}>
+                                                <button
+                                                    onClick={() => isManager && setStatusMenuOpen(statusMenuOpen === res.id ? null : res.id)}
+                                                    className={cn(
+                                                        'flex items-center gap-1 text-xs px-2 py-1 rounded-full border min-h-[28px]',
+                                                        res.status === 'vorgemerkt' && 'bg-blue-500/20 border-blue-500/40 text-blue-400',
+                                                        res.status === 'bestätigt'  && 'bg-amber-400/20 border-amber-400/40 text-amber-300',
+                                                        res.status === 'erschienen' && 'bg-green-500/20 border-green-500/40 text-green-400',
+                                                        res.status === 'no-show'    && 'bg-red-600/20 border-red-600/40 text-red-400',
+                                                        res.status === 'storniert'  && 'bg-secondary/50 border-border text-muted-foreground',
+                                                    )}
+                                                >
+                                                    {resStatusCfg.emoji} {resStatusCfg.label}
+                                                    {isManager && <ChevronDown className="w-2.5 h-2.5 ml-0.5" />}
+                                                </button>
+                                                {statusMenuOpen === res.id && isManager && (
+                                                    <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-xl shadow-xl overflow-hidden min-w-[160px]">
+                                                        {STATUS_CYCLE.map(s => (
+                                                            <button
+                                                                key={s}
+                                                                onClick={() => handleStatusChange(res, s)}
+                                                                className={cn(
+                                                                    'w-full text-left px-3 py-2.5 text-xs hover:bg-accent transition-colors',
+                                                                    s === res.status && 'font-bold text-foreground bg-accent/50'
+                                                                )}
+                                                            >
+                                                                {RES_STATUS_CONFIG[s]?.emoji} {RES_STATUS_CONFIG[s]?.label || s}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
                                         <div>
                                             <p className="text-xs text-muted-foreground">Uhrzeit</p>
                                             <p className="font-medium text-foreground">{res.time}</p>
@@ -180,10 +257,6 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                                         <div>
                                             <p className="text-xs text-muted-foreground">Personen</p>
                                             <p className="font-medium text-foreground">{res.guests}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground">Status</p>
-                                            <p className="font-medium text-foreground capitalize">{res.status}</p>
                                         </div>
                                     </div>
                                     {res.phone && (
@@ -193,7 +266,7 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                                         </a>
                                     )}
                                     {res.notes && (
-                                        <p className="text-sm text-muted-foreground italic">„{res.notes}"</p>
+                                        <p className="text-sm text-muted-foreground italic">💬 „{res.notes}"</p>
                                     )}
                                     {onEditReservation && (
                                         <Button variant="outline" size="sm" className="w-full gap-2"
@@ -231,6 +304,34 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                             />
                         </div>
 
+                        {/* Time + Guests in one row */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs font-medium text-muted-foreground mb-1 block">Uhrzeit</label>
+                                <input type="time" value={form.time}
+                                    onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
+                                    className="w-full h-12 px-3 rounded-xl border border-input bg-transparent text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-muted-foreground mb-1 block">Personen</label>
+                                <div className="flex items-center gap-2 h-12">
+                                    <button onClick={() => setForm(f => ({ ...f, guests: Math.max(1, f.guests - 1) }))}
+                                        className="w-10 h-10 rounded-xl border border-input text-foreground text-xl flex items-center justify-center hover:bg-accent shrink-0">−</button>
+                                    <span className="text-xl font-bold text-foreground w-6 text-center">{form.guests}</span>
+                                    <button onClick={() => setForm(f => ({ ...f, guests: Math.min(20, f.guests + 1) }))}
+                                        className="w-10 h-10 rounded-xl border border-input text-foreground text-xl flex items-center justify-center hover:bg-accent shrink-0">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Date */}
+                        <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Datum</label>
+                            <input type="date" value={form.date}
+                                onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                                className="w-full h-12 px-3 rounded-xl border border-input bg-transparent text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+                        </div>
+
                         {/* Phone */}
                         <div>
                             <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefon (optional)</label>
@@ -243,50 +344,19 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                             />
                         </div>
 
-                        {/* Date + Time */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="text-xs font-medium text-muted-foreground mb-1 block">Datum</label>
-                                <input type="date" value={form.date}
-                                    onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-                                    className="w-full h-12 px-3 rounded-xl border border-input bg-transparent text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-muted-foreground mb-1 block">Uhrzeit</label>
-                                <input type="time" value={form.time}
-                                    onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
-                                    className="w-full h-12 px-3 rounded-xl border border-input bg-transparent text-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
-                            </div>
-                        </div>
-
-                        {/* Guests */}
-                        <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Personen</label>
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => setForm(f => ({ ...f, guests: Math.max(1, f.guests - 1) }))}
-                                    className="w-12 h-12 rounded-xl border border-input text-foreground text-xl flex items-center justify-center hover:bg-accent">−</button>
-                                <span className="text-xl font-bold text-foreground w-8 text-center">{form.guests}</span>
-                                <button onClick={() => setForm(f => ({ ...f, guests: Math.min(20, f.guests + 1) }))}
-                                    className="w-12 h-12 rounded-xl border border-input text-foreground text-xl flex items-center justify-center hover:bg-accent">+</button>
-                                {form.guests > table.capacity && (
-                                    <span className="text-xs text-amber-400 flex items-center gap-1">
-                                        <AlertCircle className="w-3 h-3" />Über Kapazität
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Notes */}
-                        <div>
-                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Notiz (optional)</label>
-                            <input type="text" value={form.notes}
-                                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                                placeholder="Besondere Wünsche..."
-                                className="w-full h-12 px-4 rounded-xl border border-input bg-transparent text-foreground text-base focus:outline-none focus:ring-1 focus:ring-ring" />
-                        </div>
+                        {form.guests > table.capacity && (
+                            <p className="text-xs text-amber-400 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />Über Tischkapazität ({table.capacity} Pl.)
+                            </p>
+                        )}
 
                         <div className="flex gap-3 pt-2">
-                            <Button variant="outline" className="flex-1 h-12" onClick={onClose}>Abbrechen</Button>
+                            {mode === 'new' && dayReservations.length > 0 && (
+                                <Button variant="outline" className="flex-1 h-12" onClick={() => setMode('info')}>Zurück</Button>
+                            )}
+                            {mode === 'new' && dayReservations.length === 0 && (
+                                <Button variant="outline" className="flex-1 h-12" onClick={onClose}>Abbrechen</Button>
+                            )}
                             <Button
                                 className="flex-1 h-12 gap-2 font-semibold"
                                 onClick={handleCreate}

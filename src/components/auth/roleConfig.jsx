@@ -53,7 +53,10 @@ const M = EMPLOYEE_ROLES;
 export const PERMISSION_MATRIX = {
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
-    canViewDashboard:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    // Aushilfe bekommt kein volles Dashboard — sie sehen nur MeinTag
+    canViewDashboard:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER], terminal: false },
+    // Alle dürfen MeinTag sehen (eigene Schicht-Übersicht)
+    canViewMeinTag:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
 
     // ── Schichten & Kalender ──────────────────────────────────────────────────
     canViewShifts:               { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
@@ -65,13 +68,15 @@ export const PERMISSION_MATRIX = {
     canViewTeamCalendar:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
 
     // ── Reservierungen ────────────────────────────────────────────────────────
-    canViewReservations:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
-    canCreateReservations:       { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
-    canEditReservations:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    // Aushilfe sieht keine Reservierungen
+    canViewReservations:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: true  },
+    canCreateReservations:       { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
+    canEditReservations:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
     canDeleteReservations:       { roles: [M.MANAGER],                                       terminal: false },
 
     // ── Events ───────────────────────────────────────────────────────────────
-    canViewEvents:               { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
+    // Aushilfe sieht keine Events
+    canViewEvents:               { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
     canCreateEvents:             { roles: [M.MANAGER],                                       terminal: false },
     canEditEvents:               { roles: [M.MANAGER],                                       terminal: false },
     canDeleteEvents:             { roles: [M.MANAGER],                                       terminal: false },
@@ -94,18 +99,21 @@ export const PERMISSION_MATRIX = {
     canLinkSuppliers:            { roles: [M.MANAGER, M.BARKEEPER],                          terminal: false },
 
     // ── Einkauf / Auffüllen ───────────────────────────────────────────────────
-    canViewShopping:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
-    canEditShopping:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
-    canViewRestock:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
-    canEditRestock:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    // Aushilfe hat keinen Zugriff auf Einkauf/Auffüllen
+    canViewShopping:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
+    canEditShopping:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
+    canViewRestock:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
+    canEditRestock:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
 
     // ── Reinigung ────────────────────────────────────────────────────────────
-    canViewCleaning:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
-    canEditCleaning:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    // Aushilfe hat keinen Zugriff auf Reinigung
+    canViewCleaning:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
+    canEditCleaning:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
     canDeleteCleaning:           { roles: [M.MANAGER],                                       terminal: false },
     canManageCleaningAreas:      { roles: [M.MANAGER],                                       terminal: false },
 
     // ── Aufgaben ──────────────────────────────────────────────────────────────
+    // Aushilfe sieht keine Aufgaben (nur Barkeeper+ und höher)
     canViewTodos:                { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
     canViewAllTodos:             { roles: [M.MANAGER],                                       terminal: false },
     canCreateTodos:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },

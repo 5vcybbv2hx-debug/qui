@@ -133,7 +133,21 @@ export default function Layout({ children, currentPageName }) {
 
     // Build current mobile nav items for tab navigation hook
     const allNavPages = mainNavigation.flatMap(a => a.pages).concat(additionalPages);
-    const defaultPages = ['Dashboard', 'GuestHub', 'Todos', 'TeamCalendar'];
+
+    // Role-based default bottom tabs
+    const getRoleDefaultTabs = () => {
+        if (permissions.isManager || permissions.isAdmin) {
+            return ['Dashboard', 'GuestHub', 'Todos', 'TeamCalendar'];
+        }
+        if (permissions.canViewTodos) {
+            // Barkeeper: MeinTag, Schichtplan, Cleaning, Todos
+            return ['MeinTag', 'Calendar', 'Cleaning', 'Todos'];
+        }
+        // Aushilfe: MeinTag, Schichtplan, Zeiterfassung
+        return ['MeinTag', 'Calendar', 'TimeManagement'];
+    };
+
+    const defaultPages = getRoleDefaultTabs();
     const currentNavItems = mobileNavPages.length >= 2
         ? mobileNavPages
         : defaultPages.map(p => allNavPages.find(i => i.page === p)).filter(Boolean);

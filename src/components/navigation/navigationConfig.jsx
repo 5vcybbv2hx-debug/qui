@@ -27,7 +27,7 @@ export const mainNavigation = [
         icon: Home,
         pages: [
             { name: 'Übersicht',  page: 'Dashboard', icon: Home,  permission: 'canViewDashboard' },
-            { name: 'Mein Tag',   page: 'MeinTag',   icon: Sun,   permission: 'canViewDashboard' },
+            { name: 'Mein Tag',   page: 'MeinTag',   icon: Sun,   permission: 'canViewMeinTag'   },
         ]
     },
     {
@@ -90,7 +90,7 @@ export const mainNavigation = [
         pages: [
             { name: 'Mitarbeiter',   page: 'Employees',      icon: Users,          permission: 'canViewEmployees'      },
             { name: 'Schichtplan',   page: 'Calendar',       icon: Calendar,       permission: 'canViewShifts'         },
-            { name: 'Teamkalender',  page: 'TeamCalendar',   icon: Calendar,       permission: 'canViewShifts'         },
+            { name: 'Teamkalender',  page: 'TeamCalendar',   icon: Calendar,       permission: 'canViewTeamCalendar'   },
             { name: 'Zeiterfassung', page: 'TimeManagement', icon: Clock,          permission: 'canViewOwnTimeEntries' },
             { name: 'Urlaub',        page: 'Vacation',       icon: Palmtree,       permission: 'canViewVacation' },
             { name: 'Schichttausch', page: 'ShiftSwaps',     icon: ArrowLeftRight, permission: 'canRequestShiftSwap'   },
@@ -114,7 +114,7 @@ export const additionalPages = [
     { name: 'Einstellungen',  page: 'Settings',         icon: Settings,   permission: 'canViewSettings'         },
     { name: 'Firmendaten',    page: 'CompanySettings',  icon: FileText,   permission: 'canEditCompanySettings'  },
     { name: 'Einarbeitung',   page: 'Onboarding',       icon: Users,      permission: 'canViewOnboarding'       },
-    { name: 'Visitenkarte',   page: 'BusinessCard',     icon: QrCode,     permission: 'canViewDashboard'        },
+    { name: 'Visitenkarte',   page: 'BusinessCard',     icon: QrCode,     permission: 'canViewMeinTag'          },
     { name: 'Modulcenter',       page: 'ModuleCenter',     icon: Layers,    permission: 'canViewSettings'        },
     { name: 'Betriebskalender',  page: 'BusinessCalendar', icon: Calendar,       permission: 'canViewSettings'  },
     { name: 'Datenqualität',     page: 'DataQuality',      icon: AlertTriangle,  permission: 'isManager'        },

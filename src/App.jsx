@@ -1,4 +1,6 @@
 import { Toaster } from "@/components/ui/toaster"
+import RoleGuard from '@/components/auth/RoleGuard';
+import { PAGE_PERMISSIONS } from '@/lib/pagePermissions';
 import ConsentDialog from '@/components/legal/ConsentDialog';
 import { useConsent } from '@/components/legal/useConsent';
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -65,43 +67,65 @@ const AuthenticatedApp = () => {
   return (
     <>
     <Routes>
-      {/* Main landing page */}
+      {/* Main landing page — guarded: non-dashboard roles redirect to MeinTag */}
       <Route path="/" element={
         <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
+          <RoleGuard permission="canViewDashboard">
+            <MainPage />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
-      {/* Core pages: all with layout */}
-      {Object.entries(CorePages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
+      {/* Core pages: all with layout + role guard */}
+      {Object.entries(CorePages).map(([path, Page]) => {
+        const requiredPerm = PAGE_PERMISSIONS[path];
+        return (
+          <Route
+            key={path}
+            path={`/${path}`}
+            element={
+              <LayoutWrapper currentPageName={path}>
+                {requiredPerm ? (
+                  <RoleGuard permission={requiredPerm}>
+                    <Page />
+                  </RoleGuard>
+                ) : (
+                  <Page />
+                )}
+              </LayoutWrapper>
+            }
+          />
+        );
+      })}
 
-      {/* Special pages: all with layout */}
-      {Object.entries(SpecialPagesWithLayout).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
+      {/* Special pages: all with layout + role guard */}
+      {Object.entries(SpecialPagesWithLayout).map(([path, Page]) => {
+        const requiredPerm = PAGE_PERMISSIONS[path];
+        return (
+          <Route
+            key={path}
+            path={`/${path}`}
+            element={
+              <LayoutWrapper currentPageName={path}>
+                {requiredPerm ? (
+                  <RoleGuard permission={requiredPerm}>
+                    <Page />
+                  </RoleGuard>
+                ) : (
+                  <Page />
+                )}
+              </LayoutWrapper>
+            }
+          />
+        );
+      })}
 
       {/* Dynamic employee profile route */}
       <Route path="/EmployeeProfile/:id" element={
         <LayoutWrapper currentPageName="EmployeeProfile">
-          <SpecialPagesWithLayout.EmployeeProfile />
+          <RoleGuard permission="canViewEmployees">
+            <SpecialPagesWithLayout.EmployeeProfile />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
@@ -120,56 +144,68 @@ const AuthenticatedApp = () => {
       {/* Admin Zeit-Editor */}
       <Route path="/AdminTimeEditor" element={
         <LayoutWrapper currentPageName="AdminTimeEditor">
-          <AdminTimeEditor />
+          <RoleGuard permission="canViewSettings">
+            <AdminTimeEditor />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
       {/* Datenexport & Migration */}
       <Route path="/DataExport" element={
         <LayoutWrapper currentPageName="DataExport">
-          <DataExport />
+          <RoleGuard permission="canViewSettings">
+            <DataExport />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
-      {/* Mein Tag — Mitarbeiter Tagesansicht */}
+      {/* Mein Tag — alle authentifizierten Nutzer */}
       <Route path="/MeinTag" element={
         <LayoutWrapper currentPageName="MeinTag">
-          <MeinTag />
+          <RoleGuard permission="canViewMeinTag">
+            <MeinTag />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
       {/* Modulcenter — Admin Modulverwaltung */}
       <Route path="/ModuleCenter" element={
         <LayoutWrapper currentPageName="ModuleCenter">
-          <ModuleCenter />
+          <RoleGuard permission="canViewSettings">
+            <ModuleCenter />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
       {/* Datenqualität */}
       <Route path="/DataQuality" element={
         <LayoutWrapper currentPageName="DataQuality">
-          <DataQuality />
+          <RoleGuard permission="isManager">
+            <DataQuality />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
       {/* Betriebskalender & Sondertage */}
       <Route path="/BusinessCalendar" element={
         <LayoutWrapper currentPageName="BusinessCalendar">
-          <BusinessCalendar />
+          <RoleGuard permission="canViewSettings">
+            <BusinessCalendar />
+          </RoleGuard>
         </LayoutWrapper>
       } />
 
-      {/* Buchhaltungsmodul */}
-      <Route path="/AccountingDashboard" element={<LayoutWrapper currentPageName="AccountingDashboard"><AccountingDashboard /></LayoutWrapper>} />
-      <Route path="/AccountingCashbook" element={<LayoutWrapper currentPageName="AccountingCashbook"><AccountingCashbook /></LayoutWrapper>} />
-      <Route path="/AccountingReceipts" element={<LayoutWrapper currentPageName="AccountingReceipts"><AccountingReceipts /></LayoutWrapper>} />
-      <Route path="/AccountingCreditors" element={<LayoutWrapper currentPageName="AccountingCreditors"><AccountingCreditors /></LayoutWrapper>} />
-      <Route path="/AccountingDebitors" element={<LayoutWrapper currentPageName="AccountingDebitors"><AccountingDebitors /></LayoutWrapper>} />
-      <Route path="/AccountingExport" element={<LayoutWrapper currentPageName="AccountingExport"><AccountingExport /></LayoutWrapper>} />
-      <Route path="/AccountingMonthlyClosing" element={<LayoutWrapper currentPageName="AccountingMonthlyClosing"><AccountingMonthlyClosing /></LayoutWrapper>} />
-      <Route path="/AccountingFixedCosts" element={<LayoutWrapper currentPageName="AccountingFixedCosts"><AccountingFixedCosts /></LayoutWrapper>} />
-      <Route path="/AccountingLiabilities" element={<LayoutWrapper currentPageName="AccountingLiabilities"><AccountingLiabilities /></LayoutWrapper>} />
-      <Route path="/AccountingBank" element={<LayoutWrapper currentPageName="AccountingBank"><AccountingBank /></LayoutWrapper>} />
+      {/* Buchhaltungsmodul — nur für Manager */}
+      <Route path="/AccountingDashboard" element={<LayoutWrapper currentPageName="AccountingDashboard"><RoleGuard permission="canViewAccounting"><AccountingDashboard /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingCashbook" element={<LayoutWrapper currentPageName="AccountingCashbook"><RoleGuard permission="canViewAccountingCashbook"><AccountingCashbook /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingReceipts" element={<LayoutWrapper currentPageName="AccountingReceipts"><RoleGuard permission="canViewAccountingReceipts"><AccountingReceipts /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingCreditors" element={<LayoutWrapper currentPageName="AccountingCreditors"><RoleGuard permission="canViewAccountingCreditors"><AccountingCreditors /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingDebitors" element={<LayoutWrapper currentPageName="AccountingDebitors"><RoleGuard permission="canViewAccountingDebitors"><AccountingDebitors /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingExport" element={<LayoutWrapper currentPageName="AccountingExport"><RoleGuard permission="canExportAccounting"><AccountingExport /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingMonthlyClosing" element={<LayoutWrapper currentPageName="AccountingMonthlyClosing"><RoleGuard permission="canCloseAccountingMonth"><AccountingMonthlyClosing /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingFixedCosts" element={<LayoutWrapper currentPageName="AccountingFixedCosts"><RoleGuard permission="canViewAccounting"><AccountingFixedCosts /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingLiabilities" element={<LayoutWrapper currentPageName="AccountingLiabilities"><RoleGuard permission="canViewLiabilities"><AccountingLiabilities /></RoleGuard></LayoutWrapper>} />
+      <Route path="/AccountingBank" element={<LayoutWrapper currentPageName="AccountingBank"><RoleGuard permission="canViewAccounting"><AccountingBank /></RoleGuard></LayoutWrapper>} />
 
       {/* Catch-all */}
       <Route path="*" element={<PageNotFound />} />

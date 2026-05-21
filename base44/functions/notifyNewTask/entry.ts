@@ -1,67 +1,57 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// MEDIUM FIX: This function is called by an entity automation (no user context).
-// It validates the payload structure to prevent misuse when called directly.
-// No auth check is possible here as entity automations don't have a user context,
-// but we validate the expected payload shape to prevent abuse.
+const ONESIGNAL_APP_ID = '664fda20-f8c7-411a-928f-217c855bb2bb';
+
+async function pushToEmployee(employeeId, title, message) {
+    if (!employeeId) return;
+    const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${apiKey}` },
+        body: JSON.stringify({
+            app_id: ONESIGNAL_APP_ID,
+            include_aliases: { external_id: [String(employeeId)] },
+            target_channel: 'push',
+            headings: { en: title, de: title },
+            contents: { en: message, de: message }
+        })
+    });
+    if (!res.ok) console.error('[OneSignal] pushToEmployee error:', await res.text());
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        
         const body = await req.json();
         const { event, data } = body;
 
-        // Validate expected automation payload structure
         if (!event || !event.type || !data) {
             return Response.json({ message: 'Invalid automation payload' }, { status: 400 });
         }
+        if (event.type !== 'create') return Response.json({ message: 'Not a create event' });
+        if (!data.assigned_to) return Response.json({ message: 'Task not assigned to anyone' });
 
-        if (event.type !== 'create') {
-            return Response.json({ message: 'Not a create event' });
-        }
-
-        if (!data.assigned_to) {
-            return Response.json({ message: 'Task not assigned to anyone' });
-        }
-
-        const users = await base44.asServiceRole.entities.User.list();
-        const assignedUser = users.find(u => 
-            u.email === data.assigned_to || u.full_name === data.assigned_to
+        // Find assigned employee by email or name
+        const employees = await base44.asServiceRole.entities.Employee.filter({ is_active: true });
+        const employee = employees.find(e =>
+            e.email === data.assigned_to || e.name === data.assigned_to
         );
+        if (!employee) return Response.json({ message: 'Assigned employee not found' });
 
-        if (!assignedUser) {
-            return Response.json({ message: 'Assigned user not found' });
-        }
+        const title = 'Neue Aufgabe zugewiesen';
+        const message = `Dir wurde die Aufgabe "${data.title}" zugewiesen.`;
 
-        const prefs = assignedUser.notification_preferences || {};
-        if (prefs.tasks_assigned === false) {
-            return Response.json({ message: 'User has disabled task notifications' });
-        }
-
+        // In-app notification
         await base44.asServiceRole.entities.Notification.create({
-            type: 'task',
-            title: 'Neue Aufgabe zugewiesen',
-            message: `Dir wurde die Aufgabe "${data.title}" zugewiesen.`,
-            related_id: data.id,
-            read_by: []
+            type: 'task', title, message, related_id: data.id, read_by: []
         });
 
-        if (assignedUser.push_subscription) {
-            try {
-                await base44.asServiceRole.functions.invoke('sendPushNotification', {
-                    title: 'Neue Aufgabe zugewiesen',
-                    message: `"${data.title}" wurde dir zugewiesen`,
-                    targetRoles: [],
-                    targetEmails: [assignedUser.email]
-                });
-            } catch (error) {
-                console.error('Push notification failed:', error);
-            }
-        }
+        // OneSignal push
+        await pushToEmployee(employee.id, title, message);
 
         return Response.json({ success: true, message: 'Notification sent' });
     } catch (error) {
-        console.error('Error:', error);
+        console.error('[notifyNewTask] Error:', error);
         return Response.json({ error: error.message }, { status: 500 });
     }
 });

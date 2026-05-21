@@ -1,21 +1,34 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Entity automation: fires on Shift create + update
-// Sends push notification to the affected employee
+const ONESIGNAL_APP_ID = '664fda20-f8c7-411a-928f-217c855bb2bb';
+
+async function pushToEmployee(employeeId, title, message) {
+    if (!employeeId) return;
+    const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Key ${apiKey}` },
+        body: JSON.stringify({
+            app_id: ONESIGNAL_APP_ID,
+            include_aliases: { external_id: [String(employeeId)] },
+            target_channel: 'push',
+            headings: { en: title, de: title },
+            contents: { en: message, de: message }
+        })
+    });
+    if (!res.ok) console.error('[OneSignal] pushToEmployee error:', await res.text());
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const body = await req.json();
         const { event, data } = body;
 
-        if (!event || !data) {
-            return Response.json({ message: 'Invalid payload' }, { status: 400 });
-        }
+        if (!event || !data) return Response.json({ message: 'Invalid payload' }, { status: 400 });
 
         const employeeId = data.employee_id;
-        if (!employeeId) {
-            return Response.json({ message: 'No employee_id in shift' });
-        }
+        if (!employeeId) return Response.json({ message: 'No employee_id in shift' });
 
         const isCreate = event.type === 'create';
         const title = isCreate ? 'Neue Schicht eingeplant' : 'Schicht geändert';
@@ -24,17 +37,7 @@ Deno.serve(async (req) => {
         const typeStr = data.shift_type ? ` (${data.shift_type})` : '';
         const message = `${dateStr} ${timeStr}${typeStr}`.trim();
 
-        // Look up employee email
-        let employee = null;
-        try {
-            employee = await base44.asServiceRole.entities.Employee.get(employeeId);
-        } catch (_) {}
-
-        if (!employee?.email) {
-            return Response.json({ message: 'Employee not found or no email' });
-        }
-
-        // Create in-app notification
+        // In-app notification
         await base44.asServiceRole.entities.Notification.create({
             type: isCreate ? 'shift_assigned' : 'shift_updated',
             title,
@@ -43,21 +46,8 @@ Deno.serve(async (req) => {
             read_by: []
         });
 
-        // Send push notification
-        try {
-            const users = await base44.asServiceRole.entities.User.list();
-            const user = users.find(u => u.email === employee.email);
-            if (user?.push_subscription) {
-                await base44.asServiceRole.functions.invoke('sendPushNotification', {
-                    title,
-                    message,
-                    targetEmails: [employee.email],
-                    targetRoles: []
-                });
-            }
-        } catch (pushErr) {
-            console.error('[onShiftChanged] Push failed:', pushErr.message);
-        }
+        // OneSignal push
+        await pushToEmployee(employeeId, title, message);
 
         return Response.json({ success: true });
     } catch (error) {

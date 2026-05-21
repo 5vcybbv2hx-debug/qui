@@ -7,6 +7,11 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import { haptics } from '@/components/utils/haptics';
 import { getHolidaysBW, getHolidayName } from './getHolidays';
 import ShiftBottomSheet from './ShiftBottomSheet';
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const today = new Date();
@@ -25,6 +30,7 @@ function SwipeableShiftCard({ shift, onOpen, onDelete, canEdit }) {
     const startX = useRef(null);
     const [offset, setOffset] = useState(0);
     const [swiping, setSwiping] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
     const DELETE_THRESHOLD = 80;
 
     const handleTouchStart = (e) => {
@@ -39,9 +45,7 @@ function SwipeableShiftCard({ shift, onOpen, onDelete, canEdit }) {
     const handleTouchEnd = () => {
         if (offset < -DELETE_THRESHOLD && canEdit) {
             haptics.medium();
-            if (window.confirm(`Schicht von ${shift.employee_name} löschen?`)) {
-                onDelete(shift.id);
-            }
+            setConfirmOpen(true);
         }
         setOffset(0);
         setSwiping(false);
@@ -49,34 +53,63 @@ function SwipeableShiftCard({ shift, onOpen, onDelete, canEdit }) {
     };
 
     return (
-        <div className="relative overflow-hidden rounded-lg">
-            {/* Delete hint behind card */}
-            <div className="absolute inset-y-0 right-0 flex items-center justify-center w-20 bg-red-600 rounded-lg">
-                <Trash2 className="w-4 h-4 text-white" />
+        <>
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Schicht löschen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Schicht von {shift.employee_name} wird unwiderruflich gelöscht.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700"
+                            onClick={() => onDelete(shift.id)}
+                        >
+                            Löschen
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <div className="relative overflow-hidden rounded-lg">
+                {/* Delete hint behind card */}
+                <div className="absolute inset-y-0 right-0 flex items-center justify-center w-20 bg-red-600 rounded-lg">
+                    <Trash2 className="w-4 h-4 text-white" />
+                </div>
+                {/* Card */}
+                <div
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    onClick={() => { haptics.selection(); onOpen(shift); }}
+                    className="relative min-h-[52px] rounded-lg px-2 py-1.5 flex flex-col justify-center gap-0.5 cursor-pointer active:brightness-90 select-none"
+                    style={{ backgroundColor: shift._color || '#64748b', transform: `translateX(${offset}px)`, transition: swiping ? 'none' : 'transform 0.25s ease' }}
+                >
+                    <p className="text-[11px] font-bold text-white truncate leading-tight">{shift.employee_name}</p>
+                    <p className="text-[10px] text-white/80 font-mono leading-tight">{shift.start_time?.slice(0, 5)}–{shift.end_time?.slice(0, 5)}</p>
+                    {shift.shift_type && (
+                        <span className="text-[9px] text-white/70 truncate leading-tight">{shift.shift_type}</span>
+                    )}
+                </div>
             </div>
-            {/* Card */}
-            <div
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                onClick={() => { haptics.selection(); onOpen(shift); }}
-                className="relative min-h-[52px] rounded-lg px-2 py-1.5 flex flex-col justify-center gap-0.5 cursor-pointer active:brightness-90 select-none"
-                style={{ backgroundColor: shift._color || '#64748b', transform: `translateX(${offset}px)`, transition: swiping ? 'none' : 'transform 0.25s ease' }}
-            >
-                <p className="text-[11px] font-bold text-white truncate leading-tight">{shift.employee_name}</p>
-                <p className="text-[10px] text-white/80 font-mono leading-tight">{shift.start_time?.slice(0, 5)}–{shift.end_time?.slice(0, 5)}</p>
-                {shift.shift_type && (
-                    <span className="text-[9px] text-white/70 truncate leading-tight">{shift.shift_type}</span>
-                )}
-            </div>
-        </div>
+        </>
     );
 }
 
-export default function MobileWeekView({ shifts = [], employees = [], isLoading, onAddShift, onSaveShift, onDeleteShift, onWeekChange }) {
+export default function MobileWeekView({ shifts = [], employees = [], isLoading, onAddShift, onSaveShift, onDeleteShift, weekStart: weekStartProp, onWeekChange }) {
     const permissions = usePermissions();
-    const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+    const [weekStart, setWeekStart] = useState(() => weekStartProp || startOfWeek(new Date(), { weekStartsOn: 1 }));
     const [bottomSheet, setBottomSheet] = useState(null); // shift or null
+
+    // Sync weekStart from parent
+    useEffect(() => {
+        if (weekStartProp && weekStartProp.getTime() !== weekStart.getTime()) {
+            setWeekStart(weekStartProp);
+        }
+    }, [weekStartProp]);
     const [newShiftDay, setNewShiftDay] = useState(null);
     const touchStartX = useRef(null);
     const containerRef = useRef(null);
@@ -135,7 +168,7 @@ export default function MobileWeekView({ shifts = [], employees = [], isLoading,
                 <div className="text-center">
                     <p className="text-sm font-bold text-foreground">{weekLabel}</p>
                     <button
-                        onClick={() => { setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 })); }}
+                        onClick={() => { const ws = startOfWeek(new Date(), { weekStartsOn: 1 }); setWeekStart(ws); onWeekChange?.(ws); }}
                         className="text-[10px] text-primary hover:underline"
                     >
                         Heute
@@ -203,7 +236,7 @@ export default function MobileWeekView({ shifts = [], employees = [], isLoading,
                             <div className="flex-1 p-1 space-y-1 min-h-[80px]">
                                 {isLoading ? (
                                     <ShiftSkeleton />
-                                ) : (
+                                ) : dayShifts.length > 0 ? (
                                     dayShifts.map(shift => (
                                         <SwipeableShiftCard
                                             key={shift.id}
@@ -213,6 +246,15 @@ export default function MobileWeekView({ shifts = [], employees = [], isLoading,
                                             onDelete={onDeleteShift}
                                         />
                                     ))
+                                ) : permissions.canEditShifts ? (
+                                    <button
+                                        onClick={() => { haptics.light(); onAddShift(day); }}
+                                        className="w-full h-10 flex items-center justify-center rounded-lg text-muted-foreground hover:text-primary hover:bg-accent/50 transition-colors"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                    </button>
+                                ) : (
+                                    <p className="text-[9px] text-muted-foreground/50 text-center pt-2">Frei</p>
                                 )}
                             </div>
 

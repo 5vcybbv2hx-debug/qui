@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Users, Filter, X, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -46,24 +46,26 @@ export default function Shifts() {
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
-    // Desktop: load 200 shifts at once
+    // Desktop: load current month ±1 week
     const { data: allShiftsDesktop = [], isLoading: desktopLoading } = useQuery({
         queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 200),
+        queryFn: () => {
+            const now = new Date();
+            const from = format(subWeeks(new Date(now.getFullYear(), now.getMonth(), 1), 1), 'yyyy-MM-dd');
+            const to = format(addWeeks(new Date(now.getFullYear(), now.getMonth() + 1, 0), 1), 'yyyy-MM-dd');
+            return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, '-date', 200);
+        },
         enabled: !isMobile,
     });
 
-    // Mobile: load only ±1 week around current mobile week
+    // Mobile: load only ±1 week around current mobile week — server-side filter
     const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
     const mobileFrom = format(subWeeks(mobileWeekStart, 1), 'yyyy-MM-dd');
     const mobileTo = format(addWeeks(mobileWeekEnd, 1), 'yyyy-MM-dd');
 
     const { data: mobileShifts = [], isLoading: mobileLoading } = useQuery({
         queryKey: ['shifts-mobile', format(mobileWeekStart, 'yyyy-MM-dd')],
-        queryFn: async () => {
-            const all = await base44.entities.Shift.list('-date', 500);
-            return all.filter(s => s.date >= mobileFrom && s.date <= mobileTo);
-        },
+        queryFn: () => base44.entities.Shift.filter({ date_gte: mobileFrom, date_lte: mobileTo }, '-date', 200),
         enabled: isMobile,
         staleTime: 2 * 60 * 1000,
     });
@@ -241,6 +243,7 @@ export default function Shifts() {
                         onAddShift={handleAddShift}
                         onSaveShift={handleSave}
                         onDeleteShift={handleDelete}
+                        weekStart={mobileWeekStart}
                         onWeekChange={(ws) => setMobileWeekStart(ws)}
                     />
                 </div>

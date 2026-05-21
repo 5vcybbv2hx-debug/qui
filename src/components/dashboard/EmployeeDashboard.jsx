@@ -30,12 +30,14 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
         queryFn: () => base44.entities.Shift.list('date', 300)
     });
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', 100)
+        queryKey: ['time-entries', currentEmployee?.id],
+        queryFn: () => base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }),
+        enabled: !!currentEmployee?.id
     });
     const { data: clockEntries = [] } = useQuery({
-        queryKey: ['clock-entries'],
-        queryFn: () => base44.entities.ClockEntry.list('-clock_in')
+        queryKey: ['clock-entries', currentEmployee?.id],
+        queryFn: () => base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }),
+        enabled: !!currentEmployee?.id
     });
     const { data: events = [] } = useQuery({
         queryKey: ['events'],

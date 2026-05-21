@@ -43,17 +43,9 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
         queryKey: ['todos'],
         queryFn: () => base44.entities.TodoItem.filter({ is_archived: false })
     });
-    const { data: shoppingList = [] } = useQuery({
-        queryKey: ['shopping-list'],
-        queryFn: () => base44.entities.ShoppingList.list()
-    });
-    const { data: articles = [] } = useQuery({
-        queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list()
-    });
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', 100)
+        queryKey: ['time-entries-pending'],
+        queryFn: () => base44.entities.TimeEntry.filter({ status: 'eingereicht' }, '-date', 100)
     });
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
@@ -67,6 +59,17 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
         queryKey: ['maintenance-tasks'],
         queryFn: () => base44.entities.MaintenanceTask.filter({ is_active: true })
     });
+    // Sekundäre Daten — nur bei Bedarf (lazy)
+    const { data: shoppingList = [] } = useQuery({
+        queryKey: ['shopping-list'],
+        queryFn: () => base44.entities.ShoppingList.list(),
+        staleTime: 5 * 60 * 1000
+    });
+    const { data: articles = [] } = useQuery({
+        queryKey: ['articles'],
+        queryFn: () => base44.entities.Article.list(),
+        staleTime: 10 * 60 * 1000
+    });
 
     const todayShifts = shifts.filter(s => s.date === today);
     const todayEvents = events.filter(e => e.date === today && e.status !== 'abgesagt');
@@ -75,7 +78,7 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
     const urgentTodos = openTodos.filter(t => t.priority === 'dringend' || t.priority === 'hoch');
     const openShoppingItems = shoppingList.filter(i => i.status === 'offen');
     const lowStockArticles = articles.filter(a => a.min_stock && a.current_stock <= a.min_stock);
-    const pendingTimeEntries = timeEntries.filter(e => e.status === 'eingereicht');
+    const pendingTimeEntries = timeEntries; // bereits gefiltert auf status='eingereicht'
     const pendingVacationRequests = vacationRequests.filter(r => r.status === 'beantragt');
     const urgentMaintenance = maintenanceTasks.filter(t => getTaskStatus(t) === 'überfällig');
     const soonMaintenance   = maintenanceTasks.filter(t => getTaskStatus(t) === 'bald fällig');

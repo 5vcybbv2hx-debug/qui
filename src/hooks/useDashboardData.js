@@ -46,12 +46,18 @@ export function useDashboardData({ isManager, currentEmployee }) {
         queryFn: () => base44.entities.TimeEntry.list('-date', 100),
         staleTime: 2 * 60 * 1000,
     });
-    const { data: pendingTimeEntries = [] } = useQuery({
+    const { data: allTimeEntriesForManager = [] } = useQuery({
         queryKey: ['pending-time-entries'],
-        queryFn: () => base44.entities.TimeEntry.filter({ status: 'eingereicht' }),
+        queryFn: () => base44.entities.TimeEntry.list('-date', 500),
         enabled: isManager,
         staleTime: 2 * 60 * 1000,
     });
+    // Ausstehend = employee bestätigt ABER Manager noch nicht explizit genehmigt
+    // (status='eingereicht' ODER status='genehmigt' ohne manager_approved_by)
+    const pendingTimeEntries = allTimeEntriesForManager.filter(e =>
+        e.employee_confirmed === true &&
+        (e.status === 'eingereicht' || (e.status === 'genehmigt' && !e.manager_approved_by))
+    );
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
         queryFn: () => base44.entities.VacationRequest.list('-created_date', 50),

@@ -15,16 +15,19 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { formatDuration, getShiftWarning } from '@/lib/nightUtils';
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, managerApprovedBy }) {
+  // status='genehmigt' aber kein manager_approved_by → gilt als ausstehend
+  const effectiveStatus = (status === 'genehmigt' && !managerApprovedBy) ? 'ausstehend' : status;
   const cfg = {
     eingereicht: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    ausstehend: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     genehmigt: 'bg-green-500/20 text-green-400 border-green-500/30',
     abgelehnt: 'bg-red-500/20 text-red-400 border-red-500/30',
   };
-  const labels = { eingereicht: 'Eingereicht', genehmigt: 'Genehmigt', abgelehnt: 'Abgelehnt' };
+  const labels = { eingereicht: 'Eingereicht', ausstehend: 'Ausstehend', genehmigt: 'Genehmigt', abgelehnt: 'Abgelehnt' };
   return (
-    <Badge className={cn('text-[10px] border', cfg[status] || 'bg-secondary text-muted-foreground')}>
-      {labels[status] || status}
+    <Badge className={cn('text-[10px] border', cfg[effectiveStatus] || 'bg-secondary text-muted-foreground')}>
+      {labels[effectiveStatus] || effectiveStatus}
     </Badge>
   );
 }
@@ -104,11 +107,23 @@ export default function TimeApprovalPanel() {
     refetchOnWindowFocus: true,
   });
 
-  const pending = allEntries.filter(e => e.status === 'eingereicht');
-  const approved = allEntries.filter(e => e.status === 'genehmigt').slice(0, 10);
+  // Ausstehend: employee bestätigt, aber Manager noch nicht explizit genehmigt
+  const pending = allEntries.filter(e =>
+    e.employee_confirmed === true &&
+    (e.status === 'eingereicht' || (e.status === 'genehmigt' && !e.manager_approved_by))
+  );
+  // Wirklich genehmigt: manager_approved_by gesetzt
+  const approved = allEntries.filter(e => e.status === 'genehmigt' && !!e.manager_approved_by).slice(0, 10);
 
   const approveMutation = useMutation({
-    mutationFn: (id) => base44.entities.TimeEntry.update(id, { status: 'genehmigt' }),
+    mutationFn: async (id) => {
+      const user = await base44.auth.me();
+      return base44.entities.TimeEntry.update(id, {
+        status: 'genehmigt',
+        manager_approved_by: user?.email || user?.full_name || 'Manager',
+        manager_approved_at: new Date().toISOString(),
+      });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['time-entries-all'] });
       qc.invalidateQueries({ queryKey: ['pending-time-entries'] });
@@ -136,14 +151,14 @@ export default function TimeApprovalPanel() {
     return (
       <Card key={entry.id} className={cn(
         'border',
-        entry.status === 'genehmigt' ? 'border-green-500/20 bg-green-500/5' : 'border-border bg-card'
+        (entry.status === 'genehmigt' && !!entry.manager_approved_by) ? 'border-green-500/20 bg-green-500/5' : 'border-border bg-card'
       )}>
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap mb-1">
                 <p className="font-semibold text-foreground text-sm">{entry.employee_name}</p>
-                <StatusBadge status={entry.status} />
+                <StatusBadge status={entry.status} managerApprovedBy={entry.manager_approved_by} />
                 {warn && (
                   <Badge className={cn('text-[10px] border flex items-center gap-1',
                     warn === 'danger' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
@@ -162,7 +177,7 @@ export default function TimeApprovalPanel() {
               {entry.notes && <p className="text-xs text-muted-foreground mt-1 italic">{entry.notes}</p>}
             </div>
 
-            {canApprove && entry.status !== 'genehmigt' && (
+            {canApprove && !(entry.status === 'genehmigt' && !!entry.manager_approved_by) && (
               <div className="flex gap-1 shrink-0">
                 <Button size="sm" variant="outline" onClick={() => setEditingId(isEditing ? null : entry.id)}
                   className="h-8 w-8 p-0">

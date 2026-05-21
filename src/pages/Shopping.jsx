@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
-import { Plus, ShoppingCart, Trash2, Check, Clock, Package, Camera, Search } from 'lucide-react';
+import { Plus, ShoppingCart, Trash2, Check, Clock, Package, Camera, Search, AlertTriangle } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import BarcodeScanner from '../components/restock/BarcodeScanner';
 import KanbanScanModal from '../components/shopping/KanbanScanModal';
 import SmartCombobox from '@/components/ui/SmartCombobox';
+import ArticlePickerSheet from '../components/shopping/ArticlePickerSheet';
 
 const getSupplierColor = (index) => {
     const colors = [
@@ -51,6 +52,7 @@ export default function Shopping() {
     const [activeTab, setActiveTab] = useState('alle');
     const [scannerOpen, setScannerOpen] = useState(false);
     const [kanbanOpen, setKanbanOpen] = useState(false);
+    const [articlePickerOpen, setArticlePickerOpen] = useState(false);
     const [eanInput, setEanInput] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [formData, setFormData] = useState({
@@ -177,6 +179,24 @@ export default function Shopping() {
         }
     };
 
+    const handleArticleAdd = (itemData) => {
+        // Check if already on the open list (by article_id or name)
+        const existing = items.find(i =>
+            i.status === 'offen' && (
+                (itemData.article_id && i.article_id === itemData.article_id) ||
+                i.item_name === itemData.item_name
+            )
+        );
+        if (existing) {
+            updateMutation.mutate({
+                id: existing.id,
+                data: { ...existing, quantity: parseFloat(existing.quantity || 0) + itemData.quantity }
+            });
+        } else {
+            createMutation.mutate(itemData);
+        }
+    };
+
     const handleDeleteReceived = async () => {
         if (confirm(`${receivedItems.length} erledigte Artikel wirklich löschen?`)) {
             for (const item of receivedItems) {
@@ -252,6 +272,23 @@ export default function Shopping() {
         setEanInput(barcode);
     };
 
+    // Low-stock articles not yet on the open shopping list
+    const lowStockSuggestions = useMemo(() => {
+        return articles.filter(a => {
+            if (a.is_active === false) return false;
+            if (a.min_stock == null || a.current_stock == null) return false;
+            if (a.current_stock > a.min_stock) return false;
+            // Already on open list?
+            const onList = items.some(i =>
+                i.status === 'offen' && (
+                    (a.id && i.article_id === a.id) ||
+                    i.item_name === a.name
+                )
+            );
+            return !onList;
+        });
+    }, [articles, items]);
+
     const filteredItems = activeTab === 'alle' 
         ? items 
         : items.filter(item => item.category === activeTab);
@@ -277,7 +314,14 @@ export default function Shopping() {
                             </p>
                         </div>
                         {permissions.canEditShopping && (
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
+                                <Button
+                                    onClick={() => setArticlePickerOpen(true)}
+                                    className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold"
+                                >
+                                    <Search className="w-4 h-4 mr-2" />
+                                    Artikel hinzufügen
+                                </Button>
                                 <Button
                                     onClick={() => setKanbanOpen(true)}
                                     variant="outline"
@@ -296,7 +340,8 @@ export default function Shopping() {
                                 </Button>
                                 <Button 
                                     onClick={() => openModal()}
-                                    className="bg-amber-600 hover:bg-amber-700"
+                                    variant="outline"
+                                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
                                 >
                                     <Plus className="w-4 h-4 mr-2" />
                                     Manuell
@@ -337,6 +382,54 @@ export default function Shopping() {
                     </TabsList>
 
                     <TabsContent value={activeTab} className="space-y-6">
+
+                        {/* Low-stock suggestions */}
+                        {lowStockSuggestions.length > 0 && activeTab === 'alle' && (
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                                    <h3 className="text-sm font-semibold text-orange-400 uppercase tracking-wider">
+                                        Nachbestellen ({lowStockSuggestions.length})
+                                    </h3>
+                                </div>
+                                <div className="grid gap-2">
+                                    {lowStockSuggestions.map(article => (
+                                        <div key={article.id} className="flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30">
+                                            <div className="w-10 h-10 rounded-lg bg-secondary flex-shrink-0 overflow-hidden">
+                                                {article.image_url ? (
+                                                    <img src={article.image_url} alt={article.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <Package className="w-4 h-4 text-muted-foreground" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-foreground truncate">{article.name}</p>
+                                                <p className="text-xs text-orange-400">
+                                                    Bestand: {article.current_stock} / Minimum: {article.min_stock} {article.content_unit || ''}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleArticleAdd({
+                                                    article_id: article.id,
+                                                    item_name: article.name,
+                                                    category: article.supplier_details?.find(s => s.is_primary)?.supplier_name || article.suppliers?.[0] || suppliers[0]?.name || '',
+                                                    quantity: Math.max(1, (article.min_stock || 1) - (article.current_stock || 0)),
+                                                    unit: article.content_unit || 'Stück',
+                                                    status: 'offen',
+                                                    notes: 'Mindestbestand unterschritten'
+                                                })}
+                                                className="h-10 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors flex-shrink-0"
+                                            >
+                                                + Übernehmen
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Open Items */}
                         {openItems.length > 0 && (
                             <div>
@@ -350,12 +443,12 @@ export default function Shopping() {
                                                 <div className="flex-1">
                                                     <div className="flex items-start gap-3 mb-2">
                                                         {(() => {
-                                                            const article = articles.find(a => a.name === item.item_name);
+                                                            const article = articles.find(a => (item.article_id && a.id === item.article_id) || a.name === item.item_name);
                                                             return article?.image_url ? (
                                                                 <img 
                                                                     src={article.image_url} 
                                                                     alt={item.item_name}
-                                                                    className="w-16 h-16 object-cover rounded"
+                                                                    className="w-12 h-12 object-cover rounded-lg flex-shrink-0"
                                                                 />
                                                             ) : null;
                                                         })()}
@@ -640,6 +733,18 @@ export default function Shopping() {
                     open={kanbanOpen}
                     onClose={() => setKanbanOpen(false)}
                     suppliers={activeSuppliers}
+                />
+
+                {/* Article Picker Bottom Sheet */}
+                <ArticlePickerSheet
+                    open={articlePickerOpen}
+                    onClose={() => setArticlePickerOpen(false)}
+                    articles={articles}
+                    suppliers={activeSuppliers}
+                    onAdd={(itemData) => {
+                        handleArticleAdd(itemData);
+                        // Keep sheet open for adding multiple
+                    }}
                 />
             </div>
         </div>

@@ -1,0 +1,45 @@
+{
+  "name": "ShoppingList",
+  "type": "object",
+  "properties": {
+    "article_id": {
+      "type": "string",
+      "description": "Referenz auf Article (optional)"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Artikelname"
+    },
+    "category": {
+      "type": "string",
+      "description": "Lieferant/Gro\u00dfh\u00e4ndler"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Menge"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Einheit (z.B. St\u00fcck, Liter, kg)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "bestellt",
+        "erhalten"
+      ],
+      "default": "offen",
+      "description": "Status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": [
+    "item_name",
+    "category",
+    "quantity"
+  ]
+}

@@ -14,12 +14,14 @@ const STATUS_STYLES = {
     'vorgemerkt': 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
     'bestätigt':  'bg-green-500/15  text-green-400  border-green-500/30',
     'storniert':  'bg-slate-500/15  text-slate-400  border-slate-500/30',
+    'no-show':    'bg-red-500/15    text-red-400    border-red-500/30',
 };
 
 const STATUS_LABELS = {
     'vorgemerkt': 'Vorgemerkt',
     'bestätigt':  'Bestätigt',
     'storniert':  'Storniert',
+    'no-show':    'No-Show',
 };
 
 const PATTERN_LABELS = {

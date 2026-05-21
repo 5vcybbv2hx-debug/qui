@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format, isSameDay } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { RES_KEYS } from '@/features/reservations/hooks/useReservations';
 import { Switch } from "@/components/ui/switch";
 import { haptics } from "@/components/utils/haptics";
 import { cn } from '@/lib/utils';
@@ -60,11 +61,8 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
         enabled: open
     });
 
-    const { data: allReservations = [] } = useQuery({
-        queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 300),
-        enabled: open
-    });
+    // Nutze Cache statt zweitem API-Call
+    const allReservations = queryClient.getQueryData(RES_KEYS.active) ?? [];
 
     const sortedTables = useMemo(() =>
         [...allTables]
@@ -328,6 +326,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                                 <SelectItem value="vorgemerkt">Vorgemerkt</SelectItem>
                                 <SelectItem value="bestätigt">Bestätigt</SelectItem>
                                 <SelectItem value="storniert">Storniert</SelectItem>
+                                <SelectItem value="no-show">No-Show</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

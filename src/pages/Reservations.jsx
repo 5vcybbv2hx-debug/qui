@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, parseISO, addDays } from 'date-fns';
 import { Plus, Download, Search, Calendar } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -12,14 +12,19 @@ import ReservationModal from '@/components/reservations/ReservationModal';
 import ReservationCard from '@/components/reservations/ReservationCard';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import { useReservationLifecycle } from '@/features/reservations/hooks/useReservationLifecycle';
-import { RES_KEYS } from '@/features/reservations/hooks/useReservations';
-import { STALE } from '@/lib/queryUtils';
+import { useReservations, RES_KEYS } from '@/features/reservations/hooks/useReservations';
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const STATUS_FILTERS = [
     { value: 'alle',        label: 'Alle' },
     { value: 'bestätigt',   label: 'Bestätigt' },
     { value: 'vorgemerkt',  label: 'Vorgemerkt' },
     { value: 'storniert',   label: 'Storniert' },
+    { value: 'no-show',     label: 'No-Show' },
 ];
 
 export default function Reservations() {
@@ -30,13 +35,10 @@ export default function Reservations() {
     const [searchTerm, setSearchTerm]     = useState('');
     const [modalOpen, setModalOpen]         = useState(false);
     const [selectedRes, setSelectedRes]     = useState(null);
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
     // ── Data ────────────────────────────────────────────────────────────────
-    const { data: allReservations = [], isLoading } = useQuery({
-        queryKey: RES_KEYS.active,
-        queryFn:  () => base44.entities.Reservation.list('-date', 300),
-        staleTime: STALE.MEDIUM,
-    });
+    const { data: allReservations = [], isLoading } = useReservations();
 
     const { data: tables = [] } = useQuery({
         queryKey: ['tables'],
@@ -87,9 +89,14 @@ export default function Reservations() {
 
     const handleDelete = (id) => {
         if (!permissions.canDeleteReservations) return;
-        if (!confirm('Reservierung wirklich löschen?')) return;
-        deleteMutation.mutate(id);
+        setDeleteConfirmId(id);
+    };
+
+    const confirmDelete = () => {
+        if (!deleteConfirmId) return;
+        deleteMutation.mutate(deleteConfirmId);
         setModalOpen(false);
+        setDeleteConfirmId(null);
     };
 
     const handleArchive = (id, isArchived) =>
@@ -111,15 +118,21 @@ export default function Reservations() {
             'X-WR-TIMEZONE:Europe/Berlin',
         ];
         active.filter(r => r.status !== 'storniert').forEach(res => {
-            const d = res.date.replace(/-/g, '');
-            const t = (res.time ?? '19:00').replace(':', '') + '00';
-            const eh = String((parseInt((res.time ?? '19:00').split(':')[0]) + 2) % 24).padStart(2, '0');
-            const et = eh + (res.time ?? '19:00').split(':')[1] + '00';
+            const timeStr = res.time ?? '19:00';
+            const [hh, mm] = timeStr.split(':').map(Number);
+            // Start datetime
+            const startDate = parseISO(res.date);
+            startDate.setHours(hh, mm, 0, 0);
+            // End datetime: +2h, properly rolls over midnight
+            const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+
+            const fmt = (d) => format(d, "yyyyMMdd'T'HHmmss");
             lines.push(
                 'BEGIN:VEVENT',
                 `UID:res-${res.id}@barmanager.app`,
                 `DTSTAMP:${format(new Date(), "yyyyMMdd'T'HHmmss'Z'")}`,
-                `DTSTART:${d}T${t}`, `DTEND:${d}T${et}`,
+                `DTSTART:${fmt(startDate)}`,
+                `DTEND:${fmt(endDate)}`,
                 `SUMMARY:${res.customer_name} (${res.guests} P.)`,
                 `DESCRIPTION:${res.guests} Personen${res.table ? ' – Tisch ' + res.table : ''}${res.phone ? '\\nTel: ' + res.phone : ''}`,
                 'STATUS:CONFIRMED', 'END:VEVENT'
@@ -275,6 +288,24 @@ export default function Reservations() {
                 onDelete={handleDelete}
                 canDelete={permissions.canDeleteReservations}
             />
+
+            {/* ── Delete confirm ────────────────────────────────────────── */}
+            <AlertDialog open={!!deleteConfirmId} onOpenChange={(o) => { if (!o) setDeleteConfirmId(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Reservierung löschen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Diese Aktion kann nicht rückgängig gemacht werden.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={confirmDelete}>
+                            Löschen
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

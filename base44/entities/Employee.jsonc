@@ -19,7 +19,8 @@
       "enum": [
         "Aushilfe",
         "Vollzeit",
-        "Manager"
+        "Manager",
+        "Orga"
       ],
       "description": "Position in der Bar"
     },
@@ -30,6 +31,10 @@
     "calendar_token": {
       "type": "string",
       "description": "Pers\u00f6nlicher Token f\u00fcr Kalender-Abo (ohne Login)"
+    },
+    "profile_image_url": {
+      "type": "string",
+      "description": "URL des Profilfotos"
     },
     "skills": {
       "type": "array",

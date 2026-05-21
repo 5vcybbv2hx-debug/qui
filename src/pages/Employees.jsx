@@ -30,6 +30,7 @@ import { createNotification } from '@/utils/createNotification';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import SignaturePad from '@/components/employees/SignaturePad';
+import EmployeeAvatar from '@/components/employees/EmployeeAvatar';
 
 const COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#84cc16', 
@@ -477,12 +478,7 @@ export default function Employees() {
                             className="p-4 sm:p-5 bg-card border-border shadow-sm"
                         >
                             <div className="flex items-center gap-3 mb-4">
-                                <div 
-                                    className="w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold text-lg shrink-0"
-                                    style={{ backgroundColor: employee.color || '#64748b' }}
-                                >
-                                    {employee.name?.charAt(0).toUpperCase()}
-                                </div>
+                                <EmployeeAvatar employee={employee} size="sm" />
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-foreground truncate">{employee.name}</h3>
                                     {(canViewDetails(employee) || permissions.isManager) && (
@@ -727,12 +723,7 @@ export default function Employees() {
                                         className="p-4 bg-card/50 border-border opacity-60"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div 
-                                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
-                                                style={{ backgroundColor: employee.color || '#64748b' }}
-                                            >
-                                                {employee.name?.charAt(0).toUpperCase()}
-                                            </div>
+                                            <EmployeeAvatar employee={employee} size="sm" />
                                             <div className="flex-1">
                                                 <p className="font-medium text-slate-300">{employee.name}</p>
                                                 <p className="text-xs text-slate-500">{employee.role}</p>

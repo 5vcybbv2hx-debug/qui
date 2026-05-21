@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Save, Loader2, User, FileText, Shield, CreditCard, Phone } from 'lucide-react';
 import SignaturePad from './SignaturePad';
 import PermissionsManager from './PermissionsManager';
+import EmployeeAvatar from './EmployeeAvatar';
 
 const TABS = [
   { id: 'allgemein',   label: 'Allgemein',            icon: User },
@@ -164,6 +165,19 @@ export default function PersonalBogenForm({ employee, onSave, isLoading = false,
         {/* ── Tab 1: Allgemein ── */}
         {activeTab === 'allgemein' && (
           <div className="space-y-4">
+            {/* Profilfoto */}
+            <div className="flex flex-col items-center gap-2 pb-2">
+              <EmployeeAvatar
+                employee={formData}
+                size="md"
+                upload={isEditable}
+                onUploaded={(url) => handleChange('profile_image_url', url)}
+              />
+              {isEditable && (
+                <p className="text-xs text-muted-foreground">Foto antippen zum Ändern</p>
+              )}
+            </div>
+
             <SectionTitle>Basisdaten</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <TextField label="Name" field="name" {...f} />

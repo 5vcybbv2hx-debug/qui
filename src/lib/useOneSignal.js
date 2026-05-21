@@ -26,14 +26,7 @@ export function useOneSignal({ employeeId, isAuthenticated }) {
                     notifyButton: { enable: false },
                 });
 
-                // Nur einmal um Erlaubnis fragen
-                const alreadyAsked = localStorage.getItem(PERM_ASKED_KEY);
-                if (!alreadyAsked) {
-                    await OneSignal.Notifications.requestPermission();
-                    localStorage.setItem(PERM_ASKED_KEY, '1');
-                }
-
-                // Employee-ID als External User ID setzen
+                // Employee-ID als External User ID setzen (Permission wird via PushPermissionPrompt angefragt)
                 await OneSignal.login(String(employeeId));
             } catch (err) {
                 console.error('[OneSignal] Init error:', err);

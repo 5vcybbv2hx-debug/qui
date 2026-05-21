@@ -29,6 +29,7 @@ import { useAnalytics } from '@/components/analytics/useAnalytics';
 import BarAssistant from '@/components/assistant/BarAssistant';
 import DesktopQuickBar from '@/components/navigation/DesktopQuickBar';
 import { useOneSignal, oneSignalLogout } from '@/lib/useOneSignal';
+import PushPermissionPrompt from '@/components/pwa/PushPermissionPrompt';
 
 export default function Layout({ children, currentPageName }) {
     // ── State ────────────────────────────────────────────────────────────────
@@ -482,6 +483,9 @@ export default function Layout({ children, currentPageName }) {
                         </div>
                     </DrawerContent>
                 </Drawer>
+
+                {/* Push-Benachrichtigungen Einmal-Prompt */}
+                <PushPermissionPrompt employeeId={permissions.employeeId} isAuthenticated={!!currentUser} />
 
                 {/* KI-Assistent (nur Manager) */}
                 <BarAssistant isManager={permissions.isManager} />

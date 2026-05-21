@@ -113,6 +113,10 @@
       "type": "string",
       "description": "Email-Adresse f\u00fcr Lohnb\u00fcro-Reports"
     },
+    "whatsapp_group_link": {
+      "type": "string",
+      "description": "WhatsApp-Gruppenlink f\u00fcr das Team"
+    },
     "last_updated": {
       "type": "string",
       "format": "date-time",

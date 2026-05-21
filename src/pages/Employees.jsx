@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
-import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive, ContactRound } from 'lucide-react';
+import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive, ContactRound, ExternalLink } from 'lucide-react';
 import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
 import EmployeePersonalFormExport from '@/components/employees/EmployeePersonalFormExport';
 import RVBefreiungExport from '@/components/employees/RVBefreiungExport';
@@ -53,6 +54,7 @@ const roleColors = {
 export default function Employees() {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [formData, setFormData] = useState({
@@ -96,7 +98,15 @@ export default function Employees() {
     const [showInactive, setShowInactive] = useState(false);
     const [deleteDialogEmployee, setDeleteDialogEmployee] = useState(null);
     
-    const [whatsappGroupLink, setWhatsappGroupLink] = useState('https://chat.whatsapp.com/FrOmvmQFvvBJvqo4CJaBPA');
+    const { data: companyInfo } = useQuery({
+        queryKey: ['company-info'],
+        queryFn: async () => {
+            const res = await base44.entities.CompanyInfo.list('-last_updated', 1);
+            return res?.[0] || null;
+        },
+        staleTime: 10 * 60 * 1000
+    });
+    const whatsappGroupLink = companyInfo?.whatsapp_group_link || '';
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
@@ -780,17 +790,7 @@ export default function Employees() {
                                 <p className="text-xs text-muted-foreground">Klicken zum Foto hochladen</p>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Mitarbeiternummer</Label>
-                                <Input
-                                    value={formData.employee_number}
-                                    onChange={(e) => setFormData({ ...formData, employee_number: e.target.value })}
-                                    placeholder="z.B. MA-001"
-                                    disabled={!permissions.isAdmin}
-                                    className={!permissions.isAdmin ? "bg-slate-700 text-slate-400" : ""}
-                                />
-                            </div>
-
+                            {/* Basis-Felder */}
                             <div className="space-y-2">
                                 <Label>Name *</Label>
                                 <Input
@@ -802,167 +802,20 @@ export default function Employees() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Spitzname (für alte Einträge im Kalender)</Label>
-                                <Input
-                                    value={formData.short_name}
-                                    onChange={(e) => setFormData({ ...formData, short_name: e.target.value })}
-                                    placeholder="z.B. An Na, Ana"
-                                />
-                                <p className="text-xs text-muted-foreground">Falls der Name im Schichtkalender falsch angezeigt wird, hier den gespeicherten Spitznamen eintragen.</p>
-                            </div>
-
-                            <div className="space-y-2">
                                 <Label>Position</Label>
                                 {permissions.isManager ? (
                                     <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Aushilfe">Aushilfe</SelectItem>
                                             <SelectItem value="Vollzeit">Vollzeit</SelectItem>
                                             <SelectItem value="Manager">Manager</SelectItem>
+                                            <SelectItem value="Orga">Orga</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <Input
-                                        value={formData.role}
-                                        disabled
-                                        className="bg-slate-700 text-slate-400"
-                                    />
+                                    <Input value={formData.role} disabled className="bg-slate-700 text-slate-400" />
                                 )}
-                            </div>
-
-                            {permissions.isManager && (
-                                <div className="space-y-2">
-                                    <Label>Spezielle Fähigkeiten (nur für Manager sichtbar)</Label>
-                                    <div className="flex flex-col gap-2 p-3 bg-slate-900 rounded-lg border border-slate-700">
-                                        {['Barkeeper', 'Service', 'Sonderaufgaben'].map(skill => (
-                                            <label key={skill} className="flex items-center gap-2 cursor-pointer">
-                                                <Checkbox
-                                                    checked={formData.skills?.includes(skill)}
-                                                    onCheckedChange={(checked) => {
-                                                        const newSkills = checked
-                                                            ? [...(formData.skills || []), skill]
-                                                            : (formData.skills || []).filter(s => s !== skill);
-                                                        setFormData({ ...formData, skills: newSkills });
-                                                    }}
-                                                />
-                                                <span className="text-sm text-slate-300">{skill}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-2">
-                                    <Label>Vertragsart</Label>
-                                    {permissions.isAdmin ? (
-                                        <Select 
-                                            value={formData.contract_type} 
-                                            onValueChange={(v) => {
-                                                // Finde passendes Arbeitszeitmodell
-                                                const model = workTimeModels.find(m => 
-                                                    m.name.toLowerCase().includes(v.toLowerCase()) && m.is_active !== false
-                                                );
-                                                
-                                                setFormData({ 
-                                                    ...formData, 
-                                                    contract_type: v,
-                                                    hourly_rate: model?.default_hourly_rate || (v === 'Minijob' ? HOURLY_RATES.MINIJOB : HOURLY_RATES.FULLTIME),
-                                                    vacation_days_per_year: model?.vacation_days || formData.vacation_days_per_year
-                                                });
-                                            }}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Wählen..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Vollzeit">Vollzeit</SelectItem>
-                                                <SelectItem value="Teilzeit">Teilzeit</SelectItem>
-                                                <SelectItem value="Minijob">Minijob</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <Input
-                                            value={formData.contract_type || 'Nicht festgelegt'}
-                                            disabled
-                                            className="bg-slate-700 text-slate-400"
-                                        />
-                                    )}
-                                    {permissions.isAdmin && formData.contract_type && workTimeModels.length > 0 && (() => {
-                                        const model = workTimeModels.find(m => 
-                                            m.name.toLowerCase().includes(formData.contract_type.toLowerCase()) && m.is_active !== false
-                                        );
-                                        return model ? (
-                                            <p className="text-xs text-slate-500">
-                                                📋 Modell: {model.name} · Standard {model.default_hourly_rate.toFixed(2)} € · Min. {model.min_hourly_rate.toFixed(2)} €
-                                            </p>
-                                        ) : null;
-                                    })()}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Stundensatz (€)</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        value={formData.hourly_rate}
-                                        onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
-                                        placeholder="z.B. 13.50"
-                                        disabled={!permissions.isAdmin}
-                                        className={!permissions.isAdmin ? "bg-slate-700 text-slate-400" : ""}
-                                    />
-                                    {permissions.isAdmin && (
-                                        <p className="text-xs text-slate-500">
-                                            Standard: Vollzeit/Teilzeit {HOURLY_RATES.FULLTIME}€ • Minijob {HOURLY_RATES.MINIJOB}€
-                                        </p>
-                                    )}
-                                </div>
-                                </div>
-
-                                {formData.contract_type === 'Vollzeit' && (
-                                <div className="space-y-2">
-                                    <Label>Urlaubstage pro Jahr</Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.vacation_days_per_year}
-                                        onChange={(e) => setFormData({ ...formData, vacation_days_per_year: e.target.value })}
-                                        placeholder="z.B. 30"
-                                    />
-                                </div>
-                                )}
-
-                            <div className="space-y-2">
-                                <Label>E-Mail (für Einladung)</Label>
-                                <Input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="name@beispiel.de"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Mobilfunknummer</Label>
-                                <Input
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+49 123 456789"
-                                />
-                                <p className="text-xs text-slate-500">
-                                    Wird für Anrufe und WhatsApp verwendet
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Geburtsdatum</Label>
-                                <Input
-                                    type="date"
-                                    value={formData.birthday}
-                                    onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-                                />
                             </div>
 
                             <div className="space-y-2">
@@ -983,249 +836,95 @@ export default function Employees() {
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t space-y-4">
-                                <h4 className="font-semibold text-slate-800">Weitere Daten</h4>
-                                
-                                <div className="space-y-2">
-                                    <Label>Eintrittsdatum</Label>
-                                    <Input
-                                        type="date"
-                                        value={formData.entry_date}
-                                        onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label>Telefon</Label>
+                                <Input
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    placeholder="+49 123 456789"
+                                />
+                            </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label>T-Shirt (Dienstkleidung)</Label>
-                                        <select
-                                            value={formData.tshirt_size}
-                                            onChange={(e) => setFormData({ ...formData, tshirt_size: e.target.value })}
-                                            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                        >
-                                            <option value="">Größe wählen...</option>
-                                            {['XS','S','M','L','XL','XXL','XXXL'].map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Pullover (Dienstkleidung)</Label>
-                                        <select
-                                            value={formData.pullover_size}
-                                            onChange={(e) => setFormData({ ...formData, pullover_size: e.target.value })}
-                                            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                        >
-                                            <option value="">Größe wählen...</option>
-                                            {['XS','S','M','L','XL','XXL','XXXL'].map(s => <option key={s} value={s}>{s}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Straße und Hausnummer</Label>
-                                    <Input
-                                        value={formData.street}
-                                        onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                                        placeholder="Musterstraße 123"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label>PLZ</Label>
-                                        <Input
-                                            value={formData.postal_code}
-                                            onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                                            placeholder="12345"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Wohnort</Label>
-                                        <Input
-                                            value={formData.city}
-                                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                            placeholder="Berlin"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label>Geburtsname</Label>
-                                        <Input
-                                            value={formData.birth_name}
-                                            onChange={(e) => setFormData({ ...formData, birth_name: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Geburtsort</Label>
-                                        <Input
-                                            value={formData.birth_place}
-                                            onChange={(e) => setFormData({ ...formData, birth_place: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Nationalität</Label>
-                                    <Input
-                                        value={formData.nationality}
-                                        onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                                        placeholder="z.B. Deutsch"
-                                    />
-                                </div>
+                            <div className="space-y-2">
+                                <Label>E-Mail</Label>
+                                <Input
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    placeholder="name@beispiel.de"
+                                />
                             </div>
 
                             {permissions.isManager && (
-                                <div className="pt-4 border-t space-y-4">
-                                    <h4 className="font-semibold text-foreground">Beschäftigung & Versicherung</h4>
-
+                                <>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="space-y-2">
-                                            <Label>Tätigkeit</Label>
-                                            <Input
-                                                value={formData.activity}
-                                                onChange={(e) => setFormData({ ...formData, activity: e.target.value })}
-                                                placeholder="z.B. Barkeeper"
-                                            />
+                                            <Label>Vertragsart</Label>
+                                            <Select
+                                                value={formData.contract_type}
+                                                onValueChange={(v) => {
+                                                    const model = workTimeModels.find(m =>
+                                                        m.name.toLowerCase().includes(v.toLowerCase()) && m.is_active !== false
+                                                    );
+                                                    setFormData({
+                                                        ...formData,
+                                                        contract_type: v,
+                                                        hourly_rate: model?.default_hourly_rate || (v === 'Minijob' ? HOURLY_RATES.MINIJOB : HOURLY_RATES.FULLTIME),
+                                                    });
+                                                }}
+                                            >
+                                                <SelectTrigger><SelectValue placeholder="Wählen..." /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Vollzeit">Vollzeit</SelectItem>
+                                                    <SelectItem value="Teilzeit">Teilzeit</SelectItem>
+                                                    <SelectItem value="Minijob">Minijob</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Wöchentl. Arbeitszeit (h)</Label>
+                                            <Label>Stundensatz (€)</Label>
                                             <Input
                                                 type="number"
-                                                value={formData.weekly_hours}
-                                                onChange={(e) => setFormData({ ...formData, weekly_hours: e.target.value })}
+                                                step="0.01"
+                                                value={formData.hourly_rate}
+                                                onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
+                                                placeholder="z.B. 13.50"
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <Label>Ausbildung</Label>
-                                        <Input
-                                            value={formData.education}
-                                            onChange={(e) => setFormData({ ...formData, education: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-2">
-                                            <Label>Steuer-ID</Label>
-                                            <Input
-                                                value={formData.tax_id}
-                                                onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                                    {selectedEmployee && permissions.isManager && (
+                                        <div className="flex items-center justify-between py-2">
+                                            <Label>Aktiv</Label>
+                                            <Switch
+                                                checked={formData.is_active}
+                                                onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label>Rentenversicherungsnr.</Label>
-                                            <Input
-                                                value={formData.pension_number}
-                                                onChange={(e) => setFormData({ ...formData, pension_number: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>Krankenkasse</Label>
-                                        <Input
-                                            value={formData.health_insurance}
-                                            onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2 p-3 bg-secondary/50 rounded-lg">
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <Checkbox checked={formData.pension_exemption} onCheckedChange={(c) => setFormData({...formData, pension_exemption: c})} />
-                                            <span className="text-sm">Befreiungsantrag Rentenversicherung</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <Checkbox checked={formData.has_main_job} onCheckedChange={(c) => setFormData({...formData, has_main_job: c})} />
-                                            <span className="text-sm">Versicherungspflichtige Hauptbeschäftigung</span>
-                                        </label>
-                                        <label className="flex items-center gap-2 cursor-pointer">
-                                            <Checkbox checked={formData.has_other_minijob} onCheckedChange={(c) => setFormData({...formData, has_other_minijob: c})} />
-                                            <span className="text-sm">Weitere geringfügige Beschäftigung</span>
-                                        </label>
-                                        {formData.has_other_minijob && (
-                                            <Input
-                                                value={formData.other_minijob_details}
-                                                onChange={(e) => setFormData({...formData, other_minijob_details: e.target.value})}
-                                                placeholder="Seit wann und mit welchem Verdienst?"
-                                            />
-                                        )}
-                                    </div>
-
-                                    <h4 className="font-semibold text-foreground pt-2">Bankverbindung</h4>
-
-                                    <div className="space-y-2">
-                                        <Label>Kreditinstitut</Label>
-                                        <Input
-                                            value={formData.bank_name}
-                                            onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-2">
-                                            <Label>IBAN</Label>
-                                            <Input
-                                                value={formData.iban}
-                                                onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
-                                                placeholder="DE89 3704 ..."
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>BIC</Label>
-                                            <Input
-                                                value={formData.bic}
-                                                onChange={(e) => setFormData({ ...formData, bic: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Unterschrift Arbeitnehmer - für eigenes Profil */}
-                            {selectedEmployee && isOwnProfile(selectedEmployee) && !permissions.isManager && (
-                                <div className="pt-4 border-t space-y-3">
-                                    <h4 className="font-semibold text-foreground">Unterschrift</h4>
-                                    {formData.sig_employee ? (
-                                        <div className="space-y-2">
-                                            <p className="text-xs text-green-400">✓ Unterschrift bereits hinterlegt</p>
-                                            <img src={formData.sig_employee} alt="Unterschrift" className="max-h-20 border border-border rounded-lg p-2 bg-white" />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => setFormData({ ...formData, sig_employee: '' })}
-                                                className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                            >
-                                                Unterschrift löschen und neu zeichnen
-                                            </Button>
-                                        </div>
-                                    ) : (
-                                        <SignaturePad
-                                            label="Unterschrift Arbeitnehmer"
-                                            onSign={(sig) => setFormData({ ...formData, sig_employee: sig })}
-                                        />
                                     )}
+                                </>
+                            )}
+
+                            {/* Vollständiges Profil Link */}
+                            {selectedEmployee && (
+                                <div className="pt-2 border-t border-border">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full gap-2 text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
+                                        onClick={() => { closeModal(); navigate(`/EmployeeProfile/${selectedEmployee.id}`); }}
+                                    >
+                                        <ExternalLink className="w-4 h-4" />
+                                        Vollständiges Profil öffnen
+                                    </Button>
                                 </div>
                             )}
 
-                            {selectedEmployee && permissions.isManager && (
-                                <div className="flex items-center justify-between py-2">
-                                    <Label>Aktiv</Label>
-                                    <Switch
-                                        checked={formData.is_active}
-                                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                                    />
-                                </div>
-                            )}
-
-                            <div className="flex gap-2 pt-4">
-                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800">
+                            <div className="flex gap-2 pt-2">
+                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20">
+                                <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900">
                                     {selectedEmployee ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>

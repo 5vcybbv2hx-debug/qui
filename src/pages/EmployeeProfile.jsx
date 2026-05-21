@@ -47,7 +47,7 @@ export default function EmployeeProfile() {
   });
 
   // Check permissions
-  const isCurrentUser = currentUser?.email === employee?.email || currentUser?.created_by === employee?.email;
+  const isCurrentUser = currentUser?.email === employee?.email;
   const isManager = currentUser?.role === 'admin' || currentUser?.role === 'Manager';
   const canEdit = isCurrentUser || isManager;
   const canEditShortName = isManager;

@@ -19,7 +19,7 @@ function parseOpeningHours(jsonStr) {
 
 export default function CompanyInfoEditor() {
     const queryClient = useQueryClient();
-    const [form, setForm] = useState({});
+    const [form, setForm] = useState({ whatsapp_group_link: '' });
     const [openingHours, setOpeningHours] = useState({});
 
     const { data: companies = [], isLoading } = useQuery({
@@ -50,6 +50,7 @@ export default function CompanyInfoEditor() {
                 iban: company.iban || '',
                 bic: company.bic || '',
                 payroll_email: company.payroll_email || '',
+                whatsapp_group_link: company.whatsapp_group_link || '',
                 // Rechtliches
                 owner_name: company.owner_name || '',
                 legal_form: company.legal_form || '',
@@ -180,6 +181,11 @@ export default function CompanyInfoEditor() {
                             <div>
                                 <Label className="text-xs text-muted-foreground mb-1 block">Beschreibung</Label>
                                 <Input value={form.description} onChange={e => set('description', e.target.value)} placeholder="Kurze Beschreibung" />
+                            </div>
+                            <div>
+                                <Label className="text-xs text-muted-foreground mb-1 block">WhatsApp-Gruppenlink</Label>
+                                <Input value={form.whatsapp_group_link || ''} onChange={e => set('whatsapp_group_link', e.target.value)} placeholder="https://chat.whatsapp.com/..." />
+                                <p className="text-xs text-muted-foreground mt-1">Wird auf der Mitarbeiter-Seite als Team-Gruppe-Button verwendet</p>
                             </div>
                         </div>
                     </TabsContent>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -122,6 +122,10 @@ function SectionTitle({ children }) {
 export default function PersonalBogenForm({ employee, onSave, isLoading = false, isEditable = true }) {
   const [formData, setFormData] = useState(employee || {});
   const [activeTab, setActiveTab] = useState('allgemein');
+
+  useEffect(() => {
+    if (employee) setFormData(employee);
+  }, [employee?.id]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));

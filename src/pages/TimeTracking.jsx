@@ -44,8 +44,8 @@ export default function TimeTracking() {
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             let all;
             if (permissions.isManager) {
-                // Manager: alle Einträge laden
-                all = await base44.entities.TimeEntry.list('-date', 2000);
+                // Manager: serverseitiger Datums-Filter
+                all = await base44.entities.TimeEntry.filter({ date_gte: start, date_lte: end }, '-date', 500);
             } else {
                 // Mitarbeiter: nur eigene Einträge nach employee_id
                 all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 500);
@@ -63,10 +63,12 @@ export default function TimeTracking() {
     });
 
     const { data: clockEntries = [] } = useQuery({
-        queryKey: ['clockEntries', currentEmployee?.id, permissions.isManager],
+        queryKey: ['clockEntries', currentEmployee?.id, permissions.isManager, format(selectedMonth, 'yyyy-MM')],
         queryFn: async () => {
+            const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
+            const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             if (permissions.isManager) {
-                return base44.entities.ClockEntry.list('-clock_in', 500);
+                return base44.entities.ClockEntry.filter({ clock_in_gte: start, clock_in_lte: end }, '-clock_in', 500);
             }
             // Mitarbeiter: nur eigene ClockEntries laden
             return base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 200);
@@ -487,9 +489,9 @@ export default function TimeTracking() {
                         </div>
                     </Card>
                 )}
-                {!isLoadingEmployee && !currentEmployee && (
+                {!isLoadingEmployee && !currentEmployee && !permissions.isManager && (
                     <Card className="p-4 bg-amber-900/20 border-amber-700/30 mb-6">
-                        <p className="text-sm text-amber-300">⚠️ Kein Mitarbeiterprofil gefunden. Bitte wende dich an den Manager, um ein Profil zu erstellen.</p>
+                        <p className="text-sm text-amber-300">⚠️ Kein Mitarbeiterprofil gefunden. Bitte wende dich an einen Manager.</p>
                     </Card>
                 )}
                 {currentEmployee && (

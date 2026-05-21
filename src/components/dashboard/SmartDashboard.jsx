@@ -27,6 +27,7 @@ import PersonalizedQuickLinks from '@/components/dashboard/PersonalizedQuickLink
 import WeeklyHoursChart from '@/components/dashboard/WeeklyHoursChart';
 import WhatsAppMessageGenerator from '@/components/employees/WhatsAppMessageGenerator';
 import MyTimeWidget from '@/components/dashboard/MyTimeWidget';
+import ShiftSwapInboxCard from '@/components/shifts/ShiftSwapInboxCard';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -94,6 +95,9 @@ function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employ
                     </Card>
                 </Link>
             )}
+
+            {/* Schichttausch-Posteingang: direkte Anfragen */}
+            {currentEmployee && <ShiftSwapInboxCard currentEmployee={currentEmployee} />}
 
             {/* Meine Zeiten Widget (für alle Mitarbeiter) */}
             <MyTimeWidget />

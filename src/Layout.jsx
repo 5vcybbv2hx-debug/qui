@@ -13,6 +13,7 @@ import { useActiveNavigation } from '@/components/navigation/useActiveNavigation
 import { getTopPages } from '@/hooks/usePageTracking';
 import { useTabNavigation } from '@/hooks/useTabNavigation';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import { useSwapInboxCount } from '@/components/shifts/ShiftSwapInboxCard';
 import { cn } from "@/lib/utils";
 import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -45,6 +46,11 @@ export default function Layout({ children, currentPageName }) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { track } = useAnalytics();
+
+    // Badge-Counter für Schichttausch-Posteingang
+    const swapInboxCount = useSwapInboxCount(
+        permissions.employeeId ? { id: permissions.employeeId } : null
+    );
 
     // OneSignal: mit Employee-ID initialisieren sobald eingeloggt
     useOneSignal({
@@ -372,10 +378,15 @@ export default function Layout({ children, currentPageName }) {
                                     )}
                                 >
                                     <div className={cn(
-                                        'flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-150',
+                                        'relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-150',
                                         active && 'bg-foreground/10'
                                     )}>
                                         <item.icon className="w-5 h-5" />
+                                        {item.page === 'ShiftSwaps' && swapInboxCount > 0 && (
+                                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold leading-none">
+                                                {swapInboxCount > 9 ? '9+' : swapInboxCount}
+                                            </span>
+                                        )}
                                     </div>
                                     <span className={cn('text-[10px] leading-tight font-medium', active && 'font-bold')}>
                                         {item.name}

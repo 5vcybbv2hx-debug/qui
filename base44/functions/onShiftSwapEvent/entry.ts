@@ -69,8 +69,11 @@ Deno.serve(async (req) => {
             if (!newStatus || newStatus === oldStatus) {
                 return Response.json({ message: 'Status unchanged or not final' });
             }
-            if (!['angenommen', 'abgelehnt'].includes(newStatus)) {
+            if (!['angenommen', 'abgelehnt', 'in_prüfung', 'vergeben'].includes(newStatus)) {
                 return Response.json({ message: 'Not a final response status' });
+            }
+            if (!['angenommen', 'abgelehnt'].includes(newStatus)) {
+                return Response.json({ message: 'Intermediate status, no notification needed' });
             }
 
             // Notify the requesting employee

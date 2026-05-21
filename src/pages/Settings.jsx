@@ -196,7 +196,7 @@ export default function Settings() {
 
                  {/* Tabs */}
                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                     <TabsList className="grid w-full grid-cols-4 bg-card border border-border h-auto p-1">
+                     <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-card border border-border h-auto p-1">
                          <TabsTrigger value="appearance" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <SettingsIcon className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Allgemein</span>

@@ -27,6 +27,7 @@ import ErrorBoundary from '@/components/error/ErrorBoundary';
 import { useAnalytics } from '@/components/analytics/useAnalytics';
 import BarAssistant from '@/components/assistant/BarAssistant';
 import DesktopQuickBar from '@/components/navigation/DesktopQuickBar';
+import { useOneSignal, oneSignalLogout } from '@/lib/useOneSignal';
 
 export default function Layout({ children, currentPageName }) {
     // ── State ────────────────────────────────────────────────────────────────
@@ -44,6 +45,12 @@ export default function Layout({ children, currentPageName }) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { track } = useAnalytics();
+
+    // OneSignal: mit Employee-ID initialisieren sobald eingeloggt
+    useOneSignal({
+        employeeId: permissions.employeeId,
+        isAuthenticated: !!currentUser
+    });
 
     // ── Handlers ─────────────────────────────────────────────────────────────
     const handleScan = (code) => {
@@ -333,7 +340,7 @@ export default function Layout({ children, currentPageName }) {
                                 </p>
                             </div>
                             <button
-                                onClick={() => base44.auth.logout()}
+                                onClick={async () => { await oneSignalLogout(); base44.auth.logout(); }}
                                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all text-sm font-medium border border-border/50"
                             >
                                 <LogOut className="w-4 h-4" />
@@ -454,7 +461,7 @@ export default function Layout({ children, currentPageName }) {
                             {/* Abmelden */}
                             <div className="px-4 pt-3 pb-6 mt-2 border-t border-border">
                                 <button
-                                    onClick={() => { haptics.light(); base44.auth.logout(); setSettingsOpen(false); }}
+                                    onClick={async () => { haptics.light(); await oneSignalLogout(); base44.auth.logout(); setSettingsOpen(false); }}
                                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-secondary/50 text-muted-foreground text-sm font-medium border border-border/50"
                                 >
                                     <LogOut className="w-4 h-4" />

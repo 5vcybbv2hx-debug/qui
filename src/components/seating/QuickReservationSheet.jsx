@@ -29,8 +29,9 @@ export function getTableStatus(table, reservations, checkDate, checkTime) {
     if (!table.is_active && table.is_active !== undefined) return 'inactive';
     const relevant = reservations.filter(r =>
         r.status !== 'storniert' &&
+        !r.is_archived &&
         r.date === checkDate &&
-        (r.table === table.id || r.table === table.number)
+        r.table === table.table_number
     );
     if (relevant.length === 0) return 'free';
     const now = relevant.find(r => timesOverlap(r.time, checkTime, 90));
@@ -58,8 +59,9 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
     const activeReservation = status === 'reserved' || status === 'soon'
         ? reservations.find(r =>
             r.status !== 'storniert' &&
+            !r.is_archived &&
             r.date === checkDate &&
-            (r.table === table.id || r.table === table.number)
+            r.table === table.table_number
           )
         : null;
 
@@ -88,7 +90,7 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
         createMutation.mutate({
             ...form,
             guests: Number(form.guests),
-            table: table.id,
+            table: table.table_number,  // Exakt wie in Table-Entity gespeichert
             status: 'vorgemerkt',
             source: 'intern'
         });
@@ -109,11 +111,11 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                         'w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shrink-0',
                         STATUS_CONFIG[status].color
                     )}>
-                        {table.number}
+                        {table.table_number}
                     </div>
                     <div className="flex-1">
                         <div className="flex items-center gap-2">
-                            <p className="font-bold text-foreground">Tisch {table.number}</p>
+                            <p className="font-bold text-foreground">Tisch {table.table_number}</p>
                             <span className={cn('text-xs px-2 py-0.5 rounded-full border flex items-center gap-1', STATUS_CONFIG[status].color)}>
                                 <span className={cn('w-1.5 h-1.5 rounded-full', STATUS_CONFIG[status].dot)} />
                                 {STATUS_CONFIG[status].label}
@@ -179,7 +181,7 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                     <div className="p-5 space-y-4">
                         <p className="text-sm font-semibold text-foreground flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-amber-400" />
-                            Reservierung für Tisch {table.number}
+                            Reservierung für Tisch {table.table_number}
                         </p>
 
                         {/* Name */}

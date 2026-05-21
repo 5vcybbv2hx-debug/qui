@@ -135,7 +135,12 @@ export default function GuestHub() {
         filteredTables.map(t => ({
             table: t,
             status: getTableStatus(t, allReservations, filterDate, filterTime),
-            reservation: allReservations.find(r => r.status !== 'storniert' && r.date === filterDate && (r.table === t.id || r.table === t.number)) || null
+            reservation: allReservations.find(r =>
+                r.status !== 'storniert' &&
+                !r.is_archived &&
+                r.date === filterDate &&
+                r.table === t.table_number
+            ) || null
         })),
         [filteredTables, allReservations, filterDate, filterTime]
     );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2, AlertCircle, RepeatIcon, MapPin } from 'lucide-react';
+import { Trash2, AlertCircle, RepeatIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +13,9 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Switch } from "@/components/ui/switch";
 import { haptics } from "@/components/utils/haptics";
-import MultiRoomFloorPlanEditor from '@/components/seating/MultiRoomFloorPlanEditor';
 
 export default function ReservationModal({ open, onClose, reservation, onSave, onDelete, canDelete = false, isManager = false }) {
     const queryClient = useQueryClient();
-    const [showFloorPlan, setShowFloorPlan] = useState(false);
     const [formData, setFormData] = useState({
         customer_name: '',
         phone: '',
@@ -36,6 +34,12 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('-date', 50),
+        enabled: open
+    });
+
+    const { data: tables = [] } = useQuery({
+        queryKey: ['tables'],
+        queryFn: () => base44.entities.Table.list(),
         enabled: open
     });
 
@@ -192,23 +196,22 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                         </div>
                         <div className="space-y-2">
                             <Label>Tisch</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    value={formData.table}
-                                    onChange={(e) => setFormData({ ...formData, table: e.target.value })}
-                                    placeholder="z.B. T5"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => setShowFloorPlan(true)}
-                                    title="Tisch auf Grundriss wählen"
-                                    className="shrink-0"
-                                >
-                                    <MapPin className="w-4 h-4" />
-                                </Button>
-                            </div>
+                            <Select value={formData.table || '__none__'} onValueChange={(v) => setFormData({ ...formData, table: v === '__none__' ? '' : v })}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Kein Tisch" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__none__">Kein Tisch</SelectItem>
+                                    {tables
+                                        .sort((a, b) => String(a.table_number).localeCompare(String(b.table_number), undefined, { numeric: true }))
+                                        .map(t => (
+                                            <SelectItem key={t.id} value={t.table_number}>
+                                                Tisch {t.table_number}{t.room ? ` · ${t.room}` : ''}{t.capacity ? ` · ${t.capacity} Pl.` : ''}
+                                            </SelectItem>
+                                        ))
+                                    }
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
@@ -321,29 +324,7 @@ export default function ReservationModal({ open, onClose, reservation, onSave, o
                 </MobileModalFooter>
             </DialogContent>
 
-            {showFloorPlan && (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto z-[101]">
-                        <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
-                            <h2 className="text-lg font-semibold">Tisch wählen</h2>
-                            <button
-                                onClick={() => setShowFloorPlan(false)}
-                                className="p-1 hover:bg-gray-100 rounded"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-4">
-                            <MultiRoomFloorPlanEditor 
-                                onTableSelect={(tableNumber) => {
-                                    setFormData({ ...formData, table: tableNumber });
-                                    setShowFloorPlan(false);
-                                }}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
+
         </Dialog>
     );
 }

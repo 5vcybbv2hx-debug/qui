@@ -563,7 +563,15 @@ export default function Settings() {
                                         <h3 className="text-foreground font-semibold mb-1">Push-Benachrichtigungen</h3>
                                         <p className="text-sm text-muted-foreground">Aktiviere Push-Benachrichtigungen für Echtzeit-Meldungen auf deinem Gerät</p>
                                     </div>
-                                    <PushNotificationManager userEmail={currentUser.email} />
+                                    <div className="flex flex-col gap-2">
+                                        <PushNotificationManager userEmail={currentUser.email} />
+                                        <Button size="sm" onClick={() => {
+                                            localStorage.removeItem('push_prompt_seen');
+                                            window.location.reload();
+                                        }} variant="outline">
+                                            Erneut fragen
+                                        </Button>
+                                    </div>
                                 </div>
                             </Card>
                         )}

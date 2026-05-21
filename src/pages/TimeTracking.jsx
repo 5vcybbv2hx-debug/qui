@@ -47,13 +47,12 @@ export default function TimeTracking() {
                 // Manager: alle Einträge laden
                 all = await base44.entities.TimeEntry.list('-date', 2000);
             } else {
-                // Mitarbeiter: nur eigene Einträge (employee_id-Filter + RLS)
-                if (!currentEmployee?.id) return [];
+                // Mitarbeiter: nur eigene Einträge nach employee_id
                 all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 500);
             }
             return all.filter(entry => entry.date >= start && entry.date <= end);
         },
-        enabled: !isLoadingEmployee, // warte bis currentEmployee geladen ist
+        enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
         staleTime: 2 * 60 * 1000,
         refetchOnWindowFocus: false,
     });
@@ -70,10 +69,9 @@ export default function TimeTracking() {
                 return base44.entities.ClockEntry.list('-clock_in', 500);
             }
             // Mitarbeiter: nur eigene ClockEntries laden
-            if (!currentEmployee?.id) return [];
             return base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 200);
         },
-        enabled: !isLoadingEmployee,
+        enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
         refetchInterval: 15000,
         refetchOnWindowFocus: true,
         staleTime: 0,

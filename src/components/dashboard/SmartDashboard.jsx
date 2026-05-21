@@ -26,6 +26,7 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 import PersonalizedQuickLinks from '@/components/dashboard/PersonalizedQuickLinks';
 import WeeklyHoursChart from '@/components/dashboard/WeeklyHoursChart';
 import WhatsAppMessageGenerator from '@/components/employees/WhatsAppMessageGenerator';
+import MyTimeWidget from '@/components/dashboard/MyTimeWidget';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,9 @@ function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employ
                     </Card>
                 </Link>
             )}
+
+            {/* Meine Zeiten Widget (für alle Mitarbeiter) */}
+            <MyTimeWidget />
 
             {/* Personalisierte Schnellzugriffe */}
             <PersonalizedQuickLinks userEmail={currentUser?.email} permissions={permissions} />
@@ -554,8 +558,9 @@ function ClockWidget({ currentEmployee }) {
     const queryClient = useQueryClient();
 
     const { data: clockEntries = [] } = useQuery({
-        queryKey: ['clock-entries'],
-        queryFn: () => base44.entities.ClockEntry.list('-clock_in', 200),
+        queryKey: ['clock-entries', currentEmployee?.id],
+        queryFn: () => base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 50),
+        enabled: !!currentEmployee?.id,
         refetchInterval: 30000,
         refetchOnWindowFocus: true,
         staleTime: 0,

@@ -8,11 +8,14 @@ export default function PushPermissionPrompt({ employeeId, isAuthenticated }) {
     const [show, setShow] = useState(false);
 
     useEffect(() => {
+        console.log('[PushPrompt] check', { isAuthenticated, employeeId, seen: localStorage.getItem(PROMPT_KEY), notifPerm: 'Notification' in window ? Notification.permission : 'N/A' });
         if (!isAuthenticated || !employeeId) return;
-        // Nur zeigen wenn noch nicht gefragt und Browser unterstützt Push
+        // Nur zeigen wenn noch nicht gesehen
         if (localStorage.getItem(PROMPT_KEY)) return;
-        if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-        if (Notification.permission !== 'default') return;
+        // Browser muss Notifications unterstützen
+        if (!('Notification' in window)) return;
+        // Nur zeigen wenn noch nicht entschieden (default) ODER wenn bereits granted (dann trotzdem kein Prompt nötig)
+        if (Notification.permission === 'denied') return;
 
         // Kurz warten damit die App erstmal geladen ist
         const t = setTimeout(() => setShow(true), 2000);

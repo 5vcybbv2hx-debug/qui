@@ -23,7 +23,7 @@ import ReservationModal from '@/components/reservations/ReservationModal';
 import { useReservationLifecycle } from '@/features/reservations/hooks/useReservationLifecycle';
 import { RES_KEYS } from '@/features/reservations/hooks/useReservations';
 import { STALE } from '@/lib/queryUtils';
-import QuickReservationSheet, { getTableStatus } from '@/components/seating/QuickReservationSheet';
+import QuickReservationSheet, { getTableStatus, getReservationTables } from '@/components/seating/QuickReservationSheet';
 import TableModal from '@/components/seating/TableModal';
 import RoomManager from '@/components/seating/RoomManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -132,16 +132,26 @@ export default function GuestHub() {
     }, [tables, selectedRoom, guestFilter]);
 
     const tableWithStatus = useMemo(() =>
-        filteredTables.map(t => ({
-            table: t,
-            status: getTableStatus(t, allReservations, filterDate, filterTime),
-            reservation: allReservations.find(r =>
+        filteredTables.map(t => {
+            const dayRes = allReservations.filter(r =>
                 r.status !== 'storniert' &&
                 !r.is_archived &&
                 r.date === filterDate &&
-                r.table === t.table_number
-            ) || null
-        })),
+                getReservationTables(r).includes(t.table_number)
+            ).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+            // Nächste/aktive für Anzeige
+            const reservation = dayRes.find(r => {
+                const [rh, rm] = (r.time || '00:00').split(':').map(Number);
+                const [fh, fm] = filterTime.split(':').map(Number);
+                return Math.abs(rh * 60 + rm - (fh * 60 + fm)) < 90;
+            }) || dayRes[0] || null;
+            return {
+                table: t,
+                status: getTableStatus(t, allReservations, filterDate, filterTime),
+                reservation,
+                dayReservations: dayRes
+            };
+        }),
         [filteredTables, allReservations, filterDate, filterTime]
     );
 

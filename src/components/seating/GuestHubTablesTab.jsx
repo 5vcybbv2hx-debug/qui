@@ -8,6 +8,8 @@ export default function GuestHubTablesTab({
     tableWithStatus, stats, guestFilter, suggested, permissions,
     planView, onTableSelect, onCreateTable, onEditTable
 }) {
+    const getDayRes = (tableId) =>
+        tableWithStatus.find(ts => ts.table.id === tableId)?.dayReservations || [];
     return (
         <div className="space-y-3">
             {/* Suggestions */}
@@ -61,7 +63,12 @@ export default function GuestHubTablesTab({
                             <div>
                                 <p className="text-xs font-medium">{STATUS_CONFIG[status].label}</p>
                                 <p className="text-xs opacity-70">{table.capacity} Pl.{table.room ? ` · ${table.room}` : ''}</p>
-                                {reservation && <p className="text-xs font-semibold truncate mt-0.5">{reservation.time}</p>}
+                                {getDayRes(table.id).slice(0, 2).map((r, i) => (
+                                    <p key={i} className="text-xs font-semibold truncate mt-0.5">{r.time} · {r.guests}P.</p>
+                                ))}
+                                {getDayRes(table.id).length > 2 && (
+                                    <p className="text-xs opacity-60">+{getDayRes(table.id).length - 2} weitere</p>
+                                )}
                             </div>
                         </button>
                     ))}
@@ -90,7 +97,11 @@ export default function GuestHubTablesTab({
                                     {table.room && <span className="text-xs text-muted-foreground">· {table.room}</span>}
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    {table.capacity} Pl.{reservation ? ` · ${reservation.time} · ${reservation.customer_name} (${reservation.guests}P.)` : ''}
+                                    {table.capacity} Pl.
+                                    {getDayRes(table.id).slice(0, 2).map((r, i) => (
+                                        <span key={i}>{` · ${r.time} ${r.customer_name} (${r.guests}P.)`}</span>
+                                    ))}
+                                    {getDayRes(table.id).length > 2 && <span> + {getDayRes(table.id).length - 2} weitere</span>}
                                 </p>
                             </div>
                             <div className="flex items-center gap-2 shrink-0">

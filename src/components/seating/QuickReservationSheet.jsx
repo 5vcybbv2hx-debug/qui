@@ -25,13 +25,20 @@ function timesOverlap(resTime, checkTime, bufferMin = 90) {
     return Math.abs(rMin - cMin) < bufferMin;
 }
 
+// Alle table_numbers einer Reservierung (unterstützt altes + neues Format)
+export function getReservationTables(r) {
+    if (r.tables && r.tables.length > 0) return r.tables;
+    if (r.table) return [r.table];
+    return [];
+}
+
 export function getTableStatus(table, reservations, checkDate, checkTime) {
     if (!table.is_active && table.is_active !== undefined) return 'inactive';
     const relevant = reservations.filter(r =>
         r.status !== 'storniert' &&
         !r.is_archived &&
         r.date === checkDate &&
-        r.table === table.table_number
+        getReservationTables(r).includes(table.table_number)
     );
     if (relevant.length === 0) return 'free';
     const now = relevant.find(r => timesOverlap(r.time, checkTime, 90));
@@ -56,14 +63,23 @@ export const STATUS_CONFIG = {
 export default function QuickReservationSheet({ table, reservations, tables, onClose, onEditReservation, checkDate, checkTime }) {
     const queryClient = useQueryClient();
     const status = getTableStatus(table, reservations, checkDate, checkTime);
-    const activeReservation = status === 'reserved' || status === 'soon'
-        ? reservations.find(r =>
-            r.status !== 'storniert' &&
-            !r.is_archived &&
-            r.date === checkDate &&
-            r.table === table.table_number
-          )
-        : null;
+
+    // Alle Reservierungen des Tages für diesen Tisch (chronologisch)
+    const dayReservations = useMemo(() =>
+        reservations
+            .filter(r =>
+                r.status !== 'storniert' &&
+                !r.is_archived &&
+                r.date === checkDate &&
+                getReservationTables(r).includes(table.table_number)
+            )
+            .sort((a, b) => (a.time || '').localeCompare(b.time || '')),
+        [reservations, checkDate, table.table_number]
+    );
+
+    // Nächste/aktive Reservierung für Rückwärtskompatibilität
+    const activeReservation = dayReservations.find(r => timesOverlap(r.time, checkTime, 90))
+        || (dayReservations.length > 0 ? dayReservations[0] : null);
 
     const [mode, setMode] = useState(status === 'free' ? 'new' : 'info');
     const [form, setForm] = useState({
@@ -130,49 +146,67 @@ export default function QuickReservationSheet({ table, reservations, tables, onC
                     </button>
                 </div>
 
-                {/* Info mode — reserved table */}
-                {mode === 'info' && activeReservation && (
-                    <div className="p-5 space-y-4">
-                        <div className="rounded-xl border border-border bg-secondary/30 p-4 space-y-3">
-                            <div className="flex items-center gap-2">
-                                <Users className="w-4 h-4 text-muted-foreground" />
-                                <span className="font-semibold text-foreground">{activeReservation.customer_name}</span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2 text-sm">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">Uhrzeit</p>
-                                    <p className="font-medium text-foreground">{activeReservation.time}</p>
+                {/* Info mode — alle Reservierungen des Tages */}
+                {mode === 'info' && dayReservations.length > 0 && (
+                    <div className="p-5 space-y-3">
+                        {dayReservations.length > 1 && (
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                                {dayReservations.length} Reservierungen heute
+                            </p>
+                        )}
+                        {dayReservations.map(res => {
+                            const isActive = timesOverlap(res.time, checkTime, 90);
+                            return (
+                                <div key={res.id} className={cn(
+                                    'rounded-xl border p-4 space-y-3',
+                                    isActive
+                                        ? 'border-red-500/40 bg-red-500/10'
+                                        : 'border-border bg-secondary/30'
+                                )}>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Users className="w-4 h-4 text-muted-foreground" />
+                                            <span className="font-semibold text-foreground">{res.customer_name}</span>
+                                        </div>
+                                        {isActive && (
+                                            <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">Jetzt</span>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Uhrzeit</p>
+                                            <p className="font-medium text-foreground">{res.time}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Personen</p>
+                                            <p className="font-medium text-foreground">{res.guests}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Status</p>
+                                            <p className="font-medium text-foreground capitalize">{res.status}</p>
+                                        </div>
+                                    </div>
+                                    {res.phone && (
+                                        <a href={`tel:${res.phone}`}
+                                            className="flex items-center gap-2 text-sm text-blue-400 min-h-[44px]">
+                                            <Phone className="w-4 h-4" />{res.phone}
+                                        </a>
+                                    )}
+                                    {res.notes && (
+                                        <p className="text-sm text-muted-foreground italic">„{res.notes}"</p>
+                                    )}
+                                    {onEditReservation && (
+                                        <Button variant="outline" size="sm" className="w-full gap-2"
+                                            onClick={() => { onEditReservation(res); onClose(); }}>
+                                            <Pencil className="w-3.5 h-3.5" />Bearbeiten
+                                        </Button>
+                                    )}
                                 </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground">Personen</p>
-                                    <p className="font-medium text-foreground">{activeReservation.guests}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground">Status</p>
-                                    <p className="font-medium text-foreground capitalize">{activeReservation.status}</p>
-                                </div>
-                            </div>
-                            {activeReservation.phone && (
-                                <a href={`tel:${activeReservation.phone}`}
-                                    className="flex items-center gap-2 text-sm text-blue-400 min-h-[44px]">
-                                    <Phone className="w-4 h-4" />{activeReservation.phone}
-                                </a>
-                            )}
-                            {activeReservation.notes && (
-                                <p className="text-sm text-muted-foreground italic">„{activeReservation.notes}"</p>
-                            )}
-                        </div>
-                        <div className="flex gap-2">
-                            {onEditReservation && (
-                                <Button variant="outline" className="flex-1 h-12 gap-2"
-                                    onClick={() => { onEditReservation(activeReservation); onClose(); }}>
-                                    <Pencil className="w-4 h-4" />Bearbeiten
-                                </Button>
-                            )}
-                            <Button className="flex-1 h-12 gap-2" onClick={() => setMode('new')}>
-                                <Calendar className="w-4 h-4" />Neue Reservierung
-                            </Button>
-                        </div>
+                            );
+                        })}
+                        <Button className="w-full h-12 gap-2 mt-2" onClick={() => setMode('new')}>
+                            <Calendar className="w-4 h-4" />Neue Reservierung
+                        </Button>
                     </div>
                 )}
 

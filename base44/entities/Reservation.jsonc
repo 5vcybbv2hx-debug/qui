@@ -29,7 +29,14 @@
     },
     "table": {
       "type": "string",
-      "description": "Tischnummer"
+      "description": "Tischnummer (Legacy, Einzeltisch)"
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Mehrere Tische (table_number Werte)"
     },
     "notes": {
       "type": "string",

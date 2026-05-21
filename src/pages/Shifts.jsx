@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Users, Filter, X, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ShiftCalendar from '@/components/shifts/ShiftCalendar';
 import ShiftModal from '@/components/shifts/ShiftModal';
+import MobileWeekView from '@/components/shifts/MobileWeekView';
 import CalendarExport from '@/components/shifts/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
@@ -21,10 +22,12 @@ import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
 import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
 import { usePermissions } from '@/components/auth/usePermissions';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function Shifts() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
+    const isMobile = useIsMobile();
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
@@ -33,16 +36,40 @@ export default function Shifts() {
         shiftType: 'all'
     });
     const [showFilters, setShowFilters] = useState(false);
+    // Mobile: track which week is displayed to load only that week's shifts
+    const [mobileWeekStart, setMobileWeekStart] = useState(
+        () => startOfWeek(new Date(), { weekStartsOn: 1 })
+    );
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
-    const { data: shifts = [], isLoading: shiftsLoading, isError: shiftsError, error: shiftsErrorObj } = useQuery({
+    // Desktop: load 200 shifts at once
+    const { data: allShiftsDesktop = [], isLoading: desktopLoading } = useQuery({
         queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 200)
+        queryFn: () => base44.entities.Shift.list('-date', 200),
+        enabled: !isMobile,
     });
+
+    // Mobile: load only ±1 week around current mobile week
+    const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
+    const mobileFrom = format(subWeeks(mobileWeekStart, 1), 'yyyy-MM-dd');
+    const mobileTo = format(addWeeks(mobileWeekEnd, 1), 'yyyy-MM-dd');
+
+    const { data: mobileShifts = [], isLoading: mobileLoading } = useQuery({
+        queryKey: ['shifts-mobile', format(mobileWeekStart, 'yyyy-MM-dd')],
+        queryFn: async () => {
+            const all = await base44.entities.Shift.list('-date', 500);
+            return all.filter(s => s.date >= mobileFrom && s.date <= mobileTo);
+        },
+        enabled: isMobile,
+        staleTime: 2 * 60 * 1000,
+    });
+
+    const shifts = isMobile ? mobileShifts : allShiftsDesktop;
+    const shiftsLoading = isMobile ? mobileLoading : desktopLoading;
     const { handleError } = useErrorHandler();
 
     const { data: reservations = [] } = useQuery({
@@ -110,8 +137,8 @@ export default function Shifts() {
         }
     });
 
-    const handleAddShift = (date) => {
-        setSelectedShift(null);
+    const handleAddShift = (date, shift = null) => {
+        setSelectedShift(shift || null);
         setSelectedDate(date);
         setModalOpen(true);
     };
@@ -179,6 +206,56 @@ export default function Shifts() {
         }
     };
 
+    // ─── Mobile layout ──────────────────────────────────────────────────────
+    if (isMobile) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col">
+                {/* Mobile top bar */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-card">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+                        <ShiftSwapManager />
+                        {permissions.canEditShifts && (
+                            <Button
+                                size="sm"
+                                onClick={() => handleAddShift(new Date())}
+                                className="bg-amber-500 hover:bg-amber-600 text-slate-900 flex-shrink-0 h-9"
+                            >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Schicht
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Mobile week view */}
+                <div className="flex-1 overflow-hidden">
+                    <MobileWeekView
+                        shifts={shifts}
+                        employees={employees}
+                        isLoading={shiftsLoading}
+                        onAddShift={handleAddShift}
+                        onSaveShift={handleSave}
+                        onDeleteShift={handleDelete}
+                        onWeekChange={(ws) => setMobileWeekStart(ws)}
+                    />
+                </div>
+
+                {/* Shift Modal */}
+                <ShiftModal
+                    open={modalOpen}
+                    onClose={() => { setModalOpen(false); setSelectedShift(null); }}
+                    shift={selectedShift}
+                    employees={employees}
+                    selectedDate={selectedDate}
+                    existingShifts={shifts}
+                    onSave={handleSave}
+                    onDelete={handleDelete}
+                />
+            </div>
+        );
+    }
+
+    // ─── Desktop layout ──────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-slate-900">
             <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
@@ -294,9 +371,9 @@ export default function Shifts() {
                     onShiftMove={handleShiftMove}
                     selectedDate={selectedDate}
                     setSelectedDate={setSelectedDate}
-                    />
+                />
 
-                    {/* Selected Date Details */}
+                {/* Selected Date Details */}
                 {selectedDate && (
                     <Card className="mt-6 p-5 bg-slate-800 border-slate-700">
                         <div className="flex items-center justify-between mb-4">

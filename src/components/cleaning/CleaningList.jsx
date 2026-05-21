@@ -11,14 +11,7 @@ import { de } from 'date-fns/locale';
 import TaskManager from './TaskManager';
 import ReportProblemButton from './ReportProblemButton';
 
-const areaColors = {
-    'Theke': 'bg-amber-100 text-amber-700',
-    'Küche': 'bg-blue-100 text-blue-700',
-    'Toiletten': 'bg-purple-100 text-purple-700',
-    'Gastraum': 'bg-emerald-100 text-emerald-700',
-    'Lager': 'bg-slate-100 text-slate-700',
-    'Außenbereich': 'bg-cyan-100 text-cyan-700'
-};
+
 
 const frequencyLabels = {
     'täglich': 'Täglich',
@@ -57,18 +50,18 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                 const progress = (completedCount / areaTasks.length) * 100;
                 
                 return (
-                    <Card key={area} className="bg-slate-800 border-slate-700 overflow-hidden">
-                        {/* Area Header */}
-                        <div 
-                            className="px-4 py-3 flex items-center justify-between"
-                            style={{ borderLeft: `4px solid ${getAreaColor(area)}` }}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div 
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: getAreaColor(area) }}
-                                />
-                                <h3 className="font-semibold text-white text-base">{area}</h3>
+                    <Card key={area} className="bg-card border-border overflow-hidden">
+                         {/* Area Header */}
+                         <div 
+                             className="px-4 py-3 flex items-center justify-between"
+                             style={{ borderLeft: `4px solid ${getAreaColor(area)}` }}
+                         >
+                             <div className="flex items-center gap-3">
+                                 <div 
+                                     className="w-2 h-2 rounded-full"
+                                     style={{ backgroundColor: getAreaColor(area) }}
+                                 />
+                                 <h3 className="font-semibold text-foreground text-base">{area}</h3>
                                 <Badge 
                                     variant="outline" 
                                     className={cn(
@@ -87,7 +80,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="h-1 bg-slate-700">
+                        <div className="h-1 bg-border">
                             <div 
                                 className="h-full transition-all duration-300"
                                 style={{ 
@@ -96,31 +89,31 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                 }}
                             />
                         </div>
-                        
+
                         {/* Open Tasks First, Then Completed */}
-                         <div className="divide-y divide-slate-700">
+                         <div className="divide-y divide-border">
                              {/* Open Tasks Section */}
                              {areaTasks
-                                 .filter(t => !t.is_completed)
-                                 .map((task) => (
-                                 <div 
-                                     key={task.id}
-                                     className="px-4 py-4 bg-gradient-to-r from-slate-800 to-slate-800/80 hover:from-slate-750 hover:to-slate-750/80 transition-colors border-l-2 border-amber-500"
-                                 >
-                                     <div className="flex items-center gap-3">
-                                         <button
-                                             onClick={() => onComplete(task)}
-                                             className={cn(
-                                                 "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
-                                                 "border-amber-500 hover:bg-amber-500/20 hover:border-amber-400"
-                                             )}
-                                         >
-                                         </button>
+                             .filter(t => !t.is_completed)
+                             .map((task) => (
+                             <div 
+                                 key={task.id}
+                                 className="px-4 py-4 bg-card hover:bg-accent/30 transition-colors border-l-2 border-amber-500"
+                             >
+                                 <div className="flex items-center gap-3">
+                                     <button
+                                         onClick={() => onComplete(task)}
+                                         className={cn(
+                                             "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all shrink-0",
+                                             "border-amber-500 hover:bg-amber-500/20 hover:border-amber-400"
+                                         )}
+                                     >
+                                     </button>
 
-                                         <div className="flex-1 min-w-0">
-                                             <p className="text-sm font-semibold text-white">
-                                                {task.title}
-                                             </p>
+                                     <div className="flex-1 min-w-0">
+                                         <p className="text-sm font-semibold text-foreground">
+                                            {task.title}
+                                         </p>
                                             <div className="flex items-center gap-2 mt-2 flex-wrap">
                                                <span className="text-[10px] uppercase tracking-wider font-semibold text-amber-400">
                                                    {frequencyLabels[task.frequency]}
@@ -151,7 +144,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                             .filter(t => t.is_completed)
                                             .length > 0 && (
                                             <>
-                                            <div className="px-4 py-2 bg-slate-700/30 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                            <div className="px-4 py-2 bg-muted/50 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                                             ✓ Erledigt ({areaTasks.filter(t => t.is_completed).length})
                                             </div>
                                             {areaTasks
@@ -159,7 +152,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                             .map((task) => (
                                             <div 
                                             key={task.id}
-                                            className="px-4 py-3 bg-slate-800/40 hover:bg-slate-800/60 transition-colors opacity-75"
+                                            className="px-4 py-3 bg-card/50 hover:bg-card transition-colors opacity-75"
                                             >
                                             <div className="flex items-center gap-3">
                                                 <button
@@ -173,11 +166,11 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                                 </button>
 
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm text-slate-500 line-through">
+                                                    <p className="text-sm text-muted-foreground line-through">
                                                        {task.title}
                                                     </p>
                                                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                                       <span className="text-[10px] uppercase tracking-wider text-slate-600">
+                                                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
                                                            {frequencyLabels[task.frequency]}
                                                        </span>
                                                        {task.completed_by && (
@@ -198,7 +191,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-7 w-7 text-slate-500 hover:text-slate-300 hover:bg-slate-700"
+                                                        className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-accent"
                                                         onClick={() => onReset(task)}
                                                     >
                                                         <RotateCcw className="w-3.5 h-3.5" />
@@ -215,11 +208,11 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
             })}
             
             {tasks.length === 0 && (
-                <div className="text-center py-12 text-slate-400">
-                    <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>Keine aktiven Aufgaben vorhanden</p>
-                </div>
-            )}
+                 <div className="text-center py-12 text-muted-foreground">
+                     <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                     <p>Keine aktiven Aufgaben vorhanden</p>
+                 </div>
+             )}
         </div>
     );
 }

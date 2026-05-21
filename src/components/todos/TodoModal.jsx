@@ -32,7 +32,7 @@ function generateId() {
 }
 
 function generateAttachmentId() {
-    return 'att_' + Math.random().toString(36).slice(2, 10);
+    return 'att_' + crypto.randomUUID().split('-')[0];
 }
 
 export default function TodoModal({ open, onClose, todo, employees, onSave, currentUser }) {

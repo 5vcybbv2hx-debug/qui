@@ -7,6 +7,7 @@ import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { Plus, CheckSquare, Tag, Search, X, ListChecks, Trash2, Archive, CheckCheck, Square, FolderInput } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
+import { toast } from 'sonner';
 import TodoCategoryManager from '@/components/todos/TodoCategoryManager';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -25,7 +26,7 @@ export default function Todos() {
     const queryClient = useQueryClient();
 
     useEffect(() => {
-        const handleOnline = () => syncMutations(base44).catch(console.error);
+        const handleOnline = () => syncMutations(base44).catch((e) => toast.error('Offline-Sync fehlgeschlagen: ' + e.message));
         window.addEventListener('online', handleOnline);
         return () => window.removeEventListener('online', handleOnline);
     }, []);

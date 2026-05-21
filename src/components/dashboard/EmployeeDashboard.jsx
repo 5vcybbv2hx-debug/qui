@@ -17,6 +17,7 @@ import FirstStepsTour from '@/components/onboarding/FirstStepsTour';
 import { InteractiveTour, useTour } from '@/components/onboarding/InteractiveTour';
 import ShiftSwapMarketplaceCard from '@/components/shifts/ShiftSwapMarketplaceCard';
 import TimeTrackingWidget from '@/components/dashboard/TimeTrackingWidget';
+import PendingSwapRequestsCard from '@/components/shifts/PendingSwapRequestsCard';
 
 export default function EmployeeDashboard({ currentEmployee, isManager, onSwitchToManager }) {
     const queryClient = useQueryClient();
@@ -359,6 +360,8 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                         </div>
                     </Card>
                 </div>
+
+                <PendingSwapRequestsCard currentEmployee={currentEmployee} />
 
                 <TimeTrackingWidget currentEmployee={currentEmployee} />
 

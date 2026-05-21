@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { getHolidaysBW, getHolidayName } from './getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 
-export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], provisionalRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
+export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], provisionalRequests = [], swapRequests = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [viewMode, setViewMode] = useState('week');
@@ -282,6 +282,10 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                     const holidayName = getHolidayName(day, holidays);
                     const birthdays = getBirthdaysForDay(day);
                     const unavailables = getUnavailableForDay(day);
+                    const daySwapRequests = swapRequests.filter(r =>
+                        r.shift_date === dateStr &&
+                        (r.status === 'offen' || r.status === 'ausstehend')
+                    );
                     
                     return (
                         <div 
@@ -435,8 +439,20 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                         </span>
                                     </Link>
                                 )}
-                            </div>
-                            
+
+                                {/* Swap Request Badges */}
+                                {daySwapRequests.length > 0 && (
+                                    <div className="px-1.5 py-0.5 bg-blue-500/15 border border-blue-500/30 rounded text-[9px] text-blue-300 flex items-center gap-1 flex-shrink-0">
+                                        <span>🔄</span>
+                                        <span className="truncate">
+                                            {daySwapRequests.length === 1
+                                                ? `${daySwapRequests[0].requesting_employee_name?.split(' ')[0]} tauscht`
+                                                : `${daySwapRequests.length} Tausch`}
+                                        </span>
+                                    </div>
+                                )}
+                                </div>
+
                             {/* Hover Add Button */}
                             {permissions.canEditShifts && (
                                 <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 transition-opacity">

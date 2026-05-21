@@ -40,20 +40,25 @@ export default function ShiftSwapRequestModal({ shift, open, onOpenChange, onSuc
              await base44.entities.ShiftSwapRequest.create(data);
 
              if (data.marketplace) {
+                 // Alle Mitarbeiter (außer Anfragenden) benachrichtigen
                  await base44.entities.Notification.create({
                      type: 'general',
                      category: 'schicht',
-                     title: 'Neue Schichttausch-Anfrage im Marketplace',
-                     message: `${data.requesting_employee_name} bietet die Schicht am ${format(parseISO(data.shift_date), 'dd.MM.yyyy', { locale: de })} zum Tauschen an.`,
+                     priority: 'info',
+                     title: '🔄 Neue Schicht im Tausch-Marketplace',
+                     message: `${data.requesting_employee_name} bietet die Schicht am ${format(parseISO(data.shift_date), 'dd.MM.yyyy', { locale: de })} (${data.shift_time}) zum Tauschen an.`,
                      related_id: shift.id,
+                     target_roles: ['admin', 'Manager', 'Barkeeper', 'Vollzeit', 'Aushilfe'],
                      read_by: []
                  });
              } else {
+                 // Direkte Anfrage: nur den Ziel-Mitarbeiter benachrichtigen
                  await base44.entities.Notification.create({
                      type: 'general',
                      category: 'schicht',
-                     title: 'Neue Schichttausch-Anfrage',
-                     message: `${data.requesting_employee_name} möchte die Schicht am ${format(parseISO(data.shift_date), 'dd.MM.yyyy', { locale: de })} mit ${data.target_employee_name} tauschen.`,
+                     priority: 'wichtig',
+                     title: `🔄 Schichttausch-Anfrage von ${data.requesting_employee_name}`,
+                     message: `${data.requesting_employee_name} möchte die Schicht am ${format(parseISO(data.shift_date), 'dd.MM.yyyy', { locale: de })} (${data.shift_time}) mit dir tauschen.`,
                      related_id: shift.id,
                      target_roles: ['admin', 'Manager'],
                      read_by: []

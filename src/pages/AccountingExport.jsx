@@ -31,16 +31,17 @@ export default function AccountingExport() {
     const [exportProgress, setExportProgress] = useState(0);
     const [isExporting, setIsExporting] = useState(false);
     const [done, setDone] = useState(false);
+    const [readyToLoad, setReadyToLoad] = useState(false);
 
-    const { data: cashbookEntries = [] } = useQuery({ queryKey: ['cashbook-entries'], queryFn: () => base44.entities.CashbookEntry.list('-date') });
-    const { data: receipts = [] } = useQuery({ queryKey: ['accounting-receipts'], queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date') });
-    const { data: creditorInvoices = [] } = useQuery({ queryKey: ['creditor-invoices'], queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date') });
-    const { data: debitorInvoices = [] } = useQuery({ queryKey: ['debitor-invoices'], queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date') });
-    const { data: dailyRevenues = [] } = useQuery({ queryKey: ['daily-revenues'], queryFn: () => base44.entities.DailyRevenue.list('-date') });
-    const { data: recurringExpenses = [] } = useQuery({ queryKey: ['recurring-expenses'], queryFn: () => base44.entities.RecurringExpense.list('title') });
-    const { data: recurringOccurrences = [] } = useQuery({ queryKey: ['recurring-expense-occurrences'], queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month') });
-    const { data: liabilities = [] } = useQuery({ queryKey: ['liabilities'], queryFn: () => base44.entities.Liability.list('-due_date') });
-    const { data: liabilityPayments = [] } = useQuery({ queryKey: ['liability-payments'], queryFn: () => base44.entities.LiabilityPayment.list('-payment_date') });
+    const { data: cashbookEntries = [] } = useQuery({ queryKey: ['cashbook-entries'], queryFn: () => base44.entities.CashbookEntry.list('-date'), enabled: readyToLoad });
+    const { data: receipts = [] } = useQuery({ queryKey: ['accounting-receipts'], queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date'), enabled: readyToLoad });
+    const { data: creditorInvoices = [] } = useQuery({ queryKey: ['creditor-invoices'], queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date'), enabled: readyToLoad });
+    const { data: debitorInvoices = [] } = useQuery({ queryKey: ['debitor-invoices'], queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date'), enabled: readyToLoad });
+    const { data: dailyRevenues = [] } = useQuery({ queryKey: ['daily-revenues'], queryFn: () => base44.entities.DailyRevenue.list('-date'), enabled: readyToLoad });
+    const { data: recurringExpenses = [] } = useQuery({ queryKey: ['recurring-expenses'], queryFn: () => base44.entities.RecurringExpense.list('title'), enabled: readyToLoad });
+    const { data: recurringOccurrences = [] } = useQuery({ queryKey: ['recurring-expense-occurrences'], queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month'), enabled: readyToLoad });
+    const { data: liabilities = [] } = useQuery({ queryKey: ['liabilities'], queryFn: () => base44.entities.Liability.list('-due_date'), enabled: readyToLoad });
+    const { data: liabilityPayments = [] } = useQuery({ queryKey: ['liability-payments'], queryFn: () => base44.entities.LiabilityPayment.list('-payment_date'), enabled: readyToLoad });
 
     const filtered = {
         cashbook: cashbookEntries.filter(e => e.date?.startsWith(selectedMonth)),
@@ -232,29 +233,46 @@ export default function AccountingExport() {
                     </div>
                 </Card>
 
-                {/* Komplett-Export */}
-                <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                                <Archive className="w-5 h-5 text-purple-400" />
-                                <h3 className="font-semibold text-foreground">Komplett-Export</h3>
+                {/* Daten laden Button */}
+                {!readyToLoad && (
+                    <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-foreground text-sm">Daten vorab laden</h3>
+                                <p className="text-xs text-muted-foreground mt-0.5">Klick hier, um alle Daten zu laden, bevor du den Export startest</p>
                             </div>
-                            <p className="text-xs text-muted-foreground">Alle Dateien für {label} auf einmal herunterladen</p>
+                            <Button onClick={() => setReadyToLoad(true)} className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
+                                <Download className="w-4 h-4" /> Daten laden
+                            </Button>
                         </div>
-                        {done && <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs gap-1 shrink-0"><CheckCircle2 className="w-3 h-3" />Fertig</Badge>}
-                    </div>
-                    {isExporting && (
-                        <div className="mt-3 space-y-1.5">
-                            <Progress value={exportProgress} className="h-1.5" />
-                            <p className="text-xs text-muted-foreground">Exportiere... {exportProgress}%</p>
+                    </Card>
+                )}
+
+                {/* Komplett-Export */}
+                {readyToLoad && (
+                    <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Archive className="w-5 h-5 text-purple-400" />
+                                    <h3 className="font-semibold text-foreground">Komplett-Export</h3>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Alle Dateien für {label} auf einmal herunterladen</p>
+                            </div>
+                            {done && <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs gap-1 shrink-0"><CheckCircle2 className="w-3 h-3" />Fertig</Badge>}
                         </div>
-                    )}
-                    <Button onClick={runFullExport} disabled={isExporting} className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white gap-2">
-                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        {isExporting ? 'Exportiere...' : 'Alle Dateien herunterladen'}
-                    </Button>
-                </Card>
+                        {isExporting && (
+                            <div className="mt-3 space-y-1.5">
+                                <Progress value={exportProgress} className="h-1.5" />
+                                <p className="text-xs text-muted-foreground">Exportiere... {exportProgress}%</p>
+                            </div>
+                        )}
+                        <Button onClick={runFullExport} disabled={isExporting} className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white gap-2">
+                            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            {isExporting ? 'Exportiere...' : 'Alle Dateien herunterladen'}
+                        </Button>
+                    </Card>
+                )}
 
                 {/* Einzelexporte */}
                 <div>

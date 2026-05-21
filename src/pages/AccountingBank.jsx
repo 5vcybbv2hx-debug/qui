@@ -207,7 +207,7 @@ export default function AccountingBank() {
     const createAccount = useMutation({
         mutationFn: (d) => base44.entities.BankAccount.create(d),
         onSuccess: (acc) => {
-            queryClient.invalidateQueries(['bank-accounts']);
+            queryClient.invalidateQueries({ queryKey: ['bank-accounts'] });
             setShowAddAccount(false);
             setSelectedAccountId(acc.id);
             setAccountForm({ name: '', bank_name: '', iban: '', bic: '', account_type: 'Girokonto', current_balance: '', balance_date: format(new Date(), 'yyyy-MM-dd'), notes: '', active: true });
@@ -217,14 +217,14 @@ export default function AccountingBank() {
     const bulkCreateTransactions = useMutation({
         mutationFn: (rows) => base44.entities.BankTransaction.bulkCreate(rows),
         onSuccess: () => {
-            queryClient.invalidateQueries(['bank-transactions']);
+            queryClient.invalidateQueries({ queryKey: ['bank-transactions'] });
             setImportPreview(null);
         }
     });
 
     const updateTransaction = useMutation({
         mutationFn: ({ id, data }) => base44.entities.BankTransaction.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries(['bank-transactions'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['bank-transactions'] })
     });
 
     const handleCSVFile = (file) => {

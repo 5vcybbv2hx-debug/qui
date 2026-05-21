@@ -69,47 +69,56 @@ export default function AccountingDashboard() {
 
     const { data: cashbookEntries = [] } = useQuery({
         queryKey: ['cashbook-entries'],
-        queryFn: () => base44.entities.CashbookEntry.list('-date')
+        queryFn: () => base44.entities.CashbookEntry.list('-date', 500),
+        staleTime: 5 * 60_000
     });
 
     const { data: receipts = [] } = useQuery({
         queryKey: ['accounting-receipts'],
-        queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date')
+        queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
+        staleTime: 5 * 60_000
     });
 
     const { data: creditorInvoices = [] } = useQuery({
         queryKey: ['creditor-invoices'],
-        queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date')
+        queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date', 500),
+        staleTime: 5 * 60_000
     });
 
     const { data: debitorInvoices = [] } = useQuery({
         queryKey: ['debitor-invoices'],
-        queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date')
+        queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date', 500),
+        staleTime: 5 * 60_000
     });
 
     const { data: dailyRevenues = [] } = useQuery({
         queryKey: ['daily-revenues'],
-        queryFn: () => base44.entities.DailyRevenue.list('-date')
+        queryFn: () => base44.entities.DailyRevenue.list('-date', 500),
+        staleTime: 5 * 60_000
     });
 
     const { data: closings = [] } = useQuery({
         queryKey: ['monthly-closings'],
-        queryFn: () => base44.entities.MonthlyClosing.list('-year')
+        queryFn: () => base44.entities.MonthlyClosing.list('-year'),
+        staleTime: 5 * 60_000
     });
 
     const { data: recurringExpenses = [] } = useQuery({
         queryKey: ['recurring-expenses'],
-        queryFn: () => base44.entities.RecurringExpense.list('title')
+        queryFn: () => base44.entities.RecurringExpense.list('title'),
+        staleTime: 5 * 60_000
     });
 
     const { data: recurringOccurrences = [] } = useQuery({
         queryKey: ['recurring-expense-occurrences'],
-        queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month')
+        queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month'),
+        staleTime: 5 * 60_000
     });
 
     const { data: liabilities = [] } = useQuery({
         queryKey: ['liabilities'],
-        queryFn: () => base44.entities.Liability.list('-due_date')
+        queryFn: () => base44.entities.Liability.list('-due_date'),
+        staleTime: 5 * 60_000
     });
 
     const stats = useMemo(() => {

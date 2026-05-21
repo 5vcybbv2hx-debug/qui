@@ -69,12 +69,12 @@ export default function AccountingMonthlyClosing() {
 
     const createClosingMutation = useMutation({
         mutationFn: (data) => base44.entities.MonthlyClosing.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['monthly-closings']); setConfirmOpen(false); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['monthly-closings'] }); setConfirmOpen(false); }
     });
 
     const updateClosingMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.MonthlyClosing.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries(['monthly-closings'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['monthly-closings'] })
     });
 
     const currentClosing = closings.find(c => c.year === selectedYear && c.month === selectedMonth);

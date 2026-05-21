@@ -63,27 +63,31 @@ export default function WarehousePage() {
                         )}
                     </TabsList>
 
-                    {permissions.isManager && (
+                    {permissions.isManager && activeTab === 'articles' && (
                         <TabsContent value="articles" className="space-y-0">
                             <ArticlesPage />
                         </TabsContent>
                     )}
 
-                    <TabsContent value="shopping" className="space-y-0">
-                        <ShoppingPage />
-                    </TabsContent>
+                    {activeTab === 'shopping' && (
+                        <TabsContent value="shopping" className="space-y-0">
+                            <ShoppingPage />
+                        </TabsContent>
+                    )}
 
-                    <TabsContent value="restock" className="space-y-0">
-                        <RestockPage />
-                    </TabsContent>
+                    {activeTab === 'restock' && (
+                        <TabsContent value="restock" className="space-y-0">
+                            <RestockPage />
+                        </TabsContent>
+                    )}
 
-                    {permissions.canViewWastage && (
+                    {permissions.canViewWastage && activeTab === 'wastage' && (
                         <TabsContent value="wastage" className="space-y-0">
                             <WastagePage />
                         </TabsContent>
                     )}
 
-                    {permissions.canViewInventory && (
+                    {permissions.canViewInventory && activeTab === 'inventory' && (
                         <TabsContent value="inventory" className="space-y-0">
                             <InventoryPage />
                         </TabsContent>

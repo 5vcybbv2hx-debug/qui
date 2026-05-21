@@ -56,7 +56,7 @@ export default function Wastage() {
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Wastage.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['wastage-items']);
+            queryClient.invalidateQueries({ queryKey: ['wastage-items'] });
             resetForm();
         }
     });
@@ -64,7 +64,7 @@ export default function Wastage() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Wastage.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries(['wastage-items']);
+            queryClient.invalidateQueries({ queryKey: ['wastage-items'] });
         }
     });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import SmartCombobox from '@/components/ui/SmartCombobox';
 import { Camera, X, Upload, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
 import SupplierDetailsEditor from './SupplierDetailsEditor';
@@ -21,6 +21,7 @@ import { recordPriceChange } from '@/lib/priceHistoryUtils';
 import { TrendingUp, History } from 'lucide-react';
 
 export default function ArticleModal({ open, onClose, article, onSave }) {
+    const queryClient = useQueryClient();
     const currentUser = useRef(null);
     useEffect(() => { base44.auth.me().then(u => { currentUser.current = u; }).catch(() => {}); }, []);
     const { data: categories = [] } = useQuery({
@@ -33,7 +34,9 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         queryFn: () => base44.entities.Article.list('order'),
         staleTime: 5 * 60 * 1000
     });
-    const manufacturerSuggestions = [...new Set(allArticles.map(a => a.manufacturer).filter(Boolean))].sort();
+    // Nutze gecachte Artikel statt zweitem API-Call
+    const cachedArticles = queryClient.getQueryData(['articles']) ?? allArticles;
+    const manufacturerSuggestions = [...new Set(cachedArticles.map(a => a.manufacturer).filter(Boolean))].sort();
 
     const [scannerOpen, setScannerOpen] = useState(false);
     const [uploading, setUploading] = useState(false);

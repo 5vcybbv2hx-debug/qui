@@ -39,7 +39,8 @@ export default function Restock() {
 
     const { data: restockItems = [] } = useQuery({
         queryKey: ['restock-items'],
-        queryFn: () => base44.entities.RestockItem.list('-created_date', 100)
+        queryFn: () => base44.entities.RestockItem.list('-created_date', 100),
+        staleTime: 60_000
     });
 
     const { data: articles = [], isLoading: articlesLoading, isError: articlesError, error: articlesErrorObj } = useQuery({

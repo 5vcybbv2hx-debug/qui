@@ -1,274 +1,377 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SECTIONS, calculateCompletion, getMissingFields, getSectionCompletion } from '@/lib/employeeCompleteness';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { User, MapPin, Phone, FileText, CreditCard, AlertCircle, Save, Loader2 } from 'lucide-react';
+import { Save, Loader2, User, FileText, Shield, CreditCard, Phone } from 'lucide-react';
 import SignaturePad from './SignaturePad';
+import PermissionsManager from './PermissionsManager';
 
-const SECTION_ICONS = {
-  stammdaten: User,
-  adresse: MapPin,
-  kontakt: Phone,
-  steuer: FileText,
-  bank: CreditCard,
-  notfall: AlertCircle,
-  unterschriften: FileText
-};
+const TABS = [
+  { id: 'allgemein',   label: 'Allgemein',            icon: User },
+  { id: 'vertrag',     label: 'Vertrag & Arbeitszeit', icon: FileText },
+  { id: 'steuer',      label: 'Steuer & Soziales',     icon: Shield },
+  { id: 'bank',        label: 'Bankdaten',             icon: CreditCard },
+  { id: 'notfall',     label: 'Notfallkontakt',        icon: Phone },
+];
+
+function FieldWrapper({ label, children }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium text-foreground/80">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+function TextField({ label, field, type = 'text', formData, onChange, disabled }) {
+  return (
+    <FieldWrapper label={label}>
+      {type === 'textarea' ? (
+        <Textarea
+          value={formData[field] || ''}
+          onChange={(e) => onChange(field, e.target.value)}
+          disabled={disabled}
+          className="min-h-20 text-base resize-none"
+        />
+      ) : (
+        <Input
+          type={type}
+          value={formData[field] || ''}
+          onChange={(e) => onChange(field, e.target.value)}
+          disabled={disabled}
+          className="h-10 text-base"
+        />
+      )}
+    </FieldWrapper>
+  );
+}
+
+function SelectField({ label, field, options, formData, onChange, disabled }) {
+  return (
+    <FieldWrapper label={label}>
+      <Select value={formData[field] || ''} onValueChange={(v) => onChange(field, v)} disabled={disabled}>
+        <SelectTrigger className="h-10">
+          <SelectValue placeholder="Bitte wählen…" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(o => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </FieldWrapper>
+  );
+}
+
+function SwitchField({ label, field, formData, onChange, disabled }) {
+  return (
+    <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-secondary/40 min-h-[52px]">
+      <span className="text-sm text-foreground">{label}</span>
+      <Switch
+        checked={!!formData[field]}
+        onCheckedChange={(v) => onChange(field, v)}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
+function ColorField({ label, field, formData, onChange, disabled }) {
+  const COLORS = [
+    '#f43f5e','#ec4899','#a855f7','#8b5cf6','#6366f1',
+    '#3b82f6','#06b6d4','#10b981','#84cc16','#f59e0b','#f97316','#ef4444',
+  ];
+  return (
+    <FieldWrapper label={label}>
+      <div className="flex flex-wrap gap-2">
+        {COLORS.map(c => (
+          <button
+            key={c}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(field, c)}
+            className={cn(
+              'w-8 h-8 rounded-full border-2 transition-transform',
+              formData[field] === c ? 'border-foreground scale-110' : 'border-transparent'
+            )}
+            style={{ backgroundColor: c }}
+          />
+        ))}
+        <Input
+          type="color"
+          value={formData[field] || '#f59e0b'}
+          onChange={(e) => onChange(field, e.target.value)}
+          disabled={disabled}
+          className="w-8 h-8 p-0 border-0 rounded-full cursor-pointer bg-transparent"
+          title="Eigene Farbe wählen"
+        />
+      </div>
+    </FieldWrapper>
+  );
+}
+
+function SectionTitle({ children }) {
+  return <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pt-4 pb-1 first:pt-0">{children}</h3>;
+}
 
 export default function PersonalBogenForm({ employee, onSave, isLoading = false, isEditable = true }) {
   const [formData, setFormData] = useState(employee || {});
-  const [activeSection, setActiveSection] = useState('stammdaten');
-
-  const completion = calculateCompletion(formData);
-  const missingFields = getMissingFields(formData);
+  const [activeTab, setActiveTab] = useState('allgemein');
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    onSave(formData);
-  };
+  const handleSave = () => onSave(formData);
 
-  const renderField = (label, field, type = 'text', options = null) => (
-    <div className="space-y-2">
-      <Label htmlFor={field} className="text-sm font-medium text-foreground">
-        {label}
-      </Label>
-      {type === 'select' ? (
-        <Select value={formData[field] || ''} onValueChange={(value) => handleChange(field, value)} disabled={!isEditable}>
-          <SelectTrigger id={field} className="h-10">
-            <SelectValue placeholder="Bitte wählen..." />
-          </SelectTrigger>
-          <SelectContent>
-            {options?.map(opt => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : type === 'textarea' ? (
-        <Textarea
-          id={field}
-          value={formData[field] || ''}
-          onChange={(e) => handleChange(field, e.target.value)}
-          disabled={!isEditable}
-          className="min-h-24 text-base"
-        />
-      ) : (
-        <Input
-          id={field}
-          type={type}
-          value={formData[field] || ''}
-          onChange={(e) => handleChange(field, e.target.value)}
-          disabled={!isEditable}
-          className="h-10 text-base"
-        />
-      )}
-    </div>
-  );
+  const f = { formData, onChange: handleChange, disabled: !isEditable };
 
   return (
-    <div className="space-y-6">
-      {/* Fortschrittsanzeige */}
-      <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between mb-2">
-            <CardTitle className="text-lg">Personalbogen</CardTitle>
-            <span className="text-2xl font-bold text-amber-500">{completion}%</span>
-          </div>
-          <Progress value={completion} className="h-2" />
-          <CardDescription className="mt-2">
-            {completion === 100 ? '✓ Vollständig' : `${Object.keys(missingFields).length} Abschnitte unvollständig`}
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      {/* Fehlende Felder Warnung */}
-      {Object.keys(missingFields).length > 0 && (
-        <Alert className="border-orange-500/30 bg-orange-500/10">
-          <AlertCircle className="h-4 w-4 text-orange-500" />
-          <AlertDescription className="text-sm text-orange-700">
-            Bitte füllen Sie die folgenden Abschnitte aus: {Object.values(missingFields).map((fields, i) => 
-              <span key={i}>{Object.keys(SECTIONS).find(key => SECTIONS[key].label.includes(key))}</span>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Formular Tabs */}
-      <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
-        <TabsList className="grid grid-cols-3 md:grid-cols-7 w-full gap-1">
-          {Object.entries(SECTIONS).map(([key, section]) => {
-            const sectionCompletion = getSectionCompletion(formData, key);
-            const Icon = SECTION_ICONS[key];
+    <div className="space-y-0">
+      {/* Tab Bar */}
+      <div className="overflow-x-auto scrollbar-hide -mx-1">
+        <div className="flex gap-1 px-1 min-w-max border-b border-border pb-0">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
             return (
-              <TabsTrigger
-                key={key}
-                value={key}
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex flex-col items-center gap-1 py-3',
-                  sectionCompletion === 100 ? 'border-green-500' : missingFields[key] ? 'border-orange-500' : ''
+                  'flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 -mb-px',
+                  active
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                 )}
               >
-                <Icon className="w-4 h-4" />
-                <span className="text-xs hidden sm:inline">{sectionCompletion}%</span>
-              </TabsTrigger>
+                <Icon className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+              </button>
             );
           })}
-        </TabsList>
+        </div>
+      </div>
 
-        {/* Stammdaten */}
-        <TabsContent value="stammdaten" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Stammdaten</CardTitle>
-              <CardDescription>Grundlegende persönliche Informationen</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {renderField('Name', 'name')}
-              {renderField('Geburtsdatum', 'birthday', 'date')}
-              {renderField('Geburtsort', 'birth_place')}
-              {renderField('Geburtsname', 'birth_name')}
-              {renderField('Nationalität', 'nationality')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {/* Tab Content */}
+      <div className="pt-5 space-y-4">
 
-        {/* Adresse */}
-        <TabsContent value="adresse" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Adresse</CardTitle>
-              <CardDescription>Wohnort und Postleitzahl</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {renderField('Straße und Hausnummer', 'street')}
-              {renderField('Postleitzahl', 'postal_code')}
-              {renderField('Stadt', 'city')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* ── Tab 1: Allgemein ── */}
+        {activeTab === 'allgemein' && (
+          <div className="space-y-4">
+            <SectionTitle>Basisdaten</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField label="Name" field="name" {...f} />
+              <TextField label="Kurzname" field="short_name" {...f} />
+            </div>
+            <SelectField label="Rolle" field="role" options={[
+              { value: 'Aushilfe', label: 'Aushilfe' },
+              { value: 'Vollzeit', label: 'Vollzeit' },
+              { value: 'Manager', label: 'Manager' },
+              { value: 'Orga', label: 'Orga' },
+            ]} {...f} />
+            <ColorField label="Farbe" field="color" {...f} />
 
-        {/* Kontaktdaten */}
-        <TabsContent value="kontakt" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Kontaktdaten</CardTitle>
-              <CardDescription>Telefon und E-Mail</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {renderField('Telefon', 'phone', 'tel')}
-              {renderField('E-Mail', 'email', 'email')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <SectionTitle>Kontakt</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField label="Telefon" field="phone" type="tel" {...f} />
+              <TextField label="E-Mail" field="email" type="email" {...f} />
+            </div>
 
-        {/* Steuer & Sozialversicherung */}
-        <TabsContent value="steuer" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Steuer & Sozialversicherung</CardTitle>
-              <CardDescription>Steuernummer und Versicherungsinformationen</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {renderField('Steuer-ID', 'tax_id')}
-              {renderField('Rentenversicherungsnummer', 'pension_number')}
-              {renderField('Krankenkasse', 'health_insurance')}
-              {renderField('Befreiungsantrag Rentenversicherung', 'pension_exemption', 'checkbox')}
-              {renderField('Versicherungspflichtige Hauptbeschäftigung', 'has_main_job', 'checkbox')}
-              {renderField('Weitere geringfügige Beschäftigung', 'has_other_minijob', 'checkbox')}
-              {formData.has_other_minijob && renderField('Details zur weiteren Beschäftigung', 'other_minijob_details', 'textarea')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <SectionTitle>Persönliche Daten</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField label="Geburtsdatum" field="birthday" type="date" {...f} />
+              <TextField label="Geburtsname" field="birth_name" {...f} />
+              <TextField label="Geburtsort" field="birth_place" {...f} />
+              <TextField label="Nationalität" field="nationality" {...f} />
+            </div>
 
-        {/* Bankdaten */}
-        <TabsContent value="bank" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bankdaten</CardTitle>
-              <CardDescription>Kontoverbindung für Gehaltszahlung</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {renderField('Kreditinstitut', 'bank_name')}
-              {renderField('IBAN', 'iban')}
-              {renderField('BIC', 'bic')}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <SectionTitle>Adresse</SectionTitle>
+            <TextField label="Straße und Hausnummer" field="street" {...f} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField label="Postleitzahl" field="postal_code" {...f} />
+              <TextField label="Stadt" field="city" {...f} />
+            </div>
 
-        {/* Notfallkontakt */}
-         <TabsContent value="notfall" className="space-y-6 mt-6">
-           <Card>
-             <CardHeader>
-               <CardTitle>Notfallkontakt</CardTitle>
-               <CardDescription>Person die im Notfall kontaktiert werden soll</CardDescription>
-             </CardHeader>
-             <CardContent className="space-y-4">
-               {renderField('Name', 'emergency_contact_name')}
-               {renderField('Telefon', 'emergency_contact_phone', 'tel')}
-               {renderField('Beziehung', 'emergency_contact_relation', 'select', [
-                 { value: 'Ehepartner', label: 'Ehepartner' },
-                 { value: 'Eltern', label: 'Eltern' },
-                 { value: 'Kind', label: 'Kind' },
-                 { value: 'Geschwister', label: 'Geschwister' },
-                 { value: 'Freund', label: 'Freund' },
-                 { value: 'Sonstiges', label: 'Sonstiges' }
-               ])}
-             </CardContent>
-           </Card>
-         </TabsContent>
+            <SectionTitle>Kleidung</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <SelectField label="T-Shirt Größe" field="tshirt_size" options={
+                ['XS','S','M','L','XL','XXL','XXXL'].map(s => ({ value: s, label: s }))
+              } {...f} />
+              <SelectField label="Pullover Größe" field="pullover_size" options={
+                ['XS','S','M','L','XL','XXL','XXXL'].map(s => ({ value: s, label: s }))
+              } {...f} />
+            </div>
 
-        {/* Unterschriften */}
-        <TabsContent value="unterschriften" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Unterschriften</CardTitle>
-              <CardDescription>Bestätigung durch Arbeitnehmer und Arbeitgeber</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <SignaturePad 
-                label="Unterschrift Arbeitnehmer"
-                onSign={(signature) => handleChange('sig_employee', signature)}
-              />
-              <SignaturePad 
-                label="Unterschrift Arbeitgeber (Manager)"
-                onSign={(signature) => handleChange('sig_employer', signature)}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        </Tabs>
+            <SectionTitle>Status</SectionTitle>
+            <SwitchField label="Aktiv" field="is_active" {...f} />
+            <SwitchField label="Systemkonto (in Terminal ausblenden)" field="is_system_account" {...f} />
+          </div>
+        )}
+
+        {/* ── Tab 2: Vertrag & Arbeitszeit ── */}
+        {activeTab === 'vertrag' && (
+          <div className="space-y-4">
+            <SectionTitle>Anstellung</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField label="Mitarbeiternummer" field="employee_number" {...f} />
+              <TextField label="Eintrittsdatum" field="entry_date" type="date" {...f} />
+            </div>
+            <SelectField label="Vertragsart" field="contract_type" options={[
+              { value: 'Vollzeit', label: 'Vollzeit' },
+              { value: 'Teilzeit', label: 'Teilzeit' },
+              { value: 'Minijob', label: 'Minijob' },
+            ]} {...f} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <TextField label="Stundensatz (€)" field="hourly_rate" type="number" {...f} />
+              <TextField label="Wochenstunden" field="weekly_hours" type="number" {...f} />
+              <TextField label="Urlaubstage/Jahr" field="vacation_days_per_year" type="number" {...f} />
+            </div>
+
+            <SectionTitle>Tätigkeit</SectionTitle>
+            <TextField label="Tätigkeit / Position" field="activity" {...f} />
+            <TextField label="Schul- und Berufsausbildung" field="education" type="textarea" {...f} />
+
+            <SectionTitle>Skills</SectionTitle>
+            <FieldWrapper label="Fähigkeiten">
+              <div className="flex flex-wrap gap-2">
+                {['Barkeeper', 'Service', 'Sonderaufgaben'].map(skill => {
+                  const skills = formData.skills || [];
+                  const active = skills.includes(skill);
+                  return (
+                    <button
+                      key={skill}
+                      type="button"
+                      disabled={!isEditable}
+                      onClick={() => {
+                        const next = active ? skills.filter(s => s !== skill) : [...skills, skill];
+                        handleChange('skills', next);
+                      }}
+                      className={cn(
+                        'px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors',
+                        active
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-secondary/50 text-muted-foreground border-border hover:border-primary/50'
+                      )}
+                    >
+                      {skill}
+                    </button>
+                  );
+                })}
+              </div>
+            </FieldWrapper>
+
+            <SectionTitle>Nebenbeschäftigung</SectionTitle>
+            <SwitchField label="Versicherungspflichtige Hauptbeschäftigung" field="has_main_job" {...f} />
+            <SwitchField label="Weitere geringfügige Beschäftigung" field="has_other_minijob" {...f} />
+            {formData.has_other_minijob && (
+              <TextField label="Details zur weiteren Beschäftigung" field="other_minijob_details" type="textarea" {...f} />
+            )}
+
+            <SectionTitle>Berechtigungen</SectionTitle>
+            <PermissionsManager
+              employee={formData}
+              onSave={(perms) => handleChange('permissions', perms)}
+            />
+
+            <SectionTitle>Zugang</SectionTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField label="PIN (4-stellig)" field="pin" {...f} />
+              <TextField label="Kalender-Token" field="calendar_token" {...f} />
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 3: Steuer & Soziales ── */}
+        {activeTab === 'steuer' && (
+          <div className="space-y-4">
+            <SectionTitle>Steuer</SectionTitle>
+            <TextField label="Steuer-Identifikationsnummer" field="tax_id" {...f} />
+
+            <SectionTitle>Sozialversicherung</SectionTitle>
+            <TextField label="Rentenversicherungsnummer" field="pension_number" {...f} />
+            <TextField label="Krankenkasse" field="health_insurance" {...f} />
+            <SwitchField label="Befreiungsantrag Rentenversicherung" field="pension_exemption" {...f} />
+          </div>
+        )}
+
+        {/* ── Tab 4: Bankdaten ── */}
+        {activeTab === 'bank' && (
+          <div className="space-y-4">
+            <SectionTitle>Kontoverbindung</SectionTitle>
+            <TextField label="Kreditinstitut" field="bank_name" {...f} />
+            <TextField label="IBAN" field="iban" {...f} />
+            <TextField label="BIC" field="bic" {...f} />
+
+            <SectionTitle>Unterschriften</SectionTitle>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground/80">Unterschrift Arbeitnehmer</p>
+                {formData.sig_employee && (
+                  <img src={formData.sig_employee} alt="Unterschrift AN" className="border rounded-lg max-h-24 bg-white" />
+                )}
+                {isEditable && (
+                  <SignaturePad
+                    label=""
+                    onSign={(sig) => handleChange('sig_employee', sig)}
+                  />
+                )}
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground/80">Unterschrift Arbeitgeber</p>
+                {formData.sig_employer && (
+                  <img src={formData.sig_employer} alt="Unterschrift AG" className="border rounded-lg max-h-24 bg-white" />
+                )}
+                {isEditable && (
+                  <SignaturePad
+                    label=""
+                    onSign={(sig) => handleChange('sig_employer', sig)}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 5: Notfallkontakt ── */}
+        {activeTab === 'notfall' && (
+          <div className="space-y-4">
+            <SectionTitle>Notfallkontakt</SectionTitle>
+            <TextField label="Name" field="emergency_contact_name" {...f} />
+            <TextField label="Telefon" field="emergency_contact_phone" type="tel" {...f} />
+            <SelectField label="Beziehung" field="emergency_contact_relation" options={[
+              { value: 'Ehepartner', label: 'Ehepartner' },
+              { value: 'Eltern', label: 'Eltern' },
+              { value: 'Kind', label: 'Kind' },
+              { value: 'Geschwister', label: 'Geschwister' },
+              { value: 'Freund', label: 'Freund' },
+              { value: 'Sonstiges', label: 'Sonstiges' },
+            ]} {...f} />
+          </div>
+        )}
+
+      </div>
 
       {/* Save Button */}
       {isEditable && (
-        <Button
-          onClick={handleSave}
-          disabled={isLoading}
-          className="w-full h-11 text-base font-semibold"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Wird gespeichert...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Speichern
-            </>
-          )}
-        </Button>
+        <div className="pt-6">
+          <Button
+            onClick={handleSave}
+            disabled={isLoading}
+            className="w-full h-11 text-base font-semibold"
+          >
+            {isLoading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Wird gespeichert…</>
+            ) : (
+              <><Save className="w-4 h-4 mr-2" />Speichern</>
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );

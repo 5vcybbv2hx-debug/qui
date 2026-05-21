@@ -38,13 +38,22 @@ export default function TimeTracking() {
     const [filterDate, setFilterDate] = useState('');
 
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries', selectedMonth],
+        queryKey: ['time-entries', selectedMonth, currentEmployee?.id, permissions.isManager],
         queryFn: async () => {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
-            const all = await base44.entities.TimeEntry.list('-date', 2000);
+            let all;
+            if (permissions.isManager) {
+                // Manager: alle Einträge laden
+                all = await base44.entities.TimeEntry.list('-date', 2000);
+            } else {
+                // Mitarbeiter: nur eigene Einträge (employee_id-Filter + RLS)
+                if (!currentEmployee?.id) return [];
+                all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 500);
+            }
             return all.filter(entry => entry.date >= start && entry.date <= end);
         },
+        enabled: !isLoadingEmployee, // warte bis currentEmployee geladen ist
         staleTime: 2 * 60 * 1000,
         refetchOnWindowFocus: false,
     });
@@ -55,9 +64,17 @@ export default function TimeTracking() {
     });
 
     const { data: clockEntries = [] } = useQuery({
-        queryKey: ['clockEntries'],
-        queryFn: () => base44.entities.ClockEntry.list('-clock_in', 500),
-        refetchInterval: 15000, // alle 15 Sekunden aktualisieren
+        queryKey: ['clockEntries', currentEmployee?.id, permissions.isManager],
+        queryFn: async () => {
+            if (permissions.isManager) {
+                return base44.entities.ClockEntry.list('-clock_in', 500);
+            }
+            // Mitarbeiter: nur eigene ClockEntries laden
+            if (!currentEmployee?.id) return [];
+            return base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 200);
+        },
+        enabled: !isLoadingEmployee,
+        refetchInterval: 15000,
         refetchOnWindowFocus: true,
         staleTime: 0,
     });

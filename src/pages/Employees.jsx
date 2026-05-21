@@ -763,6 +763,23 @@ export default function Employees() {
                         </DialogHeader>
                         
                         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                            {/* Profilfoto Upload */}
+                            <div className="flex flex-col items-center gap-2 pb-4 border-b border-border">
+                                <EmployeeAvatar
+                                    employee={{ ...selectedEmployee, ...formData }}
+                                    size="lg"
+                                    upload={true}
+                                    onUploaded={(url) => {
+                                        setFormData(f => ({ ...f, profile_image_url: url }));
+                                        if (selectedEmployee) {
+                                            base44.entities.Employee.update(selectedEmployee.id, { profile_image_url: url })
+                                                .then(() => queryClient.invalidateQueries(['employees']));
+                                        }
+                                    }}
+                                />
+                                <p className="text-xs text-muted-foreground">Klicken zum Foto hochladen</p>
+                            </div>
+
                             <div className="space-y-2">
                                 <Label>Mitarbeiternummer</Label>
                                 <Input

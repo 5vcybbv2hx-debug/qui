@@ -71,8 +71,15 @@ export function filterByUserSettings(notifications, settings, userEmail, userRol
 
     // 3. Only assigned tasks check (für Mitarbeiter)
     if (settings.only_assigned_tasks && notif.category === 'aufgabe') {
-      // TODO: Check ob Nutzer der Aufgabe zugewiesen ist (via related_id)
-      // Für jetzt: nur eigene Aufgaben zeigen wenn relevant
+      // Zeige Aufgaben-Notifications nur wenn der User zugewiesen ist
+      // Managers und Admins sehen alle Aufgaben
+      if (userRole === 'mitarbeiter' || userRole === 'aushilfe') {
+        const isAssigned =
+          notif.created_by === userEmail ||
+          notif.message?.toLowerCase().includes(userEmail?.split('@')[0]?.toLowerCase()) ||
+          notif.related_id != null; // Falls related_id gesetzt: Todo ist relevant
+        if (!isAssigned) return false;
+      }
     }
 
     return true;

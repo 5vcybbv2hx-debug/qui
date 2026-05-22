@@ -23,10 +23,10 @@ import PayrollReportSender from '@/components/reports/PayrollReportSender';
 import { validateArbZG, formatWarnings } from '@/components/timetracking/ArbZGValidator';
 
 const statusConfig = {
-    'entwurf': { label: 'Entwurf', color: 'bg-slate-100 text-slate-700', icon: FileText },
-    'eingereicht': { label: 'Eingereicht', color: 'bg-blue-100 text-blue-700', icon: Clock },
-    'ausstehend': { label: 'Ausstehend', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
-    'genehmigt': { label: 'Genehmigt', color: 'bg-green-100 text-green-700', icon: CheckCircle2 }
+    'entwurf': { label: 'Entwurf', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400', icon: FileText },
+    'eingereicht': { label: 'Eingereicht', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400', icon: Clock },
+    'ausstehend': { label: 'Ausstehend', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400', icon: Clock },
+    'genehmigt': { label: 'Genehmigt', color: 'bg-green-500/15 text-green-600 dark:text-green-400', icon: CheckCircle2 }
 };
 
 export default function TimeTracking() {
@@ -47,9 +47,9 @@ export default function TimeTracking() {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             let all;
-            if (permissions.isManager) {
-                // Manager: serverseitiger Datums-Filter
-                all = await base44.entities.TimeEntry.filter({ date_gte: start, date_lte: end }, '-date', 500);
+             if (permissions.isManager) {
+                 // Manager: serverseitiger Datums-Filter
+                 all = await base44.entities.TimeEntry.filter({ date_gte: start, date_lte: end }, '-date', 1000);
             } else {
                 // Mitarbeiter: nur eigene Einträge nach employee_id
                 all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 500);
@@ -193,9 +193,9 @@ export default function TimeTracking() {
     };
 
     const handleApproveEmployee = (employeeName) => {
-        const pendingEntries = entriesByEmployee[employeeName]
-            .filter(e => e.status !== 'genehmigt')
-            .map(e => e.id);
+         const pendingEntries = entriesByEmployee[employeeName]
+             .filter(e => e.employee_confirmed === true && e.status !== 'genehmigt')
+             .map(e => e.id);
         if (pendingEntries.length > 0) {
             approveMutation.mutate(pendingEntries);
         }
@@ -860,7 +860,9 @@ export default function TimeTracking() {
                 <div className="space-y-4 sm:space-y-6">
                     {Object.entries(entriesByEmployee).map(([employeeName, entries]) => {
                         const employeeTotal = entries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
-                        const pendingCount = entries.filter(e => e.status !== 'genehmigt').length;
+                        const pendingCount = entries.filter(e =>
+                            e.employee_confirmed === true && e.status !== 'genehmigt'
+                        ).length;
                         return (
                             <div key={employeeName}>
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, endOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Pencil, Trash2, Save, X, Clock, AlertTriangle, Plus, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -225,37 +225,31 @@ export default function AdminTimeEditor() {
     const [filterMonth, setFilterMonth] = useState(format(new Date(), 'yyyy-MM'));
 
     const { data: employees = [] } = useQuery({
-        queryKey: ['employees-all'],
-        queryFn: () => base44.entities.Employee.list('name', 500)
+        queryKey: ['employees'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
     const { data: timeEntries = [], isLoading: loadingTE } = useQuery({
         queryKey: ['admin-time-entries', filterMonth],
-        queryFn: () => base44.entities.TimeEntry.list('-date', 2000)
+        queryFn: () => {
+            const start = `${filterMonth}-01`;
+            const end = format(endOfMonth(parseISO(start)), 'yyyy-MM-dd');
+            return base44.entities.TimeEntry.filter({ date_gte: start, date_lte: end }, '-date', 500);
+        }
     });
 
     const { data: clockEntries = [], isLoading: loadingCE } = useQuery({
         queryKey: ['admin-clock-entries', filterMonth],
-        queryFn: () => base44.entities.ClockEntry.list('-clock_in', 2000)
+        queryFn: () => {
+            const start = `${filterMonth}-01T00:00:00`;
+            const end = format(endOfMonth(parseISO(`${filterMonth}-01`)), 'yyyy-MM-dd') + 'T23:59:59';
+            return base44.entities.ClockEntry.filter({ clock_in_gte: start, clock_in_lte: end }, '-clock_in', 500);
+        }
     });
 
-    // Filter
-    const monthStart = filterMonth + '-01';
-    const monthEnd = filterMonth + '-31';
-
-    const filteredTE = timeEntries.filter(e => {
-        const inMonth = e.date >= monthStart && e.date <= monthEnd;
-        const inEmp = !filterEmp || e.employee_id === filterEmp;
-        return inMonth && inEmp;
-    });
-
-    const filteredCE = clockEntries.filter(e => {
-        if (!e.clock_in) return false;
-        const d = e.clock_in.slice(0, 10);
-        const inMonth = d >= monthStart && d <= monthEnd;
-        const inEmp = !filterEmp || e.employee_id === filterEmp;
-        return inMonth && inEmp;
-    });
+    // Clientseitige Filterung entfernt — Daten sind bereits gefiltert
+    const filteredTE = timeEntries;
+    const filteredCE = clockEntries;
 
     // Mutations
     const saveTEMutation = useMutation({

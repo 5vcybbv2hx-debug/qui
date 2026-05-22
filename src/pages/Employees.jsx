@@ -47,9 +47,10 @@ const HOURLY_RATES = {
 };
 
 const roleColors = {
-    'Aushilfe': 'bg-muted text-muted-foreground',
-    'Vollzeit': 'bg-blue-100 text-blue-700',
-    'Manager': 'bg-purple-100 text-purple-700'
+    'Aushilfe': 'bg-muted/80 text-muted-foreground border border-border',
+    'Vollzeit': 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+    'Manager':  'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+    'Teilzeit': 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
 };
 
 export default function Employees() {

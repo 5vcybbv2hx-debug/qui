@@ -134,3 +134,90 @@
     box-shadow: 0 0 20px -4px rgba(245, 158, 11, 0.3);
   }
 }
+
+/* ── BarShift Pro — Globale Design-Tokens & Fixes ─────────────────────────── */
+
+/* Konsistente Scroll-Verhalten in Modals */
+[data-radix-dialog-content] {
+  overscroll-behavior: contain;
+}
+
+/* Select-Dropdown: verhindert iOS-Zoom beim Fokus */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Einheitliche Focus-Ringe */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Tap-Highlight entfernen (bereits vorhanden, zur Sicherheit) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile Touch-Targets: alle interaktiven Elemente min 44px */
+@media (max-width: 768px) {
+  button, [role="button"], a, select {
+    min-height: 44px;
+  }
+}
+
+/* Scrollbar-Styling (Webkit) */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 9999px;
+}
+
+/* Dialog-Overlay Blur auf iOS */
+@supports (-webkit-backdrop-filter: blur(1px)) {
+  [data-radix-dialog-overlay] {
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Smooth transitions für alle Cards */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+/* Role-Badges einheitlich mit semantischen Tokens */
+.role-badge-aushilfe { @apply bg-muted text-muted-foreground border border-border rounded-lg px-2 py-0.5 text-xs font-medium; }
+.role-badge-vollzeit  { @apply bg-blue-500/15 text-blue-400 border border-blue-500/30 rounded-lg px-2 py-0.5 text-xs font-medium; }
+.role-badge-manager   { @apply bg-purple-500/15 text-purple-400 border border-purple-500/30 rounded-lg px-2 py-0.5 text-xs font-medium; }
+
+/* ── Einheitliche Seiten-Header ────────────────────────────────────────────── */
+.page-header {
+  @apply flex items-center justify-between gap-3 mb-5;
+}
+.page-title {
+  @apply text-xl font-bold tracking-tight;
+}
+
+/* ── Form-Label einheitlich ────────────────────────────────────────────────── */
+.form-label {
+  @apply text-sm font-medium text-foreground mb-1.5 block;
+}
+
+/* ── Einheitliches leeres-Zustand-Element ───────────────────────────────────── */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-16 text-center text-muted-foreground gap-3;
+}
+.empty-state-icon {
+  @apply w-12 h-12 opacity-30;
+}

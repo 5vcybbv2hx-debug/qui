@@ -46,24 +46,26 @@ export default function Vacation() {
         staleTime: 10 * 60 * 1000,
     });
 
-    const { data: allVacationRequests = [] } = useQuery({
-        queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list('-created_date', 500),
+    const { data: vacationRequests = [] } = useQuery({
+        queryKey: ['vacation-requests', selectedYear],
+        queryFn: () => base44.entities.VacationRequest.filter(
+            { start_date_gte: `${selectedYear}-01-01`, start_date_lte: `${selectedYear}-12-31` },
+            '-created_date', 500
+        ),
         staleTime: 2 * 60 * 1000,
     });
 
-    // Filter by selected year client-side
-    const vacationRequests = allVacationRequests.filter(req => 
-        new Date(req.start_date).getFullYear() === selectedYear
-    );
-
     const { data: allEmployees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: 5 * 60 * 1000,
     });
 
     // Get current employee from cached user
-    const currentEmployee = allEmployees.find(e => e.email === user?.email) || null;
+    const currentEmployee =
+        allEmployees.find(e => e.email === user?.email) ||
+        allEmployees.find(e => e.user_id === user?.id) ||
+        null;
 
     // Check if current employee is full-time
     const isFullTimeEmployee = currentEmployee?.contract_type === 'Vollzeit';
@@ -162,8 +164,8 @@ export default function Vacation() {
             id: request.id,
             data: {
                 status: 'abgelehnt',
-                approved_by: user?.full_name,
-                approved_date: new Date().toISOString()
+                reviewed_by: user?.full_name,
+                reviewed_date: new Date().toISOString()
             }
         });
     };

@@ -42,7 +42,7 @@ export default function AccountingCreditors() {
 
     const { data: invoices = [] } = useQuery({
         queryKey: ['creditor-invoices'],
-        queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date')
+        queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date', 300)
     });
 
     const { data: suppliers = [] } = useQuery({
@@ -63,12 +63,12 @@ export default function AccountingCreditors() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.CreditorInvoice.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['creditor-invoices']); setModalOpen(false); setFormData(EMPTY_FORM); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['creditor-invoices'] }); setModalOpen(false); setFormData(EMPTY_FORM); }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.CreditorInvoice.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries(['creditor-invoices'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['creditor-invoices'] })
     });
 
     const enriched = useMemo(() => {

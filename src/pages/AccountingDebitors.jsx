@@ -42,7 +42,7 @@ export default function AccountingDebitors() {
 
     const { data: invoices = [] } = useQuery({
         queryKey: ['debitor-invoices'],
-        queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date')
+        queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date', 300)
     });
 
     const { data: receipts = [] } = useQuery({
@@ -58,12 +58,12 @@ export default function AccountingDebitors() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.DebitorInvoice.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['debitor-invoices']); setModalOpen(false); setFormData(EMPTY_FORM); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['debitor-invoices'] }); setModalOpen(false); setFormData(EMPTY_FORM); }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.DebitorInvoice.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries(['debitor-invoices'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['debitor-invoices'] })
     });
 
     const enriched = useMemo(() => invoices.map(inv => {

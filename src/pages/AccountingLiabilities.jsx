@@ -218,12 +218,12 @@ export default function AccountingLiabilities() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Liability.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['liabilities']); closeModal(); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['liabilities'] }); closeModal(); }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Liability.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries(['liabilities'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['liabilities'] })
     });
 
     const createPaymentMutation = useMutation({
@@ -244,8 +244,8 @@ export default function AccountingLiabilities() {
             return payment;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['liabilities']);
-            queryClient.invalidateQueries(['liability-payments']);
+            queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+            queryClient.invalidateQueries({ queryKey: ['liability-payments'] });
             setPaymentModalOpen(false);
             setPaymentForm(EMPTY_PAYMENT);
         }

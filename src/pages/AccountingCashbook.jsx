@@ -61,7 +61,7 @@ export default function AccountingCashbook() {
 
     const { data: dailyRevenues = [] } = useQuery({
         queryKey: ['daily-revenues'],
-        queryFn: () => base44.entities.DailyRevenue.list('-date')
+        queryFn: () => base44.entities.DailyRevenue.list('-date', 365)
     });
 
     const createMutation = useMutation({

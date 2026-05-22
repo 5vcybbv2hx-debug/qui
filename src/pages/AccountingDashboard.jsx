@@ -12,7 +12,7 @@ import {
     CheckCircle2, Clock, ArrowRight, Download, FileText, Layers,
     BarChart2, Euro, CreditCard, Calendar, RefreshCw, Building2
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, isAfter } from 'date-fns';
+import { format, startOfMonth, endOfMonth, isAfter, subMonths } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -69,31 +69,46 @@ export default function AccountingDashboard() {
 
     const { data: cashbookEntries = [] } = useQuery({
         queryKey: ['cashbook-entries'],
-        queryFn: () => base44.entities.CashbookEntry.list('-date', 500),
+        queryFn: () => {
+            const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
+            return base44.entities.CashbookEntry.filter({ date_gte: from }, '-date', 500);
+        },
         staleTime: 5 * 60_000
     });
 
     const { data: receipts = [] } = useQuery({
         queryKey: ['accounting-receipts'],
-        queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
+        queryFn: () => {
+            const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
+            return base44.entities.AccountingReceipt.filter({ receipt_date_gte: from }, '-receipt_date', 500);
+        },
         staleTime: 5 * 60_000
     });
 
     const { data: creditorInvoices = [] } = useQuery({
         queryKey: ['creditor-invoices'],
-        queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date', 500),
+        queryFn: () => {
+            const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
+            return base44.entities.CreditorInvoice.filter({ invoice_date_gte: from }, '-invoice_date', 300);
+        },
         staleTime: 5 * 60_000
     });
 
     const { data: debitorInvoices = [] } = useQuery({
         queryKey: ['debitor-invoices'],
-        queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date', 500),
+        queryFn: () => {
+            const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
+            return base44.entities.DebitorInvoice.filter({ invoice_date_gte: from }, '-invoice_date', 300);
+        },
         staleTime: 5 * 60_000
     });
 
     const { data: dailyRevenues = [] } = useQuery({
         queryKey: ['daily-revenues'],
-        queryFn: () => base44.entities.DailyRevenue.list('-date', 500),
+        queryFn: () => {
+            const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
+            return base44.entities.DailyRevenue.filter({ date_gte: from }, '-date', 365);
+        },
         staleTime: 5 * 60_000
     });
 

@@ -127,7 +127,11 @@ Deno.serve(async (req) => {
                             ${item.is_seasonal ? `<span class="badge badge-special">Saisonal</span>` : ''}
                             ${item.is_special ? `<span class="badge badge-special">Special</span>` : ''}
                         </div>
-                        ${item.allergens ? `<div class="allergens"><strong>Allergene:</strong> ${esc(item.allergens)}</div>` : ''}
+                        ${(item.allergens_list?.length || item.allergens || item.additives?.length) ? `
+                        <div class="allergens">
+                        ${(item.allergens_list?.length) ? `<div><strong>Allergene:</strong> ${item.allergens_list.map(a => esc(a)).join(', ')}</div>` : item.allergens ? `<div><strong>Allergene:</strong> ${esc(item.allergens)}</div>` : ''}
+                        ${(item.additives?.length) ? `<div style="margin-top:0.25rem"><strong>Zusatzstoffe:</strong> ${item.additives.map(a => esc(a)).join(', ')}</div>` : ''}
+                        </div>` : ''}
                     </div>
                 </div>
             `).join('')}

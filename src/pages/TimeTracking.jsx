@@ -23,6 +23,7 @@ import { validateArbZG, formatWarnings } from '@/components/timetracking/ArbZGVa
 const statusConfig = {
     'entwurf': { label: 'Entwurf', color: 'bg-slate-100 text-slate-700', icon: FileText },
     'eingereicht': { label: 'Eingereicht', color: 'bg-blue-100 text-blue-700', icon: Clock },
+    'ausstehend': { label: 'Ausstehend', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
     'genehmigt': { label: 'Genehmigt', color: 'bg-green-100 text-green-700', icon: CheckCircle2 }
 };
 
@@ -123,7 +124,7 @@ export default function TimeTracking() {
 
     const approveMutation = useMutation({
         mutationFn: async (entryIds) => {
-            const user = await base44.auth.me();
+            const user = queryClient.getQueryData(['user']) || await base44.auth.me();
             const promises = entryIds.map(async (id) => {
                 const entry = timeEntries.find(e => e.id === id);
                 await base44.entities.TimeEntry.update(id, { 
@@ -505,8 +506,8 @@ export default function TimeTracking() {
                                     {currentEmployee.name?.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                    <h2 className="text-lg sm:text-xl font-bold text-white">{currentEmployee.name}</h2>
-                                    <p className="text-xs sm:text-sm text-slate-400">{currentEmployee.role}</p>
+                                    <h2 className="text-lg sm:text-xl font-bold text-foreground">{currentEmployee.name}</h2>
+                                    <p className="text-xs sm:text-sm text-muted-foreground">{currentEmployee.role}</p>
                                     {activeClockEntry && (
                                         <p className="text-xs sm:text-sm text-green-400 mt-1">
                                             Eingestempelt um {format(new Date(activeClockEntry.clock_in), 'HH:mm')} Uhr
@@ -607,7 +608,7 @@ export default function TimeTracking() {
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold text-foreground text-sm truncate">{entry.employee_name}</p>
-                                            <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                                                 <span className="flex items-center gap-1">
                                                     <LogIn className="w-3 h-3 text-green-500" />
                                                     {format(new Date(entry.clock_in), 'HH:mm')}
@@ -625,7 +626,7 @@ export default function TimeTracking() {
                                                 {entry.status === 'clocked_in' ? 'Aktiv' : 'Fertig'}
                                             </Badge>
                                             {entry.total_hours && (
-                                                <p className="text-sm font-bold text-white mt-1">
+                                                <p className="text-sm font-bold text-foreground mt-1">
                                                     {entry.total_hours}h
                                                 </p>
                                             )}
@@ -660,29 +661,29 @@ export default function TimeTracking() {
                 <div className="mb-1">
                     <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">Meine Stunden</p>
                     <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/40 to-slate-800 border-slate-700">
+                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/40 to-card border-border">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Heute</p>
-                                    <p className="text-xl sm:text-2xl font-bold text-white">{myTodayHours.toFixed(1)}h</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Heute</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-foreground">{myTodayHours.toFixed(1)}h</p>
                                 </div>
                                 <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-blue-400 opacity-50" />
                             </div>
                         </Card>
-                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/40 to-slate-800 border-slate-700">
+                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/40 to-card border-border">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Woche</p>
-                                    <p className="text-xl sm:text-2xl font-bold text-white">{myWeekHours.toFixed(1)}h</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Woche</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-foreground">{myWeekHours.toFixed(1)}h</p>
                                 </div>
                                 <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-purple-400 opacity-50" />
                             </div>
                         </Card>
-                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/40 to-slate-800 border-slate-700">
+                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/40 to-card border-border">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] sm:text-xs text-slate-400 mb-1">Monat</p>
-                                    <p className="text-xl sm:text-2xl font-bold text-white">{myMonthHours.toFixed(1)}h</p>
+                                    <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Monat</p>
+                                    <p className="text-xl sm:text-2xl font-bold text-foreground">{myMonthHours.toFixed(1)}h</p>
                                     <p className="text-[10px] sm:text-xs text-green-400 mt-0.5">{myApprovedHours.toFixed(1)}h ✓</p>
                                 </div>
                                 <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-amber-400 opacity-50" />
@@ -696,29 +697,29 @@ export default function TimeTracking() {
                     <div className="mb-1">
                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Gesamt Team</p>
                         <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/20 to-slate-800 border-slate-700/50">
+                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/20 to-card border-border/50">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Heute</p>
-                                        <p className="text-xl sm:text-2xl font-bold text-slate-300">{todayHours.toFixed(1)}h</p>
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Heute</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-foreground">{todayHours.toFixed(1)}h</p>
                                     </div>
                                     <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-blue-500 opacity-30" />
                                 </div>
                             </Card>
-                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/20 to-slate-800 border-slate-700/50">
+                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/20 to-card border-border/50">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Woche</p>
-                                        <p className="text-xl sm:text-2xl font-bold text-slate-300">{weekHours.toFixed(1)}h</p>
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Woche</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-foreground">{weekHours.toFixed(1)}h</p>
                                     </div>
                                     <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-purple-500 opacity-30" />
                                 </div>
                             </Card>
-                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/20 to-slate-800 border-slate-700/50">
+                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/20 to-card border-border/50">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] sm:text-xs text-slate-500 mb-1">Monat</p>
-                                        <p className="text-xl sm:text-2xl font-bold text-slate-300">{totalHours.toFixed(1)}h</p>
+                                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Monat</p>
+                                        <p className="text-xl sm:text-2xl font-bold text-foreground">{totalHours.toFixed(1)}h</p>
                                         <p className="text-[10px] sm:text-xs text-green-500 mt-0.5">{approvedHours.toFixed(1)}h ✓</p>
                                     </div>
                                     <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-amber-500 opacity-30" />
@@ -787,12 +788,14 @@ export default function TimeTracking() {
                             className="text-sm bg-background border border-border rounded px-2 py-1 text-foreground flex-1 min-w-[130px]"
                         />
                         {(filterEmployee || filterStatus || filterDate) && (
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => { setFilterEmployee(''); setFilterStatus(''); setFilterDate(''); }}
-                                className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300"
+                                className="text-muted-foreground hover:text-foreground text-xs"
                             >
-                                <X className="w-3 h-3" /> Zurücksetzen
-                            </button>
+                                <X className="w-4 h-4 mr-1" /> Filter zurücksetzen
+                            </Button>
                         )}
                     </div>
                 )}
@@ -831,7 +834,7 @@ export default function TimeTracking() {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 mb-3">
                                     <div className="flex items-center gap-2 sm:gap-3">
                                         <h2 className="text-base sm:text-lg font-semibold text-foreground">{employeeName}</h2>
-                                        <span className="text-xs sm:text-sm text-slate-400">{employeeTotal.toFixed(2)}h</span>
+                                        <span className="text-xs sm:text-sm text-muted-foreground">{employeeTotal.toFixed(2)}h</span>
                                     </div>
                                     {permissions.isManager && pendingCount > 0 && (
                                         <Button
@@ -872,7 +875,7 @@ export default function TimeTracking() {
                                                                    </Badge>
                                                                )}
                                                            </div>
-                                                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-400">
+                                                           <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                                                                <span>
                                                                    {entry.start_time} - {entry.end_time}
                                                                    {entry.end_time < entry.start_time && <span className="ml-1">🌙</span>}
@@ -890,7 +893,7 @@ export default function TimeTracking() {
                                                                </div>
                                                            )}
                                                            {entry.notes && (
-                                                               <p className="text-[10px] sm:text-xs text-slate-500 mt-2">{entry.notes}</p>
+                                                               <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">{entry.notes}</p>
                                                            )}
                                                            {entry.status === 'genehmigt' && entry.manager_approved_by && (
                                                                <p className="text-[10px] text-slate-500 mt-1">
@@ -930,7 +933,7 @@ export default function TimeTracking() {
                                                                             setSelectedEntry(entry);
                                                                             setModalOpen(true);
                                                                         }}
-                                                                        className="text-slate-400 hover:text-white"
+                                                                        className="text-muted-foreground hover:text-foreground"
                                                                         title={!permissions.isManager && entry.status !== 'entwurf' ? 'Bearbeiten setzt Status zurück auf Entwurf' : 'Bearbeiten'}
                                                                     >
                                                                         <Pencil className="w-4 h-4" />

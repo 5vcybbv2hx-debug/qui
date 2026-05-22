@@ -6,29 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Users, TrendingUp, ChevronRight } from 'lucide-react';
-import { format, startOfWeek, endOfWeek, addDays, startOfMonth, endOfMonth, isSameDay, parseISO, isAfter, isBefore, differenceInMinutes } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, startOfMonth, endOfMonth, isSameDay, parseISO, isAfter, isBefore, differenceInMinutes, subMonths, addMonths } from 'date-fns';
+import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import MyShiftsCalendarSync from '@/components/calendar/MyShiftsCalendarSync';
 
 export default function MyShiftsPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [currentUser, setCurrentUser] = useState(null);
-    const [employee, setEmployee] = useState(null);
-
-    React.useEffect(() => {
-        const loadUser = async () => {
-            const user = await base44.auth.me();
-            setCurrentUser(user);
-            
-            const employees = await base44.entities.Employee.filter({ 
-                email: user.email,
-                is_active: true 
-            });
-            setEmployee(employees[0]);
-        };
-        loadUser();
-    }, []);
+    const { data: employee } = useCurrentEmployee();
 
     const { data: provisionalAccess } = useQuery({
         queryKey: ['my-provisional-access', employee?.id],
@@ -44,12 +30,12 @@ export default function MyShiftsPage() {
         queryKey: ['my-shifts', employee?.id],
         queryFn: async () => {
             if (!employee) return [];
-            const allShifts = await base44.entities.Shift.filter({ 
-                employee_id: employee.id 
-            });
-            return allShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const from = format(subMonths(new Date(), 1), 'yyyy-MM-dd');
+            const to = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
+            return base44.entities.Shift.filter({ employee_id: employee.id, date_gte: from, date_lte: to }, 'date', 200);
         },
-        enabled: !!employee
+        enabled: !!employee,
+        staleTime: 2 * 60 * 1000,
     });
 
     // Berechne nächste 14 Tage
@@ -123,12 +109,12 @@ export default function MyShiftsPage() {
 
     const { data: weekTeam = [] } = useQuery({
         queryKey: ['team-week'],
-        queryFn: async () => {
+        queryFn: () => {
             const today = format(new Date(), 'yyyy-MM-dd');
             const in7days = format(addDays(new Date(), 6), 'yyyy-MM-dd');
-            const all = await base44.entities.Shift.list('-date');
-            return all.filter(s => s.date >= today && s.date <= in7days);
-        }
+            return base44.entities.Shift.filter({ date_gte: today, date_lte: in7days }, 'date', 100);
+        },
+        staleTime: 5 * 60 * 1000,
     });
 
     if (!employee) {

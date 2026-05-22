@@ -56,6 +56,8 @@ export default function Shifts() {
             return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, '-date', 200);
         },
         enabled: !isMobile,
+        staleTime: 2 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
 
     // Mobile: load only ±1 week around current mobile week — server-side filter
@@ -86,7 +88,8 @@ export default function Shifts() {
 
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list()
+        queryFn: () => base44.entities.VacationRequest.list('-start_date', 300),
+        staleTime: 5 * 60 * 1000,
     });
 
     const { data: swapRequests = [] } = useQuery({
@@ -98,7 +101,7 @@ export default function Shifts() {
         mutationFn: (data) => base44.entities.Shift.create(data),
         onSuccess: (newShift) => {
             queryClient.setQueryData(['shifts'], (old) => [newShift, ...(old || [])]);
-            queryClient.invalidateQueries(['shifts']);
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
         }
@@ -118,7 +121,7 @@ export default function Shifts() {
             queryClient.setQueryData(['shifts'], context.previous);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['shifts']);
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
         }
@@ -138,7 +141,7 @@ export default function Shifts() {
             queryClient.setQueryData(['shifts'], context.previous);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['shifts']);
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
         }

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, isPast, parseISO } from 'date-fns';
+import { format, isPast, parseISO, addDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
@@ -55,7 +55,12 @@ export default function ShiftSwaps() {
 
     const { data: shifts = [] } = useQuery({
         queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list()
+        queryFn: () => {
+            const from = format(new Date(), 'yyyy-MM-dd');
+            const to = format(addDays(new Date(), 60), 'yyyy-MM-dd');
+            return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, 'date', 200);
+        },
+        staleTime: 5 * 60 * 1000,
     });
 
     const updateMutation = useMutation({
@@ -78,7 +83,7 @@ export default function ShiftSwaps() {
             }
         },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries(['shift-swap-requests']);
+            queryClient.invalidateQueries({ queryKey: ['shift-swap-requests'] });
             setSelectedRequest(null);
             toast.success(variables.data.status === 'genehmigt' ? 'Tauschanfrage genehmigt' : 'Tauschanfrage abgelehnt');
         }
@@ -141,9 +146,9 @@ export default function ShiftSwaps() {
             }
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['shift-swap-requests']);
-            queryClient.invalidateQueries(['shift-swap-bids']);
-            queryClient.invalidateQueries(['shifts']);
+            queryClient.invalidateQueries({ queryKey: ['shift-swap-requests'] });
+            queryClient.invalidateQueries({ queryKey: ['shift-swap-bids'] });
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setSelectedRequest(null);
             toast.success('Schichttausch genehmigt – Kalender wurde aktualisiert');
         }
@@ -632,7 +637,7 @@ export default function ShiftSwaps() {
                      onSuccess={() => {
                          setCreateModalOpen(false);
                          setSelectedShift(null);
-                         queryClient.invalidateQueries(['shift-swap-requests']);
+                         queryClient.invalidateQueries({ queryKey: ['shift-swap-requests'] });
                      }}
                  />
              )}

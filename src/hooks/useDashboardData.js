@@ -38,8 +38,10 @@ export function useDashboardData({ isManager, currentEmployee }) {
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
     const { data: articles = [] } = useQuery({
-        queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list()
+        queryKey: ['articles-low-stock'],
+        queryFn: () => base44.entities.Article.list('name', 500),
+        staleTime: STALE.MEDIUM,
+        select: (data) => data.filter(a => a.min_stock > 0 && a.current_stock <= a.min_stock),
     });
     const { data: shopping = [] } = useQuery({
         queryKey: ['shopping-list'],
@@ -97,7 +99,6 @@ export function useDashboardData({ isManager, currentEmployee }) {
     const usedVacationDays = approvedVacations.reduce((sum, v) => sum + (v.days_count || 0), 0);
     const remainingVacationDays = (currentEmployee?.vacation_days_per_year || 0) - usedVacationDays;
 
-    const lowStockArticles = articles.filter(a => a.min_stock && a.current_stock <= a.min_stock);
     const pendingVacationRequests = vacationRequests.filter(r => r.status === 'beantragt');
     const urgentMaintenance = maintenanceTasks.filter(t => getTaskStatus(t) === 'überfällig');
 
@@ -125,7 +126,7 @@ export function useDashboardData({ isManager, currentEmployee }) {
         hoursThisWeek,
         myUpcomingShifts,
         remainingVacationDays,
-        lowStockArticles,
+        lowStockArticles: articles,
         pendingVacationRequests,
         urgentMaintenance,
     };

@@ -336,16 +336,16 @@ export default function DrinkMenuPage() {
                                                     </div>
                                                     <div className="flex gap-1 flex-wrap">
                                                         {!item.is_available && (
-                                                            <Badge className="text-[10px] bg-muted text-muted-foreground">Nicht verfügbar</Badge>
+                                                            <Badge variant="muted" className="text-[10px]">Nicht verfügbar</Badge>
                                                         )}
                                                         {item.is_seasonal && (
-                                                            <Badge className="text-[10px] bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20">Saisonal</Badge>
+                                                            <Badge variant="success" className="text-[10px]">Saisonal</Badge>
                                                         )}
                                                         {item.is_special && (
-                                                            <Badge className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20">Special</Badge>
+                                                            <Badge variant="warning" className="text-[10px]">Special</Badge>
                                                         )}
                                                         {(permissions.isAdmin || permissions.isManager) && getArticleStockStatus(item.linked_article_id) && (
-                                                            <Badge className="text-[10px] bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20" title="Bestand niedrig">
+                                                            <Badge variant="destructive" className="text-[10px]" title="Bestand niedrig">
                                                                 <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
                                                                 Bestand
                                                             </Badge>

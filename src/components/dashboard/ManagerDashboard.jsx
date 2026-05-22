@@ -121,7 +121,7 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                                         <div className={`${stat.color} p-3 rounded-2xl shadow-lg`}>
                                             <stat.icon className="w-6 h-6 text-white" />
                                         </div>
-                                        {stat.badge && <Badge className="bg-red-500/20 text-red-400 border border-red-500/30 text-xs">{stat.badge}</Badge>}
+                                        {stat.badge && <Badge variant="warning" className="text-xs">{stat.badge}</Badge>}
                                     </div>
                                     <p className="text-sm text-muted-foreground mb-2">{stat.title}</p>
                                     <p className="text-3xl font-bold text-foreground">{stat.value}</p>

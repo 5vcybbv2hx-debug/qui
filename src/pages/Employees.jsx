@@ -501,7 +501,7 @@ export default function Employees() {
                                     {permissions.isManager && employee.skills?.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-1">
                                             {employee.skills.map(skill => (
-                                                <Badge key={skill} variant="outline" className="text-xs border-amber-600 text-amber-400">
+                                                <Badge key={skill} variant="skill" className="text-xs">
                                                     {skill}
                                                 </Badge>
                                             ))}

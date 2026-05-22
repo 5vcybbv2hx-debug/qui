@@ -5,7 +5,7 @@ import { createPageUrl } from '@/utils';
  * Wird auf der QR-Code-Seite, der Getränkekarte-Seite und überall sonst verwendet.
  */
 export function getGuestMenuLink() {
-    return `${window.location.origin}/api/functions/publicDrinkMenu`;
+    return 'https://base44.app/api/apps/695532713e60f5ccfc3522b9/functions/publicDrinkMenu';
 }
 
 /**

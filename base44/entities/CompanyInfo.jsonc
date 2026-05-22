@@ -113,6 +113,14 @@
       "type": "string",
       "description": "Email-Adresse f\u00fcr Lohnb\u00fcro-Reports"
     },
+    "datev_beraternummer": {
+      "type": "string",
+      "description": "DATEV Beraternummer"
+    },
+    "datev_mandantennummer": {
+      "type": "string",
+      "description": "DATEV Mandantennummer"
+    },
     "whatsapp_group_link": {
       "type": "string",
       "description": "WhatsApp-Gruppenlink f\u00fcr das Team"

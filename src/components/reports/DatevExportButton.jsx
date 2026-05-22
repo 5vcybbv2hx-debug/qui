@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Download } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, getDaysInMonth } from 'date-fns';
 
 /**
  * DATEV Lohnbuchführung Export (ASCII/CSV Format)
@@ -12,6 +12,9 @@ import { format } from 'date-fns';
  * Personalnummer, Name, Vorname, Lohnart, Betrag/Stunden, Kostenstelle
  */
 export default function DatevExportButton({ hoursByEmployee, employees, selectedMonth, beraternummer = '12345', mandantennummer = '1' }) {
+    // Ensure beraternummer and mandantennummer have default values
+    const finalBeraternummer = beraternummer || '12345';
+    const finalMandantennummer = mandantennummer || '1';
 
     const exportDatev = () => {
         if (!hoursByEmployee.length) {
@@ -26,7 +29,7 @@ export default function DatevExportButton({ hoursByEmployee, employees, selected
         const header = [
             '"EXTF";700;21;"DTVF";1;0;"Buchungsstapel";8;1;;;"RE";;;0;',
             `"Beraternummer";"Mandantennummer";"Datum von";"Datum bis";"Bezeichnung";"Festschreibung";"WKZ";;;`,
-            `${beraternummer};${mandantennummer};"01.${monat}.${jahr}";"${getDaysInMonth(selectedMonth)}.${monat}.${jahr}";"Lohn ${format(selectedMonth, 'MMMM yyyy')}";;EUR;;;`,
+            `${finalBeraternummer};${finalMandantennummer};"01.${monat}.${jahr}";"${getDaysInMonth(selectedMonth)}.${monat}.${jahr}";"Lohn ${format(selectedMonth, 'MMMM yyyy')}";;EUR;;;`,
             '',
         ].join('\n');
 
@@ -99,8 +102,4 @@ export default function DatevExportButton({ hoursByEmployee, employees, selected
             DATEV
         </Button>
     );
-}
-
-function getDaysInMonth(date) {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }

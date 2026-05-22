@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, getDaysInMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { STALE } from '@/lib/queryUtils';
 import { FileText, Download, Calendar, TrendingUp, Users, Clock, ChevronLeft, ChevronRight, AlertTriangle, Euro, Percent } from 'lucide-react';
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import DatevExportButton from '@/components/reports/DatevExportButton';
@@ -24,20 +25,38 @@ export default function Reports() {
     const monthEnd   = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
     const daysInMonth = getDaysInMonth(selectedMonth);
 
-    // ── Data fetching — alle Daten laden, clientseitig filtern ───────────────
+    // ── Data fetching — gefilterte Queries mit Monatsscoping ──────────────────
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries-all'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', 2000)
+        queryKey: ['time-entries-report', format(selectedMonth, 'yyyy-MM')],
+        queryFn: () => base44.entities.TimeEntry.filter(
+            { date_gte: monthStart, date_lte: monthEnd },
+            '-date',
+            500
+        ),
+        staleTime: STALE.MEDIUM
     });
 
     const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts-all'],
-        queryFn: () => base44.entities.Shift.list('-date', 2000)
+        queryKey: ['shifts-report', format(selectedMonth, 'yyyy-MM')],
+        queryFn: () => base44.entities.Shift.filter(
+            { date_gte: monthStart, date_lte: monthEnd },
+            '-date',
+            500
+        ),
+        staleTime: STALE.MEDIUM
     });
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name', 200)
+    });
+
+    const { data: company } = useQuery({
+        queryKey: ['company-info'],
+        queryFn: async () => {
+            const res = await base44.entities.CompanyInfo.list('last_updated', 1);
+            return res?.[0] || null;
+        },
     });
 
     const { data: dailyRevenues = [] } = useQuery({
@@ -278,6 +297,8 @@ export default function Reports() {
                                         hoursByEmployee={hoursByEmployee}
                                         employees={employees}
                                         selectedMonth={selectedMonth}
+                                        beraternummer={company?.datev_beraternummer || '12345'}
+                                        mandantennummer={company?.datev_mandantennummer || '1'}
                                     />
                                     <Button
                                         onClick={() => exportCSV(hoursByEmployee.map(r => ({

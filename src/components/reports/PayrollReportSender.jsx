@@ -7,6 +7,7 @@ import { Mail, Send, AlertCircle, CheckCircle2, Loader, ChevronLeft, ChevronRigh
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { STALE } from '@/lib/queryUtils';
 import { cn } from '@/lib/utils';
 import {
     AlertDialog,
@@ -35,9 +36,17 @@ export default function PayrollReportSender() {
         },
     });
 
+    const monthStart = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
+    const monthEnd   = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
+
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries-for-report'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', 2000)
+        queryKey: ['time-entries-for-report', format(selectedMonth, 'yyyy-MM')],
+        queryFn: () => base44.entities.TimeEntry.filter(
+            { date_gte: monthStart, date_lte: monthEnd },
+            '-date',
+            500
+        ),
+        staleTime: STALE.MEDIUM
     });
 
     // Verfügbare Tage extrahieren

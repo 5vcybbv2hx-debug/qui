@@ -299,15 +299,28 @@ export default function Settings() {
 
                 {/* Betriebsdaten – nur für Manager/Admin */}
                 {permissions.isManager && (
-                    <div className="mt-8">
-                        <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                            <Package className="w-5 h-5" />
-                            Betriebsdaten
-                        </h2>
-                        <p className="text-xs text-muted-foreground mb-4">
-                            Konfiguriere Betriebseinstellungen und automatisierte Berichte.
-                        </p>
-                        <CompanyInfoEditor />
+                    <div className="mt-8 space-y-6">
+                        <div>
+                            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                                <Package className="w-5 h-5" />
+                                Betriebsdaten
+                            </h2>
+                            <p className="text-xs text-muted-foreground mb-4">
+                                Konfiguriere Betriebseinstellungen und automatisierte Berichte.
+                            </p>
+                            <CompanyInfoEditor />
+                        </div>
+
+                        {/* Finanzen Section */}
+                        <Card className="p-4 bg-card border-border">
+                            <h3 className="font-semibold text-foreground mb-3">Finanzen</h3>
+                            <p className="text-xs text-muted-foreground mb-4">
+                                DATEV-Integration für Lohnbuchführung und Steuerberater-Export.
+                            </p>
+                            <p className="text-xs text-muted-foreground italic">
+                                ℹ️ Diese Felder werden in der CompanyInfoEditor aktualisiert.
+                            </p>
+                        </Card>
                     </div>
                 )}
 

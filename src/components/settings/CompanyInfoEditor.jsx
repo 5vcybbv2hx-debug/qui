@@ -50,6 +50,8 @@ export default function CompanyInfoEditor() {
                 iban: company.iban || '',
                 bic: company.bic || '',
                 payroll_email: company.payroll_email || '',
+                datev_beraternummer: company.datev_beraternummer || '',
+                datev_mandantennummer: company.datev_mandantennummer || '',
                 whatsapp_group_link: company.whatsapp_group_link || '',
                 // Rechtliches
                 owner_name: company.owner_name || '',
@@ -219,6 +221,20 @@ export default function CompanyInfoEditor() {
                                 </Label>
                                 <Input type="email" value={form.payroll_email} onChange={e => set('payroll_email', e.target.value)} placeholder="payroll@example.com" />
                                 <p className="text-xs text-muted-foreground mt-1">Empfänger der monatlichen Zeiterfassungs-Reports</p>
+                            </div>
+                            <div className="border-t border-border pt-3 mt-3">
+                                <h4 className="text-xs font-semibold text-foreground mb-3">DATEV-Integration</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground mb-1 block">Beraternummer</Label>
+                                        <Input value={form.datev_beraternummer} onChange={e => set('datev_beraternummer', e.target.value)} placeholder="123456" />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground mb-1 block">Mandantennummer</Label>
+                                        <Input value={form.datev_mandantennummer} onChange={e => set('datev_mandantennummer', e.target.value)} placeholder="1" />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">Wird beim DATEV-Lohnbuchführungs-Export verwendet</p>
                             </div>
                         </div>
                     </TabsContent>

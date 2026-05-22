@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Circle, ClipboardList, Loader2, CheckCheck } from 'lucide-react';
@@ -11,21 +11,23 @@ export default function CleaningChecklist() {
     const area = params.get('area') || '';
 
     const queryClient = useQueryClient();
-    const [currentUser, setCurrentUser] = useState(null);
 
-    React.useEffect(() => {
-        base44.auth.me().then(setCurrentUser).catch(() => {});
-    }, []);
+    const { data: currentUser } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+        staleTime: 10 * 60 * 1000
+    });
 
     const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['cleaning-tasks-area', area],
         queryFn: () => base44.entities.CleaningTask.filter({ area, is_active: true }, 'title'),
-        enabled: !!area
+        enabled: !!area,
+        staleTime: 5 * 60 * 1000
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries(['cleaning-tasks-area', area])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['cleaning-tasks-area', area] })
     });
 
     const activeTasks = tasks.filter(t => !t.is_completed);
@@ -46,7 +48,7 @@ export default function CleaningChecklist() {
     };
 
     const markAllDone = () => {
-        activeTasks.forEach(task => toggleTask(task));
+        Promise.all(activeTasks.map(task => toggleTask(task)));
     };
 
     if (!area) {

@@ -82,7 +82,8 @@ export default function Cleaning() {
 
     const { data: allTasks = [], isLoading, isError: tasksError, error: tasksErrorObj } = useQuery({
          queryKey: ['cleaning'],
-         queryFn: () => base44.entities.CleaningTask.list('area')
+         queryFn: () => base44.entities.CleaningTask.list('area'),
+         staleTime: 5 * 60 * 1000
      });
      const { handleError } = useErrorHandler();
 
@@ -104,7 +105,11 @@ export default function Cleaning() {
 
     const { data: shifts = [] } = useQuery({
         queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list()
+        queryFn: () => {
+            const today = format(new Date(), 'yyyy-MM-dd');
+            return base44.entities.Shift.filter({ date: today }, 'start_time', 50);
+        },
+        staleTime: 5 * 60 * 1000
     });
 
     const { data: allEmployees = [] } = useQuery({
@@ -114,7 +119,8 @@ export default function Cleaning() {
 
     const { data: reports = [] } = useQuery({
         queryKey: ['cleaning-reports'],
-        queryFn: () => base44.entities.CleaningReport.list('-created_date', 20)
+        queryFn: () => base44.entities.CleaningReport.list('-created_date', 20),
+        staleTime: 5 * 60 * 1000
     });
 
     // Filtere saisonale Bereiche (April-Oktober)

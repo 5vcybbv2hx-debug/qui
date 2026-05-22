@@ -161,11 +161,11 @@ Deno.serve(async (req) => {
                             spellcheck="false"
                             inputmode="search"
                         >
-                        <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" aria-label="Suche leeren">&#10005;</button>
+                        <button class="search-clear" id="search-clear-btn" aria-label="Suche leeren">&#10005;</button>
                     </div>
                     <div class="search-result-count" id="search-result-count"></div>
                 </div>
-                ${hasAllergenData ? `<button class="allergen-toggle-btn" id="allergen-toggle-btn" onclick="toggleAllergenPanel()">&#9888;&#65039; Filter <span class="allergen-badge" id="allergen-count-badge" style="display:none">0</span></button>` : ''}
+                ${hasAllergenData ? `<button class="allergen-toggle-btn" id="allergen-toggle-btn" >&#9888;&#65039; Filter <span class="allergen-badge" id="allergen-count-badge" style="display:none">0</span></button>` : ''}
             </div>
 
             ${hasAllergenData ? `
@@ -175,15 +175,15 @@ Deno.serve(async (req) => {
                     ${allAllergens.length > 0 ? `
                     <p class="allergen-panel-title" style="color:#fca5a5">Allergene</p>
                     <div class="allergen-chips">
-                        ${allAllergens.map(a => `<button class="allergen-chip" data-allergen="${esc(a)}" onclick="toggleAllergen(this, '${esc(a.replace(/'/g, "\\'"))}')">${esc(a)}</button>`).join('')}
+                        ${allAllergens.map(a => `<button class="allergen-chip" data-allergen="${esc(a)}">${esc(a)}</button>`).join('')}
                     </div>` : ''}
                     ${allAdditives.length > 0 ? `
                     <p class="allergen-panel-title" style="color:#fde68a">Zusatzstoffe</p>
                     <div class="allergen-chips">
-                        ${allAdditives.map(a => `<button class="allergen-chip additive-chip" data-additive="${esc(a)}" onclick="toggleAdditive(this, '${esc(a.replace(/'/g, "\\'"))}')">${esc(a)}</button>`).join('')}
+                        ${allAdditives.map(a => `<button class="allergen-chip additive-chip" data-additive="${esc(a)}">${esc(a)}</button>`).join('')}
                     </div>` : ''}
                     <p class="allergen-hint">Ausgewaehlt = wird ausgeblendet</p>
-                    <button class="allergen-clear-btn" onclick="clearAllergenFilter()">&#10005; Alle Filter zuruecksetzen</button>
+                    <button class="allergen-clear-btn" id="clear-allergen-btn">&#10005; Alle Filter zuruecksetzen</button>
                 </div>
             </div>` : ''}
 
@@ -237,160 +237,221 @@ Deno.serve(async (req) => {
     </footer>
 
     <script>
-        var activeCategory = 'Alle';
-        var searchQuery = '';
-        var excludedAllergens = {};
-        var excludedAdditives = {};
+        // ── All logic runs after DOM is ready ──────────────────────────
+        document.addEventListener('DOMContentLoaded', function() {
 
-        var searchDebounceTimer = null;
+            // ── State ────────────────────────────────────────────────
+            var activeCategory = 'Alle';
+            var searchQuery    = '';
+            var excludedAllergens = {};
+            var excludedAdditives = {};
+            var debounceTimer  = null;
 
-        function onSearchInput(value) {
-            var clearBtn = document.getElementById('search-clear-btn');
-            if (clearBtn) clearBtn.classList.toggle('visible', value.length > 0);
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = setTimeout(function() {
-                searchQuery = value.toLowerCase().trim();
-                applyFilters();
-            }, 120);
-        }
+            // ── Helpers ──────────────────────────────────────────────
+            function $(id) { return document.getElementById(id); }
 
-        function clearSearch() {
-            var input = document.getElementById('search-input');
-            if (input) { input.value = ''; input.focus(); }
-            var clearBtn = document.getElementById('search-clear-btn');
-            if (clearBtn) clearBtn.classList.remove('visible');
-            searchQuery = '';
-            applyFilters();
-        }
+            // ── Search ───────────────────────────────────────────────
+            var searchInput = $('search-input');
+            var clearBtn    = $('search-clear-btn');
 
-        document.getElementById('filter-bar').addEventListener('click', function(e) {
-            var btn = e.target.closest('.filter-btn');
-            if (!btn) return;
-            activeCategory = btn.getAttribute('data-cat');
-            document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            applyFilters();
-        });
-
-        function toggleAllergenPanel() {
-            var panel = document.getElementById('allergen-panel');
-            panel.classList.toggle('open');
-        }
-
-        function toggleAllergen(el, name) {
-            if (excludedAllergens[name]) {
-                delete excludedAllergens[name];
-                el.classList.remove('selected');
-            } else {
-                excludedAllergens[name] = true;
-                el.classList.add('selected');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    var val = searchInput.value;
+                    if (clearBtn) clearBtn.classList.toggle('visible', val.length > 0);
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(function() {
+                        searchQuery = val.toLowerCase().trim();
+                        applyFilters();
+                    }, 150);
+                });
             }
-            updateAllergenBadge();
-            applyFilters();
-        }
 
-        function toggleAdditive(el, name) {
-            if (excludedAdditives[name]) {
-                delete excludedAdditives[name];
-                el.classList.remove('selected');
-            } else {
-                excludedAdditives[name] = true;
-                el.classList.add('selected');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    if (searchInput) { searchInput.value = ''; searchInput.focus(); }
+                    clearBtn.classList.remove('visible');
+                    searchQuery = '';
+                    applyFilters();
+                });
             }
-            updateAllergenBadge();
-            applyFilters();
-        }
 
-        function clearAllergenFilter() {
-            excludedAllergens = {};
-            excludedAdditives = {};
-            document.querySelectorAll('.allergen-chip.selected').forEach(function(c) { c.classList.remove('selected'); });
-            updateAllergenBadge();
-            applyFilters();
-        }
-
-        function updateAllergenBadge() {
-            var aKeys = Object.keys(excludedAllergens);
-            var dKeys = Object.keys(excludedAdditives);
-            var total = aKeys.length + dKeys.length;
-            var badge = document.getElementById('allergen-count-badge');
-            var btn = document.getElementById('allergen-toggle-btn');
-            var banner = document.getElementById('active-filter-banner');
-            if (badge) { badge.style.display = total > 0 ? 'inline-flex' : 'none'; badge.textContent = total; }
-            if (btn) { btn.classList.toggle('has-active', total > 0); }
-            if (banner) {
-                if (total > 0) {
-                    banner.classList.add('visible');
-                    banner.textContent = 'Filter aktiv: Produkte mit folgenden Inhaltsstoffen werden ausgeblendet: ' + aKeys.concat(dKeys).join(', ');
-                } else {
-                    banner.classList.remove('visible');
-                }
+            // ── Category filter ──────────────────────────────────────
+            var filterBar = $('filter-bar');
+            if (filterBar) {
+                filterBar.addEventListener('click', function(e) {
+                    var btn = e.target.closest('.filter-btn');
+                    if (!btn) return;
+                    activeCategory = btn.getAttribute('data-cat');
+                    document.querySelectorAll('.filter-btn').forEach(function(b) {
+                        b.classList.remove('active');
+                    });
+                    btn.classList.add('active');
+                    applyFilters();
+                });
             }
-        }
 
-        function applyFilters() {
-            var cards = document.querySelectorAll('.card');
-            var visibleCount = 0;
-            var aKeys = Object.keys(excludedAllergens);
-            var dKeys = Object.keys(excludedAdditives);
+            // ── Allergen panel toggle ─────────────────────────────────
+            var allergenToggleBtn = $('allergen-toggle-btn');
+            if (allergenToggleBtn) {
+                allergenToggleBtn.addEventListener('click', function() {
+                    var panel = $('allergen-panel');
+                    if (panel) panel.classList.toggle('open');
+                });
+            }
 
-            for (var i = 0; i < cards.length; i++) {
-                var card = cards[i];
-                var matchCat = activeCategory === 'Alle' || card.getAttribute('data-category') === activeCategory;
-                var name = card.getAttribute('data-name') || '';
-                var desc = card.getAttribute('data-description') || '';
-                var searchAll = card.getAttribute('data-search-allergens') || '';
-                var matchSearch = searchQuery === '' || name.indexOf(searchQuery) !== -1 || desc.indexOf(searchQuery) !== -1 || searchAll.indexOf(searchQuery) !== -1;
+            // ── Allergen chip clicks (delegated) ─────────────────────
+            var allergenPanel = $('allergen-panel');
+            if (allergenPanel) {
+                allergenPanel.addEventListener('click', function(e) {
+                    var chip = e.target.closest('.allergen-chip');
+                    if (!chip) return;
+                    var allergen = chip.getAttribute('data-allergen');
+                    var additive = chip.getAttribute('data-additive');
+                    if (allergen !== null) {
+                        if (excludedAllergens[allergen]) {
+                            delete excludedAllergens[allergen];
+                            chip.classList.remove('selected');
+                        } else {
+                            excludedAllergens[allergen] = true;
+                            chip.classList.add('selected');
+                        }
+                    } else if (additive !== null) {
+                        if (excludedAdditives[additive]) {
+                            delete excludedAdditives[additive];
+                            chip.classList.remove('selected');
+                        } else {
+                            excludedAdditives[additive] = true;
+                            chip.classList.add('selected');
+                        }
+                    }
+                    updateAllergenBadge();
+                    applyFilters();
+                });
+            }
 
-                var matchAllergen = true;
-                if (aKeys.length > 0) {
-                    var cardA = card.getAttribute('data-allergens') || '';
-                    for (var j = 0; j < aKeys.length; j++) {
-                        if (cardA.indexOf(aKeys[j].toLowerCase()) !== -1) { matchAllergen = false; break; }
+            // ── Clear allergen filter ────────────────────────────────
+            var clearAllergenBtn = $('clear-allergen-btn');
+            if (clearAllergenBtn) {
+                clearAllergenBtn.addEventListener('click', function() {
+                    excludedAllergens = {};
+                    excludedAdditives = {};
+                    document.querySelectorAll('.allergen-chip.selected').forEach(function(c) {
+                        c.classList.remove('selected');
+                    });
+                    updateAllergenBadge();
+                    applyFilters();
+                });
+            }
+
+            // ── Update allergen badge & banner ───────────────────────
+            function updateAllergenBadge() {
+                var aKeys = Object.keys(excludedAllergens);
+                var dKeys = Object.keys(excludedAdditives);
+                var total = aKeys.length + dKeys.length;
+                var badge  = $('allergen-count-badge');
+                var btn    = $('allergen-toggle-btn');
+                var banner = $('active-filter-banner');
+                if (badge) { badge.style.display = total > 0 ? 'inline-flex' : 'none'; badge.textContent = total; }
+                if (btn)   { btn.classList.toggle('has-active', total > 0); }
+                if (banner) {
+                    if (total > 0) {
+                        banner.classList.add('visible');
+                        banner.textContent = 'Filter aktiv: Inhaltsstoffe ausgeblendet: ' + aKeys.concat(dKeys).join(', ');
+                    } else {
+                        banner.classList.remove('visible');
+                        banner.textContent = '';
                     }
                 }
-                if (matchAllergen && dKeys.length > 0) {
-                    var cardD = card.getAttribute('data-additives') || '';
-                    for (var k = 0; k < dKeys.length; k++) {
-                        if (cardD.indexOf(dKeys[k].toLowerCase()) !== -1) { matchAllergen = false; break; }
+            }
+
+            // ── Core filter function ─────────────────────────────────
+            function applyFilters() {
+                var cards = document.querySelectorAll('#menu-grid .card');
+                var aKeys = Object.keys(excludedAllergens);
+                var dKeys = Object.keys(excludedAdditives);
+                var visibleCount = 0;
+
+                for (var i = 0; i < cards.length; i++) {
+                    var card = cards[i];
+
+                    // Category
+                    var matchCat = activeCategory === 'Alle' ||
+                        card.getAttribute('data-category') === activeCategory;
+
+                    // Text search
+                    var matchSearch = true;
+                    if (searchQuery !== '') {
+                        var name        = card.getAttribute('data-name') || '';
+                        var desc        = card.getAttribute('data-description') || '';
+                        var allergenStr = card.getAttribute('data-search-allergens') || '';
+                        matchSearch = name.indexOf(searchQuery) !== -1 ||
+                                      desc.indexOf(searchQuery) !== -1 ||
+                                      allergenStr.indexOf(searchQuery) !== -1;
+                    }
+
+                    // Allergen exclusion
+                    var matchAllergen = true;
+                    if (aKeys.length > 0) {
+                        var cardA = (card.getAttribute('data-allergens') || '').split('||');
+                        for (var j = 0; j < aKeys.length; j++) {
+                            for (var m = 0; m < cardA.length; m++) {
+                                if (cardA[m] === aKeys[j].toLowerCase()) { matchAllergen = false; break; }
+                            }
+                            if (!matchAllergen) break;
+                        }
+                    }
+                    if (matchAllergen && dKeys.length > 0) {
+                        var cardD = (card.getAttribute('data-additives') || '').split('||');
+                        for (var k = 0; k < dKeys.length; k++) {
+                            for (var n = 0; n < cardD.length; n++) {
+                                if (cardD[n] === dKeys[k].toLowerCase()) { matchAllergen = false; break; }
+                            }
+                            if (!matchAllergen) break;
+                        }
+                    }
+
+                    var visible = matchCat && matchSearch && matchAllergen;
+                    card.style.display = visible ? '' : 'none';
+                    if (visible) visibleCount++;
+                }
+
+                // Result count
+                var countEl = $('search-result-count');
+                if (countEl) {
+                    var hasFilter = searchQuery !== '' || aKeys.length > 0 || dKeys.length > 0;
+                    if (hasFilter) {
+                        countEl.textContent = visibleCount + ' Treffer';
+                        countEl.className = 'search-result-count' + (visibleCount > 0 ? ' highlight' : '');
+                    } else {
+                        countEl.textContent = '';
+                        countEl.className = 'search-result-count';
                     }
                 }
 
-                var visible = matchCat && matchSearch && matchAllergen;
-                card.style.display = visible ? 'block' : 'none';
-                if (visible) visibleCount++;
-            }
-
-            // Result count display
-            var countEl = document.getElementById('search-result-count');
-            if (countEl) {
-                if (searchQuery !== '' || Object.keys(excludedAllergens).length > 0 || Object.keys(excludedAdditives).length > 0) {
-                    countEl.textContent = visibleCount + ' Treffer';
-                    countEl.className = 'search-result-count' + (visibleCount === 0 ? '' : ' highlight');
+                // No-results state
+                var empty = $('no-results');
+                if (visibleCount === 0) {
+                    if (!empty) {
+                        empty = document.createElement('div');
+                        empty.id = 'no-results';
+                        empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:5rem 1rem;color:#64748b';
+                        empty.innerHTML = '<div style="font-size:3rem;margin-bottom:1rem">&#128269;</div><h2 style="margin-bottom:0.5rem">Keine Treffer</h2><p>Versuche andere Suchbegriffe oder passe die Filter an.</p>';
+                        var grid = $('menu-grid');
+                        if (grid) grid.appendChild(empty);
+                    }
                 } else {
-                    countEl.textContent = '';
-                    countEl.className = 'search-result-count';
+                    if (empty) empty.parentNode.removeChild(empty);
                 }
             }
 
-            var empty = document.getElementById('no-results');
-            if (visibleCount === 0) {
-                if (!empty) {
-                    empty = document.createElement('div');
-                    empty.id = 'no-results';
-                    empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:5rem 1rem;color:#64748b';
-                    empty.innerHTML = '<div style="font-size:4rem;opacity:0.5">&#128269;</div><h2>Keine Treffer</h2><p style="margin-top:0.5rem">Versuche andere Suchbegriffe oder passe deine Filter an.</p>';
-                    document.getElementById('menu-grid').appendChild(empty);
-                }
-            } else {
-                if (empty) empty.parentNode.removeChild(empty);
-            }
-        }
-
-        window.addEventListener('load', function() {
+            // ── Fade-in ──────────────────────────────────────────────
             document.body.style.opacity = '0';
-            setTimeout(function() { document.body.style.transition = 'opacity 0.5s'; document.body.style.opacity = '1'; }, 100);
-        });
+            setTimeout(function() {
+                document.body.style.transition = 'opacity 0.4s';
+                document.body.style.opacity = '1';
+            }, 50);
+
+        }); // end DOMContentLoaded
     </script>
 </body>
 </html>`;

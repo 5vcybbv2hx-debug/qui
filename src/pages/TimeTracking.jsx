@@ -3,11 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, parseISO, startOfWeek, endOfWeek, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, TrendingUp, LogIn, LogOut, Coffee, Pause, Play, Filter, X } from 'lucide-react';
+import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, TrendingUp, LogIn, LogOut, Coffee, Pause, Play, Filter, X, Clock3, Euro, Star } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -38,6 +39,7 @@ export default function TimeTracking() {
     const [filterEmployee, setFilterEmployee] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [filterDate, setFilterDate] = useState('');
+    const [shiftSummary, setShiftSummary] = useState(null);
 
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries', selectedMonth, currentEmployee?.id, permissions.isManager],
@@ -373,23 +375,38 @@ export default function TimeTracking() {
                 });
             }
         },
-        onSuccess: (_, entryId) => {
+        onSuccess: (result, entryId) => {
             queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
             invalidateTimeEntries();
 
             const entry = clockEntries.find(e => e.id === entryId);
-            const hourlyRate = currentEmployee?.hourly_rate;
-            if (entry && hourlyRate) {
-                const totalMinutes = differenceInMinutes(new Date(), new Date(entry.clock_in));
+            if (entry) {
+                const clockOutTime = new Date();
+                const totalMinutes = differenceInMinutes(clockOutTime, new Date(entry.clock_in));
                 const breakMinutes = calcLegalBreak(totalMinutes);
-                const workedHours = ((totalMinutes - breakMinutes) / 60).toFixed(2);
-                const earned = (workedHours * hourlyRate).toFixed(2);
-                toast.success(
-                    `✅ Ausgestempelt — ${workedHours}h gearbeitet · ${earned} € verdient`,
-                    { duration: 6000 }
-                );
-            } else {
-                toast.success('✅ Erfolgreich ausgestempelt', { duration: 3000 });
+                const workedMinutes = totalMinutes - breakMinutes;
+                const workedHours = (workedMinutes / 60).toFixed(2);
+                const hourlyRate = currentEmployee?.hourly_rate;
+                const earned = hourlyRate ? (workedHours * hourlyRate).toFixed(2) : null;
+                const tempEntry = {
+                    date: format(new Date(entry.clock_in), 'yyyy-MM-dd'),
+                    start_time: format(new Date(entry.clock_in), 'HH:mm'),
+                    end_time: format(clockOutTime, 'HH:mm'),
+                    break_minutes: breakMinutes,
+                    total_hours: workedHours,
+                    employee_id: entry.employee_id
+                };
+                const warnings = validateArbZG(tempEntry, timeEntries);
+                setShiftSummary({
+                    workedHours,
+                    workedMinutes,
+                    breakMinutes,
+                    earned,
+                    hourlyRate,
+                    clockIn: format(new Date(entry.clock_in), 'HH:mm'),
+                    clockOut: format(clockOutTime, 'HH:mm'),
+                    arbzgWarning: formatWarnings(warnings)
+                });
             }
         }
     });
@@ -421,9 +438,7 @@ export default function TimeTracking() {
 
     const handleClockOut = (entry) => {
         if (clockOutMutation.isPending) return;
-        if (confirm('Möchtest du jetzt ausstempeln?')) {
-            clockOutMutation.mutate(entry.id);
-        }
+        clockOutMutation.mutate(entry.id);
     };
 
     const getWorkingDuration = (clockIn) => {
@@ -1011,6 +1026,73 @@ export default function TimeTracking() {
                     isManager={permissions.isManager}
                     onSave={handleSave}
                 />
+
+                {/* Shift Summary Bottom Sheet */}
+                <Sheet open={!!shiftSummary} onOpenChange={(open) => { if (!open) setShiftSummary(null); }}>
+                    <SheetContent side="bottom" className="rounded-t-2xl pb-10 px-6 pt-6">
+                        {shiftSummary && (
+                            <div className="space-y-5">
+                                {/* Header */}
+                                <div className="text-center space-y-1">
+                                    <div className="text-4xl">✅</div>
+                                    <h2 className="text-xl font-bold text-foreground">Schicht beendet</h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        {shiftSummary.clockIn} – {shiftSummary.clockOut} Uhr
+                                    </p>
+                                </div>
+
+                                <Separator />
+
+                                {/* Stats Grid */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-muted rounded-xl p-4 text-center space-y-1">
+                                        <Clock3 className="w-5 h-5 mx-auto text-blue-500" />
+                                        <p className="text-2xl font-bold text-foreground">{shiftSummary.workedHours}h</p>
+                                        <p className="text-xs text-muted-foreground">Gearbeitet</p>
+                                    </div>
+                                    <div className="bg-muted rounded-xl p-4 text-center space-y-1">
+                                        <Coffee className="w-5 h-5 mx-auto text-amber-500" />
+                                        <p className="text-2xl font-bold text-foreground">{shiftSummary.breakMinutes} Min</p>
+                                        <p className="text-xs text-muted-foreground">Pause (gesetzl.)</p>
+                                    </div>
+                                    {shiftSummary.earned && (
+                                        <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center space-y-1 col-span-2">
+                                            <Euro className="w-5 h-5 mx-auto text-green-600" />
+                                            <p className="text-3xl font-bold text-green-600">{shiftSummary.earned} €</p>
+                                            <p className="text-xs text-muted-foreground">Verdient ({shiftSummary.hourlyRate} €/h)</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* ArbZG Warning falls vorhanden */}
+                                {shiftSummary.arbzgWarning && (
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 text-sm text-amber-700 dark:text-amber-400">
+                                        ⚠️ {shiftSummary.arbzgWarning}
+                                    </div>
+                                )}
+
+                                <Separator />
+
+                                {/* Motivations-Message basierend auf Stunden */}
+                                <p className="text-center text-sm text-muted-foreground">
+                                    {shiftSummary.workedMinutes >= 480
+                                        ? '💪 Langer Einsatz heute — gut gemacht!'
+                                        : shiftSummary.workedMinutes >= 300
+                                        ? '👍 Gute Schicht — bis zum nächsten Mal!'
+                                        : '☕ Kurze Schicht heute — schönen Feierabend!'}
+                                </p>
+
+                                {/* Close Button */}
+                                <Button
+                                    className="w-full"
+                                    onClick={() => setShiftSummary(null)}
+                                >
+                                    Schließen
+                                </Button>
+                            </div>
+                        )}
+                    </SheetContent>
+                </Sheet>
             </div>
         </div>
     );

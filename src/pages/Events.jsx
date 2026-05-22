@@ -58,24 +58,25 @@ export default function Events() {
         end_time: '',
         event_type: 'Party',
         expected_guests: '',
+        entry_fee: '',
+        artist_name: '',
+        responsible_person: '',
+        budget: '',
+        actual_guests: '',
         notes: '',
         status: 'geplant'
     });
 
     const { data: allEvents = [] } = useQuery({
         queryKey: ['events'],
-        queryFn: () => base44.entities.Event.list('date')
+        queryFn: () => base44.entities.Event.list('date', 500),
+        staleTime: 5 * 60 * 1000,
     });
 
     const { data: allIdeas = [] } = useQuery({
         queryKey: ['eventIdeas'],
-        queryFn: async () => {
-            try {
-                return await base44.entities.EventIdea.list('-created_date') || [];
-            } catch {
-                return [];
-            }
-        }
+        queryFn: () => base44.entities.EventIdea.list('-created_date', 200),
+        staleTime: 5 * 60 * 1000,
     });
 
     const now = new Date();
@@ -144,6 +145,11 @@ export default function Events() {
                 end_time: event.end_time || '',
                 event_type: event.event_type || 'Party',
                 expected_guests: event.expected_guests || '',
+                entry_fee: event.entry_fee || '',
+                artist_name: event.artist_name || '',
+                responsible_person: event.responsible_person || '',
+                budget: event.budget || '',
+                actual_guests: event.actual_guests || '',
                 notes: event.notes || '',
                 status: event.status || 'geplant'
             });
@@ -157,6 +163,11 @@ export default function Events() {
                 end_time: '02:00',
                 event_type: 'Party',
                 expected_guests: '',
+                entry_fee: '',
+                artist_name: '',
+                responsible_person: '',
+                budget: '',
+                actual_guests: '',
                 notes: '',
                 status: 'geplant'
             });
@@ -171,6 +182,14 @@ export default function Events() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Confirm if changing to "abgesagt"
+        if (selectedEvent && selectedEvent.status !== 'abgesagt' && formData.status === 'abgesagt') {
+            if (!confirm('Event wirklich absagen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                return;
+            }
+        }
+        
         if (selectedEvent) {
             updateMutation.mutate({ id: selectedEvent.id, data: formData });
         } else {
@@ -195,6 +214,11 @@ export default function Events() {
             end_time: '02:00',
             event_type: idea.category || 'Party',
             expected_guests: '',
+            entry_fee: '',
+            artist_name: '',
+            responsible_person: '',
+            budget: '',
+            actual_guests: '',
             notes: idea.notes || `Umgewandelt von Idee: ${idea.title}`,
             status: 'geplant'
         });
@@ -213,13 +237,13 @@ export default function Events() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
+        <div className="min-h-screen bg-background pb-24 md:pb-0">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
                     <div>
-                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Events</h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h1 className="text-lg sm:text-2xl font-bold text-foreground tracking-tight">Events</h1>
+                        <p className="text-muted-foreground text-sm mt-1">
                             {upcomingEvents.length} kommend · {archiveEvents.length} archiviert · {allIdeas.length} Ideen
                         </p>
                     </div>
@@ -238,12 +262,14 @@ export default function Events() {
                         <span className="sm:hidden">+</span>
                     </Button>
                     )}
-                    <CalendarSubscribe />
+                    <div className="text-xs text-muted-foreground p-2">
+                        iCal-Export wird in Kürze verfügbar.
+                    </div>
                 </div>
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                    <TabsList className="bg-slate-800 border-slate-700 border w-full grid grid-cols-3 h-auto">
+                    <TabsList className="bg-card border-border border w-full grid grid-cols-3 h-auto">
                         <TabsTrigger value="upcoming" className="text-xs sm:text-sm">Kommend</TabsTrigger>
                         <TabsTrigger value="archive" className="text-xs sm:text-sm">Archiv</TabsTrigger>
                         <TabsTrigger value="ideas" className="text-xs sm:text-sm flex items-center gap-1"><Lightbulb className="w-3 h-3" /></TabsTrigger>
@@ -251,20 +277,20 @@ export default function Events() {
 
                     {/* Upcoming Events Tab */}
                     <TabsContent value="upcoming" className="space-y-4">
-                        <Card className="p-4 bg-slate-800 border-slate-700">
+                        <Card className="p-4 bg-card border-border">
                             <div className="space-y-3">
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     <div className="relative flex-1">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                         <Input
                                             placeholder="Event suchen..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-9 bg-slate-900 border-slate-700"
+                                            className="pl-9 bg-background border-border"
                                         />
                                     </div>
                                     <Select value={typeFilter} onValueChange={setTypeFilter}>
-                                        <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                        <SelectTrigger className="w-full sm:w-40 bg-background border-border">
                                             <SelectValue placeholder="Typ" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -275,7 +301,7 @@ export default function Events() {
                                         </SelectContent>
                                     </Select>
                                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                        <SelectTrigger className="w-full sm:w-40 bg-slate-900 border-slate-700">
+                                        <SelectTrigger className="w-full sm:w-40 bg-background border-border">
                                             <SelectValue placeholder="Status" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -302,14 +328,14 @@ export default function Events() {
                                 {sortedEvents.map(event => (
                                     <Card 
                                         key={event.id}
-                                        className={cn("p-5 bg-slate-800 border-slate-700 transition-colors", canEdit && "hover:bg-slate-750 cursor-pointer")}
+                                        className={cn("p-5 bg-card border-border transition-colors", canEdit && "hover:bg-accent/5 cursor-pointer")}
                                         onClick={() => canEdit && openModal(event)}
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-3 mb-2 flex-wrap">
                                                     <CalendarIcon className="w-5 h-5 text-amber-400" />
-                                                    <h3 className="font-semibold text-white text-lg">{event.title}</h3>
+                                                    <h3 className="font-semibold text-foreground text-lg">{event.title}</h3>
                                                     <Badge className={eventTypeColors[event.event_type]}>
                                                         {event.event_type}
                                                     </Badge>
@@ -319,24 +345,24 @@ export default function Events() {
                                                 </div>
                                                 
                                                 {event.description && (
-                                                    <p className="text-sm text-slate-400 mb-3">{event.description}</p>
+                                                    <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
                                                 )}
                                                 
                                                 <div className="flex flex-wrap items-center gap-4 text-sm">
-                                                    <div className="flex items-center gap-2 text-slate-300">
-                                                        <CalendarIcon className="w-4 h-4 text-slate-400" />
+                                                    <div className="flex items-center gap-2 text-foreground">
+                                                        <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                                                         <span>{formatDateWithDay(event.date)}</span>
                                                     </div>
                                                     
                                                     {event.start_time && (
-                                                        <div className="flex items-center gap-2 text-slate-300">
+                                                        <div className="flex items-center gap-2 text-foreground">
                                                             <span>🕐</span>
                                                             <span>{event.start_time}{event.end_time && ` - ${event.end_time}`}</span>
                                                         </div>
                                                     )}
                                                     
                                                     {event.expected_guests && (
-                                                        <div className="flex items-center gap-2 text-slate-300">
+                                                        <div className="flex items-center gap-2 text-foreground">
                                                             <span>👥</span>
                                                             <span>{event.expected_guests} Gäste</span>
                                                         </div>
@@ -344,7 +370,7 @@ export default function Events() {
                                                 </div>
                                                 
                                                 {event.notes && (
-                                                    <p className="text-xs text-slate-500 mt-2 italic">{event.notes}</p>
+                                                    <p className="text-xs text-muted-foreground mt-2 italic">{event.notes}</p>
                                                 )}
                                             </div>
                                             
@@ -379,8 +405,8 @@ export default function Events() {
                                 ))}
                             </div>
                         ) : (
-                            <Card className="p-12 bg-slate-800 border-slate-700">
-                                <div className="text-center text-slate-400">
+                            <Card className="p-12 bg-card border-border">
+                                <div className="text-center text-muted-foreground">
                                     <CalendarIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
                                     <p className="text-lg font-medium">Keine Events gefunden</p>
                                     <p className="text-sm mt-1">
@@ -518,6 +544,64 @@ export default function Events() {
                                 />
                             </div>
 
+                            {canEdit && (
+                                <>
+                                    <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+                                        <div className="space-y-2">
+                                            <Label>Eintritt (€)</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={formData.entry_fee}
+                                                onChange={(e) => setFormData({ ...formData, entry_fee: e.target.value })}
+                                                placeholder="z.B. 10.00"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Budget (€)</Label>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                value={formData.budget}
+                                                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                                                placeholder="z.B. 500.00"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-2">
+                                            <Label>Künstler / DJ</Label>
+                                            <Input
+                                                value={formData.artist_name}
+                                                onChange={(e) => setFormData({ ...formData, artist_name: e.target.value })}
+                                                placeholder="z.B. DJ Max"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Verantwortlich</Label>
+                                            <Input
+                                                value={formData.responsible_person}
+                                                onChange={(e) => setFormData({ ...formData, responsible_person: e.target.value })}
+                                                placeholder="z.B. Max Schmidt"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {selectedEvent && new Date(formData.date) < now && (
+                                        <div className="space-y-2">
+                                            <Label>Tatsächliche Gäste</Label>
+                                            <Input
+                                                type="number"
+                                                value={formData.actual_guests}
+                                                onChange={(e) => setFormData({ ...formData, actual_guests: e.target.value })}
+                                                placeholder="z.B. 120"
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
                             <div className="space-y-2">
                                 <Label>Notizen</Label>
                                 <Textarea
@@ -529,7 +613,7 @@ export default function Events() {
                             </div>
 
                             <div className="flex gap-2 pt-4">
-                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800">
+                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1 border-border text-muted-foreground hover:bg-accent">
                                     Abbrechen
                                 </Button>
                                 <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20">

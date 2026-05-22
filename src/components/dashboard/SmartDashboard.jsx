@@ -4,6 +4,7 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamNotes from '@/components/dashboard/TeamNotes';
+import ManagerDashboard from '@/components/dashboard/ManagerDashboard';
 import ShiftSwapMarketplaceCard from '@/components/shifts/ShiftSwapMarketplaceCard';
 import ActiveStaffPanel from '@/components/dashboard/ActiveStaffPanel';
 import UpcomingBirthdaysWidget from '@/components/dashboard/UpcomingBirthdaysWidget';
@@ -865,22 +866,24 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                         />
                     )}
                     {activeTab === 'manager' && isManager && (
-                        <ManagerTab
-                            stats={[]}
-                            alerts={alerts}
-                            employees={employees}
-                            todos={openTodos}
-                            shopping={shopping}
-                            articles={articles}
-                            pendingTimeEntries={pendingTimeEntries}
-                            maintenanceTasks={maintenanceTasks}
-                            todayShifts={todayShifts}
-                            todayEvents={todayEvents}
-                            isManager={isManager}
+                        <ManagerDashboard
+                            onSwitchToEmployee={() => {}}
+                            currentEmployee={currentEmployee}
+                            hoursThisWeek={hoursThisWeek}
+                            remainingVacationDays={remainingVacationDays}
+                            myUpcomingShifts={myUpcomingShifts}
                             currentUser={currentUser}
-                            activeStaffCount={0}
-                            isTodayClosed={isTodayClosed}
-                            todayCalendarEntry={todayCalendarEntry}
+                            isManager={isManager}
+                            employees={employees}
+                            shifts={shifts}
+                            events={events}
+                            reservations={reservations}
+                            todos={openTodos}
+                            timeEntries={pendingTimeEntries}
+                            vacationRequests={vacationRequests}
+                            maintenanceTasks={maintenanceTasks}
+                            shoppingList={shopping}
+                            articles={articles}
                         />
                     )}
                 </div>

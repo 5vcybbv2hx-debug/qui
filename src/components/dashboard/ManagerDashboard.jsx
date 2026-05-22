@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
@@ -20,56 +18,8 @@ import TeamMeetingReminder from '@/components/dashboard/TeamMeetingReminder';
 import LegalStatusPanel from '@/components/legal/LegalStatusPanel';
 import TeamNotes from '@/components/dashboard/TeamNotes';
 
-export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts, currentUser, isManager = true }) {
+export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts, currentUser, isManager = true, employees = [], shifts = [], events = [], reservations = [], todos = [], timeEntries = [], vacationRequests = [], maintenanceTasks = [], shoppingList = [], articles = [], cleaningTasks = [] }) {
     const today = format(new Date(), 'yyyy-MM-dd');
-
-    const { data: employees = [] } = useQuery({
-        queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
-    });
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 100)
-    });
-    const { data: events = [] } = useQuery({
-        queryKey: ['events'],
-        queryFn: () => base44.entities.Event.list('-date', 30)
-    });
-    const { data: reservations = [] } = useQuery({
-        queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 30)
-    });
-    const { data: todos = [] } = useQuery({
-        queryKey: ['todos'],
-        queryFn: () => base44.entities.TodoItem.filter({ is_archived: false })
-    });
-    const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries-pending'],
-        queryFn: () => base44.entities.TimeEntry.filter({ status: 'eingereicht' }, '-date', 100)
-    });
-    const { data: vacationRequests = [] } = useQuery({
-        queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list('-created_date', 50)
-    });
-    const { data: cleaningTasks = [] } = useQuery({
-        queryKey: ['cleaning-tasks'],
-        queryFn: () => base44.entities.CleaningTask.list()
-    });
-    const { data: maintenanceTasks = [] } = useQuery({
-        queryKey: ['maintenance-tasks'],
-        queryFn: () => base44.entities.MaintenanceTask.filter({ is_active: true })
-    });
-    // Sekundäre Daten — nur bei Bedarf (lazy)
-    const { data: shoppingList = [] } = useQuery({
-        queryKey: ['shopping-list'],
-        queryFn: () => base44.entities.ShoppingList.list(),
-        staleTime: 5 * 60 * 1000
-    });
-    const { data: articles = [] } = useQuery({
-        queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list(),
-        staleTime: 10 * 60 * 1000
-    });
 
     const todayShifts = shifts.filter(s => s.date === today);
     const todayEvents = events.filter(e => e.date === today && e.status !== 'abgesagt');
@@ -126,8 +76,8 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                                         <Clock className="w-8 h-8 text-blue-400" />
                                     </div>
                                     <div>
-                                        <p className="text-3xl font-bold text-white">{hoursThisWeek?.toFixed(1)}h</p>
-                                        <p className="text-sm text-slate-400">Diese Woche</p>
+                                        <p className="text-3xl font-bold text-foreground">{hoursThisWeek?.toFixed(1)}h</p>
+                                        <p className="text-sm text-muted-foreground">Diese Woche</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -135,8 +85,8 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                                         <Umbrella className="w-8 h-8 text-purple-400" />
                                     </div>
                                     <div>
-                                        <p className="text-3xl font-bold text-white">{remainingVacationDays}</p>
-                                        <p className="text-sm text-slate-400">Urlaubstage übrig</p>
+                                        <p className="text-3xl font-bold text-foreground">{remainingVacationDays}</p>
+                                        <p className="text-sm text-muted-foreground">Urlaubstage übrig</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
@@ -144,13 +94,13 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                                         <Calendar className="w-8 h-8 text-green-400" />
                                     </div>
                                     <div>
-                                        <p className="text-3xl font-bold text-white">{myUpcomingShifts?.length}</p>
-                                        <p className="text-sm text-slate-400">Kommende Schichten</p>
+                                        <p className="text-3xl font-bold text-foreground">{myUpcomingShifts?.length}</p>
+                                        <p className="text-sm text-muted-foreground">Kommende Schichten</p>
                                     </div>
                                 </div>
                             </div>
                         </Card>
-                        <div className="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+                        <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
                     </>
                 )}
 

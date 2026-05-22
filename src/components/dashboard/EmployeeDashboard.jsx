@@ -27,25 +27,34 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
 
     const { data: shifts = [] } = useQuery({
         queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('date', 300)
+        queryFn: () => base44.entities.Shift.filter(
+            { employee_id: currentEmployee.id },
+            'date', 100
+        ),
+        enabled: !!currentEmployee?.id,
+        staleTime: 5 * 60 * 1000
     });
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries', currentEmployee?.id],
         queryFn: () => base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }),
-        enabled: !!currentEmployee?.id
+        enabled: !!currentEmployee?.id,
+        staleTime: 5 * 60 * 1000
     });
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clock-entries', currentEmployee?.id],
         queryFn: () => base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }),
-        enabled: !!currentEmployee?.id
+        enabled: !!currentEmployee?.id,
+        staleTime: 5 * 60 * 1000
     });
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
-        queryFn: () => base44.entities.Event.list('-date', 30)
+        queryFn: () => base44.entities.Event.list('-date', 30),
+        staleTime: 5 * 60 * 1000
     });
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 30)
+        queryFn: () => base44.entities.Reservation.list('-date', 30),
+        staleTime: 5 * 60 * 1000
     });
     const { data: todos = [] } = useQuery({
         queryKey: ['todos'],
@@ -53,7 +62,8 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
     });
     const { data: cleaningTasks = [] } = useQuery({
         queryKey: ['cleaning-tasks'],
-        queryFn: () => base44.entities.CleaningTask.list()
+        queryFn: () => base44.entities.CleaningTask.filter({ is_active: true }, 'area', 100),
+        staleTime: 5 * 60 * 1000
     });
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
@@ -77,7 +87,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
             clock_in: new Date().toISOString(),
             status: 'clocked_in'
         }),
-        onSuccess: () => queryClient.invalidateQueries(['clock-entries'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clock-entries'] })
     });
 
     const pauseMutation = useMutation({
@@ -92,7 +102,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                 [field]: timestamp
             });
         },
-        onSuccess: () => queryClient.invalidateQueries(['clock-entries'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clock-entries'] })
     });
 
     const clockOutMutation = useMutation({
@@ -211,12 +221,12 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                     </div>
                     <div className="flex gap-2">
                         {isManager && (
-                            <Button size="sm" onClick={onSwitchToManager} className="bg-amber-500 hover:bg-amber-600 text-slate-900">
+                            <Button size="sm" onClick={onSwitchToManager} className="bg-amber-500 hover:bg-amber-600">
                                 Manager-Ansicht
                             </Button>
                         )}
                         {onboardingProgress < 100 && (
-                            <Button onClick={() => setShowOnboardingTour(true)} size="sm" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 gap-2">
+                            <Button onClick={() => setShowOnboardingTour(true)} size="sm" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 gap-2">
                                 <GraduationCap className="w-4 h-4" />
                                 Erste Schritte
                             </Button>
@@ -296,15 +306,15 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                     <div className="flex gap-3 flex-wrap">
                         {activeClockEntry ? (
                             <>
-                                <Button onClick={() => pauseMutation.mutate(activeClockEntry.id)} disabled={pauseMutation.isPending} className="bg-amber-600 hover:bg-amber-700 text-white gap-2">
+                                <Button onClick={() => pauseMutation.mutate(activeClockEntry.id)} disabled={pauseMutation.isPending} className="bg-amber-600 hover:bg-amber-700 gap-2">
                                     <Pause className="w-4 h-4" /> Pause
                                 </Button>
-                                <Button onClick={() => clockOutMutation.mutate(activeClockEntry.id)} disabled={clockOutMutation.isPending} className="flex-1 bg-red-600 hover:bg-red-700 text-white gap-2">
+                                <Button onClick={() => clockOutMutation.mutate(activeClockEntry.id)} disabled={clockOutMutation.isPending} className="flex-1 bg-red-600 hover:bg-red-700 gap-2">
                                     <LogOut className="w-4 h-4" /> Ausstempeln
                                 </Button>
                             </>
                         ) : (
-                            <Button onClick={() => clockInMutation.mutate()} disabled={clockInMutation.isPending} className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2">
+                            <Button onClick={() => clockInMutation.mutate()} disabled={clockInMutation.isPending} className="flex-1 bg-green-600 hover:bg-green-700 gap-2">
                                 <LogIn className="w-4 h-4" /> Einstempeln
                             </Button>
                         )}

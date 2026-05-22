@@ -34,12 +34,13 @@ import GuestHubTodayTab from '@/components/reservations/GuestHubTodayTab';
 import GuestHubTablesTab from '@/components/seating/GuestHubTablesTab';
 
 const STATUS_FILTERS = [
-    { value: 'alle', label: 'Alle' },
+    { value: 'alle',       label: 'Alle' },
     { value: 'vorgemerkt', label: '🔵 Vorgemerkt' },
-    { value: 'bestätigt', label: '🟡 Bestätigt' },
+    { value: 'bestätigt',  label: '🟡 Bestätigt' },
     { value: 'erschienen', label: '🟢 Erschienen' },
-    { value: 'no-show', label: '🔴 No-Show' },
-    { value: 'storniert', label: '⚪ Storniert' },
+    { value: 'no-show',    label: '🔴 No-Show' },
+    { value: 'storniert',  label: '⚪ Storniert' },
+    { value: 'archiv',     label: '🗂 Archiv' },
 ];
 
 function suggestTables(tables, reservations, guestCount, date, time) {
@@ -143,15 +144,27 @@ export default function GuestHub() {
 
     const { reservations: filteredReservations } = useMemo(() => {
         const search = searchTerm.toLowerCase();
-        const matches = (r) =>
-            (!search || r.customer_name?.toLowerCase().includes(search) || r.phone?.toLowerCase().includes(search)) &&
-            (statusFilter === 'alle' || r.status === statusFilter);
+        const isArchiveView = statusFilter === 'archiv';
+
+        const matches = (r) => {
+            // Archiv-Tab: nur archivierte Einträge anzeigen
+            if (isArchiveView) return r.is_archived === true;
+            // Alle anderen Tabs: niemals archivierte anzeigen
+            if (r.is_archived) return false;
+            // Vergangene Reservierungen (vor heute) ausblenden — gehören ins Archiv
+            if (r.date < todayStr) return false;
+            // Suchfilter
+            if (search && !r.customer_name?.toLowerCase().includes(search) && !r.phone?.toLowerCase().includes(search)) return false;
+            // Statusfilter
+            if (statusFilter !== 'alle' && r.status !== statusFilter) return false;
+            return true;
+        };
 
         const all = allReservations.filter(matches)
             .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? ''));
 
         return { reservations: all };
-    }, [allReservations, searchTerm, statusFilter]);
+    }, [allReservations, searchTerm, statusFilter, todayStr]);
 
     const filteredTables = useMemo(() => {
         let list = selectedRoom ? tables.filter(t => t.room === selectedRoom) : tables;

@@ -5,7 +5,7 @@ import { createPageUrl } from '@/utils';
  * Wird auf der QR-Code-Seite, der Getränkekarte-Seite und überall sonst verwendet.
  */
 export function getGuestMenuLink() {
-    return `${window.location.origin}${createPageUrl('PublicDrinkMenu')}`;
+    return `${window.location.origin}/api/functions/publicDrinkMenu`;
 }
 
 /**

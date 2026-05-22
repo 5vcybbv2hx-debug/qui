@@ -12,15 +12,11 @@ export function useDashboardData({ isManager, currentEmployee }) {
 
     const { data: shiftsRaw = [] } = useQuery({
         queryKey: ['shifts-dashboard', today],
-        queryFn: () => base44.entities.Shift.filter(
-            { date_gte: today, date_lte: twoWeeksLater },
-            '-date',
-            500
-        ),
+        queryFn: () => base44.entities.Shift.list('date', 500),
         staleTime: STALE.MEDIUM,
     });
 
-    const shifts = shiftsRaw.filter(s => s.date >= today);
+    const shifts = shiftsRaw.filter(s => s.date >= today && s.date <= twoWeeksLater);
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('date', 50)

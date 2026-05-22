@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
+import { toast } from 'sonner';
 import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
 import { createNotification } from '@/utils/createNotification';
 import TimeEntryModal from '@/components/timetracking/TimeEntryModal';
@@ -306,6 +307,7 @@ export default function TimeTracking() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
             invalidateTimeEntries();
+            toast.success('✅ Alle ausgestempelt', { duration: 3000 });
         }
     });
 
@@ -371,9 +373,24 @@ export default function TimeTracking() {
                 });
             }
         },
-        onSuccess: () => {
+        onSuccess: (_, entryId) => {
             queryClient.invalidateQueries({ queryKey: ['clockEntries'] });
             invalidateTimeEntries();
+
+            const entry = clockEntries.find(e => e.id === entryId);
+            const hourlyRate = currentEmployee?.hourly_rate;
+            if (entry && hourlyRate) {
+                const totalMinutes = differenceInMinutes(new Date(), new Date(entry.clock_in));
+                const breakMinutes = calcLegalBreak(totalMinutes);
+                const workedHours = ((totalMinutes - breakMinutes) / 60).toFixed(2);
+                const earned = (workedHours * hourlyRate).toFixed(2);
+                toast.success(
+                    `✅ Ausgestempelt — ${workedHours}h gearbeitet · ${earned} € verdient`,
+                    { duration: 6000 }
+                );
+            } else {
+                toast.success('✅ Erfolgreich ausgestempelt', { duration: 3000 });
+            }
         }
     });
 

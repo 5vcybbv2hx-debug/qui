@@ -68,12 +68,20 @@ Deno.serve(async (req) => {
         h1 { font-size: 1.75rem; color: #f1f5f9; font-weight: 700; }
         .table-info { color: #94a3b8; font-size: 0.875rem; margin-top: 0.25rem; }
 
-        .search-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
+        .search-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem; }
         .search-wrapper { flex: 1; }
-        .search-input { width: 100%; padding: 0.75rem 1rem 0.75rem 2.75rem; border-radius: 9999px; border: 2px solid rgba(148,163,184,0.2); background: rgba(30,41,59,0.5); color: #f1f5f9; font-size: 0.9375rem; outline: none; transition: all 0.3s; }
-        .search-input:focus { border-color: ${accent.from}80; background: rgba(30,41,59,0.8); box-shadow: 0 0 0 3px ${accent.from}22; }
         .search-container { position: relative; }
-        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; }
+        .search-input { width: 100%; padding: 0.75rem 2.75rem 0.75rem 2.75rem; border-radius: 9999px; border: 2px solid rgba(148,163,184,0.2); background: rgba(30,41,59,0.5); color: #f1f5f9; font-size: 1rem; outline: none; transition: all 0.3s; -webkit-appearance: none; appearance: none; }
+        .search-input:focus { border-color: ${accent.from}80; background: rgba(30,41,59,0.9); box-shadow: 0 0 0 3px ${accent.from}22; }
+        .search-input::placeholder { color: #64748b; }
+        .search-input::-webkit-search-cancel-button { display: none; }
+        .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; font-size: 1rem; transition: color 0.2s; }
+        .search-container:focus-within .search-icon { color: ${accent.from}; }
+        .search-clear { position: absolute; right: 0.875rem; top: 50%; transform: translateY(-50%); background: rgba(148,163,184,0.2); border: none; border-radius: 9999px; width: 1.5rem; height: 1.5rem; display: none; align-items: center; justify-content: center; cursor: pointer; color: #94a3b8; font-size: 0.875rem; transition: all 0.2s; line-height: 1; padding: 0; }
+        .search-clear:hover { background: rgba(148,163,184,0.35); color: #f1f5f9; }
+        .search-clear.visible { display: flex; }
+        .search-result-count { font-size: 0.75rem; color: #64748b; text-align: right; min-height: 1.1rem; transition: opacity 0.2s; padding-right: 0.75rem; margin-bottom: 0.5rem; }
+        .search-result-count.highlight { color: ${accent.from}; font-weight: 600; }
 
         .allergen-toggle-btn { flex-shrink: 0; padding: 0.75rem 1rem; border-radius: 9999px; border: 2px solid rgba(148,163,184,0.2); background: rgba(30,41,59,0.5); color: #94a3b8; cursor: pointer; font-size: 0.875rem; font-weight: 600; white-space: nowrap; transition: all 0.3s; display: flex; align-items: center; gap: 0.4rem; }
         .allergen-toggle-btn:hover { border-color: ${accent.from}4d; color: #f1f5f9; }
@@ -141,8 +149,21 @@ Deno.serve(async (req) => {
                 <div class="search-wrapper">
                     <div class="search-container">
                         <span class="search-icon">&#128269;</span>
-                        <input type="search" class="search-input" placeholder="Getraenk, Zutat, Allergen suchen..." oninput="searchMenu(this.value)" id="search-input">
+                        <input
+                            type="search"
+                            id="search-input"
+                            class="search-input"
+                            placeholder="Getraenk, Zutat, Allergen suchen..."
+                            oninput="onSearchInput(this.value)"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            inputmode="search"
+                        >
+                        <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" aria-label="Suche leeren">&#10005;</button>
                     </div>
+                    <div class="search-result-count" id="search-result-count"></div>
                 </div>
                 ${hasAllergenData ? `<button class="allergen-toggle-btn" id="allergen-toggle-btn" onclick="toggleAllergenPanel()">&#9888;&#65039; Filter <span class="allergen-badge" id="allergen-count-badge" style="display:none">0</span></button>` : ''}
             </div>
@@ -221,8 +242,24 @@ Deno.serve(async (req) => {
         var excludedAllergens = {};
         var excludedAdditives = {};
 
-        function searchMenu(value) {
-            searchQuery = value.toLowerCase().trim();
+        var searchDebounceTimer = null;
+
+        function onSearchInput(value) {
+            var clearBtn = document.getElementById('search-clear-btn');
+            if (clearBtn) clearBtn.classList.toggle('visible', value.length > 0);
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(function() {
+                searchQuery = value.toLowerCase().trim();
+                applyFilters();
+            }, 120);
+        }
+
+        function clearSearch() {
+            var input = document.getElementById('search-input');
+            if (input) { input.value = ''; input.focus(); }
+            var clearBtn = document.getElementById('search-clear-btn');
+            if (clearBtn) clearBtn.classList.remove('visible');
+            searchQuery = '';
             applyFilters();
         }
 
@@ -324,6 +361,18 @@ Deno.serve(async (req) => {
                 if (visible) visibleCount++;
             }
 
+            // Result count display
+            var countEl = document.getElementById('search-result-count');
+            if (countEl) {
+                if (searchQuery !== '' || Object.keys(excludedAllergens).length > 0 || Object.keys(excludedAdditives).length > 0) {
+                    countEl.textContent = visibleCount + ' Treffer';
+                    countEl.className = 'search-result-count' + (visibleCount === 0 ? '' : ' highlight');
+                } else {
+                    countEl.textContent = '';
+                    countEl.className = 'search-result-count';
+                }
+            }
+
             var empty = document.getElementById('no-results');
             if (visibleCount === 0) {
                 if (!empty) {
@@ -357,3 +406,4 @@ Deno.serve(async (req) => {
         });
     }
 });
+

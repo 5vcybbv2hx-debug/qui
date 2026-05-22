@@ -52,7 +52,7 @@ export default function Todos() {
     });
 
     const { data: user } = useQuery({
-        queryKey: ['current-user'],
+        queryKey: ['user'],
         queryFn: () => base44.auth.me()
     });
 
@@ -65,7 +65,15 @@ export default function Todos() {
 
     const { data: todos = [], isLoading, isError: todosError, error: todosErrorObj } = useQuery({
         queryKey: ['todos'],
-        queryFn: () => base44.entities.TodoItem.list('-created_date', 200)
+        queryFn: () => base44.entities.TodoItem.filter({ is_archived: false }, '-created_date', 300),
+        staleTime: 60 * 1000
+    });
+
+    const { data: dbArchivedTodos = [] } = useQuery({
+        queryKey: ['todos-archived'],
+        queryFn: () => base44.entities.TodoItem.filter({ is_archived: true }, '-created_date', 100),
+        enabled: showArchived,
+        staleTime: 5 * 60 * 1000
     });
     const { handleError } = useErrorHandler();
 
@@ -131,8 +139,17 @@ export default function Todos() {
         return assignees.includes(currentUserName);
     }), [todos, currentUserName, isAdmin]);
 
-    const activeTodos = visibleTodos.filter(t => !t.is_archived);
-    const archivedTodos = visibleTodos.filter(t => t.is_archived);
+    const visibleArchivedTodos = useMemo(() => dbArchivedTodos.filter(todo => {
+        const assignees = todo.assigned_to_names?.length > 0
+            ? todo.assigned_to_names
+            : todo.assigned_to ? [todo.assigned_to] : [];
+        if (assignees.length === 0) return true;
+        if (isAdmin) return true;
+        return assignees.includes(currentUserName);
+    }), [dbArchivedTodos, currentUserName, isAdmin]);
+
+    const activeTodos = visibleTodos;
+    const archivedTodos = visibleArchivedTodos;
 
     const allCategories = Array.from(new Set(
         todos.map(t => t.category).filter(Boolean)
@@ -210,40 +227,36 @@ export default function Todos() {
 
     const handleBulkDelete = async () => {
         if (!confirm(`${selectedIds.size} Aufgabe(n) löschen?`)) return;
-        for (const id of selectedIds) {
-            await base44.entities.TodoItem.delete(id);
-        }
+        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.delete(id)));
         queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
         clearSelection();
     };
 
     const handleBulkArchive = async () => {
         if (!confirm(`${selectedIds.size} Aufgabe(n) archivieren?`)) return;
-        for (const id of selectedIds) {
-            await base44.entities.TodoItem.update(id, { is_archived: true });
-        }
+        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.update(id, { is_archived: true })));
         queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
         clearSelection();
     };
 
     const handleBulkMoveCategory = async (category) => {
-        for (const id of selectedIds) {
-            await base44.entities.TodoItem.update(id, { category });
-        }
+        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.update(id, { category })));
         queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
         setBulkCategoryOpen(false);
         clearSelection();
     };
 
     const handleBulkDone = async () => {
-        for (const id of selectedIds) {
-            await base44.entities.TodoItem.update(id, {
-                status: 'erledigt',
-                completed_by: getUserDisplayName({ employeeName: permissions.employeeName, user }),
-                completed_at: new Date().toISOString()
-            });
-        }
+        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.update(id, {
+            status: 'erledigt',
+            completed_by: getUserDisplayName({ employeeName: permissions.employeeName, user }),
+            completed_at: new Date().toISOString()
+        })));
         queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
         clearSelection();
     };
 
@@ -263,7 +276,7 @@ export default function Todos() {
     if (todosError) {
         return (
             <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-                {handleError({ error: todosErrorObj, title: 'Aufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries(['todos']) })}
+                {handleError({ error: todosErrorObj, title: 'Aufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries({ queryKey: ['todos'] }) })}
             </div>
         );
     }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { format, parseISO, addDays } from 'date-fns';
 import { Plus, Download, Search, Calendar } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -12,7 +12,10 @@ import ReservationModal from '@/components/reservations/ReservationModal';
 import ReservationCard from '@/components/reservations/ReservationCard';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import { useReservationLifecycle } from '@/features/reservations/hooks/useReservationLifecycle';
-import { useReservations, RES_KEYS } from '@/features/reservations/hooks/useReservations';
+import {
+    useReservations, useArchivedReservations, RES_KEYS,
+    useCreateReservation, useUpdateReservation, useDeleteReservation,
+} from '@/features/reservations/hooks/useReservations';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
     AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -29,7 +32,6 @@ const STATUS_FILTERS = [
 
 export default function Reservations() {
     const permissions   = usePermissions();
-    const queryClient   = useQueryClient();
     const [tab, setTab]           = useState('aktiv');   // 'aktiv' | 'archiv'
     const [statusFilter, setStatusFilter] = useState('alle');
     const [searchTerm, setSearchTerm]     = useState('');
@@ -38,7 +40,8 @@ export default function Reservations() {
     const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
     // ── Data ────────────────────────────────────────────────────────────────
-    const { data: allReservations = [], isLoading } = useReservations();
+    const { data: activeReservations = [], isLoading } = useReservations();
+    const { data: archivedReservations = [] } = useArchivedReservations();
 
     const { data: tables = [] } = useQuery({
         queryKey: ['tables'],
@@ -47,7 +50,7 @@ export default function Reservations() {
     });
 
     // Run lifecycle processing once after data loads (idempotent)
-    useReservationLifecycle(allReservations);
+    useReservationLifecycle(activeReservations);
 
     // ── Filtering ───────────────────────────────────────────────────────────
     const { active, archived } = useMemo(() => {
@@ -59,33 +62,27 @@ export default function Reservations() {
             (statusFilter === 'alle' || r.status === statusFilter);
 
         return {
-            active:   allReservations.filter(r => !r.is_archived && matches(r))
+            active:   activeReservations.filter(matches)
                         .sort((a, b) => a.date.localeCompare(b.date) || (a.time ?? '').localeCompare(b.time ?? '')),
-            archived: allReservations.filter(r =>  r.is_archived && matches(r))
+            archived: archivedReservations.filter(matches)
                         .sort((a, b) => b.date.localeCompare(a.date)),
         };
-    }, [allReservations, searchTerm, statusFilter]);
+    }, [activeReservations, archivedReservations, searchTerm, statusFilter]);
 
     const displayed = tab === 'aktiv' ? active : archived;
 
     // ── Mutations ───────────────────────────────────────────────────────────
-    const invalidate = () => queryClient.invalidateQueries({ queryKey: RES_KEYS.all });
+    const createMutation = useCreateReservation();
+    const updateMutation = useUpdateReservation();
+    const deleteMutation = useDeleteReservation();
 
-    const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.Reservation.create(data),
-        onSuccess: () => { invalidate(); setModalOpen(false); setSelectedRes(null); },
-    });
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.Reservation.update(id, data),
-        onSuccess: () => { invalidate(); setModalOpen(false); setSelectedRes(null); },
-    });
-    const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.Reservation.delete(id),
-        onSuccess:  invalidate,
-    });
-
-    const handleSave = (data, id) =>
-        id ? updateMutation.mutate({ id, data }) : createMutation.mutate(data);
+    const handleSave = (data, id) => {
+        if (id) {
+            updateMutation.mutate({ id, data }, { onSuccess: () => { setModalOpen(false); setSelectedRes(null); } });
+        } else {
+            createMutation.mutate(data, { onSuccess: () => { setModalOpen(false); setSelectedRes(null); } });
+        }
+    };
 
     const handleDelete = (id) => {
         if (!permissions.canDeleteReservations) return;
@@ -171,7 +168,7 @@ export default function Reservations() {
                         {permissions.canEditReservations && (
                             <Button
                                 onClick={() => { setSelectedRes(null); setModalOpen(true); }}
-                                className="h-9 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold gap-1.5"
+                                className="h-9 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 font-semibold gap-1.5"
                             >
                                 <Plus className="w-4 h-4" />
                                 <span className="hidden sm:inline">Reservierung</span>
@@ -210,7 +207,7 @@ export default function Reservations() {
                             {label}
                             <span className={cn(
                                 'inline-flex items-center justify-center min-w-[1.25rem] h-5 rounded-full text-xs px-1.5',
-                                tab === key ? 'bg-amber-500 text-slate-900 font-bold' : 'bg-muted text-muted-foreground'
+                                tab === key ? 'bg-amber-500 text-primary-foreground font-bold' : 'bg-muted text-muted-foreground'
                             )}>{count}</span>
                         </button>
                     ))}
@@ -225,7 +222,7 @@ export default function Reservations() {
                             className={cn(
                                 'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
                                 statusFilter === f.value
-                                    ? 'bg-amber-500 border-amber-500 text-slate-900'
+                                    ? 'bg-amber-500 border-amber-500 text-primary-foreground'
                                     : 'border-border text-muted-foreground hover:border-amber-500/50 hover:text-foreground'
                             )}
                         >
@@ -269,7 +266,7 @@ export default function Reservations() {
                             <Button
                                 size="sm"
                                 onClick={() => { setSelectedRes(null); setModalOpen(true); }}
-                                className="mt-1 bg-amber-500 hover:bg-amber-600 text-slate-900"
+                                className="mt-1 bg-amber-500 hover:bg-amber-600"
                             >
                                 <Plus className="w-4 h-4 mr-1.5" />
                                 Erste Reservierung

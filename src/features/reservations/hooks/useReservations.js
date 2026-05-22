@@ -95,6 +95,14 @@ export function useArchiveReservation() {
     });
 }
 
+export function useDeleteReservation() {
+    const invalidate = useInvalidateAll();
+    return useMutation({
+        mutationFn: (id) => reservationService.delete(id),
+        onSuccess: invalidate,
+    });
+}
+
 export function useSendConfirmation() {
     return useMutation({
         mutationFn: (reservationId) => reservationService.sendConfirmation(reservationId),

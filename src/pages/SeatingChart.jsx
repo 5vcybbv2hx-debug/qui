@@ -13,7 +13,7 @@ import {
     ChevronRight, Pencil, X, CheckCircle2, Phone, Layers,
     Sparkles, AlarmClock
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addDays, subDays } from 'date-fns';
 import { de } from 'date-fns/locale';
 import QuickReservationSheet, { getTableStatus, STATUS_CONFIG } from '@/components/seating/QuickReservationSheet';
 import TableModal from '@/components/seating/TableModal';
@@ -64,8 +64,15 @@ export default function SeatingChartPage() {
 
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date'),
-        staleTime: 30 * 1000
+        queryFn: () => {
+            const from = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+            const to = format(addDays(new Date(), 30), 'yyyy-MM-dd');
+            return base44.entities.Reservation.filter(
+                { is_archived: false, date_gte: from, date_lte: to },
+                'date', 200
+            );
+        },
+        staleTime: 30 * 1000,
     });
 
     const filteredTables = useMemo(() => {

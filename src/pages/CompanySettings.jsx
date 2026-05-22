@@ -36,12 +36,12 @@ export default function CompanySettingsPage() {
     const queryClient = useQueryClient();
 
     const { data: companyInfo, isLoading } = useQuery({
-        queryKey: ['company-info'],
-        queryFn: async () => {
-            const infos = await base44.entities.CompanyInfo.list();
-            return infos[0] || null;
-        }
-    });
+         queryKey: ['company-info'],
+         queryFn: async () => {
+             const infos = await base44.entities.CompanyInfo.list('-last_updated', 1);
+             return infos[0] || null;
+         }
+     });
 
     const initialized = React.useRef(false);
     useEffect(() => {

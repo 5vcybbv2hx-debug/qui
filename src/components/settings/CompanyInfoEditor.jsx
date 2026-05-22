@@ -113,14 +113,34 @@ export default function CompanyInfoEditor() {
     return (
         <div className="space-y-4">
             {/* Duplikat-Banner */}
-            {hasDuplicates && (
-                <Card className="p-3 bg-amber-500/10 border-amber-500/30 flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-sm text-amber-600">
-                        ⚠️ Mehrere Firmendatensätze gefunden – bitte bereinigen. ({companies.length} Einträge)
-                    </p>
-                </Card>
-            )}
+             {hasDuplicates && (
+                 <Card className="p-3 bg-amber-500/10 border-amber-500/30 flex items-start justify-between gap-3">
+                     <div className="flex items-start gap-3">
+                         <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                         <p className="text-sm text-amber-600">
+                             ⚠️ Mehrere Firmendatensätze gefunden – bitte bereinigen. ({companies.length} Einträge)
+                         </p>
+                     </div>
+                     <Button
+                         size="sm"
+                         variant="outline"
+                         onClick={async () => {
+                             try {
+                                 for (const c of companies.slice(1)) {
+                                     await base44.entities.CompanyInfo.delete(c.id);
+                                 }
+                                 toast.success('Duplikat entfernt');
+                                 queryClient.invalidateQueries({ queryKey: ['company-info'] });
+                             } catch (err) {
+                                 toast.error('Fehler: ' + err.message);
+                             }
+                         }}
+                         className="text-xs shrink-0"
+                     >
+                         Duplikat löschen
+                     </Button>
+                 </Card>
+             )}
 
             <Card className="p-4 bg-card border-border">
                 <Tabs defaultValue="general">

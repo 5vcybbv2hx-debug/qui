@@ -124,14 +124,14 @@ export default function PublicDrinkMenu() {
 
     const { data: items = [], isLoading, error: itemsError } = useQuery({
         queryKey: ['public-menu-items'],
-        queryFn: () => base44.asServiceRole.entities.MenuItem.list(),
+        queryFn: () => base44.entities.MenuItem.list('category', 1000),
         retry: 2,
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
 
     const { data: companyData = [] } = useQuery({
         queryKey: ['company-info'],
-        queryFn: () => base44.asServiceRole.entities.CompanyInfo.list(),
+        queryFn: () => base44.entities.CompanyInfo.list(),
         retry: 1,
         staleTime: 30 * 60 * 1000, // 30 minutes
     });
@@ -139,14 +139,14 @@ export default function PublicDrinkMenu() {
     const { data: activeSpecial = null } = useQuery({
         queryKey: ['public-weekly-special'],
         queryFn: async () => {
-            const specials = await base44.asServiceRole.entities.WeeklySpecial.filter({ is_active: true });
+            const specials = await base44.entities.WeeklySpecial.filter({ is_active: true });
             return specials[0] || null;
         }
     });
 
     const { data: specialItems = [] } = useQuery({
         queryKey: ['public-weekly-special-items', activeSpecial?.id],
-        queryFn: () => activeSpecial ? base44.asServiceRole.entities.WeeklySpecialItem.filter({ weekly_special_id: activeSpecial.id }) : Promise.resolve([]),
+        queryFn: () => activeSpecial ? base44.entities.WeeklySpecialItem.filter({ weekly_special_id: activeSpecial.id }) : Promise.resolve([]),
         enabled: !!activeSpecial?.id
     });
 

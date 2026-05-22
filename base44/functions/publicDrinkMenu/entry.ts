@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// MEDIUM FIX: Error page no longer leaks internal error.message to the browser.
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -33,12 +32,10 @@ Deno.serve(async (req) => {
         const accent = ACCENT_PRESETS[companyInfo.accent_color_key] || ACCENT_PRESETS.amber;
         const bgTheme = BG_PRESETS[companyInfo.bg_color_key] || BG_PRESETS.default;
 
-        // Helper: escape HTML to prevent XSS when rendering user data
         const esc = (str) => String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
         const categories = ['Alle', ...new Set(sortedItems.map(item => item.category || 'Sonstiges').filter(Boolean))];
 
-        // Collect all unique allergens/additives across all items (for the filter panel)
         const allAllergenSet = new Set();
         const allAdditiveSet = new Set();
         for (const item of sortedItems) {
@@ -48,6 +45,82 @@ Deno.serve(async (req) => {
         const allAllergens = [...allAllergenSet].sort();
         const allAdditives = [...allAdditiveSet].sort();
         const hasAllergenData = allAllergens.length > 0 || allAdditives.length > 0;
+
+        let itemsHtml = '';
+        if (sortedItems.length === 0) {
+            itemsHtml = '<div style="grid-column:1/-1;text-align:center;padding:5rem 1rem;color:#64748b"><div style="font-size:4rem;opacity:0.5">&#127863;</div><h2>Keine Getraenke verfuegbar</h2></div>';
+        } else {
+            itemsHtml = sortedItems.map(item => {
+                const allergenList = Array.isArray(item.allergens_list) ? item.allergens_list : [];
+                const additiveList = Array.isArray(item.additives) ? item.additives : [];
+                const legacyAllergen = item.allergens ? item.allergens : '';
+                const searchAllergenStr = [...allergenList, ...additiveList, legacyAllergen].join(' ').toLowerCase();
+                const allergenDataAttr = allergenList.length ? ` data-allergens="${esc(allergenList.join('||').toLowerCase())}"` : '';
+                const additiveDataAttr = additiveList.length ? ` data-additives="${esc(additiveList.join('||').toLowerCase())}"` : '';
+                const imageHtml = item.image_url ? `<img src="${esc(item.image_url)}" alt="${esc(item.name)}" class="card-image" loading="lazy">` : '';
+                const descHtml = item.description ? `<p class="card-description">${esc(item.description)}</p>` : '';
+                const price = item.price ? Number(item.price).toFixed(2) : '0.00';
+                const categoryBadge = item.category ? `<span class="badge badge-category">${esc(item.category)}</span>` : '';
+                const sizeBadge = item.size ? `<span class="badge badge-outline">${esc(item.size)}</span>` : '';
+                const alcBadge = item.alcohol_content ? `<span class="badge badge-outline">${item.alcohol_content}% Vol.</span>` : '';
+                const seasonalBadge = item.is_seasonal ? '<span class="badge badge-special">Saisonal</span>' : '';
+                const specialBadge = item.is_special ? '<span class="badge badge-special">Special</span>' : '';
+                let allergenHtml = '';
+                if (allergenList.length || item.allergens || additiveList.length) {
+                    allergenHtml = '<div class="allergens">';
+                    if (allergenList.length) {
+                        allergenHtml += `<div><strong>Allergene:</strong> ${allergenList.map(a => esc(a)).join(', ')}</div>`;
+                    } else if (item.allergens) {
+                        allergenHtml += `<div><strong>Allergene:</strong> ${esc(item.allergens)}</div>`;
+                    }
+                    if (additiveList.length) {
+                        allergenHtml += `<div style="margin-top:0.25rem"><strong>Zusatzstoffe:</strong> ${additiveList.map(a => esc(a)).join(', ')}</div>`;
+                    }
+                    allergenHtml += '</div>';
+                }
+                return `<div class="card" data-category="${esc(item.category || 'Sonstiges')}" data-name="${esc((item.name || '').toLowerCase())}" data-description="${esc((item.description || '').toLowerCase())}" data-search-allergens="${esc(searchAllergenStr)}"${allergenDataAttr}${additiveDataAttr}>
+                    ${imageHtml}
+                    <div class="card-content">
+                        <h3 class="card-title">${esc(item.name)}</h3>
+                        ${descHtml}
+                        <div class="price">&#8364;${price}</div>
+                        <div class="badges">
+                            ${categoryBadge}
+                            ${sizeBadge}
+                            ${alcBadge}
+                            ${seasonalBadge}
+                            ${specialBadge}
+                        </div>
+                        ${allergenHtml}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        const allergenChipsHtml = allAllergens.map(a => `<button class="allergen-chip" data-allergen="${esc(a)}">${esc(a)}</button>`).join('');
+        const additiveChipsHtml = allAdditives.map(a => `<button class="allergen-chip additive-chip" data-additive="${esc(a)}">${esc(a)}</button>`).join('');
+        const categoryButtonsHtml = categories.map((cat, i) => `<button class="filter-btn ${i === 0 ? 'active' : ''}" data-cat="${esc(cat)}">${esc(cat)}</button>`).join('');
+
+        const allergenPanelHtml = !hasAllergenData ? '' : `
+            <div class="allergen-panel" id="allergen-panel">
+                <div class="allergen-panel-inner">
+                    <p class="allergen-panel-title">Produkte ausblenden die enthalten:</p>
+                    ${allAllergens.length > 0 ? `
+                    <p class="allergen-panel-title" style="color:#fca5a5;margin-top:0.5rem">Allergene</p>
+                    <div class="allergen-chips">
+                        ${allergenChipsHtml}
+                    </div>` : ''}
+                    ${allAdditives.length > 0 ? `
+                    <p class="allergen-panel-title" style="color:#fde68a;margin-top:0.5rem">Zusatzstoffe</p>
+                    <div class="allergen-chips">
+                        ${additiveChipsHtml}
+                    </div>` : ''}
+                    <p class="allergen-hint">Ausgewaehlt = wird ausgeblendet</p>
+                    <button class="allergen-clear-btn" id="clear-allergen-btn">&#10005; Alle Filter zuruecksetzen</button>
+                </div>
+            </div>`;
+
+        const filterButtonHtml = !hasAllergenData ? '' : `<button class="allergen-toggle-btn" id="allergen-toggle-btn">&#9888;&#65039; Filter <span class="allergen-badge" id="allergen-count-badge" style="display:none">0</span></button>`;
 
         const html = `<!DOCTYPE html>
 <html lang="de">
@@ -74,13 +147,12 @@ Deno.serve(async (req) => {
         .search-input { width: 100%; padding: 0.75rem 2.75rem 0.75rem 2.75rem; border-radius: 9999px; border: 2px solid rgba(148,163,184,0.2); background: rgba(30,41,59,0.5); color: #f1f5f9; font-size: 1rem; outline: none; transition: all 0.3s; -webkit-appearance: none; appearance: none; }
         .search-input:focus { border-color: ${accent.from}80; background: rgba(30,41,59,0.9); box-shadow: 0 0 0 3px ${accent.from}22; }
         .search-input::placeholder { color: #64748b; }
-        .search-input::-webkit-search-cancel-button { display: none; }
         .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #64748b; pointer-events: none; font-size: 1rem; transition: color 0.2s; }
         .search-container:focus-within .search-icon { color: ${accent.from}; }
-        .search-clear { position: absolute; right: 0.875rem; top: 50%; transform: translateY(-50%); background: rgba(148,163,184,0.2); border: none; border-radius: 9999px; width: 1.5rem; height: 1.5rem; display: none; align-items: center; justify-content: center; cursor: pointer; color: #94a3b8; font-size: 0.875rem; transition: all 0.2s; line-height: 1; padding: 0; }
+        .search-clear { position: absolute; right: 0.875rem; top: 50%; transform: translateY(-50%); background: rgba(148,163,184,0.2); border: none; border-radius: 9999px; width: 1.5rem; height: 1.5rem; display: none; align-items: center; justify-content: center; cursor: pointer; color: #94a3b8; font-size: 0.875rem; transition: all 0.2s; padding: 0; }
         .search-clear:hover { background: rgba(148,163,184,0.35); color: #f1f5f9; }
         .search-clear.visible { display: flex; }
-        .search-result-count { font-size: 0.75rem; color: #64748b; text-align: right; min-height: 1.1rem; transition: opacity 0.2s; padding-right: 0.75rem; margin-bottom: 0.5rem; }
+        .search-result-count { font-size: 0.75rem; color: #64748b; text-align: right; min-height: 1.1rem; padding-right: 0.75rem; margin-bottom: 0.5rem; }
         .search-result-count.highlight { color: ${accent.from}; font-weight: 600; }
 
         .allergen-toggle-btn { flex-shrink: 0; padding: 0.75rem 1rem; border-radius: 9999px; border: 2px solid rgba(148,163,184,0.2); background: rgba(30,41,59,0.5); color: #94a3b8; cursor: pointer; font-size: 0.875rem; font-weight: 600; white-space: nowrap; transition: all 0.3s; display: flex; align-items: center; gap: 0.4rem; }
@@ -103,7 +175,8 @@ Deno.serve(async (req) => {
         .allergen-clear-btn { margin-top: 0.625rem; padding: 0.375rem 0.875rem; border-radius: 9999px; border: 1.5px solid rgba(148,163,184,0.2); background: transparent; color: #94a3b8; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; }
         .allergen-clear-btn:hover { background: rgba(148,163,184,0.1); color: #f1f5f9; }
 
-        .filters { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.5rem 0; }
+        .filters { display: flex; gap: 0.5rem; overflow-x: auto; padding: 0.5rem 0; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .filters::-webkit-scrollbar { display: none; }
         .filter-btn { padding: 0.625rem 1.25rem; border-radius: 9999px; border: 2px solid rgba(148,163,184,0.2); background: rgba(30,41,59,0.5); color: #94a3b8; cursor: pointer; white-space: nowrap; transition: all 0.3s; font-size: 0.875rem; font-weight: 600; }
         .filter-btn:hover { background: ${bgTheme.header}; border-color: ${accent.from}4d; }
         .filter-btn.active { background: linear-gradient(90deg, ${accent.from} 0%, ${accent.via} 100%); color: #0f172a; border-color: transparent; font-weight: 700; box-shadow: 0 4px 16px ${accent.from}66; }
@@ -117,7 +190,6 @@ Deno.serve(async (req) => {
         .card-content { padding: 1.5rem; }
         .card-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.75rem; color: #f1f5f9; }
         .card-description { color: #94a3b8; font-size: 0.9375rem; margin-bottom: 1.25rem; line-height: 1.6; }
-        .card-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
         .price { font-size: 2.25rem; font-weight: 800; background: linear-gradient(135deg, ${accent.from} 0%, ${accent.via} 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
         .badge { display: inline-block; padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.8125rem; font-weight: 600; }
@@ -126,12 +198,9 @@ Deno.serve(async (req) => {
         .badge-special { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; }
         .allergens { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(148,163,184,0.1); font-size: 0.75rem; color: #64748b; }
         .allergens strong { color: #94a3b8; }
-
         .active-filter-banner { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 0.75rem; padding: 0.625rem 1rem; margin-bottom: 1.5rem; font-size: 0.8rem; color: #fca5a5; display: none; }
         .active-filter-banner.visible { display: block; }
-
         .footer { background: ${bgTheme.header}f2; backdrop-filter: blur(12px); border-top: 1px solid rgba(148,163,184,0.1); padding: 2rem 1rem; margin-top: 3rem; text-align: center; color: #94a3b8; }
-        .empty-state { text-align: center; padding: 5rem 1rem; color: #64748b; }
     </style>
 </head>
 <body>
@@ -150,83 +219,34 @@ Deno.serve(async (req) => {
                     <div class="search-container">
                         <span class="search-icon">&#128269;</span>
                         <input
-                            type="search"
+                            type="text"
                             id="search-input"
                             class="search-input"
-                            placeholder="Getraenk, Zutat, Allergen suchen..."
-                            oninput="onSearchInput(this.value)"
+                            placeholder="Getraenk, Zutat oder Allergen suchen..."
                             autocomplete="off"
                             autocorrect="off"
                             autocapitalize="off"
                             spellcheck="false"
-                            inputmode="search"
                         >
                         <button class="search-clear" id="search-clear-btn" aria-label="Suche leeren">&#10005;</button>
                     </div>
                     <div class="search-result-count" id="search-result-count"></div>
                 </div>
-                ${hasAllergenData ? `<button class="allergen-toggle-btn" id="allergen-toggle-btn" >&#9888;&#65039; Filter <span class="allergen-badge" id="allergen-count-badge" style="display:none">0</span></button>` : ''}
+                ${filterButtonHtml}
             </div>
 
-            ${hasAllergenData ? `
-            <div class="allergen-panel" id="allergen-panel">
-                <div class="allergen-panel-inner">
-                    <p class="allergen-panel-title">Produkte ausblenden die enthalten:</p>
-                    ${allAllergens.length > 0 ? `
-                    <p class="allergen-panel-title" style="color:#fca5a5">Allergene</p>
-                    <div class="allergen-chips">
-                        ${allAllergens.map(a => `<button class="allergen-chip" data-allergen="${esc(a)}">${esc(a)}</button>`).join('')}
-                    </div>` : ''}
-                    ${allAdditives.length > 0 ? `
-                    <p class="allergen-panel-title" style="color:#fde68a">Zusatzstoffe</p>
-                    <div class="allergen-chips">
-                        ${allAdditives.map(a => `<button class="allergen-chip additive-chip" data-additive="${esc(a)}">${esc(a)}</button>`).join('')}
-                    </div>` : ''}
-                    <p class="allergen-hint">Ausgewaehlt = wird ausgeblendet</p>
-                    <button class="allergen-clear-btn" id="clear-allergen-btn">&#10005; Alle Filter zuruecksetzen</button>
-                </div>
-            </div>` : ''}
+            ${allergenPanelHtml}
 
             <div class="filters" id="filter-bar">
-                ${categories.map((cat, i) => `<button class="filter-btn ${i === 0 ? 'active' : ''}" data-cat="${esc(cat)}">${esc(cat)}</button>`).join('')}
+                ${categoryButtonsHtml}
             </div>
         </div>
     </header>
 
     <main class="content">
         <div class="active-filter-banner" id="active-filter-banner"></div>
-
         <div class="grid" id="menu-grid">
-            ${sortedItems.length === 0
-                ? `<div class="empty-state"><div style="font-size:4rem;opacity:0.5">&#127863;</div><h2>Keine Getraenke verfuegbar</h2><p>Die Getraenkekarte wird gerade aktualisiert.</p></div>`
-                : sortedItems.map(item => {
-                    const allergenList = Array.isArray(item.allergens_list) ? item.allergens_list : [];
-                    const additiveList = Array.isArray(item.additives) ? item.additives : [];
-                    const legacyAllergen = item.allergens ? item.allergens : '';
-                    const searchAllergenStr = [...allergenList, ...additiveList, legacyAllergen].join(' ').toLowerCase();
-                    const allergenDataAttr = allergenList.length ? ` data-allergens="${esc(allergenList.join('||').toLowerCase())}"` : '';
-                    const additiveDataAttr = additiveList.length ? ` data-additives="${esc(additiveList.join('||').toLowerCase())}"` : '';
-
-                    return `<div class="card" data-category="${esc(item.category || 'Sonstiges')}" data-name="${esc((item.name || '').toLowerCase())}" data-description="${esc((item.description || '').toLowerCase())}" data-search-allergens="${esc(searchAllergenStr)}"${allergenDataAttr}${additiveDataAttr}>
-                    ${item.image_url ? `<img src="${esc(item.image_url)}" alt="${esc(item.name)}" class="card-image" loading="lazy">` : ''}
-                    <div class="card-content">
-                        <h3 class="card-title">${esc(item.name)}</h3>
-                        ${item.description ? `<p class="card-description">${esc(item.description)}</p>` : ''}
-                        <div class="card-footer"><div class="price">&#8364;${item.price ? Number(item.price).toFixed(2) : '0.00'}</div></div>
-                        <div class="badges">
-                            ${item.category ? `<span class="badge badge-category">${esc(item.category)}</span>` : ''}
-                            ${item.size ? `<span class="badge badge-outline">${esc(item.size)}</span>` : ''}
-                            ${item.alcohol_content ? `<span class="badge badge-outline">${item.alcohol_content}% Vol.</span>` : ''}
-                            ${item.is_seasonal ? `<span class="badge badge-special">Saisonal</span>` : ''}
-                            ${item.is_special ? `<span class="badge badge-special">Special</span>` : ''}
-                        </div>
-                        ${(allergenList.length || item.allergens || additiveList.length) ? `<div class="allergens">
-                            ${allergenList.length ? `<div><strong>Allergene:</strong> ${allergenList.map(a => esc(a)).join(', ')}</div>` : item.allergens ? `<div><strong>Allergene:</strong> ${esc(item.allergens)}</div>` : ''}
-                            ${additiveList.length ? `<div style="margin-top:0.25rem"><strong>Zusatzstoffe:</strong> ${additiveList.map(a => esc(a)).join(', ')}</div>` : ''}
-                        </div>` : ''}
-                    </div>
-                </div>`;
-                }).join('')}
+            ${itemsHtml}
         </div>
     </main>
 
@@ -237,29 +257,25 @@ Deno.serve(async (req) => {
     </footer>
 
     <script>
-        // ── All logic runs after DOM is ready ──────────────────────────
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
 
-            // ── State ────────────────────────────────────────────────
-            var activeCategory = 'Alle';
-            var searchQuery    = '';
+            var activeCategory    = 'Alle';
+            var searchQuery       = '';
             var excludedAllergens = {};
             var excludedAdditives = {};
-            var debounceTimer  = null;
+            var debounceTimer     = null;
 
-            // ── Helpers ──────────────────────────────────────────────
-            function $(id) { return document.getElementById(id); }
+            function byId(id) { return document.getElementById(id); }
 
-            // ── Search ───────────────────────────────────────────────
-            var searchInput = $('search-input');
-            var clearBtn    = $('search-clear-btn');
+            var searchInput = byId('search-input');
+            var clearBtn    = byId('search-clear-btn');
 
             if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    var val = searchInput.value;
+                searchInput.addEventListener('input', function () {
+                    var val = this.value;
                     if (clearBtn) clearBtn.classList.toggle('visible', val.length > 0);
                     clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(function() {
+                    debounceTimer = setTimeout(function () {
                         searchQuery = val.toLowerCase().trim();
                         applyFilters();
                     }, 150);
@@ -267,7 +283,7 @@ Deno.serve(async (req) => {
             }
 
             if (clearBtn) {
-                clearBtn.addEventListener('click', function() {
+                clearBtn.addEventListener('click', function () {
                     if (searchInput) { searchInput.value = ''; searchInput.focus(); }
                     clearBtn.classList.remove('visible');
                     searchQuery = '';
@@ -275,196 +291,145 @@ Deno.serve(async (req) => {
                 });
             }
 
-            // ── Category filter ──────────────────────────────────────
-            var filterBar = $('filter-bar');
+            var filterBar = byId('filter-bar');
             if (filterBar) {
-                filterBar.addEventListener('click', function(e) {
+                filterBar.addEventListener('click', function (e) {
                     var btn = e.target.closest('.filter-btn');
                     if (!btn) return;
                     activeCategory = btn.getAttribute('data-cat');
-                    document.querySelectorAll('.filter-btn').forEach(function(b) {
-                        b.classList.remove('active');
-                    });
+                    filterBar.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
                     btn.classList.add('active');
                     applyFilters();
                 });
             }
 
-            // ── Allergen panel toggle ─────────────────────────────────
-            var allergenToggleBtn = $('allergen-toggle-btn');
-            if (allergenToggleBtn) {
-                allergenToggleBtn.addEventListener('click', function() {
-                    var panel = $('allergen-panel');
-                    if (panel) panel.classList.toggle('open');
+            var allergenToggleBtn = byId('allergen-toggle-btn');
+            var allergenPanel     = byId('allergen-panel');
+            if (allergenToggleBtn && allergenPanel) {
+                allergenToggleBtn.addEventListener('click', function () {
+                    allergenPanel.classList.toggle('open');
                 });
             }
 
-            // ── Allergen chip clicks (delegated) ─────────────────────
-            var allergenPanel = $('allergen-panel');
             if (allergenPanel) {
-                allergenPanel.addEventListener('click', function(e) {
+                allergenPanel.addEventListener('click', function (e) {
                     var chip = e.target.closest('.allergen-chip');
                     if (!chip) return;
                     var allergen = chip.getAttribute('data-allergen');
                     var additive = chip.getAttribute('data-additive');
                     if (allergen !== null) {
-                        if (excludedAllergens[allergen]) {
-                            delete excludedAllergens[allergen];
-                            chip.classList.remove('selected');
-                        } else {
-                            excludedAllergens[allergen] = true;
-                            chip.classList.add('selected');
-                        }
+                        if (excludedAllergens[allergen]) { delete excludedAllergens[allergen]; chip.classList.remove('selected'); }
+                        else { excludedAllergens[allergen] = true; chip.classList.add('selected'); }
                     } else if (additive !== null) {
-                        if (excludedAdditives[additive]) {
-                            delete excludedAdditives[additive];
-                            chip.classList.remove('selected');
-                        } else {
-                            excludedAdditives[additive] = true;
-                            chip.classList.add('selected');
-                        }
+                        if (excludedAdditives[additive]) { delete excludedAdditives[additive]; chip.classList.remove('selected'); }
+                        else { excludedAdditives[additive] = true; chip.classList.add('selected'); }
                     }
-                    updateAllergenBadge();
+                    updateBadge();
                     applyFilters();
                 });
             }
 
-            // ── Clear allergen filter ────────────────────────────────
-            var clearAllergenBtn = $('clear-allergen-btn');
+            var clearAllergenBtn = byId('clear-allergen-btn');
             if (clearAllergenBtn) {
-                clearAllergenBtn.addEventListener('click', function() {
+                clearAllergenBtn.addEventListener('click', function () {
                     excludedAllergens = {};
                     excludedAdditives = {};
-                    document.querySelectorAll('.allergen-chip.selected').forEach(function(c) {
-                        c.classList.remove('selected');
-                    });
-                    updateAllergenBadge();
+                    if (allergenPanel) allergenPanel.querySelectorAll('.allergen-chip.selected').forEach(function (c) { c.classList.remove('selected'); });
+                    updateBadge();
                     applyFilters();
                 });
             }
 
-            // ── Update allergen badge & banner ───────────────────────
-            function updateAllergenBadge() {
-                var aKeys = Object.keys(excludedAllergens);
-                var dKeys = Object.keys(excludedAdditives);
-                var total = aKeys.length + dKeys.length;
-                var badge  = $('allergen-count-badge');
-                var btn    = $('allergen-toggle-btn');
-                var banner = $('active-filter-banner');
-                if (badge) { badge.style.display = total > 0 ? 'inline-flex' : 'none'; badge.textContent = total; }
-                if (btn)   { btn.classList.toggle('has-active', total > 0); }
+            function updateBadge() {
+                var aKeys  = Object.keys(excludedAllergens);
+                var dKeys  = Object.keys(excludedAdditives);
+                var total  = aKeys.length + dKeys.length;
+                var badge  = byId('allergen-count-badge');
+                var btn    = byId('allergen-toggle-btn');
+                var banner = byId('active-filter-banner');
+                if (badge)  { badge.style.display = total > 0 ? 'inline-flex' : 'none'; badge.textContent = total; }
+                if (btn)    { btn.classList.toggle('has-active', total > 0); }
                 if (banner) {
-                    if (total > 0) {
-                        banner.classList.add('visible');
-                        banner.textContent = 'Filter aktiv: Inhaltsstoffe ausgeblendet: ' + aKeys.concat(dKeys).join(', ');
-                    } else {
-                        banner.classList.remove('visible');
-                        banner.textContent = '';
-                    }
+                    if (total > 0) { banner.classList.add('visible'); banner.textContent = 'Filter aktiv — ausgeblendet: ' + aKeys.concat(dKeys).join(', '); }
+                    else           { banner.classList.remove('visible'); banner.textContent = ''; }
                 }
             }
 
-            // ── Core filter function ─────────────────────────────────
             function applyFilters() {
-                var cards = document.querySelectorAll('#menu-grid .card');
-                var aKeys = Object.keys(excludedAllergens);
-                var dKeys = Object.keys(excludedAdditives);
-                var visibleCount = 0;
+                var cards     = document.querySelectorAll('#menu-grid .card');
+                var aKeys     = Object.keys(excludedAllergens);
+                var dKeys     = Object.keys(excludedAdditives);
+                var visible   = 0;
 
                 for (var i = 0; i < cards.length; i++) {
                     var card = cards[i];
 
-                    // Category
-                    var matchCat = activeCategory === 'Alle' ||
-                        card.getAttribute('data-category') === activeCategory;
+                    var okCat = activeCategory === 'Alle' || card.getAttribute('data-category') === activeCategory;
 
-                    // Text search
-                    var matchSearch = true;
-                    if (searchQuery !== '') {
-                        var name        = card.getAttribute('data-name') || '';
-                        var desc        = card.getAttribute('data-description') || '';
-                        var allergenStr = card.getAttribute('data-search-allergens') || '';
-                        matchSearch = name.indexOf(searchQuery) !== -1 ||
-                                      desc.indexOf(searchQuery) !== -1 ||
-                                      allergenStr.indexOf(searchQuery) !== -1;
+                    var okSearch = true;
+                    if (searchQuery) {
+                        var n = card.getAttribute('data-name') || '';
+                        var d = card.getAttribute('data-description') || '';
+                        var s = card.getAttribute('data-search-allergens') || '';
+                        okSearch = n.indexOf(searchQuery) !== -1 || d.indexOf(searchQuery) !== -1 || s.indexOf(searchQuery) !== -1;
                     }
 
-                    // Allergen exclusion
-                    var matchAllergen = true;
-                    if (aKeys.length > 0) {
-                        var cardA = (card.getAttribute('data-allergens') || '').split('||');
-                        for (var j = 0; j < aKeys.length; j++) {
-                            for (var m = 0; m < cardA.length; m++) {
-                                if (cardA[m] === aKeys[j].toLowerCase()) { matchAllergen = false; break; }
-                            }
-                            if (!matchAllergen) break;
-                        }
+                    var okAllergen = true;
+                    if (aKeys.length) {
+                        var ca = (card.getAttribute('data-allergens') || '').split('||');
+                        for (var j = 0; j < aKeys.length && okAllergen; j++)
+                            for (var m = 0; m < ca.length; m++)
+                                if (ca[m] === aKeys[j].toLowerCase()) { okAllergen = false; break; }
                     }
-                    if (matchAllergen && dKeys.length > 0) {
-                        var cardD = (card.getAttribute('data-additives') || '').split('||');
-                        for (var k = 0; k < dKeys.length; k++) {
-                            for (var n = 0; n < cardD.length; n++) {
-                                if (cardD[n] === dKeys[k].toLowerCase()) { matchAllergen = false; break; }
-                            }
-                            if (!matchAllergen) break;
-                        }
+                    if (okAllergen && dKeys.length) {
+                        var cd = (card.getAttribute('data-additives') || '').split('||');
+                        for (var k = 0; k < dKeys.length && okAllergen; k++)
+                            for (var n2 = 0; n2 < cd.length; n2++)
+                                if (cd[n2] === dKeys[k].toLowerCase()) { okAllergen = false; break; }
                     }
 
-                    var visible = matchCat && matchSearch && matchAllergen;
-                    card.style.display = visible ? '' : 'none';
-                    if (visible) visibleCount++;
+                    var show = okCat && okSearch && okAllergen;
+                    card.style.display = show ? '' : 'none';
+                    if (show) visible++;
                 }
 
-                // Result count
-                var countEl = $('search-result-count');
+                var countEl   = byId('search-result-count');
+                var hasFilter = searchQuery || aKeys.length || dKeys.length;
                 if (countEl) {
-                    var hasFilter = searchQuery !== '' || aKeys.length > 0 || dKeys.length > 0;
-                    if (hasFilter) {
-                        countEl.textContent = visibleCount + ' Treffer';
-                        countEl.className = 'search-result-count' + (visibleCount > 0 ? ' highlight' : '');
-                    } else {
-                        countEl.textContent = '';
-                        countEl.className = 'search-result-count';
-                    }
+                    countEl.textContent = hasFilter ? visible + ' Treffer' : '';
+                    countEl.className   = 'search-result-count' + (hasFilter && visible > 0 ? ' highlight' : '');
                 }
 
-                // No-results state
-                var empty = $('no-results');
-                if (visibleCount === 0) {
+                var empty = byId('no-results');
+                if (visible === 0) {
                     if (!empty) {
                         empty = document.createElement('div');
                         empty.id = 'no-results';
                         empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:5rem 1rem;color:#64748b';
-                        empty.innerHTML = '<div style="font-size:3rem;margin-bottom:1rem">&#128269;</div><h2 style="margin-bottom:0.5rem">Keine Treffer</h2><p>Versuche andere Suchbegriffe oder passe die Filter an.</p>';
-                        var grid = $('menu-grid');
+                        empty.innerHTML = '<div style="font-size:3rem;margin-bottom:1rem">&#128269;</div><h2 style="margin-bottom:0.5rem">Keine Treffer</h2><p>Suchbegriff anpassen oder Filter zuruecksetzen.</p>';
+                        var grid = byId('menu-grid');
                         if (grid) grid.appendChild(empty);
                     }
-                } else {
-                    if (empty) empty.parentNode.removeChild(empty);
+                } else if (empty) {
+                    empty.parentNode.removeChild(empty);
                 }
             }
 
-            // ── Fade-in ──────────────────────────────────────────────
             document.body.style.opacity = '0';
-            setTimeout(function() {
-                document.body.style.transition = 'opacity 0.4s';
-                document.body.style.opacity = '1';
-            }, 50);
+            setTimeout(function () { document.body.style.transition = 'opacity 0.4s'; document.body.style.opacity = '1'; }, 30);
 
-        }); // end DOMContentLoaded
+        });
     </script>
 </body>
 </html>`;
 
-        return new Response(html, {
-            headers: { 'Content-Type': 'text/html; charset=utf-8' }
-        });
+        return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+
     } catch (error) {
         console.error('Fehler:', error);
-        return new Response('<html><head><meta charset="UTF-8"><title>Fehler</title></head><body style="font-family:sans-serif;background:#0f172a;color:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center"><div><h1 style="color:#f59e0b">Fehler</h1><p>Die Getraenkekarte konnte nicht geladen werden.</p></div></body></html>', {
+        return new Response('<html><head><meta charset="UTF-8"></head><body style="font-family:sans-serif;background:#0f172a;color:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center"><div><h1 style="color:#f59e0b">Fehler</h1><p>Die Getraenkekarte konnte nicht geladen werden.</p></div></body></html>', {
             status: 500,
             headers: { 'Content-Type': 'text/html' }
         });
     }
 });
-

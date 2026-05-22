@@ -48,7 +48,6 @@ export const mainNavigation = [
         name: 'Lager',
         icon: Package,
         pages: [
-            { name: 'Artikel',      page: 'Articles',  icon: Package,       permission: 'canViewWarehouse' },
             { name: 'Bestand',      page: 'Warehouse', icon: Package,       permission: 'canViewWarehouse' },
             { name: 'Inventur',     page: 'Inventory', icon: ClipboardList, permission: 'canViewInventory' },
             { name: 'Schwund',      page: 'Wastage',   icon: Trash2,        permission: 'canViewWastage'   },
@@ -95,7 +94,7 @@ export const mainNavigation = [
             { name: 'Urlaub',        page: 'Vacation',       icon: Palmtree,       permission: 'canViewVacation' },
             { name: 'Schichttausch', page: 'ShiftSwaps',     icon: ArrowLeftRight, permission: 'canRequestShiftSwap'   },
             { name: 'Berechtigungen',page: 'Permissions',    icon: Shield,         permission: 'canEditEmployeePermissions'},
-            { name: 'Teamsitzung',   page: 'TeamMeeting',    icon: Video,          permission: 'canViewShifts'             },
+            { name: 'Teamsitzung',   page: 'TeamMeeting',    icon: Video,          permission: 'canViewTeamMeeting'        },
         ]
     },
 ];

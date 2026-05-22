@@ -18,6 +18,10 @@ export function invalidatePermissionsCache() {
     clearPermissionsCache();
 }
 
+if (import.meta.env.DEV) {
+    window.__clearPermissions = clearPermissionsCache;
+}
+
 export async function loadPermissions() {
     if (cachedPermissions) return cachedPermissions;
     if (loadingPromise)    return loadingPromise;

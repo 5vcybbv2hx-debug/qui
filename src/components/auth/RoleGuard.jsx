@@ -24,7 +24,7 @@ export default function RoleGuard({ permission, children }) {
         if (!hasAccess) {
             navigate(getAllowedLandingUrl(permissions), { replace: true });
         }
-    }, [permissions.isLoading, permission]);
+    }, [permissions.isLoading, permissions[permission], permission]);
 
     if (permissions.isLoading || !permissions[permission]) {
         return null;

@@ -47,8 +47,8 @@ export default function PermissionGuard({
 }) {
     const perms = usePermissions();
 
-    // Still loading — render nothing to avoid flicker
-    if (perms.isLoading) return null;
+    // Still loading — skeleton to avoid layout shift
+    if (perms.isLoading) return <div className="animate-pulse h-8 w-full rounded-lg bg-muted" />;
 
     // Evaluate access
     let allowed = true;

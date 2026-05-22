@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { Plus, Pencil, Trash2, Phone, MessageCircle, Mail, UserPlus, ShoppingBag, Filter, Archive, ContactRound, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
 import EmployeePersonalFormExport from '@/components/employees/EmployeePersonalFormExport';
 import RVBefreiungExport from '@/components/employees/RVBefreiungExport';
@@ -46,7 +47,7 @@ const HOURLY_RATES = {
 };
 
 const roleColors = {
-    'Aushilfe': 'bg-slate-100 text-slate-700',
+    'Aushilfe': 'bg-muted text-muted-foreground',
     'Vollzeit': 'bg-blue-100 text-blue-700',
     'Manager': 'bg-purple-100 text-purple-700'
 };
@@ -110,8 +111,8 @@ export default function Employees() {
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.list('name'),
-        staleTime: 2 * 60 * 1000, // 2 minutes
+        queryFn: () => base44.entities.Employee.list('name', 500),
+        staleTime: 2 * 60 * 1000,
     });
 
     const { data: currentUser } = useQuery({
@@ -313,13 +314,13 @@ export default function Employees() {
         }
     };
 
-    const handlePermissionsSave = async (employeeId, permissions) => {
+    const handlePermissionsSave = async (employeeId, newPermissions) => {
         try {
-            await base44.entities.Employee.update(employeeId, { permissions });
+            await base44.entities.Employee.update(employeeId, { permissions: newPermissions });
             queryClient.invalidateQueries({ queryKey: ['employees'] });
-            alert('✅ Berechtigungen aktualisiert!');
+            toast.success('Berechtigungen aktualisiert!');
         } catch (error) {
-            alert('❌ Fehler beim Speichern der Berechtigungen: ' + error.message);
+            toast.error('Fehler beim Speichern der Berechtigungen: ' + error.message);
         }
     };
 
@@ -328,8 +329,7 @@ export default function Employees() {
     };
 
     const canViewDetails = (employee) => {
-        // Jeder Mitarbeiter kann seine eigenen Daten sehen
-        return isOwnProfile(employee);
+        return permissions.isManager || isOwnProfile(employee);
     };
 
     const canEdit = (employee) => {
@@ -339,7 +339,7 @@ export default function Employees() {
 
     const handleOrderItem = (itemType, size, employeeName) => {
         if (!size) {
-            alert(`Bitte zuerst ${itemType === 'tshirt' ? 'T-Shirt' : 'Pullover'}-Größe auswählen`);
+            toast.error(`Bitte zuerst ${itemType === 'tshirt' ? 'T-Shirt' : 'Pullover'}-Größe auswählen`);
             return;
         }
         
@@ -353,7 +353,7 @@ export default function Employees() {
             priority: 'mittel',
             status: 'offen'
         }).then(() => {
-            alert(`Bestellung zur Aufgabenliste hinzugefügt!`);
+            toast.success('Bestellung zur Aufgabenliste hinzugefügt!');
         });
     };
 
@@ -384,10 +384,9 @@ export default function Employees() {
         );
     };
 
-    // Alle Mitarbeiter dürfen die Team-Seite nutzen
-    // if (!permissions.canViewEmployees) {
-    //     return <PermissionDenied message="Du hast keine Berechtigung, die Mitarbeiterliste zu sehen." />;
-    // }
+    if (!permissions.isLoading && !permissions.canViewEmployees) {
+        return <PermissionDenied message="Du hast keine Berechtigung, die Mitarbeiterliste zu sehen." />;
+    }
 
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-0">
@@ -419,7 +418,7 @@ export default function Employees() {
                                         { label: 'Email', field: 'email' }
                                     ]}
                                     variant="outline"
-                                    className="border-slate-700 text-slate-300 hover:bg-slate-800"
+                                    className="border-border text-foreground hover:bg-card"
                                 />
                             </>
                         )}
@@ -435,7 +434,7 @@ export default function Employees() {
                         {permissions.isManager && (
                             <Button 
                                 onClick={() => openModal()}
-                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20"
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-background shadow-lg shadow-amber-500/20"
                             >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Mitarbeiter hinzufügen
@@ -458,7 +457,7 @@ export default function Employees() {
                                             checked={skillsFilter.includes(skill)}
                                             onCheckedChange={() => handleSkillsFilterChange(skill)}
                                         />
-                                        <span className="text-sm text-slate-300">{skill}</span>
+                                        <span className="text-sm text-foreground">{skill}</span>
                                     </label>
                                 ))}
                             </div>
@@ -493,7 +492,7 @@ export default function Employees() {
                                     <h3 className="font-semibold text-foreground truncate">{employee.name}</h3>
                                     {(canViewDetails(employee) || permissions.isManager) && (
                                         <div className="flex flex-wrap gap-1 mt-1">
-                                            <Badge className={cn("text-xs", roleColors[employee.role] || 'bg-slate-100 text-slate-700')}>
+                                            <Badge className={cn("text-xs", roleColors[employee.role] || 'bg-muted text-muted-foreground')}>
                                                 {employee.role}
                                             </Badge>
                                         </div>
@@ -512,9 +511,9 @@ export default function Employees() {
 
                             {/* Contact Info - nur bei eigenem Profil oder Manager */}
                             {canViewDetails(employee) && employee.email && (
-                                <div className="mb-3 pb-3 border-b border-slate-700">
-                                    <p className="text-xs text-slate-500 mb-1">E-Mail</p>
-                                    <p className="text-xs text-slate-300 truncate">{employee.email}</p>
+                                <div className="mb-3 pb-3 border-b border-border">
+                                    <p className="text-xs text-muted-foreground mb-1">E-Mail</p>
+                                    <p className="text-xs text-foreground truncate">{employee.email}</p>
                                 </div>
                             )}
 
@@ -558,7 +557,7 @@ export default function Employees() {
                                     <>
                                         <a
                                             href={`tel:${employee.phone}`}
-                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all text-sm"
+                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/50 hover:bg-muted text-foreground hover:text-foreground transition-all text-sm"
                                             title="Anrufen"
                                         >
                                             <Phone className="w-4 h-4" />
@@ -579,7 +578,7 @@ export default function Employees() {
                                 {employee.email && !employee.phone && (
                                     <a
                                     href={`mailto:${employee.email}`}
-                                    className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-700/50 text-slate-300 hover:text-white transition-all text-sm"
+                                    className="flex-1 flex items-center justify-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/50 hover:bg-muted text-foreground hover:text-foreground transition-all text-sm"
                                     title="E-Mail"
                                     >
                                     <Mail className="w-4 h-4" />
@@ -590,31 +589,31 @@ export default function Employees() {
 
                             {/* Additional Details - nur bei eigenem Profil */}
                             {canViewDetails(employee) && (
-                                <div className="space-y-2 pt-3 border-t border-slate-700 text-sm">
+                                <div className="space-y-2 pt-3 border-t border-border text-sm">
                                     {employee.birthday && (
                                         <div>
-                                            <p className="text-xs text-slate-500">Geburtstag</p>
-                                            <p className="text-slate-300 text-xs">
+                                            <p className="text-xs text-muted-foreground">Geburtstag</p>
+                                            <p className="text-foreground text-xs">
                                                 {format(new Date(employee.birthday), 'dd.MM.yyyy', { locale: de })}
                                             </p>
                                         </div>
                                     )}
                                     {employee.contract_type && (
                                         <div>
-                                            <p className="text-xs text-slate-500">Vertragsart</p>
-                                            <p className="text-slate-300 text-xs">{employee.contract_type}</p>
+                                            <p className="text-xs text-muted-foreground">Vertragsart</p>
+                                            <p className="text-foreground text-xs">{employee.contract_type}</p>
                                         </div>
                                     )}
                                     {employee.tshirt_size && (
                                         <div>
-                                            <p className="text-xs text-slate-500">T-Shirt Größe</p>
-                                            <p className="text-slate-300 text-xs">{employee.tshirt_size}</p>
+                                            <p className="text-xs text-muted-foreground">T-Shirt Größe</p>
+                                            <p className="text-foreground text-xs">{employee.tshirt_size}</p>
                                         </div>
                                     )}
                                     {employee.pullover_size && (
                                         <div>
-                                            <p className="text-xs text-slate-500">Pullover Größe</p>
-                                            <p className="text-slate-300 text-xs">{employee.pullover_size}</p>
+                                            <p className="text-xs text-muted-foreground">Pullover Größe</p>
+                                            <p className="text-foreground text-xs">{employee.pullover_size}</p>
                                         </div>
                                     )}
                                 </div>
@@ -622,13 +621,13 @@ export default function Employees() {
 
                             {/* Order Buttons - für alle Mitarbeiter */}
                             {(canViewDetails(employee) || permissions.isManager) && (employee.tshirt_size || employee.pullover_size) && (
-                                <div className="flex gap-2 pt-3 border-t border-slate-700">
+                                <div className="flex gap-2 pt-3 border-t border-border">
                                     {employee.tshirt_size && (
                                         <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleOrderItem('tshirt', employee.tshirt_size, employee.name)}
-                                            className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50 text-xs"
+                                            className="flex-1 border-border/50 text-foreground hover:bg-muted/50 text-xs"
                                         >
                                             <ShoppingBag className="w-3 h-3 mr-1" />
                                             T-Shirt
@@ -639,7 +638,7 @@ export default function Employees() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleOrderItem('pullover', employee.pullover_size, employee.name)}
-                                            className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50 text-xs"
+                                            className="flex-1 border-border/50 text-foreground hover:bg-muted/50 text-xs"
                                         >
                                             <ShoppingBag className="w-3 h-3 mr-1" />
                                             Pullover
@@ -649,7 +648,7 @@ export default function Employees() {
                             )}
 
                             {/* Action Buttons */}
-                            <div className="space-y-2 mt-4 pt-3 border-t border-slate-700">
+                            <div className="space-y-2 mt-4 pt-3 border-t border-border">
                                 {permissions.isManager && (
                                     <>
                                         <div className="flex gap-2">
@@ -692,7 +691,7 @@ export default function Employees() {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => openModal(employee)}
-                                            className="flex-1 border-slate-700/50 text-slate-300 hover:bg-slate-800/50"
+                                            className="flex-1 border-border/50 text-foreground hover:bg-muted/50"
                                         >
                                             <Pencil className="w-4 h-4 mr-1" />
                                             Bearbeiten
@@ -719,11 +718,11 @@ export default function Employees() {
                     <div className="mt-8">
                         <button
                             onClick={() => setShowInactive(v => !v)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-800 transition-all text-sm font-medium mb-4"
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-foreground hover:bg-card transition-all text-sm font-medium mb-4"
                         >
                             <Archive className="w-4 h-4" />
                             Ehemalige ({inactiveEmployees.length})
-                            <span className="text-xs text-slate-500">{showInactive ? '▲' : '▼'}</span>
+                            <span className="text-xs text-muted-foreground">{showInactive ? '▲' : '▼'}</span>
                         </button>
                         {showInactive && (
                             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -735,8 +734,8 @@ export default function Employees() {
                                         <div className="flex items-center gap-3">
                                             <EmployeeAvatar employee={employee} size="sm" />
                                             <div className="flex-1">
-                                                <p className="font-medium text-slate-300">{employee.name}</p>
-                                                <p className="text-xs text-slate-500">{employee.role}</p>
+                                                <p className="font-medium text-foreground">{employee.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{employee.role}</p>
                                             </div>
                                             <Button 
                                                 variant="ghost" 
@@ -814,7 +813,7 @@ export default function Employees() {
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <Input value={formData.role} disabled className="bg-slate-700 text-slate-400" />
+                                    <Input value={formData.role} disabled className="bg-muted text-muted-foreground" />
                                 )}
                             </div>
 
@@ -828,7 +827,7 @@ export default function Employees() {
                                             onClick={() => setFormData({ ...formData, color })}
                                             className={cn(
                                                 "w-8 h-8 rounded-full transition-transform",
-                                                formData.color === color && "ring-2 ring-offset-2 ring-slate-400 scale-110"
+                                                formData.color === color && "ring-2 ring-offset-2 ring-border scale-110"
                                             )}
                                             style={{ backgroundColor: color }}
                                         />
@@ -924,7 +923,7 @@ export default function Employees() {
                                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900">
+                                <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-background">
                                     {selectedEmployee ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>

@@ -53,7 +53,7 @@ export function filterByUserSettings(notifications, settings, userEmail, userRol
 
   return notifications.filter(notif => {
     // 1. Kategorie check
-    if (!settings.categories[notif.category] === true) {
+    if (settings.categories[notif.category] === false) {
       return false;
     }
 

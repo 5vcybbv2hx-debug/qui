@@ -11,12 +11,13 @@ import { cn } from "@/lib/utils";
 
 export default function NotificationSettings() {
     const queryClient = useQueryClient();
-    const [currentUser, setCurrentUser] = useState(null);
     const [localSettings, setLocalSettings] = useState(null);
 
-    useEffect(() => {
-        base44.auth.me().then(setCurrentUser).catch(() => {});
-    }, []);
+    const { data: currentUser } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+        staleTime: 10 * 60 * 1000
+    });
 
     const { data: settings } = useQuery({
         queryKey: ['notificationSettings', currentUser?.email],
@@ -57,7 +58,7 @@ export default function NotificationSettings() {
             }
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['notificationSettings']);
+            queryClient.invalidateQueries({ queryKey: ['notificationSettings'] });
         }
     });
 

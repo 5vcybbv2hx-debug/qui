@@ -129,7 +129,7 @@ export default function Employees() {
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Employee.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['employees']);
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
             closeModal();
         }
     });
@@ -166,8 +166,8 @@ export default function Employees() {
             }
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['employees']);
-            queryClient.invalidateQueries(['salary-history']);
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
+            queryClient.invalidateQueries({ queryKey: ['salary-history'] });
             closeModal();
         }
     });
@@ -175,7 +175,7 @@ export default function Employees() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Employee.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries(['employees']);
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
         }
     });
 
@@ -316,7 +316,7 @@ export default function Employees() {
     const handlePermissionsSave = async (employeeId, permissions) => {
         try {
             await base44.entities.Employee.update(employeeId, { permissions });
-            queryClient.invalidateQueries(['employees']);
+            queryClient.invalidateQueries({ queryKey: ['employees'] });
             alert('✅ Berechtigungen aktualisiert!');
         } catch (error) {
             alert('❌ Fehler beim Speichern der Berechtigungen: ' + error.message);
@@ -404,8 +404,8 @@ export default function Employees() {
                          {permissions.isManager && (
                              <>
                                  <WorkTimeModelsManager />
-                                 <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries(['employees'])} />
-                                 <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries(['employees'])} />
+                                 <PersonalFormDigital onSuccess={() => queryClient.invalidateQueries({ queryKey: ['employees'] })} />
+                                 <PersonalFormUploader onSuccess={() => queryClient.invalidateQueries({ queryKey: ['employees'] })} />
                                  <EmployeesCSVExport employees={filteredActiveEmployees} />
                                 <PDFExportButton
                                     data={filteredActiveEmployees}
@@ -783,7 +783,7 @@ export default function Employees() {
                                         setFormData(f => ({ ...f, profile_image_url: url }));
                                         if (selectedEmployee) {
                                             base44.entities.Employee.update(selectedEmployee.id, { profile_image_url: url })
-                                                .then(() => queryClient.invalidateQueries(['employees']));
+                                                .then(() => queryClient.invalidateQueries({ queryKey: ['employees'] }));
                                         }
                                     }}
                                 />

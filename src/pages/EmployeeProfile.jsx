@@ -6,23 +6,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import PersonalBogenForm from '@/components/employees/PersonalBogenForm';
 import ShortNameEditor from '@/components/employees/ShortNameEditor';
 import DocumentManager from '@/components/employees/DocumentManager';
 import { calculateCompletion, isComplete } from '@/lib/employeeCompleteness';
+import { usePermissions } from '@/components/auth/usePermissions';
 import { createPageUrl } from '@/utils';
-import { ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, AlertCircle, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function EmployeeProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [currentUser, setCurrentUser] = React.useState(null);
+  const { isManager } = usePermissions();
+  const [formData, setFormData] = React.useState({});
 
-  React.useEffect(() => {
-    base44.auth.me().then(setCurrentUser).catch(() => {});
-  }, []);
+  const { data: currentUser } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => base44.auth.me(),
+    staleTime: 10 * 60 * 1000,
+  });
 
   // Fetch employee
   const { data: employee, isLoading } = useQuery({
@@ -48,9 +54,40 @@ export default function EmployeeProfile() {
 
   // Check permissions
   const isCurrentUser = currentUser?.email === employee?.email;
-  const isManager = currentUser?.role === 'admin' || currentUser?.role === 'Manager';
   const canEdit = isCurrentUser || isManager;
   const canEditShortName = isManager;
+
+  // Initialize formData when employee loads
+  React.useEffect(() => {
+    if (employee) {
+      setFormData({
+        name: employee.name || '',
+        phone: employee.phone || '',
+        email: employee.email || '',
+        street: employee.street || '',
+        postal_code: employee.postal_code || '',
+        city: employee.city || '',
+        birthday: employee.birthday || '',
+        nationality: employee.nationality || '',
+        entry_date: employee.entry_date || '',
+        contract_type: employee.contract_type || '',
+        hourly_rate: employee.hourly_rate || '',
+        weekly_hours: employee.weekly_hours || '',
+        vacation_days_per_year: employee.vacation_days_per_year || '',
+        tax_id: employee.tax_id || '',
+        pension_number: employee.pension_number || '',
+        health_insurance: employee.health_insurance || '',
+        pension_exemption: employee.pension_exemption || false,
+        has_main_job: employee.has_main_job || false,
+        has_other_minijob: employee.has_other_minijob || false,
+        iban: employee.iban || '',
+        bic: employee.bic || '',
+        bank_name: employee.bank_name || '',
+        emergency_contact_name: employee.emergency_contact_name || '',
+        emergency_contact_phone: employee.emergency_contact_phone || '',
+      });
+    }
+  }, [employee]);
 
   if (isLoading) {
     return (
@@ -119,39 +156,287 @@ export default function EmployeeProfile() {
         />
 
         {/* Content Tabs */}
-        <Tabs defaultValue="personalbogen" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
-            <TabsTrigger value="personalbogen" className="flex items-center gap-2">
-              {isPersonalBogenComplete ? (
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-              ) : (
-                <AlertCircle className="w-4 h-4 text-orange-600" />
-              )}
-              <span className="hidden sm:inline">Personalbogen</span>
-              <span className="sm:hidden">Daten</span>
-            </TabsTrigger>
-            <TabsTrigger value="dokumente">
-              Dokumente
-            </TabsTrigger>
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="general">Allgemein</TabsTrigger>
+            <TabsTrigger value="contract">Vertrag</TabsTrigger>
+            <TabsTrigger value="tax">Steuern</TabsTrigger>
+            <TabsTrigger value="bank">Bankdaten</TabsTrigger>
+            <TabsTrigger value="emergency">Notfall</TabsTrigger>
           </TabsList>
 
-          {/* Personalbogen Tab */}
-          <TabsContent value="personalbogen" className="space-y-6 mt-6">
-            <PersonalBogenForm
-              employee={employee}
-              onSave={(data) => updateMutation.mutate(data)}
-              isLoading={updateMutation.isPending}
-              isEditable={canEdit}
-            />
+          {/* Allgemein Tab */}
+          <TabsContent value="general" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Persönliche Daten</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Name</Label>
+                    <Input value={formData.name} disabled className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Telefon</Label>
+                    <Input
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>E-Mail</Label>
+                    <Input
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Geburtstag</Label>
+                    <Input
+                      type="date"
+                      value={formData.birthday}
+                      onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nationalität</Label>
+                    <Input
+                      value={formData.nationality}
+                      onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Eintrittsdatum</Label>
+                    <Input
+                      type="date"
+                      value={formData.entry_date}
+                      onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Straße</Label>
+                    <Input
+                      value={formData.street}
+                      onChange={(e) => setFormData({ ...formData, street: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>PLZ</Label>
+                      <Input
+                        value={formData.postal_code}
+                        onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Stadt</Label>
+                      <Input
+                        value={formData.city}
+                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          {/* Dokumente Tab */}
-          <TabsContent value="dokumente" className="space-y-6 mt-6">
-            <DocumentManager
-              employeeId={employee.id}
-              employeeName={employee.name}
-              canEdit={canEdit}
-            />
+          {/* Vertrag Tab */}
+          <TabsContent value="contract" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vertragsdaten</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Vertragsart</Label>
+                    <Input
+                      value={formData.contract_type}
+                      onChange={(e) => setFormData({ ...formData, contract_type: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Stundensatz (€)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.hourly_rate}
+                      onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Wochenstunden</Label>
+                    <Input
+                      type="number"
+                      step="0.5"
+                      value={formData.weekly_hours}
+                      onChange={(e) => setFormData({ ...formData, weekly_hours: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Urlaubstage pro Jahr</Label>
+                    <Input
+                      type="number"
+                      value={formData.vacation_days_per_year}
+                      onChange={(e) => setFormData({ ...formData, vacation_days_per_year: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Steuern Tab */}
+          <TabsContent value="tax" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Steuer & Soziales</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Steuer-ID</Label>
+                    <Input
+                      value={formData.tax_id}
+                      onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Rentenversicherungsnummer</Label>
+                    <Input
+                      value={formData.pension_number}
+                      onChange={(e) => setFormData({ ...formData, pension_number: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Krankenkasse</Label>
+                    <Input
+                      value={formData.health_insurance}
+                      onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.pension_exemption}
+                        onChange={(e) => setFormData({ ...formData, pension_exemption: e.target.checked })}
+                        disabled={!canEdit}
+                      />
+                      Rentenpflicht-Befreiung
+                    </Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.has_main_job}
+                        onChange={(e) => setFormData({ ...formData, has_main_job: e.target.checked })}
+                        disabled={!canEdit}
+                      />
+                      Versicherungspflichtige Hauptbeschäftigung
+                    </Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.has_other_minijob}
+                        onChange={(e) => setFormData({ ...formData, has_other_minijob: e.target.checked })}
+                        disabled={!canEdit}
+                      />
+                      Weitere geringfügige Beschäftigung
+                    </Label>
+                  </div>
+                </div>
+                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Bankdaten Tab */}
+          <TabsContent value="bank" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Bankverbindung</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Bankname</Label>
+                  <Input
+                    value={formData.bank_name}
+                    onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>IBAN</Label>
+                  <Input
+                    value={formData.iban}
+                    onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>BIC</Label>
+                  <Input
+                    value={formData.bic}
+                    onChange={(e) => setFormData({ ...formData, bic: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                </div>
+                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Notfall Tab */}
+          <TabsContent value="emergency" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notfallkontakt</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input
+                    value={formData.emergency_contact_name}
+                    onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Telefon</Label>
+                  <Input
+                    value={formData.emergency_contact_phone}
+                    onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                </div>
+                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
 

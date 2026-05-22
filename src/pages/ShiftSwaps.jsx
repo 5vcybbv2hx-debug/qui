@@ -35,12 +35,12 @@ export default function ShiftSwaps() {
 
     const { data: swapRequests = [], isLoading: loadingRequests } = useQuery({
         queryKey: ['shift-swap-requests'],
-        queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date')
+        queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date', 100)
     });
 
     const { data: bids = [] } = useQuery({
         queryKey: ['shift-swap-bids'],
-        queryFn: () => base44.entities.ShiftSwapBid.list('-created_date', 200)
+        queryFn: () => base44.entities.ShiftSwapBid.filter({ status: 'ausstehend' }, '-created_date', 200)
     });
 
     const { data: currentUser } = useQuery({

@@ -47,14 +47,11 @@ export default function Shifts() {
     });
 
     // Desktop: load current month ±1 week
+    const desktopFrom = format(subWeeks(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 1), 'yyyy-MM-dd');
+    const desktopTo = format(addWeeks(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), 1), 'yyyy-MM-dd');
     const { data: allShiftsDesktop = [], isLoading: desktopLoading } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => {
-            const now = new Date();
-            const from = format(subWeeks(new Date(now.getFullYear(), now.getMonth(), 1), 1), 'yyyy-MM-dd');
-            const to = format(addWeeks(new Date(now.getFullYear(), now.getMonth() + 1, 0), 1), 'yyyy-MM-dd');
-            return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, '-date', 200);
-        },
+        queryKey: ['shifts', desktopFrom, desktopTo],
+        queryFn: () => base44.entities.Shift.filter({ date_gte: desktopFrom, date_lte: desktopTo }, '-date', 200),
         enabled: !isMobile,
         staleTime: 2 * 60 * 1000,
         refetchOnWindowFocus: false,
@@ -78,7 +75,12 @@ export default function Shifts() {
 
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 200)
+        queryFn: () => {
+            const from = format(subWeeks(new Date(), 1), 'yyyy-MM-dd');
+            const to = format(addWeeks(new Date(), 8), 'yyyy-MM-dd');
+            return base44.entities.Reservation.filter({ date_gte: from, date_lte: to }, 'date', 200);
+        },
+        staleTime: 5 * 60 * 1000,
     });
 
     const { data: requirements = [] } = useQuery({
@@ -88,7 +90,7 @@ export default function Shifts() {
 
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list('-start_date', 300),
+        queryFn: () => base44.entities.VacationRequest.filter({ status: 'genehmigt' }, '-start_date', 200),
         staleTime: 5 * 60 * 1000,
     });
 
@@ -268,19 +270,19 @@ export default function Shifts() {
 
     // ─── Desktop layout ──────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-background">
             <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-3 mb-6 sm:mb-8">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Schichtplan</h1>
-                        <p className="text-slate-400 text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Schichtplan</h1>
+                        <p className="text-muted-foreground text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2 flex-wrap overflow-x-auto pb-2">
                         <Button
                             variant={showFilters ? "secondary" : "outline"}
                             onClick={() => setShowFilters(!showFilters)}
-                            className="border-slate-600 text-slate-300"
+                            className="border-border text-muted-foreground hover:text-foreground"
                         >
                             <Filter className="w-4 h-4 mr-2" />
                             Filter
@@ -293,7 +295,7 @@ export default function Shifts() {
                         <Button
                             variant="outline"
                             onClick={handleBackup}
-                            className="border-slate-600 text-slate-300"
+                            className="border-border text-muted-foreground hover:text-foreground"
                             title="Alle Schichten als JSON sichern"
                         >
                             <Download className="w-4 h-4 mr-2" />
@@ -315,9 +317,9 @@ export default function Shifts() {
 
                 {/* Filters Panel */}
                 {showFilters && (
-                    <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                    <Card className="p-4 bg-card border-border mb-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-white flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground flex items-center gap-2">
                                 <Filter className="w-4 h-4" />
                                 Filter
                             </h3>
@@ -326,7 +328,7 @@ export default function Shifts() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setFilters({ employee: 'all', shiftType: 'all' })}
-                                    className="text-slate-400 hover:text-white"
+                                    className="text-muted-foreground hover:text-foreground"
                                 >
                                     <X className="w-4 h-4 mr-1" />
                                     Zurücksetzen
@@ -335,11 +337,11 @@ export default function Shifts() {
                         </div>
                         <div className="grid sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="text-sm text-slate-400 mb-2 block">Mitarbeiter</label>
+                                <label className="text-sm text-muted-foreground mb-2 block">Mitarbeiter</label>
                                 <select
                                     value={filters.employee}
                                     onChange={(e) => setFilters({ ...filters, employee: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-600"
+                                    className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-amber-600"
                                 >
                                     <option value="all">Alle Mitarbeiter</option>
                                     {employees.map(emp => (
@@ -348,11 +350,11 @@ export default function Shifts() {
                                 </select>
                             </div>
                             <div>
-                                <label className="text-sm text-slate-400 mb-2 block">Schichttyp</label>
+                                <label className="text-sm text-muted-foreground mb-2 block">Schichttyp</label>
                                 <select
                                     value={filters.shiftType}
                                     onChange={(e) => setFilters({ ...filters, shiftType: e.target.value })}
-                                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:border-amber-600"
+                                    className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-amber-600"
                                 >
                                     <option value="all">Alle Schichttypen</option>
                                     <option value="Aufmachen">Aufmachen</option>
@@ -363,7 +365,7 @@ export default function Shifts() {
                             </div>
                         </div>
                         {(filters.employee !== 'all' || filters.shiftType !== 'all') && (
-                            <div className="mt-4 text-sm text-slate-400">
+                            <div className="mt-4 text-sm text-muted-foreground">
                                 {filteredShifts.length} Schicht{filteredShifts.length !== 1 ? 'en' : ''} gefunden
                             </div>
                         )}
@@ -387,9 +389,9 @@ export default function Shifts() {
 
                 {/* Selected Date Details */}
                 {selectedDate && (
-                    <Card className="mt-6 p-5 bg-slate-800 border-slate-700">
+                    <Card className="mt-6 p-5 bg-card border-border">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-bold text-white text-lg">
+                            <h3 className="font-bold text-foreground text-lg">
                                 {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
                             </h3>
                             {permissions.canEditShifts && (
@@ -412,7 +414,7 @@ export default function Shifts() {
                                         <div 
                                             key={shift.id}
                                             onClick={() => permissions.canEditShifts && handleSelectShift(shift)}
-                                            className={`flex items-center gap-3 p-3 rounded-lg bg-slate-900 transition-colors border border-slate-700 ${permissions.canEditShifts ? 'cursor-pointer hover:bg-slate-700 hover:border-amber-600' : 'cursor-default'}`}
+                                            className={`flex items-center gap-3 p-3 rounded-lg bg-muted transition-colors border border-border ${permissions.canEditShifts ? 'cursor-pointer hover:bg-accent hover:border-amber-600' : 'cursor-default'}`}
                                         >
                                             <div 
                                                 className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
@@ -422,18 +424,18 @@ export default function Shifts() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <p className="font-semibold text-white truncate">{shift.employee_name}</p>
+                                                    <p className="font-semibold text-foreground truncate">{shift.employee_name}</p>
                                                     {shift.shift_type && (
                                                         <Badge className="bg-amber-600/20 text-amber-400 border-amber-600/30 text-[10px]">
                                                             {shift.shift_type}
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-slate-400 font-mono">
+                                                <p className="text-sm text-muted-foreground font-mono">
                                                     {shift.start_time} - {shift.end_time}
                                                 </p>
                                                 {shift.notes && (
-                                                    <p className="text-xs text-slate-500 mt-1 italic truncate">
+                                                    <p className="text-xs text-muted-foreground mt-1 italic truncate">
                                                         {shift.notes}
                                                     </p>
                                                 )}
@@ -443,12 +445,12 @@ export default function Shifts() {
                                 })}
                             </div>
                         ) : (
-                            <div className="text-center py-12 text-slate-400">
-                                <div className="w-16 h-16 rounded-full bg-slate-900/50 flex items-center justify-center mx-auto mb-3">
-                                    <Users className="w-8 h-8 text-slate-600" />
+                            <div className="text-center py-12 text-muted-foreground">
+                                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                                    <Users className="w-8 h-8 text-muted-foreground" />
                                 </div>
-                                <p className="text-base mb-2">Keine Schichten geplant</p>
-                                <p className="text-sm text-slate-500">Klicke oben auf "Schicht hinzufügen"</p>
+                                <p className="text-base mb-2 text-foreground">Keine Schichten geplant</p>
+                                <p className="text-sm text-muted-foreground">Klicke oben auf "Schicht hinzufügen"</p>
                             </div>
                         )}
                     </Card>

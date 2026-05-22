@@ -7,7 +7,7 @@ import { Calendar, Clock, Users, AlertTriangle, TrendingUp } from 'lucide-react'
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, parseISO, differenceInHours } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, parseISO, differenceInHours, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { de } from 'date-fns/locale';
 
 const COLORS = ['#f59e0b', '#3b82f6', '#ef4444', '#22c55e', '#8b5cf6', '#ec4899'];
@@ -23,7 +23,12 @@ export default function ShiftAnalytics() {
 
     const { data: allShifts = [] } = useQuery({
         queryKey: ['shifts-analytics'],
-        queryFn: () => base44.entities.Shift.list('-date', 500)
+        queryFn: () => {
+            const from = format(startOfMonth(subMonths(new Date(), 2)), 'yyyy-MM-dd');
+            const to = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+            return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, '-date', 500);
+        },
+        staleTime: 5 * 60 * 1000,
     });
 
     const weekStart = startOfWeek(selectedWeek, { locale: de, weekStartsOn: 1 });
@@ -135,13 +140,13 @@ export default function ShiftAnalytics() {
     const avgHoursPerDay = dailyStaffing.reduce((sum, day) => sum + day.hours, 0) / 7;
 
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-background">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Schichtplan-Analyse</h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-foreground tracking-tight">Schichtplan-Analyse</h1>
+                        <p className="text-muted-foreground text-sm mt-1">
                             {format(weekStart, 'd. MMM', { locale: de })} - {format(weekEnd, 'd. MMM yyyy', { locale: de })}
                         </p>
                     </div>
@@ -150,7 +155,7 @@ export default function ShiftAnalytics() {
                             value={format(selectedWeek, 'yyyy-MM-dd')}
                             onValueChange={(v) => setSelectedWeek(parseISO(v))}
                         >
-                            <SelectTrigger className="w-48 bg-slate-800 border-slate-700">
+                            <SelectTrigger className="w-48 bg-card border-border">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -172,50 +177,50 @@ export default function ShiftAnalytics() {
 
                 {/* Stats Overview */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <Card className="p-6 bg-slate-800 border-slate-700">
+                    <Card className="p-6 bg-card border-border">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-amber-600/20 flex items-center justify-center">
                                 <Clock className="w-6 h-6 text-amber-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-white">{totalHours}h</p>
-                                <p className="text-sm text-slate-400">Gesamt-Stunden</p>
+                                <p className="text-2xl font-bold text-foreground">{totalHours}h</p>
+                                <p className="text-sm text-muted-foreground">Gesamt-Stunden</p>
                             </div>
                         </div>
                     </Card>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
+                    <Card className="p-6 bg-card border-border">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-blue-600/20 flex items-center justify-center">
                                 <Users className="w-6 h-6 text-blue-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-white">{weekShifts.length}</p>
-                                <p className="text-sm text-slate-400">Schichten</p>
+                                <p className="text-2xl font-bold text-foreground">{weekShifts.length}</p>
+                                <p className="text-sm text-muted-foreground">Schichten</p>
                             </div>
                         </div>
                     </Card>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
+                    <Card className="p-6 bg-card border-border">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-green-600/20 flex items-center justify-center">
                                 <Calendar className="w-6 h-6 text-green-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-white">{avgHoursPerDay.toFixed(1)}h</p>
-                                <p className="text-sm text-slate-400">Ø Stunden/Tag</p>
+                                <p className="text-2xl font-bold text-foreground">{avgHoursPerDay.toFixed(1)}h</p>
+                                <p className="text-sm text-muted-foreground">Ø Stunden/Tag</p>
                             </div>
                         </div>
                     </Card>
 
-                    <Card className="p-6 bg-slate-800 border-slate-700">
+                    <Card className="p-6 bg-card border-border">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-purple-600/20 flex items-center justify-center">
                                 <TrendingUp className="w-6 h-6 text-purple-500" />
                             </div>
                             <div>
-                                <p className="text-2xl font-bold text-white">{employeeHours.length}</p>
-                                <p className="text-sm text-slate-400">Aktive Mitarbeiter</p>
+                                <p className="text-2xl font-bold text-foreground">{employeeHours.length}</p>
+                                <p className="text-sm text-muted-foreground">Aktive Mitarbeiter</p>
                             </div>
                         </div>
                     </Card>
@@ -223,23 +228,23 @@ export default function ShiftAnalytics() {
 
                 {/* Issues Alert */}
                 {issues.length > 0 && (
-                    <Card className="p-6 bg-slate-800 border-slate-700 mb-8">
-                        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                    <Card className="p-6 bg-card border-border mb-8">
+                        <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                             <AlertTriangle className="w-5 h-5 text-amber-500" />
                             Hinweise zur Planung ({issues.length})
                         </h3>
                         <div className="grid gap-2">
                             {issues.slice(0, 5).map((issue, idx) => (
-                                <div key={idx} className="flex items-start gap-3 p-3 bg-slate-900 rounded-lg">
+                                <div key={idx} className="flex items-start gap-3 p-3 bg-muted rounded-lg">
                                     <issue.icon className={`w-4 h-4 mt-0.5 ${
                                         issue.type === 'critical' ? 'text-red-500' : 
                                         issue.type === 'warning' ? 'text-amber-500' : 'text-blue-500'
                                     }`} />
-                                    <span className="text-sm text-slate-300">{issue.message}</span>
+                                    <span className="text-sm text-muted-foreground">{issue.message}</span>
                                 </div>
                             ))}
                             {issues.length > 5 && (
-                                <p className="text-sm text-slate-500 pl-7">
+                                <p className="text-sm text-muted-foreground pl-7">
                                     + {issues.length - 5} weitere Hinweise
                                 </p>
                             )}
@@ -250,8 +255,8 @@ export default function ShiftAnalytics() {
                 {/* Charts Grid */}
                 <div className="grid lg:grid-cols-2 gap-6 mb-6">
                     {/* Hours per Employee */}
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <h3 className="font-semibold text-white mb-4">Stunden pro Mitarbeiter</h3>
+                    <Card className="p-6 bg-card border-border">
+                        <h3 className="font-semibold text-foreground mb-4">Stunden pro Mitarbeiter</h3>
                         {employeeHours.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={employeeHours}>
@@ -276,15 +281,15 @@ export default function ShiftAnalytics() {
                                 </BarChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-64 flex items-center justify-center text-slate-500">
+                            <div className="h-64 flex items-center justify-center text-muted-foreground">
                                 Keine Daten verfügbar
                             </div>
                         )}
                     </Card>
 
                     {/* Shift Type Distribution */}
-                    <Card className="p-6 bg-slate-800 border-slate-700">
-                        <h3 className="font-semibold text-white mb-4">Schichttypen-Verteilung</h3>
+                    <Card className="p-6 bg-card border-border">
+                        <h3 className="font-semibold text-foreground mb-4">Schichttypen-Verteilung</h3>
                         {shiftTypeData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
                                 <PieChart>
@@ -313,7 +318,7 @@ export default function ShiftAnalytics() {
                                 </PieChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-64 flex items-center justify-center text-slate-500">
+                            <div className="h-64 flex items-center justify-center text-muted-foreground">
                                 Keine Daten verfügbar
                             </div>
                         )}
@@ -321,8 +326,8 @@ export default function ShiftAnalytics() {
                 </div>
 
                 {/* Daily Staffing */}
-                <Card className="p-6 bg-slate-800 border-slate-700">
-                    <h3 className="font-semibold text-white mb-4">Tägliche Besetzung</h3>
+                <Card className="p-6 bg-card border-border">
+                    <h3 className="font-semibold text-foreground mb-4">Tägliche Besetzung</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={dailyStaffing}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />

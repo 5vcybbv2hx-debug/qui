@@ -33,7 +33,6 @@ export default function Vacation() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
     const [modalOpen, setModalOpen] = useState(false);
-    const [currentEmployee, setCurrentEmployee] = useState(null);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [formData, setFormData] = useState({
         type: 'Urlaub',
@@ -41,46 +40,43 @@ export default function Vacation() {
         periods: [{ start_date: '', end_date: '' }]
     });
 
-    useEffect(() => {
-        const loadEmployee = async () => {
-            const user = await base44.auth.me();
-            const employees = await base44.entities.Employee.filter({ 
-                email: user.email,
-                is_active: true 
-            });
-            if (employees[0]) {
-                setCurrentEmployee(employees[0]);
-            }
-        };
-        loadEmployee();
-    }, []);
-
-    const { data: vacationRequests = [] } = useQuery({
-        queryKey: ['vacation-requests', selectedYear],
-        queryFn: async () => {
-            const all = await base44.entities.VacationRequest.list('-created_date');
-            return all.filter(req => {
-                const year = new Date(req.start_date).getFullYear();
-                return year === selectedYear;
-            });
-        }
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+        staleTime: 10 * 60 * 1000,
     });
+
+    const { data: allVacationRequests = [] } = useQuery({
+        queryKey: ['vacation-requests'],
+        queryFn: () => base44.entities.VacationRequest.list('-created_date', 500),
+        staleTime: 2 * 60 * 1000,
+    });
+
+    // Filter by selected year client-side
+    const vacationRequests = allVacationRequests.filter(req => 
+        new Date(req.start_date).getFullYear() === selectedYear
+    );
 
     const { data: allEmployees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
     });
 
+    // Get current employee from cached user
+    const currentEmployee = allEmployees.find(e => e.email === user?.email) || null;
+
     // Check if current employee is full-time
     const isFullTimeEmployee = currentEmployee?.contract_type === 'Vollzeit';
     
-    // Filter to show only full-time employees for vacation stats
-    const fullTimeEmployees = allEmployees.filter(e => e.contract_type === 'Vollzeit');
+    // Filter to show only full-time and part-time employees for vacation stats
+    const fullTimeEmployees = allEmployees.filter(e => 
+        ['Vollzeit', 'Teilzeit'].includes(e.contract_type) && e.vacation_days_per_year > 0
+    );
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.VacationRequest.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['vacation-requests']);
+            queryClient.invalidateQueries({ queryKey: ['vacation-requests'] });
             setModalOpen(false);
             resetForm();
         }
@@ -89,29 +85,17 @@ export default function Vacation() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.VacationRequest.update(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['vacation-requests']);
+            queryClient.invalidateQueries({ queryKey: ['vacation-requests'] });
         }
     });
 
     const withdrawMutation = useMutation({
         mutationFn: (id) => base44.entities.VacationRequest.delete(id),
-        onSuccess: () => queryClient.invalidateQueries(['vacation-requests'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['vacation-requests'] })
     });
 
     const calculateBusinessDays = (start, end) => {
-        let count = 0;
-        let current = new Date(start);
-        const endDate = new Date(end);
-        
-        while (current <= endDate) {
-            const dayOfWeek = current.getDay();
-            // Nur Sonntag (0) ist kein Werktag, Montag-Samstag (1-6) sind Werktage
-            if (dayOfWeek !== 0) {
-                count++;
-            }
-            current.setDate(current.getDate() + 1);
-        }
-        return count;
+        return differenceInBusinessDays(new Date(end), new Date(start)) + 1;
     };
 
     const handleSubmit = (e) => {
@@ -163,24 +147,22 @@ export default function Vacation() {
     };
 
     const handleApprove = async (request) => {
-        const user = await base44.auth.me();
         await updateMutation.mutateAsync({
             id: request.id,
             data: {
                 status: 'genehmigt',
-                approved_by: user.full_name,
+                approved_by: user?.full_name,
                 approved_date: new Date().toISOString()
             }
         });
     };
 
     const handleReject = async (request) => {
-        const user = await base44.auth.me();
         await updateMutation.mutateAsync({
             id: request.id,
             data: {
                 status: 'abgelehnt',
-                approved_by: user.full_name,
+                approved_by: user?.full_name,
                 approved_date: new Date().toISOString()
             }
         });
@@ -224,13 +206,13 @@ export default function Vacation() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-background">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">Urlaubsverwaltung</h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h1 className="text-2xl font-bold text-foreground tracking-tight">Urlaubsverwaltung</h1>
+                        <p className="text-muted-foreground text-sm mt-1">
                             {selectedYear} · {pendingRequests.length} offene Anträge
                         </p>
                     </div>
@@ -239,14 +221,14 @@ export default function Vacation() {
                             <Button
                                 variant="outline"
                                 onClick={() => setShowTaxReport(!showTaxReport)}
-                                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                className="border-border text-muted-foreground hover:bg-accent"
                             >
                                 <FileText className="w-4 h-4 mr-2" />
                                 Steuerberater-Auswertung
                             </Button>
                         )}
                         <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
-                            <SelectTrigger className="w-32 bg-slate-800 border-slate-600 text-white">
+                            <SelectTrigger className="w-32 bg-card border-border text-foreground">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -269,19 +251,19 @@ export default function Vacation() {
 
                 {/* Stats Card */}
                 {currentEmployeeStats && (
-                    <Card className="p-6 bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700 mb-6">
+                    <Card className="p-6 bg-card border-border mb-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-slate-400 mb-1">Dein Urlaubskonto {selectedYear}</p>
+                                <p className="text-sm text-muted-foreground mb-1">Dein Urlaubskonto {selectedYear}</p>
                                 <div className="flex items-baseline gap-3">
-                                    <span className="text-3xl font-bold text-white">
+                                    <span className="text-3xl font-bold text-foreground">
                                         {currentEmployeeStats.remaining}
                                     </span>
-                                    <span className="text-slate-400">von {currentEmployeeStats.total} Tagen</span>
+                                    <span className="text-muted-foreground">von {currentEmployeeStats.total} Tagen</span>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-sm text-slate-400 mb-1">Genommen</p>
+                                <p className="text-sm text-muted-foreground mb-1">Genommen</p>
                                 <p className="text-2xl font-semibold text-amber-400">
                                     {currentEmployeeStats.used} Tage
                                 </p>
@@ -307,21 +289,21 @@ export default function Vacation() {
 
                 {/* Manager: Employee Overview */}
                 {permissions.isManager && (
-                    <Card className="p-6 bg-slate-800 border-slate-700 mb-6">
-                        <h2 className="text-lg font-semibold text-white mb-4">Mitarbeiter-Übersicht</h2>
+                    <Card className="p-6 bg-card border-border mb-6">
+                        <h2 className="text-lg font-semibold text-foreground mb-4">Mitarbeiter-Übersicht</h2>
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {fullTimeEmployees.map(emp => {
                                 const stats = employeeStats[emp.id];
                                 if (!stats) return null;
                                 return (
-                                    <div key={emp.id} className="p-4 bg-slate-900 rounded-lg border border-slate-700">
-                                        <p className="font-medium text-white mb-2">{stats.name}</p>
+                                    <div key={emp.id} className="p-4 bg-background rounded-lg border border-border">
+                                        <p className="font-medium text-foreground mb-2">{stats.name}</p>
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-slate-400">Genommen:</span>
-                                            <span className="text-white">{stats.used} Tage</span>
+                                            <span className="text-muted-foreground">Genommen:</span>
+                                            <span className="text-foreground">{stats.used} Tage</span>
                                         </div>
                                         <div className="flex justify-between text-sm">
-                                            <span className="text-slate-400">Verfügbar:</span>
+                                            <span className="text-muted-foreground">Verfügbar:</span>
                                             <span className={cn(
                                                 "font-semibold",
                                                 stats.remaining < 5 ? "text-orange-400" : "text-green-400"
@@ -344,11 +326,11 @@ export default function Vacation() {
                             .map(request => {
                                 const StatusIcon = statusConfig[request.status].icon;
                                 return (
-                                    <Card key={request.id} className="p-5 bg-slate-800 border-slate-700">
+                                    <Card key={request.id} className="p-5 bg-card border-border">
                                         <div className="flex items-start justify-between">
-                                            <div className="flex-1">
+                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-2">
-                                                    <span className="font-semibold text-white">
+                                                    <span className="font-semibold text-foreground">
                                                         {request.employee_name}
                                                     </span>
                                                     <Badge className={typeColors[request.type]}>
@@ -359,7 +341,7 @@ export default function Vacation() {
                                                         {statusConfig[request.status].label}
                                                     </Badge>
                                                 </div>
-                                                <div className="flex items-center gap-4 text-sm text-slate-400 mb-2">
+                                                <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="w-4 h-4" />
                                                         <span>
@@ -373,10 +355,10 @@ export default function Vacation() {
                                                     </span>
                                                 </div>
                                                 {request.notes && (
-                                                    <p className="text-sm text-slate-400 mt-2">{request.notes}</p>
+                                                    <p className="text-sm text-muted-foreground mt-2">{request.notes}</p>
                                                 )}
                                                 {request.approved_by && (
-                                                    <p className="text-xs text-slate-500 mt-2">
+                                                    <p className="text-xs text-muted-foreground mt-2">
                                                         {request.status === 'genehmigt' ? 'Genehmigt' : 'Abgelehnt'} von {request.approved_by}
                                                     </p>
                                                 )}
@@ -425,8 +407,8 @@ export default function Vacation() {
                                 );
                             })
                     ) : (
-                        <Card className="p-12 bg-slate-800 border-slate-700">
-                            <div className="text-center text-slate-500">
+                        <Card className="p-12 bg-card border-border">
+                            <div className="text-center text-muted-foreground">
                                 <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                 <p>Keine Urlaubsanträge für {selectedYear}</p>
                             </div>
@@ -466,25 +448,25 @@ export default function Vacation() {
                                 </div>
 
                                 {formData.periods.map((period, index) => (
-                                    <div key={index} className="p-3 border border-slate-600 rounded-lg space-y-2 bg-slate-900/50">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-slate-400 font-medium">
-                                                Zeitraum {index + 1}
+                                    <div key={index} className="p-3 border border-border rounded-lg space-y-2 bg-background/50">
+                                         <div className="flex items-center justify-between">
+                                            <span className="text-xs text-muted-foreground font-medium">
+                                                 Zeitraum {index + 1}
                                                 {period.start_date && period.end_date && (
                                                     <span className="ml-2 text-amber-400">
-                                                        · {calculateBusinessDays(period.start_date, period.end_date)} Tage
+                                                         · {calculateBusinessDays(period.start_date, period.end_date)} Tage
                                                     </span>
-                                                )}
+                                                 )}
                                             </span>
-                                            {formData.periods.length > 1 && (
-                                                <button type="button" onClick={() => removePeriod(index)} className="text-red-400 hover:text-red-300">
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            )}
+                                             {formData.periods.length > 1 && (
+                                                 <button type="button" onClick={() => removePeriod(index)} className="text-red-400 hover:text-red-300">
+                                                     <Trash2 className="w-3.5 h-3.5" />
+                                                 </button>
+                                             )}
                                         </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div>
-                                                <Label className="text-xs text-slate-400">Von *</Label>
+                                         <div className="grid grid-cols-2 gap-2">
+                                             <div>
+                                                 <Label className="text-xs text-muted-foreground">Von *</Label>
                                                 <Input
                                                     type="date"
                                                     value={period.start_date}
@@ -494,7 +476,7 @@ export default function Vacation() {
                                                 />
                                             </div>
                                             <div>
-                                                <Label className="text-xs text-slate-400">Bis *</Label>
+                                                <Label className="text-xs text-muted-foreground">Bis *</Label>
                                                 <Input
                                                     type="date"
                                                     value={period.end_date}

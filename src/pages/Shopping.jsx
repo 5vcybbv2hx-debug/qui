@@ -66,7 +66,8 @@ export default function Shopping() {
 
     const { data: items = [] } = useQuery({
         queryKey: ['shopping-list'],
-        queryFn: () => base44.entities.ShoppingList.list('-created_date')
+        queryFn: () => base44.entities.ShoppingList.list('-created_date', 200),
+        staleTime: 2 * 60 * 1000,
     });
 
     const createMutation = useMutation({

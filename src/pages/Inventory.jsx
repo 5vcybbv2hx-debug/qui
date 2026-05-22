@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePermissions } from '@/components/auth/usePermissions';
+import { toast } from 'sonner';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import PDFExportButton from '@/components/export/PDFExportButton';
@@ -96,16 +97,17 @@ export default function Inventory() {
                 return old ? [...old, { counts: previousCounts }] : [{ counts: previousCounts }];
             });
             
-            alert('Inventur gespeichert (Bestände nicht geändert)');
+            toast.success('Inventur gespeichert');
         },
         onError: (error) => {
-            alert('Fehler beim Speichern: ' + error.message);
+            toast.error('Fehler beim Speichern: ' + error.message);
         }
     });
 
     const { data: currentUser } = useQuery({
-        queryKey: ['current-user'],
-        queryFn: () => base44.auth.me()
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+        staleTime: 10 * 60 * 1000,
     });
 
     const handleCountChange = (articleId, value) => {

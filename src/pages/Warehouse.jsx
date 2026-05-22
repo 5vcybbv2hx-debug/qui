@@ -32,7 +32,17 @@ export default function WarehousePage() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-                    <TabsList className="grid w-full grid-cols-5 bg-card border border-border h-auto p-1">
+                    {(() => {
+                        const tabCount = [
+                            permissions.isManager,
+                            true,
+                            true,
+                            permissions.canViewWastage,
+                            permissions.canViewInventory
+                        ].filter(Boolean).length;
+                        const gridClass = `grid-cols-${tabCount}`;
+                        return (
+                    <TabsList className={`grid w-full ${gridClass} bg-card border border-border h-auto p-1`}>
                         {permissions.isManager && (
                             <TabsTrigger value="articles" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                                 <Package className="w-5 h-5 sm:w-4 sm:h-4" />
@@ -62,6 +72,8 @@ export default function WarehousePage() {
                             </TabsTrigger>
                         )}
                     </TabsList>
+                        );
+                    })()}
 
                     {permissions.isManager && activeTab === 'articles' && (
                         <TabsContent value="articles" className="space-y-0">

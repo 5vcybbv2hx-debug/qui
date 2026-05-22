@@ -69,7 +69,7 @@ export default function Restock() {
             return base44.entities.RestockItem.create(data);
         },
         onSuccess: (newItem) => {
-            if (!newItem?._offline) queryClient.invalidateQueries(['restock-items']);
+            if (!newItem?._offline) queryClient.invalidateQueries({ queryKey: ['restock-items'] });
             if (newItem?.id) markRecent(newItem.id);
         }
     });
@@ -84,7 +84,7 @@ export default function Restock() {
             return base44.entities.RestockItem.update(id, data);
         },
         onSuccess: (result, variables) => {
-            if (!result?.queued) queryClient.invalidateQueries(['restock-items']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['restock-items'] });
             markRecent(result?.id || variables.id);
         }
     });
@@ -99,7 +99,7 @@ export default function Restock() {
             return base44.entities.RestockItem.delete(id);
         },
         onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['restock-items']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['restock-items'] });
         }
     });
 
@@ -249,7 +249,7 @@ export default function Restock() {
     if (articlesError) {
         return (
             <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-                {handleError({ error: articlesErrorObj, title: 'Artikel konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries(['articles']) })}
+                {handleError({ error: articlesErrorObj, title: 'Artikel konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries({ queryKey: ['articles'] }) })}
             </div>
         );
     }

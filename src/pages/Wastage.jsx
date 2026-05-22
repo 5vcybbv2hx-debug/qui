@@ -49,8 +49,9 @@ export default function Wastage() {
     });
 
     const { data: currentUser } = useQuery({
-        queryKey: ['current-user'],
-        queryFn: () => base44.auth.me()
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+        staleTime: 10 * 60 * 1000,
     });
 
     const createMutation = useMutation({

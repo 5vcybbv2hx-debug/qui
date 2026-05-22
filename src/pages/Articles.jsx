@@ -79,7 +79,7 @@ export default function Articles() {
         },
         onSuccess: (newArticle) => {
             queryClient.setQueryData(['articles'], (old) => old ? [...old, newArticle] : [newArticle]);
-            if (!newArticle._offline) queryClient.invalidateQueries(['articles']);
+            if (!newArticle._offline) queryClient.invalidateQueries({ queryKey: ['articles'] });
             setModalOpen(false);
             setSelectedArticle(null);
         }
@@ -103,7 +103,7 @@ export default function Articles() {
             queryClient.setQueryData(['articles'], context.previous);
         },
         onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['articles']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['articles'] });
             setModalOpen(false);
             setSelectedArticle(null);
         }
@@ -127,7 +127,7 @@ export default function Articles() {
             queryClient.setQueryData(['articles'], context.previous);
         },
         onSuccess: (result) => {
-            if (!result?.queued) queryClient.invalidateQueries(['articles']);
+            if (!result?.queued) queryClient.invalidateQueries({ queryKey: ['articles'] });
         }
     });
 
@@ -238,7 +238,7 @@ export default function Articles() {
             await Promise.all(reordered.map((cat, idx) =>
                 base44.entities.ArticleCategory.update(cat.id, { order: idx })
             ));
-            queryClient.invalidateQueries(['article-categories']);
+            queryClient.invalidateQueries({ queryKey: ['article-categories'] });
 
         } else if (type === 'ARTICLE') {
             const categoryName = source.droppableId;
@@ -286,7 +286,7 @@ export default function Articles() {
                     base44.entities.Article.update(a.id, { order: idx >= destination.index ? idx + 1 : idx })
                 ));
             }
-            queryClient.invalidateQueries(['articles']);
+            queryClient.invalidateQueries({ queryKey: ['articles'] });
         }
     }, [articles, categories, queryClient]);
 

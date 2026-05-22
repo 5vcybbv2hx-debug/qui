@@ -81,26 +81,26 @@ export default function Cleaning() {
     });
 
     const { data: allTasks = [], isLoading, isError: tasksError, error: tasksErrorObj } = useQuery({
-         queryKey: ['cleaning'],
-         queryFn: () => base44.entities.CleaningTask.list('area'),
-         staleTime: 5 * 60 * 1000
-     });
-     const { handleError } = useErrorHandler();
+        queryKey: ['cleaning'],
+        queryFn: () => base44.entities.CleaningTask.filter({ is_active: true }, 'area', 200),
+        staleTime: 5 * 60 * 1000
+    });
+    const { handleError } = useErrorHandler();
 
     // Wochentagsaufgaben gehören zu WeeklyTasks — hier ausschließen
     // due_weekdays: Aufgabe nur am passenden Wochentag zeigen
     const todayName = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][new Date().getDay()];
     const tasks = allTasks.filter(t => {
-        if (t.is_active === false) return false;
         if (t.area === 'Wochentagsaufgaben') return false;
         if (t.due_weekdays && t.due_weekdays.length > 0 && !t.due_weekdays.includes(todayName)) return false;
         return true;
     });
-    const deactivatedTasks = allTasks.filter(t => t.is_active === false && t.area !== 'Wochentagsaufgaben');
+    const deactivatedTasks = [];
 
     const { data: allAreas = [] } = useQuery({
         queryKey: ['cleaning-areas'],
-        queryFn: () => base44.entities.CleaningArea.list('order')
+        queryFn: () => base44.entities.CleaningArea.list('order'),
+        staleTime: 30 * 60 * 1000,
     });
 
     const { data: shifts = [] } = useQuery({
@@ -112,10 +112,7 @@ export default function Cleaning() {
         staleTime: 5 * 60 * 1000
     });
 
-    const { data: allEmployees = [] } = useQuery({
-        queryKey: ['all-employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
-    });
+
 
     const { data: reports = [] } = useQuery({
         queryKey: ['cleaning-reports'],

@@ -152,7 +152,7 @@ export default function MaintenancePage() {
         onSuccess: () => {
             haptics.success();
             toast.success('Wartung als erledigt markiert');
-            queryClient.invalidateQueries(['maintenance-tasks']);
+            queryClient.invalidateQueries({ queryKey: ['maintenance-tasks'] });
         },
         onError: (err) => toast.error('Fehler beim Speichern'),
     });

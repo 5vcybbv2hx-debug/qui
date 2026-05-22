@@ -169,14 +169,25 @@ export default function WeeklyTasks() {
     const todayJsDay = getDay(new Date());
     const currentWeek = getWeekNumber(new Date());
 
-    const { data: user } = useQuery({ queryKey: ['user'], queryFn: () => base44.auth.me() });
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: () => base44.auth.me(),
+        staleTime: 10 * 60 * 1000,
+    });
 
     const { data: allTasks = [] } = useQuery({
         queryKey: ['weekly-cleaning-tasks'],
         queryFn: () => base44.entities.CleaningTask.filter({ area: 'Wochentagsaufgaben', is_active: true })
     });
 
-    const { data: shifts = [] } = useQuery({ queryKey: ['shifts'], queryFn: () => base44.entities.Shift.list() });
+    const { data: shifts = [] } = useQuery({
+        queryKey: ['shifts'],
+        queryFn: () => {
+            const today = format(new Date(), 'yyyy-MM-dd');
+            return base44.entities.Shift.filter({ date: today }, 'start_time', 50);
+        },
+        staleTime: 5 * 60 * 1000,
+    });
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true })
@@ -291,7 +302,7 @@ export default function WeeklyTasks() {
                     title="Wochenaufgaben"
                     subtitle={`${format(new Date(), 'EEEE, d. MMMM', { locale: de })} · KW ${getWeekNumber(new Date()) === 1 ? 'ungerade' : 'gerade'}`}
                     action={permissions.canEditCleaning && (
-                        <Button onClick={() => setModalOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-slate-900 gap-2">
+                        <Button onClick={() => setModalOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-background gap-2">
                             <Plus className="w-4 h-4" />
                             Aufgabe
                         </Button>
@@ -376,7 +387,7 @@ export default function WeeklyTasks() {
                             </div>
                             <div className="flex gap-2 pt-2">
                                 <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
-                                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-900">
+                                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-amber-500 hover:bg-amber-600 text-background">
                                     Hinzufügen
                                 </Button>
                             </div>

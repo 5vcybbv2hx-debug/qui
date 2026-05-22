@@ -227,7 +227,7 @@ export default function Cleaning() {
         };
 
         await base44.entities.CleaningReport.create(report);
-        queryClient.invalidateQueries(['cleaning-reports']);
+        queryClient.invalidateQueries({ queryKey: ['cleaning-reports'] });
 
         // Setze tägliche Aufgaben zurück — sequenziell um Rate Limit zu vermeiden
         const dailyTasks = tasks.filter(t => t.frequency === 'täglich' && t.is_completed);
@@ -280,7 +280,7 @@ export default function Cleaning() {
         };
 
         await base44.entities.CleaningReport.create(report);
-        queryClient.invalidateQueries(['cleaning-reports']);
+        queryClient.invalidateQueries({ queryKey: ['cleaning-reports'] });
         alert('Wochenbericht erstellt!');
     };
 
@@ -290,7 +290,7 @@ export default function Cleaning() {
     if (tasksError) {
         return (
             <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-                {handleError({ error: tasksErrorObj, title: 'Putzaufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries(['cleaning']) })}
+                {handleError({ error: tasksErrorObj, title: 'Putzaufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries({ queryKey: ['cleaning'] }) })}
             </div>
         );
     }
@@ -387,7 +387,7 @@ export default function Cleaning() {
 
                 {/* Task List */}
                 {isLoading ? <LoadingState text="Lade Putzaufgaben…" /> :
-                 tasksError ? <ErrorFallback error={tasksErrorObj} title="Putzaufgaben konnten nicht geladen werden" onRetry={() => queryClient.invalidateQueries(['cleaning'])} /> : (
+                 tasksError ? <ErrorFallback error={tasksErrorObj} title="Putzaufgaben konnten nicht geladen werden" onRetry={() => queryClient.invalidateQueries({ queryKey: ['cleaning'] })} /> : (
                     <Tabs defaultValue="active" className="space-y-4">
                         <TabsList className="bg-card border border-border grid w-full grid-cols-2">
                             <TabsTrigger value="active" className="text-muted-foreground">

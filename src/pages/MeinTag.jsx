@@ -16,6 +16,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, differenceInMinutes, parseISO, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { STALE } from '@/lib/queryUtils';
 import { 
     LogIn, LogOut, Clock, CheckSquare, Brush, RefreshCw, 
     Calendar, ChevronRight, Play, Pause, Circle, CheckCircle2,
@@ -487,6 +488,7 @@ export default function MeinTag() {
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
 
     const { data: clockEntries = [] } = useQuery({
@@ -499,12 +501,13 @@ export default function MeinTag() {
     const { data: shifts = [] } = useQuery({
         queryKey: ['meinTag-shifts'],
         queryFn: () => base44.entities.Shift.list('-date', 100),
+        staleTime: STALE.SLOW,
     });
 
     const { data: calendarDays = [] } = useQuery({
         queryKey: ['business-calendar'],
         queryFn: () => base44.entities.BusinessCalendarDay.list('-date', 100),
-        staleTime: 60000,
+        staleTime: STALE.SLOW,
     });
 
     const employee = employees.find(e => e.email === user?.email);

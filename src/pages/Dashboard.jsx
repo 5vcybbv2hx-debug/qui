@@ -21,9 +21,12 @@ export default function Dashboard() {
     });
 
     const { handleError } = useErrorHandler();
-    const currentEmployee = employees.find(e => e.email === user?.email);
 
-    if (permissions.isLoading) return <LoadingState text="Lade Dashboard…" fullScreen />;
+    if (permissions.isLoading || !user) {
+        return <LoadingState text="Lade Dashboard…" fullScreen />;
+    }
+
+    const currentEmployee = employees.find(e => e.email === user.email);
 
     return (
         <>

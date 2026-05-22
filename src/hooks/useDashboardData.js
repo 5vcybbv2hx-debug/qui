@@ -1,17 +1,26 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
+import { format, startOfWeek, endOfWeek, parseISO, addDays } from 'date-fns';
 import { getTodayOperationDate } from '@/lib/nightUtils';
 import { getTaskStatus } from '@/lib/maintenanceUtils';
+import { STALE } from '@/lib/queryUtils';
 
 export function useDashboardData({ isManager, currentEmployee }) {
     const today = format(new Date(), 'yyyy-MM-dd');
+    const twoWeeksLater = format(addDays(new Date(), 14), 'yyyy-MM-dd');
 
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 1000)
+    const { data: shiftsRaw = [] } = useQuery({
+        queryKey: ['shifts-dashboard', today],
+        queryFn: () => base44.entities.Shift.filter(
+            { date_gte: today, date_lte: twoWeeksLater },
+            '-date',
+            500
+        ),
+        staleTime: STALE.MEDIUM,
     });
+
+    const shifts = shiftsRaw.filter(s => s.date >= today);
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('date', 50)
@@ -42,22 +51,16 @@ export function useDashboardData({ isManager, currentEmployee }) {
         enabled: isManager
     });
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', 100),
-        staleTime: 2 * 60 * 1000,
-    });
-    const { data: allTimeEntriesForManager = [] } = useQuery({
-        queryKey: ['pending-time-entries'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', 500),
-        enabled: isManager,
+        queryKey: ['time-entries-dashboard'],
+        queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 500 : 100),
         staleTime: 2 * 60 * 1000,
     });
     // Ausstehend = employee bestätigt ABER Manager noch nicht explizit genehmigt
     // (status='eingereicht' ODER status='genehmigt' ohne manager_approved_by)
-    const pendingTimeEntries = allTimeEntriesForManager.filter(e =>
+    const pendingTimeEntries = isManager ? timeEntries.filter(e =>
         e.employee_confirmed === true &&
         (e.status === 'eingereicht' || (e.status === 'genehmigt' && !e.manager_approved_by))
-    );
+    ) : [];
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
         queryFn: () => base44.entities.VacationRequest.list('-created_date', 50),

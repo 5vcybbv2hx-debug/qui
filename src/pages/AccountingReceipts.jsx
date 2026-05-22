@@ -165,22 +165,23 @@ export default function AccountingReceipts() {
 
     const { data: receipts = [] } = useQuery({
         queryKey: ['accounting-receipts'],
-        queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date')
+        queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
+        staleTime: 2 * 60 * 1000,
     });
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.AccountingReceipt.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['accounting-receipts']); setUploadOpen(false); setAiResult(null); setEditData({}); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] }); setUploadOpen(false); setAiResult(null); setEditData({}); }
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.AccountingReceipt.update(id, data),
-        onSuccess: () => { queryClient.invalidateQueries(['accounting-receipts']); setDetailOpen(false); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] }); setDetailOpen(false); }
     });
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.AccountingReceipt.delete(id),
-        onSuccess: () => { queryClient.invalidateQueries(['accounting-receipts']); setDetailOpen(false); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] }); setDetailOpen(false); }
     });
 
     const handleFileUpload = async (file) => {

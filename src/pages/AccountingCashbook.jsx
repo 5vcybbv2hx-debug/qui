@@ -55,7 +55,8 @@ export default function AccountingCashbook() {
 
     const { data: entries = [], isLoading } = useQuery({
         queryKey: ['cashbook-entries'],
-        queryFn: () => base44.entities.CashbookEntry.list('-date')
+        queryFn: () => base44.entities.CashbookEntry.list('-date', 500),
+        staleTime: 2 * 60 * 1000,
     });
 
     const { data: dailyRevenues = [] } = useQuery({
@@ -65,7 +66,7 @@ export default function AccountingCashbook() {
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.CashbookEntry.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['cashbook-entries']); setModalOpen(false); setFormData(EMPTY_FORM); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] }); setModalOpen(false); setFormData(EMPTY_FORM); }
     });
 
     const filtered = useMemo(() => {
@@ -108,7 +109,7 @@ export default function AccountingCashbook() {
             daily_revenue_id: revenue.id,
         });
         await base44.entities.CashbookEntry.create(entries[0]);
-        queryClient.invalidateQueries(['cashbook-entries']);
+        queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] });
     };
 
     const importAllPending = async () => {

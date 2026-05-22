@@ -98,27 +98,27 @@ export default function AccountingFixedCosts() {
 
     const createExpenseMutation = useMutation({
         mutationFn: (data) => base44.entities.RecurringExpense.create(data),
-        onSuccess: () => { queryClient.invalidateQueries(['recurring-expenses']); closeModal(); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] }); closeModal(); }
     });
 
     const updateExpenseMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.RecurringExpense.update(id, data),
-        onSuccess: () => { queryClient.invalidateQueries(['recurring-expenses']); closeModal(); }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] }); closeModal(); }
     });
 
     const deleteExpenseMutation = useMutation({
         mutationFn: (id) => base44.entities.RecurringExpense.delete(id),
-        onSuccess: () => queryClient.invalidateQueries(['recurring-expenses'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-expenses'] })
     });
 
     const createOccurrenceMutation = useMutation({
         mutationFn: (data) => base44.entities.RecurringExpenseOccurrence.create(data),
-        onSuccess: () => queryClient.invalidateQueries(['recurring-expense-occurrences'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-expense-occurrences'] })
     });
 
     const updateOccurrenceMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.RecurringExpenseOccurrence.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries(['recurring-expense-occurrences'])
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring-expense-occurrences'] })
     });
 
     // Merge generated + real occurrences for the selected month
@@ -139,7 +139,7 @@ export default function AccountingFixedCosts() {
         const total = monthOccurrences.reduce((s, o) => s + (o.expected_amount || 0), 0);
         const paid = monthOccurrences.filter(o => o.status === 'bezahlt').reduce((s, o) => s + (o.actual_amount || o.expected_amount || 0), 0);
         const missing = monthOccurrences.filter(o => o.status !== 'bezahlt').length;
-        const overdue = monthOccurrences.filter(o => o.status === 'überfallig').length;
+        const overdue = monthOccurrences.filter(o => o.status === 'überfällig').length;
         return { total, paid, missing, overdue };
     }, [monthOccurrences]);
 

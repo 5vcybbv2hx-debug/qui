@@ -141,6 +141,9 @@ const AuthenticatedApp = () => {
       {/* Redirect old EmployeeHome links to Dashboard */}
       <Route path="/EmployeeHome" element={<Navigate to="/" replace />} />
 
+      {/* Redirect old SeatingChart route to GuestHub */}
+      <Route path="/SeatingChart" element={<Navigate to="/GuestHub" replace />} />
+
       {/* Admin Zeit-Editor */}
       <Route path="/AdminTimeEditor" element={
         <LayoutWrapper currentPageName="AdminTimeEditor">

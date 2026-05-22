@@ -81,7 +81,6 @@ import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
 import SalesAnalysis from './pages/SalesAnalysis';
-import SeatingChart from './pages/SeatingChart';
 import GuestHub from './pages/GuestHub';
 import Settings from './pages/Settings';
 import ShiftAnalytics from './pages/ShiftAnalytics';
@@ -156,7 +155,6 @@ const CORE_PAGES = {
     "Reservations": Reservations,
     "Restock": Restock,
     "SalesAnalysis": SalesAnalysis,
-    "SeatingChart": SeatingChart,
     "GuestHub": GuestHub,
     "Settings": Settings,
     "ShiftAnalytics": ShiftAnalytics,

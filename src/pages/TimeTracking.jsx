@@ -48,11 +48,10 @@ export default function TimeTracking() {
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             let all;
              if (permissions.isManager) {
-                 // Manager: serverseitiger Datums-Filter
-                 all = await base44.entities.TimeEntry.filter({ date_gte: start, date_lte: end }, '-date', 1000);
+                 all = await base44.entities.TimeEntry.list('-date', 500);
             } else {
                 // Mitarbeiter: nur eigene Einträge nach employee_id
-                all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 500);
+                all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 300);
             }
             return all.filter(entry => entry.date >= start && entry.date <= end);
         },
@@ -72,7 +71,12 @@ export default function TimeTracking() {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             if (permissions.isManager) {
-                return base44.entities.ClockEntry.filter({ clock_in_gte: start, clock_in_lte: end }, '-clock_in', 500);
+                const all = await base44.entities.ClockEntry.list('-clock_in', 300);
+                return all.filter(e => {
+                    if (!e.clock_in) return false;
+                    const d = format(new Date(e.clock_in), 'yyyy-MM-dd');
+                    return d >= start && d <= end;
+                });
             }
             // Mitarbeiter: nur eigene ClockEntries laden
             return base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 200);

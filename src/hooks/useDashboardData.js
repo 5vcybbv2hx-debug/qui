@@ -50,7 +50,7 @@ export function useDashboardData({ isManager, currentEmployee }) {
     });
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries-dashboard'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 500 : 100),
+        queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 200 : 50),
         staleTime: 2 * 60 * 1000,
     });
     // Ausstehend = employee bestätigt ABER Manager noch nicht explizit genehmigt

@@ -65,7 +65,7 @@ export default function TeamMeeting() {
     });
 
     const { data: allTopics = [] } = useQuery({
-        queryKey: ['team-meeting-topics'],
+        queryKey: ['team-meeting-topics', currentEmployee?.id],
         queryFn: async () => {
             const items = await base44.entities.TeamMeetingTopic.list('-created_date');
             // Nur Manager sehen alle Themen, normale Mitarbeiter nur ihre eigenen
@@ -74,7 +74,8 @@ export default function TeamMeeting() {
             }
             return items;
         },
-        enabled: !!currentEmployee || permissions.isManager
+        // Immer laden — auch ohne Employee-Profil (z.B. nur User-Account)
+        enabled: true
     });
 
     // Get meeting schedule
@@ -186,17 +187,22 @@ export default function TeamMeeting() {
         }
     });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!currentEmployee) {
-            alert('Mitarbeiterprofil nicht gefunden');
-            return;
+        
+        let employeeId = currentEmployee?.id;
+        let employeeName = currentEmployee?.name;
+
+        // Fallback: User-Account ohne verknüpftes Employee-Profil
+        if (!employeeName) {
+            const user = await base44.auth.me();
+            employeeName = user?.full_name || user?.email || 'Unbekannt';
         }
         
         createMutation.mutate({
             ...formData,
-            employee_id: currentEmployee.id,
-            employee_name: currentEmployee.name
+            employee_id: employeeId || '',
+            employee_name: employeeName
         });
     };
 

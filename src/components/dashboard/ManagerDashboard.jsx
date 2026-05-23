@@ -17,6 +17,7 @@ import ShiftSwapApprovalCard from '@/components/dashboard/ShiftSwapApprovalCard'
 import TeamMeetingReminder from '@/components/dashboard/TeamMeetingReminder';
 import LegalStatusPanel from '@/components/legal/LegalStatusPanel';
 import TeamNotes from '@/components/dashboard/TeamNotes';
+import TimeApprovalPanel from '@/components/dashboard/TimeApprovalPanel';
 
 export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, clockEntry, hoursThisWeek, remainingVacationDays, myUpcomingShifts, currentUser, isManager = true, employees = [], shifts = [], events = [], reservations = [], todos = [], timeEntries = [], vacationRequests = [], maintenanceTasks = [], shoppingList = [], articles = [], cleaningTasks = [] }) {
     const today = format(new Date(), 'yyyy-MM-dd');
@@ -231,6 +232,15 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                             </Card>
                         </Link>
                     ))}
+                </div>
+
+                {/* Zeiterfassung genehmigen */}
+                <div>
+                    <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-amber-500" />
+                        Zeiterfassung genehmigen
+                    </h2>
+                    <TimeApprovalPanel />
                 </div>
 
                 <TodayOverview shifts={todayShifts} events={todayEvents} reservations={todayReservations} employees={employees} maxItems={4} />

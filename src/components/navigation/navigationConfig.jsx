@@ -4,7 +4,7 @@ import {
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
-    Palmtree, ListChecks, Video, QrCode, Sun, Layers, Zap,
+    Palmtree, ListChecks, Video, QrCode, Layers, Zap,
     Receipt, TrendingDown, Download, Euro, Building2, AlertTriangle
 } from 'lucide-react';
 
@@ -27,7 +27,6 @@ export const mainNavigation = [
         icon: Home,
         pages: [
             { name: 'Übersicht',  page: 'Dashboard', icon: Home,  permission: 'canViewDashboard' },
-            { name: 'Mein Tag',   page: 'MeinTag',   icon: Sun,   permission: 'canViewMeinTag'   },
         ]
     },
     {

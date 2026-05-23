@@ -163,14 +163,8 @@ const AuthenticatedApp = () => {
         </LayoutWrapper>
       } />
 
-      {/* Mein Tag — alle authentifizierten Nutzer */}
-      <Route path="/MeinTag" element={
-        <LayoutWrapper currentPageName="MeinTag">
-          <RoleGuard permission="canViewMeinTag">
-            <MeinTag />
-          </RoleGuard>
-        </LayoutWrapper>
-      } />
+      {/* Mein Tag — jetzt auf Dashboard umgeleitet */}
+      <Route path="/MeinTag" element={<Navigate to="/" replace />} />
 
       {/* Modulcenter — Admin Modulverwaltung */}
       <Route path="/ModuleCenter" element={

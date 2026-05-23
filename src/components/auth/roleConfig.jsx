@@ -54,8 +54,8 @@ export const PERMISSION_MATRIX = {
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     // Aushilfe bekommt kein volles Dashboard — sie sehen nur MeinTag
-    canViewDashboard:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER], terminal: false },
-    // Alle dürfen MeinTag sehen (eigene Schicht-Übersicht)
+    canViewDashboard:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    // MeinTag ist in Dashboard integriert — bleibt für Rückwärtskompatibilität
     canViewMeinTag:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
 
     // ── Schichten & Kalender ──────────────────────────────────────────────────

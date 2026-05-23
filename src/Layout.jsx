@@ -154,11 +154,11 @@ export default function Layout({ children, currentPageName }) {
             return ['Dashboard', 'GuestHub', 'Todos', 'TeamCalendar'];
         }
         if (permissions.canViewTodos) {
-            // Barkeeper: MeinTag, Schichtplan, Cleaning, Todos
-            return ['MeinTag', 'Calendar', 'Cleaning', 'Todos'];
+            // Barkeeper: Dashboard, Schichtplan, Cleaning, Todos
+            return ['Dashboard', 'Calendar', 'Cleaning', 'Todos'];
         }
-        // Aushilfe: MeinTag, Schichtplan, Zeiterfassung
-        return ['MeinTag', 'Calendar', 'TimeManagement'];
+        // Aushilfe: Dashboard, Schichtplan, Zeiterfassung
+        return ['Dashboard', 'Calendar', 'TimeManagement'];
     };
 
     const defaultPages = getRoleDefaultTabs();

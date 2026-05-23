@@ -198,7 +198,7 @@ export default function TimeTracking() {
 
     const handleApproveEmployee = (employeeName) => {
          const pendingEntries = entriesByEmployee[employeeName]
-             .filter(e => e.employee_confirmed === true && e.status !== 'genehmigt')
+             .filter(e => (e.employee_confirmed === true || e.status === 'eingereicht') && e.status !== 'genehmigt')
              .map(e => e.id);
         if (pendingEntries.length > 0) {
             approveMutation.mutate(pendingEntries);
@@ -865,7 +865,7 @@ export default function TimeTracking() {
                     {Object.entries(entriesByEmployee).map(([employeeName, entries]) => {
                         const employeeTotal = entries.reduce((sum, e) => sum + (e.total_hours || 0), 0);
                         const pendingCount = entries.filter(e =>
-                            e.employee_confirmed === true && e.status !== 'genehmigt'
+                           (e.employee_confirmed === true || e.status === 'eingereicht') && e.status !== 'genehmigt'
                         ).length;
                         return (
                             <div key={employeeName}>
@@ -951,7 +951,7 @@ export default function TimeTracking() {
                                                                     <Check className="w-4 h-4" />
                                                                 </Button>
                                                             )}
-                                                            {permissions.isManager && entry.status !== 'genehmigt' && entry.employee_confirmed && (
+                                                            {permissions.isManager && entry.status !== 'genehmigt' && (entry.employee_confirmed || entry.status === 'eingereicht') && (
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"

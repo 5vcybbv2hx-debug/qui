@@ -48,21 +48,22 @@ export default function TimeTracking() {
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             let all;
              if (permissions.isManager) {
-                 all = await base44.entities.TimeEntry.list('-date', 500);
+                 all = await base44.entities.TimeEntry.list('-date', 200);
             } else {
                 // Mitarbeiter: nur eigene Einträge nach employee_id
-                all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 300);
+                all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 100);
             }
             return all.filter(entry => entry.date >= start && entry.date <= end);
         },
         enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
-        staleTime: 2 * 60 * 1000,
+        staleTime: 3 * 60 * 1000,
         refetchOnWindowFocus: false,
     });
 
     const { data: allEmployees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: 10 * 60 * 1000,
     });
 
     const { data: clockEntries = [] } = useQuery({
@@ -71,7 +72,7 @@ export default function TimeTracking() {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             if (permissions.isManager) {
-                const all = await base44.entities.ClockEntry.list('-clock_in', 300);
+                const all = await base44.entities.ClockEntry.list('-clock_in', 100);
                 return all.filter(e => {
                     if (!e.clock_in) return false;
                     const d = format(new Date(e.clock_in), 'yyyy-MM-dd');

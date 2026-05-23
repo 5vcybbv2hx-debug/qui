@@ -59,9 +59,10 @@ export function useDashboardData({ isManager, currentEmployee }) {
         queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 100 : 30),
         staleTime: STALE.MEDIUM,
     });
-    // Ausstehend = employee bestätigt ODER status='eingereicht' — noch nicht explizit genehmigt
+    // Ausstehend = status='eingereicht' ODER employee_confirmed=true — noch nicht vom Manager genehmigt
+    // (entspricht exakt dem Filter in TimeApprovalPanel)
     const pendingTimeEntries = isManager ? timeEntries.filter(e =>
-        (e.employee_confirmed === true || e.status === 'eingereicht') &&
+        (e.status === 'eingereicht' || e.employee_confirmed === true) &&
         e.status !== 'genehmigt'
     ) : [];
     const { data: vacationRequests = [] } = useQuery({

@@ -102,15 +102,16 @@ export default function TimeApprovalPanel() {
 
   const { data: allEntries = [], isLoading } = useQuery({
     queryKey: ['time-entries-all'],
-    queryFn: () => base44.entities.TimeEntry.list('-date', 200),
-    refetchInterval: 30000,
+    queryFn: () => base44.entities.TimeEntry.list('-date', 300),
+    refetchInterval: 60000,
     refetchOnWindowFocus: true,
+    staleTime: 30000,
   });
 
-  // Ausstehend: employee bestätigt, aber Manager noch nicht explizit genehmigt
+  // Ausstehend: status='eingereicht' ODER employee_confirmed=true — noch nicht vom Manager genehmigt
   const pending = allEntries.filter(e =>
-    e.employee_confirmed === true &&
-    (e.status === 'eingereicht' || (e.status === 'genehmigt' && !e.manager_approved_by))
+    (e.status === 'eingereicht' || e.employee_confirmed === true) &&
+    e.status !== 'genehmigt'
   );
   // Wirklich genehmigt: manager_approved_by gesetzt
   const approved = allEntries.filter(e => e.status === 'genehmigt' && !!e.manager_approved_by).slice(0, 10);

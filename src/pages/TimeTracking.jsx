@@ -82,9 +82,9 @@ export default function TimeTracking() {
             return base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 200);
         },
         enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
-        refetchInterval: 15000,
-        refetchOnWindowFocus: true,
-        staleTime: 0,
+        refetchInterval: 60000,
+        refetchOnWindowFocus: false,
+        staleTime: 30000,
     });
 
     // Invalidiert ALLE time-entries Queries (inkl. mit selectedMonth-Key)

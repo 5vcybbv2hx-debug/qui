@@ -12,57 +12,63 @@ export function useDashboardData({ isManager, currentEmployee }) {
 
     const { data: shiftsRaw = [] } = useQuery({
         queryKey: ['shifts-dashboard', today],
-        queryFn: () => base44.entities.Shift.list('date', 500),
-        staleTime: STALE.MEDIUM,
+        queryFn: () => base44.entities.Shift.list('date', 200),
+        staleTime: STALE.SLOW,
     });
 
     const shifts = shiftsRaw.filter(s => s.date >= today && s.date <= twoWeeksLater);
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
-        queryFn: () => base44.entities.Event.list('date', 50)
+        queryFn: () => base44.entities.Event.list('date', 30),
+        staleTime: STALE.SLOW,
     });
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 50)
+        queryFn: () => base44.entities.Reservation.list('-date', 30),
+        staleTime: STALE.MEDIUM,
     });
     const { data: todos = [] } = useQuery({
         queryKey: ['todos'],
-        queryFn: () => base44.entities.TodoItem.filter({ is_archived: false })
+        queryFn: () => base44.entities.TodoItem.filter({ is_archived: false }),
+        staleTime: STALE.SLOW,
     });
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
     const { data: articles = [] } = useQuery({
         queryKey: ['articles-low-stock'],
-        queryFn: () => base44.entities.Article.list('name', 500),
-        staleTime: STALE.MEDIUM,
+        queryFn: () => base44.entities.Article.list('name', 200),
+        staleTime: STALE.SLOW,
         select: (data) => data.filter(a => a.min_stock > 0 && a.current_stock <= a.min_stock),
     });
     const { data: shopping = [] } = useQuery({
         queryKey: ['shopping-list'],
-        queryFn: () => base44.entities.ShoppingList.list()
+        queryFn: () => base44.entities.ShoppingList.list(),
+        staleTime: STALE.SLOW,
     });
     const { data: maintenanceTasks = [] } = useQuery({
         queryKey: ['maintenance-tasks'],
         queryFn: () => base44.entities.MaintenanceTask.filter({ is_active: true }),
-        enabled: isManager
+        enabled: isManager,
+        staleTime: STALE.SLOW,
     });
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries-dashboard'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 200 : 50),
-        staleTime: 2 * 60 * 1000,
+        queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 100 : 30),
+        staleTime: STALE.MEDIUM,
     });
-    // Ausstehend = employee bestätigt ABER Manager noch nicht explizit genehmigt
-    // (status='eingereicht' ODER status='genehmigt' ohne manager_approved_by)
+    // Ausstehend = employee bestätigt ODER status='eingereicht' — noch nicht explizit genehmigt
     const pendingTimeEntries = isManager ? timeEntries.filter(e =>
-        e.employee_confirmed === true &&
-        (e.status === 'eingereicht' || (e.status === 'genehmigt' && !e.manager_approved_by))
+        (e.employee_confirmed === true || e.status === 'eingereicht') &&
+        e.status !== 'genehmigt'
     ) : [];
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list('-created_date', 50),
-        enabled: isManager
+        queryFn: () => base44.entities.VacationRequest.list('-created_date', 30),
+        enabled: isManager,
+        staleTime: STALE.SLOW,
     });
 
     // Derived values

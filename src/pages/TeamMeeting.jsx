@@ -65,17 +65,20 @@ export default function TeamMeeting() {
     });
 
     const { data: allTopics = [] } = useQuery({
-        queryKey: ['team-meeting-topics', currentEmployee?.id],
+        queryKey: ['team-meeting-topics', permissions.isManager, currentEmployee?.id],
         queryFn: async () => {
-            const items = await base44.entities.TeamMeetingTopic.list('-created_date');
-            // Nur Manager sehen alle Themen, normale Mitarbeiter nur ihre eigenen
-            if (!permissions.isManager && currentEmployee) {
-                return items.filter(t => t.employee_id === currentEmployee.id);
+            if (permissions.isManager) {
+                // Manager sehen alle Themen
+                return base44.entities.TeamMeetingTopic.list('-created_date');
             }
-            return items;
+            if (currentEmployee?.id) {
+                // Mitarbeiter sehen nur ihre eigenen
+                return base44.entities.TeamMeetingTopic.filter({ employee_id: currentEmployee.id }, '-created_date');
+            }
+            // Kein Employee-Profil verknüpft → leere Liste
+            return [];
         },
-        // Immer laden — auch ohne Employee-Profil (z.B. nur User-Account)
-        enabled: true
+        enabled: permissions.isManager || !!currentEmployee?.id
     });
 
     // Get meeting schedule

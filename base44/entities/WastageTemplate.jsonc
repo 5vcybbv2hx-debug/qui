@@ -1,0 +1,53 @@
+{
+  "name": "WastageTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name der Vorlage"
+    },
+    "items": {
+      "type": "array",
+      "description": "Liste der Artikel in dieser Vorlage",
+      "items": {
+        "type": "object",
+        "properties": {
+          "barcode": {
+            "type": "string"
+          },
+          "article_name": {
+            "type": "string"
+          },
+          "article_image_url": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Bruch",
+              "Nachtw\u00e4chter",
+              "Verderb",
+              "Sonstiges"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Allgemeine Notiz zur Vorlage"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

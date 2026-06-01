@@ -1,0 +1,12 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "is_terminal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Terminal-Modus aktiviert"
+    }
+  },
+  "required": []
+}

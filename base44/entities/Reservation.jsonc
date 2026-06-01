@@ -47,6 +47,8 @@
       "enum": [
         "vorgemerkt",
         "best\u00e4tigt",
+        "erschienen",
+        "no-show",
         "storniert"
       ],
       "default": "vorgemerkt",

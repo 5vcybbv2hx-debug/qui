@@ -1,0 +1,26 @@
+{
+  "name": "CleaningArea",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Bereichs"
+    },
+    "color": {
+      "type": "string",
+      "description": "Farbe f\u00fcr die Anzeige"
+    },
+    "order": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    },
+    "seasonal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Nur saisonal sichtbar (April-Oktober)"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "TeamMeetingRSVP",
+  "type": "object",
+  "properties": {
+    "meeting_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Teamsitzung"
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "zusage",
+        "absage"
+      ],
+      "description": "Zusage oder Absage zur Teamsitzung"
+    }
+  },
+  "required": [
+    "meeting_date",
+    "employee_id",
+    "employee_name",
+    "status"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "DefaultShiftRule",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "day_of_week": {
+      "type": "string",
+      "enum": [
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        "Samstag",
+        "Sonntag"
+      ],
+      "description": "Wochentag"
+    },
+    "shift_type": {
+      "type": "string",
+      "description": "Standard-Schichttyp f\u00fcr diesen Tag"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "day_of_week",
+    "shift_type"
+  ]
+}

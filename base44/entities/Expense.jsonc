@@ -1,0 +1,58 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "Einkauf",
+        "Personal",
+        "Marketing",
+        "Wartung",
+        "Events",
+        "Sonstiges"
+      ],
+      "description": "Ausgabenkategorie"
+    },
+    "title": {
+      "type": "string",
+      "description": "Bezeichnung der Ausgabe"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Betrag in Euro"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Ausgabe"
+    },
+    "receipt_url": {
+      "type": "string",
+      "description": "URL zum Beleg"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "auto_generated": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatisch generiert"
+    },
+    "source_type": {
+      "type": "string",
+      "description": "Quelle (z.B. shopping, payroll)"
+    },
+    "source_id": {
+      "type": "string",
+      "description": "ID der Quelle"
+    }
+  },
+  "required": [
+    "category",
+    "title",
+    "amount",
+    "date"
+  ]
+}

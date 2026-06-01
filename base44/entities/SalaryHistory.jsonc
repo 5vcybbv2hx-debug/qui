@@ -1,0 +1,49 @@
+{
+  "name": "SalaryHistory",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "old_hourly_rate": {
+      "type": "number",
+      "description": "Alter Stundensatz in Euro"
+    },
+    "new_hourly_rate": {
+      "type": "number",
+      "description": "Neuer Stundensatz in Euro"
+    },
+    "change_reason": {
+      "type": "string",
+      "description": "Grund der \u00c4nderung"
+    },
+    "effective_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Wirksam ab"
+    },
+    "changed_by": {
+      "type": "string",
+      "description": "Ge\u00e4ndert von (E-Mail)"
+    },
+    "old_contract_type": {
+      "type": "string",
+      "description": "Alte Vertragsart"
+    },
+    "new_contract_type": {
+      "type": "string",
+      "description": "Neue Vertragsart"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "new_hourly_rate",
+    "effective_date"
+  ]
+}

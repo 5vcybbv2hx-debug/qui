@@ -1,0 +1,43 @@
+{
+  "name": "WorkTimeModel",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Arbeitszeitmodells (z.B. Vollzeit, Teilzeit, Minijob)"
+    },
+    "hours_per_week": {
+      "type": "number",
+      "description": "Wochenstunden"
+    },
+    "min_hourly_rate": {
+      "type": "number",
+      "description": "Mindestlohn f\u00fcr dieses Modell"
+    },
+    "default_hourly_rate": {
+      "type": "number",
+      "description": "Standard-Stundensatz"
+    },
+    "max_monthly_earnings": {
+      "type": "number",
+      "description": "Max. monatlicher Verdienst (f\u00fcr Minijobs)"
+    },
+    "vacation_days": {
+      "type": "number",
+      "description": "Standard Urlaubstage pro Jahr"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Zus\u00e4tzliche Hinweise"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "name",
+    "default_hourly_rate"
+  ]
+}

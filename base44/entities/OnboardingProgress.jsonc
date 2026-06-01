@@ -1,0 +1,47 @@
+{
+  "name": "OnboardingProgress",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "ID der Aufgabe"
+    },
+    "task_title": {
+      "type": "string",
+      "description": "Titel der Aufgabe"
+    },
+    "task_category": {
+      "type": "string",
+      "description": "Kategorie der Aufgabe"
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aufgabe erledigt"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der Fertigstellung"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zur Aufgabe"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "task_id",
+    "task_title",
+    "task_category"
+  ]
+}

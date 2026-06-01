@@ -1,0 +1,77 @@
+{
+  "name": "Document",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Dokumentenname"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL der hochgeladenen Datei"
+    },
+    "file_type": {
+      "type": "string",
+      "description": "Dateityp (PDF, Excel, Word, etc.)"
+    },
+    "file_size": {
+      "type": "number",
+      "description": "Dateigr\u00f6\u00dfe in Bytes"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Vertrag",
+        "Rechnung",
+        "Bericht",
+        "Handbuch",
+        "Sonstiges"
+      ],
+      "description": "Kategorie"
+    },
+    "linked_entity_type": {
+      "type": "string",
+      "enum": [
+        "Employee",
+        "SalesReport",
+        "Event",
+        "Supplier",
+        "Keine"
+      ],
+      "description": "Verkn\u00fcpfte Entit\u00e4t"
+    },
+    "linked_entity_id": {
+      "type": "string",
+      "description": "ID der verkn\u00fcpften Entit\u00e4t"
+    },
+    "linked_entity_name": {
+      "type": "string",
+      "description": "Name/Bezeichnung der verkn\u00fcpften Entit\u00e4t"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags f\u00fcr Suche"
+    },
+    "expiry_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Ablaufdatum (optional)"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Archiviert"
+    }
+  },
+  "required": [
+    "name",
+    "file_url"
+  ]
+}

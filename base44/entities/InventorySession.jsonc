@@ -1,0 +1,52 @@
+{
+  "name": "InventorySession",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Inventur"
+    },
+    "counted_by": {
+      "type": "string",
+      "description": "Durchgef\u00fchrt von"
+    },
+    "counts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "article_id": {
+            "type": "string"
+          },
+          "article_name": {
+            "type": "string"
+          },
+          "system_stock": {
+            "type": "number"
+          },
+          "counted_stock": {
+            "type": "number"
+          },
+          "difference": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Gez\u00e4hlte Artikel"
+    },
+    "total_items": {
+      "type": "number",
+      "description": "Anzahl gez\u00e4hlter Artikel"
+    },
+    "total_difference": {
+      "type": "number",
+      "description": "Summe aller Differenzen (absolut)"
+    }
+  },
+  "required": [
+    "date",
+    "counted_by",
+    "counts"
+  ]
+}

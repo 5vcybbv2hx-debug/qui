@@ -1,0 +1,51 @@
+{
+  "name": "OpeningHours",
+  "type": "object",
+  "properties": {
+    "day_of_week": {
+      "type": "string",
+      "enum": [
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        "Samstag",
+        "Sonntag"
+      ],
+      "description": "Wochentag"
+    },
+    "open_time": {
+      "type": "string",
+      "description": "\u00d6ffnungszeit (HH:MM)"
+    },
+    "close_time": {
+      "type": "string",
+      "description": "Schlie\u00dfzeit (HH:MM)"
+    },
+    "is_closed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Geschlossen"
+    },
+    "is_special_day": {
+      "type": "boolean",
+      "default": false,
+      "description": "Sonder\u00f6ffnungstag"
+    },
+    "special_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum f\u00fcr Sonder\u00f6ffnungszeit"
+    },
+    "special_name": {
+      "type": "string",
+      "description": "Name des Sonder\u00f6ffnungstags"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": []
+}

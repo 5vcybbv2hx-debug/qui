@@ -1,0 +1,60 @@
+{
+  "name": "Wastage",
+  "type": "object",
+  "properties": {
+    "barcode": {
+      "type": "string",
+      "description": "Barcode des Artikels"
+    },
+    "article_name": {
+      "type": "string",
+      "description": "Artikelname"
+    },
+    "article_image_url": {
+      "type": "string",
+      "description": "Bild-URL des Artikels"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Menge des Schwunds"
+    },
+    "unit": {
+      "type": "string",
+      "description": "Einheit (St\u00fcck, Liter, etc.)"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Bruch",
+        "Nachtw\u00e4chter",
+        "Verderb",
+        "Sonstiges"
+      ],
+      "description": "Art des Schwunds"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum"
+    },
+    "time": {
+      "type": "string",
+      "description": "Uhrzeit"
+    },
+    "noted_by": {
+      "type": "string",
+      "description": "Eingetragen von"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": [
+    "barcode",
+    "article_name",
+    "quantity",
+    "type",
+    "date"
+  ]
+}

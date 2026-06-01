@@ -1,0 +1,64 @@
+{
+  "name": "SalesReport",
+  "type": "object",
+  "properties": {
+    "report_type": {
+      "type": "string",
+      "enum": [
+        "Z-Abschlag",
+        "Artikelverk\u00e4ufe",
+        "Warengruppen",
+        "Stundenauswertung",
+        "Wochenauswertung",
+        "Zahlungsarten",
+        "Sonstiges"
+      ],
+      "description": "Art des Berichts"
+    },
+    "report_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum des Berichts"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL der hochgeladenen PDF"
+    },
+    "extracted_data": {
+      "type": "object",
+      "description": "Extrahierte Daten aus dem PDF"
+    },
+    "total_revenue": {
+      "type": "number",
+      "description": "Gesamtumsatz"
+    },
+    "total_transactions": {
+      "type": "number",
+      "description": "Anzahl Transaktionen"
+    },
+    "average_transaction": {
+      "type": "number",
+      "description": "Durchschnittlicher Bonwert"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zum Bericht"
+    },
+    "processing_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "Status der Verarbeitung"
+    }
+  },
+  "required": [
+    "report_type",
+    "report_date",
+    "file_url"
+  ]
+}

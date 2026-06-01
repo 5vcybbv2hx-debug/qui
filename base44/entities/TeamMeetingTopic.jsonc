@@ -1,0 +1,66 @@
+{
+  "name": "TeamMeetingTopic",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Besprechungspunkt"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detaillierte Beschreibung"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "niedrig",
+        "normal",
+        "hoch"
+      ],
+      "default": "normal",
+      "description": "Priorit\u00e4t"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "besprochen",
+        "erledigt"
+      ],
+      "default": "offen",
+      "description": "Status"
+    },
+    "discussed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Besprechung"
+    },
+    "manager_notes": {
+      "type": "string",
+      "description": "Notizen des Managers"
+    },
+    "is_archived": {
+      "type": "boolean",
+      "default": false,
+      "description": "Im Archiv"
+    },
+    "archived_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Archivierung"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "topic"
+  ]
+}

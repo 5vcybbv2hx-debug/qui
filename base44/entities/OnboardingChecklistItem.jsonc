@@ -1,0 +1,50 @@
+{
+  "name": "OnboardingChecklistItem",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "category": {
+      "type": "string",
+      "description": "Kategorie (z.B. Kasse und EC Ger\u00e4te, Sp\u00fclmaschine)"
+    },
+    "item_title": {
+      "type": "string",
+      "description": "Titel des Checklistenpunkts"
+    },
+    "item_order": {
+      "type": "number",
+      "description": "Reihenfolge innerhalb der Kategorie"
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wurde abgehakt"
+    },
+    "completed_by": {
+      "type": "string",
+      "description": "Wer hat abgehakt (Trainer)"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Wann wurde abgehakt"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zum Punkt"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "category",
+    "item_title"
+  ]
+}

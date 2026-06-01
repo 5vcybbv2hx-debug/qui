@@ -1,0 +1,47 @@
+{
+  "name": "SalesDataItem",
+  "type": "object",
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "description": "ID des zugeh\u00f6rigen Berichts"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Verkaufsdatum"
+    },
+    "item_name": {
+      "type": "string",
+      "description": "Artikelname"
+    },
+    "category": {
+      "type": "string",
+      "description": "Kategorie"
+    },
+    "quantity_sold": {
+      "type": "number",
+      "description": "Verkaufte Menge"
+    },
+    "revenue": {
+      "type": "number",
+      "description": "Umsatz"
+    },
+    "price": {
+      "type": "number",
+      "description": "Verkaufspreis"
+    },
+    "hour": {
+      "type": "number",
+      "description": "Stunde (f\u00fcr Stundenauswertung)"
+    },
+    "day_of_week": {
+      "type": "string",
+      "description": "Wochentag"
+    }
+  },
+  "required": [
+    "report_id",
+    "date"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "name": "Room",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Raums"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung des Raums"
+    },
+    "capacity": {
+      "type": "number",
+      "description": "Gesamtkapazit\u00e4t des Raums"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv/Deaktiviert"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

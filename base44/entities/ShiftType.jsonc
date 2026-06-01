@@ -1,0 +1,30 @@
+{
+  "name": "ShiftType",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name der Schichtart"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Startzeit (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Endzeit (HH:MM)"
+    },
+    "order": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

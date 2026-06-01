@@ -66,7 +66,7 @@ export const PERMISSION_MATRIX = {
     canApproveShiftSwaps:        { roles: [M.MANAGER],                                       terminal: false },
     canRequestShiftSwap:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
     canViewTeamCalendar:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
-    canViewTeamMeeting:          { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
+    canViewTeamMeeting:          { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
 
     // ── Reservierungen ────────────────────────────────────────────────────────
     // Aushilfe sieht keine Reservierungen

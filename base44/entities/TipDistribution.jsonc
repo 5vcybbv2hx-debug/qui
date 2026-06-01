@@ -1,0 +1,56 @@
+{
+  "name": "TipDistribution",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Trinkgeldverteilung"
+    },
+    "total_revenue": {
+      "type": "number",
+      "description": "Tagesumsatz"
+    },
+    "tip_percentage": {
+      "type": "number",
+      "description": "Trinkgeldprozentsatz vom Umsatz"
+    },
+    "total_tips": {
+      "type": "number",
+      "description": "Gesamttrinkgeldbetrag"
+    },
+    "employee_count": {
+      "type": "number",
+      "description": "Anzahl der Mitarbeiter"
+    },
+    "tip_per_person": {
+      "type": "number",
+      "description": "Trinkgeld pro Mitarbeiter"
+    },
+    "distribution_details": {
+      "type": "array",
+      "description": "Detaillierte Verteilung pro Mitarbeiter",
+      "items": {
+        "type": "object",
+        "properties": {
+          "employee_id": {
+            "type": "string"
+          },
+          "employee_name": {
+            "type": "string"
+          },
+          "tip_amount": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "date",
+    "total_revenue",
+    "tip_percentage",
+    "total_tips",
+    "employee_count"
+  ]
+}

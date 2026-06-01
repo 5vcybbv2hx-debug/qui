@@ -59,7 +59,7 @@ export const PAGE_PERMISSIONS = {
     ShiftSwaps:              'canRequestShiftSwap',
     Permissions:             'canEditEmployeePermissions',
     PermissionsNew:          'canEditEmployeePermissions',
-    TeamMeeting:             'canViewShifts',
+    TeamMeeting:             'canViewTeamMeeting',
     Stationsplan:            'canViewShifts',
 
     // ── Analytik ───────────────────────────────────────────────────────────────

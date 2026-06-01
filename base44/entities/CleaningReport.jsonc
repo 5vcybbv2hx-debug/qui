@@ -1,0 +1,56 @@
+{
+  "name": "CleaningReport",
+  "type": "object",
+  "properties": {
+    "week_start": {
+      "type": "string",
+      "format": "date",
+      "description": "Wochenanfang"
+    },
+    "week_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Wochenende"
+    },
+    "report_data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "task_title": {
+            "type": "string"
+          },
+          "area": {
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string"
+          },
+          "completed_by": {
+            "type": "string"
+          },
+          "completed_at": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Berichtsdaten"
+    },
+    "total_tasks": {
+      "type": "number",
+      "description": "Gesamtanzahl Aufgaben"
+    },
+    "completed_tasks": {
+      "type": "number",
+      "description": "Erledigte Aufgaben"
+    },
+    "completion_rate": {
+      "type": "number",
+      "description": "Erledigungsrate in Prozent"
+    }
+  },
+  "required": [
+    "week_start",
+    "week_end"
+  ]
+}

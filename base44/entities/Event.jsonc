@@ -1,0 +1,49 @@
+{
+  "name": "Event",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Event-Titel"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Startzeit (HH:MM)"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "Party",
+        "Livemusik",
+        "Special Event"
+      ],
+      "description": "Art des Events"
+    },
+    "expected_guests": {
+      "type": "number",
+      "description": "Erwartete G\u00e4steanzahl"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "geplant",
+        "best\u00e4tigt"
+      ],
+      "default": "geplant",
+      "description": "Status"
+    }
+  },
+  "required": [
+    "title",
+    "date"
+  ]
+}

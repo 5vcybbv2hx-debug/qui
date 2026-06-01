@@ -1,0 +1,68 @@
+{
+  "name": "VacationRequest",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Startdatum"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Enddatum"
+    },
+    "days_count": {
+      "type": "number",
+      "description": "Anzahl der Urlaubstage"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Urlaub",
+        "Krankheit",
+        "Sonderurlaub"
+      ],
+      "default": "Urlaub",
+      "description": "Art des Antrags"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "beantragt",
+        "genehmigt",
+        "abgelehnt"
+      ],
+      "default": "beantragt",
+      "description": "Status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen/Begr\u00fcndung"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Genehmigt/Abgelehnt von"
+    },
+    "approved_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Datum der Entscheidung"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "start_date",
+    "end_date",
+    "days_count"
+  ]
+}

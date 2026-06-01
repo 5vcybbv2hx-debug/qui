@@ -1,0 +1,35 @@
+{
+  "name": "ShiftRequirement",
+  "type": "object",
+  "properties": {
+    "day_of_week": {
+      "type": "string",
+      "enum": [
+        "Montag",
+        "Dienstag",
+        "Mittwoch",
+        "Donnerstag",
+        "Freitag",
+        "Samstag",
+        "Sonntag"
+      ],
+      "description": "Wochentag"
+    },
+    "shift_type": {
+      "type": "string",
+      "description": "Schichttyp"
+    },
+    "required_employees": {
+      "type": "number",
+      "description": "Ben\u00f6tigte Mitarbeiteranzahl"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": [
+    "day_of_week",
+    "required_employees"
+  ]
+}

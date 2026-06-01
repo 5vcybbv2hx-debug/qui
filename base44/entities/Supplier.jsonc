@@ -1,0 +1,130 @@
+{
+  "name": "Supplier",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name des Lieferanten/Kontakts"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Lieferant",
+        "Steuerberater",
+        "Anwalt",
+        "Versicherung",
+        "Sonstiger Kontakt"
+      ],
+      "default": "Lieferant",
+      "description": "Art des Kontakts"
+    },
+    "street": {
+      "type": "string",
+      "description": "Stra\u00dfe und Hausnummer"
+    },
+    "postal_code": {
+      "type": "string",
+      "description": "Postleitzahl"
+    },
+    "city": {
+      "type": "string",
+      "description": "Stadt"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-Mail Adresse"
+    },
+    "website": {
+      "type": "string",
+      "description": "Webseite"
+    },
+    "opening_hours": {
+      "type": "string",
+      "description": "\u00d6ffnungszeiten (Freitext)"
+    },
+    "branches": {
+      "type": "array",
+      "description": "Niederlassungen",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name der Niederlassung"
+          },
+          "street": {
+            "type": "string"
+          },
+          "postal_code": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "opening_hours": {
+            "type": "string",
+            "description": "\u00d6ffnungszeiten der Niederlassung"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "contacts": {
+      "type": "array",
+      "description": "Ansprechpartner",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name des Ansprechpartners"
+          },
+          "role": {
+            "type": "string",
+            "description": "Funktion/Position"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Telefonnummer"
+          },
+          "mobile": {
+            "type": "string",
+            "description": "Mobilnummer"
+          },
+          "email": {
+            "type": "string",
+            "description": "E-Mail"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notizen"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Allgemeine Notizen"
+    },
+    "order": {
+      "type": "number",
+      "description": "Sortierreihenfolge"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

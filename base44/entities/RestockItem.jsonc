@@ -1,0 +1,44 @@
+{
+  "name": "RestockItem",
+  "type": "object",
+  "properties": {
+    "barcode": {
+      "type": "string",
+      "description": "Barcode des Artikels"
+    },
+    "article_name": {
+      "type": "string",
+      "description": "Artikelname"
+    },
+    "article_image_url": {
+      "type": "string",
+      "description": "Bild-URL des Artikels"
+    },
+    "quantity": {
+      "type": "number",
+      "description": "Aufgef\u00fcllte Menge"
+    },
+    "restocked_by": {
+      "type": "string",
+      "description": "Aufgef\u00fcllt von"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum"
+    },
+    "time": {
+      "type": "string",
+      "description": "Uhrzeit"
+    },
+    "is_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Wurde aufgef\u00fcllt"
+    }
+  },
+  "required": [
+    "barcode",
+    "quantity"
+  ]
+}

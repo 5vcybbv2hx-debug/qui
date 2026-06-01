@@ -1,0 +1,126 @@
+{
+  "name": "TimeEntry",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Arbeitsdatum"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Startzeit (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Endzeit (HH:MM)"
+    },
+    "break_minutes": {
+      "type": "number",
+      "default": 0,
+      "description": "Pausenzeit in Minuten"
+    },
+    "total_hours": {
+      "type": "number",
+      "description": "Gesamtstunden (berechnet)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "entwurf",
+        "eingereicht",
+        "genehmigt"
+      ],
+      "default": "entwurf",
+      "description": "Status des Eintrags"
+    },
+    "employee_confirmed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vom Mitarbeiter best\u00e4tigt"
+    },
+    "employee_confirmed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Mitarbeiterbest\u00e4tigung"
+    },
+    "manager_approved_by": {
+      "type": "string",
+      "description": "Manager der genehmigt hat"
+    },
+    "manager_approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Genehmigung"
+    },
+    "arbzg_warning": {
+      "type": "string",
+      "description": "ArbZG Warnung falls vorhanden"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "date",
+    "start_time",
+    "end_time"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.employee_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.employee_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.employee_id": "{{user.id}}",
+          "data.status": {
+            "$ne": "genehmigt"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

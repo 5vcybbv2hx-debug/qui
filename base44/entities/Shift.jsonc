@@ -1,0 +1,54 @@
+{
+  "name": "Shift",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Schicht"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Startzeit (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Endzeit (HH:MM)"
+    },
+    "shift_type": {
+      "type": "string",
+      "description": "Art der Schicht"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Anmerkungen"
+    },
+    "color": {
+      "type": "string",
+      "description": "Farbe der Schicht f\u00fcr Kalendarstellung"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": false,
+      "description": "Teil einer wiederkehrenden Schichtserie"
+    },
+    "recurring_series_id": {
+      "type": "string",
+      "description": "ID der Schichtserie"
+    }
+  },
+  "required": [
+    "employee_id",
+    "date",
+    "start_time",
+    "end_time"
+  ]
+}

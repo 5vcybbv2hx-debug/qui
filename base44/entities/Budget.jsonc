@@ -1,0 +1,36 @@
+{
+  "name": "Budget",
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": [
+        "Einkauf",
+        "Personal",
+        "Marketing",
+        "Wartung",
+        "Events",
+        "Sonstiges"
+      ],
+      "description": "Budgetkategorie"
+    },
+    "month": {
+      "type": "string",
+      "format": "date",
+      "description": "Monat (YYYY-MM-DD)"
+    },
+    "planned_amount": {
+      "type": "number",
+      "description": "Geplantes Budget in Euro"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    }
+  },
+  "required": [
+    "category",
+    "month",
+    "planned_amount"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "TeamMeetingSchedule",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Teamsitzung"
+    },
+    "time": {
+      "type": "string",
+      "description": "Uhrzeit der Teamsitzung (HH:MM)"
+    },
+    "location": {
+      "type": "string",
+      "description": "Ort der Teamsitzung (optional)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen zur Teamsitzung"
+    }
+  },
+  "required": [
+    "date",
+    "time"
+  ]
+}

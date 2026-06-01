@@ -1,0 +1,52 @@
+{
+  "name": "UnavailabilityRequest",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID des Mitarbeiters"
+    },
+    "employee_name": {
+      "type": "string",
+      "description": "Name des Mitarbeiters"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum (Beginn)"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum (Ende, optional f\u00fcr mehrt\u00e4gig)"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Grund (z.B. Arzttermin, Urlaub geplant, Pr\u00fcfung)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ausstehend",
+        "genehmigt",
+        "abgelehnt"
+      ],
+      "default": "ausstehend",
+      "description": "Status der Anfrage"
+    },
+    "response_note": {
+      "type": "string",
+      "description": "Notiz des Managers"
+    },
+    "responded_by": {
+      "type": "string",
+      "description": "Genehmigt/Abgelehnt von"
+    }
+  },
+  "required": [
+    "employee_id",
+    "employee_name",
+    "date",
+    "reason"
+  ]
+}

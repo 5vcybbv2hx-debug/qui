@@ -1,0 +1,35 @@
+{
+  "name": "OnboardingTask",
+  "type": "object",
+  "properties": {
+    "category": {
+      "type": "string",
+      "description": "Kategorie (z.B. Kasse und EC Ger\u00e4te)"
+    },
+    "category_icon": {
+      "type": "string",
+      "description": "Icon f\u00fcr die Kategorie (Emoji)"
+    },
+    "title": {
+      "type": "string",
+      "description": "Aufgabentitel"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detaillierte Beschreibung"
+    },
+    "order": {
+      "type": "number",
+      "description": "Sortierreihenfolge innerhalb der Kategorie"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Aktiv/deaktiviert"
+    }
+  },
+  "required": [
+    "category",
+    "title"
+  ]
+}

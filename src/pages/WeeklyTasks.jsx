@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { format, getDay } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Check, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
@@ -177,7 +178,8 @@ export default function WeeklyTasks() {
 
     const { data: allTasks = [] } = useQuery({
         queryKey: ['weekly-cleaning-tasks'],
-        queryFn: () => base44.entities.CleaningTask.filter({ area: 'Wochentagsaufgaben', is_active: true })
+        queryFn: () => base44.entities.CleaningTask.filter({ area: 'Wochentagsaufgaben', is_active: true }),
+        staleTime: STALE.SLOW,
     });
 
     const { data: shifts = [] } = useQuery({
@@ -190,7 +192,8 @@ export default function WeeklyTasks() {
     });
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
 
     // Filter tasks relevant for this week (biweekly logic)

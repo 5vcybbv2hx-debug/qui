@@ -3,7 +3,8 @@
  * Shows entries with status 'eingereicht', allows approve / edit.
  */
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -105,7 +106,7 @@ export default function TimeApprovalPanel() {
     queryFn: () => base44.entities.TimeEntry.list('-date', 300),
     refetchInterval: 60000,
     refetchOnWindowFocus: true,
-    staleTime: 30000,
+    staleTime: STALE.FAST,
   });
 
   // Ausstehend: status='eingereicht' ODER employee_confirmed=true — noch nicht vom Manager genehmigt

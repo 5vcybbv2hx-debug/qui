@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import ProvisionalShiftEntry from '@/components/provisional/ProvisionalShiftEntry';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,7 +36,7 @@ export default function MyShiftsPage() {
             return base44.entities.Shift.filter({ employee_id: employee.id, date_gte: from, date_lte: to }, 'date', 200);
         },
         enabled: !!employee,
-        staleTime: 2 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     // Berechne nächste 14 Tage
@@ -114,7 +115,7 @@ export default function MyShiftsPage() {
             const in7days = format(addDays(new Date(), 6), 'yyyy-MM-dd');
             return base44.entities.Shift.filter({ date_gte: today, date_lte: in7days }, 'date', 100);
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     if (!employee) {

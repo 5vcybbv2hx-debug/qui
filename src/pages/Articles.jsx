@@ -2,7 +2,8 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { Plus, Search, Camera, CheckSquare, Package, GripVertical } from 'lucide-react';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { useIsMobile } from '@/components/utils/useIsMobile';
@@ -55,14 +56,14 @@ export default function Articles() {
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
         queryFn: () => base44.entities.Article.list('order'),
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
         gcTime: 10 * 60 * 1000
     });
 
     const { data: categories = [] } = useQuery({
         queryKey: ['article-categories'],
         queryFn: () => base44.entities.ArticleCategory.list('order'),
-        staleTime: 30 * 60 * 1000,
+        staleTime: STALE.SLOW,
         gcTime: 60 * 60 * 1000
     });
 

@@ -103,7 +103,7 @@ export default function MonthNavigator({ value, onChange }) {
                                     onClick={() => !isFuture && selectMonth(i)}
                                     disabled={isFuture}
                                     className={`h-9 rounded-xl text-xs font-medium transition-all
-                                        ${isSelected ? 'bg-blue-600 text-white' : ''}
+                                        ${isSelected ? 'bg-blue-600 text-foreground' : ''}
                                         ${!isSelected && isToday ? 'border border-blue-500/50 text-blue-400' : ''}
                                         ${!isSelected && !isToday && !isFuture ? 'hover:bg-accent text-foreground' : ''}
                                         ${isFuture ? 'opacity-25 cursor-not-allowed text-muted-foreground' : ''}

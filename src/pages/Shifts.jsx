@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Users, Filter, X, ExternalLink, Download } from 'lucide-react';
@@ -43,7 +44,8 @@ export default function Shifts() {
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
 
     // Desktop: load current month ±1 week
@@ -74,18 +76,15 @@ export default function Shifts() {
     const { handleError } = useErrorHandler();
 
     const { data: reservations = [] } = useQuery({
-        queryKey: ['reservations'],
-        queryFn: () => {
-            const from = format(subWeeks(new Date(), 1), 'yyyy-MM-dd');
-            const to = format(addWeeks(new Date(), 8), 'yyyy-MM-dd');
-            return base44.entities.Reservation.filter({ date_gte: from, date_lte: to }, 'date', 200);
-        },
-        staleTime: 5 * 60 * 1000,
+        queryKey: ['reservations', 'active'],
+        queryFn: () => base44.entities.Reservation.filter({ is_archived: false }, '-date', 200),
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: requirements = [] } = useQuery({
         queryKey: ['shift-requirements'],
-        queryFn: () => base44.entities.ShiftRequirement.list()
+        queryFn: () => base44.entities.ShiftRequirement.list(),
+        staleTime: STALE.SLOW,
     });
 
     const { data: vacationRequests = [] } = useQuery({
@@ -97,6 +96,7 @@ export default function Shifts() {
     const { data: swapRequests = [] } = useQuery({
         queryKey: ['shift-swap-requests-open'],
         queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date', 100),
+        staleTime: STALE.MEDIUM,
     });
 
     const createMutation = useMutation({

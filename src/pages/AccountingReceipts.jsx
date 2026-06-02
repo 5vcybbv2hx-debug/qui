@@ -123,7 +123,7 @@ function ReceiptForm({ data, onChange }) {
                             className={cn(
                                 'py-2 px-2 rounded-xl border text-xs font-semibold transition-all text-center',
                                 data.assignment === opt.key
-                                    ? 'bg-blue-600 border-blue-600 text-white'
+                                    ? 'bg-blue-500/20 border-blue-500/40 text-blue-400'
                                     : 'border-border text-muted-foreground hover:border-blue-500/50'
                             )}
                         >
@@ -282,7 +282,7 @@ Gib folgende Felder zurück:
                     </div>
                     <div className="flex items-center gap-2">
                         <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
-                        <Button size="sm" onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="bg-blue-600 hover:bg-blue-700 text-white gap-1">
+                        <Button size="sm" onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="bg-blue-500 hover:bg-blue-600 text-primary-foreground gap-1">
                             <Camera className="w-4 h-4" />
                         </Button>
                     </div>
@@ -309,7 +309,7 @@ Gib folgende Felder zurück:
                     <Card className="p-12 text-center text-muted-foreground bg-card border-border">
                         <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         <p className="font-medium">Keine Belege für diesen Monat</p>
-                        <Button onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white">
+                        <Button onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="mt-4 bg-blue-500 hover:bg-blue-600 text-primary-foreground">
                             <Camera className="w-4 h-4 mr-2" />Beleg scannen
                         </Button>
                     </Card>
@@ -362,7 +362,7 @@ Gib folgende Felder zurück:
             {/* FAB */}
             <button
                 onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }}
-                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
+                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-primary-foreground rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
             >
                 <Camera className="w-6 h-6" />
             </button>
@@ -452,7 +452,7 @@ Gib folgende Felder zurück:
                                 <Button variant="outline" onClick={() => { setAiResult(null); setEditData({}); }} className="flex-1">
                                     Neu scannen
                                 </Button>
-                                <Button onClick={() => createMutation.mutate({ ...editData, status: 'pruefung', assignment: null })} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={createMutation.isPending}>
+                                <Button onClick={() => createMutation.mutate({ ...editData, status: 'pruefung', assignment: null })} className="flex-1 bg-blue-500 hover:bg-blue-600 text-primary-foreground" disabled={createMutation.isPending}>
                                     {createMutation.isPending ? 'Speichern…' : 'Zur Prüfung speichern'}
                                 </Button>
                             </div>
@@ -492,7 +492,7 @@ Gib folgende Felder zurück:
 
                         {/* LEFT: Belegbild — groß */}
                         {selected.file_url && (
-                            <div className="md:w-1/2 bg-black/20 flex items-start justify-center overflow-y-auto p-3 md:p-4 shrink-0 max-h-[45vh] md:max-h-none">
+                            <div className="md:w-1/2 bg-card/50 flex items-start justify-center overflow-y-auto p-3 md:p-4 shrink-0 max-h-[45vh] md:max-h-none">
                                 <div className="relative w-full">
                                     <img
                                         src={selected.file_url}
@@ -564,7 +564,7 @@ Gib folgende Felder zurück:
                                                     className={cn(
                                                         'py-3 px-2 rounded-xl border text-xs font-semibold transition-all text-center',
                                                         editData.assignment === opt.key
-                                                            ? 'bg-green-600 border-green-600 text-white'
+                                                            ? 'bg-green-500/20 border-green-500/40 text-green-400'
                                                             : 'border-border text-muted-foreground hover:border-green-500/50 hover:bg-green-500/5'
                                                     )}>
                                                     {opt.label}
@@ -613,7 +613,7 @@ Gib folgende Felder zurück:
                                 <Button variant="outline" onClick={() => setDetailOpen(false)} className="flex-1">Abbrechen</Button>
                                 <Button
                                     onClick={handleFreigabe}
-                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
+                                    className="flex-1 bg-green-500 hover:bg-green-600 text-primary-foreground gap-2"
                                     disabled={updateMutation.isPending || !editData.assignment}
                                 >
                                     <ShieldCheck className="w-4 h-4" />
@@ -624,7 +624,7 @@ Gib folgende Felder zurück:
                             <>
                                 <Button variant="outline" onClick={() => setDetailOpen(false)} className="flex-1">Abbrechen</Button>
                                 <Button onClick={() => updateMutation.mutate({ id: selected.id, data: editData })}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-primary-foreground"
                                     disabled={updateMutation.isPending}>
                                     {updateMutation.isPending ? 'Speichern…' : 'Speichern'}
                                 </Button>

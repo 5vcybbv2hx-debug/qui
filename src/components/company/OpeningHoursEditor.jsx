@@ -40,7 +40,7 @@ export default function OpeningHoursEditor({ value, onChange }) {
                 const day = hours[key] || { ...DEFAULT_HOURS };
                 return (
                     <div key={key} className="flex items-center gap-3">
-                        <span className="w-24 text-sm text-slate-300 shrink-0">{label}</span>
+                        <span className="w-24 text-sm text-foreground/75 shrink-0">{label}</span>
                         <Switch
                             checked={!!day.open}
                             onCheckedChange={(v) => update(key, 'open', v)}
@@ -51,18 +51,18 @@ export default function OpeningHoursEditor({ value, onChange }) {
                                     type="time"
                                     value={day.from}
                                     onChange={(e) => update(key, 'from', e.target.value)}
-                                    className="bg-slate-900 border-slate-600 text-white w-32"
+                                    className="bg-background border-border/70 text-foreground w-32"
                                 />
-                                <span className="text-slate-400 text-sm">–</span>
+                                <span className="text-muted-foreground text-sm">–</span>
                                 <Input
                                     type="time"
                                     value={day.to}
                                     onChange={(e) => update(key, 'to', e.target.value)}
-                                    className="bg-slate-900 border-slate-600 text-white w-32"
+                                    className="bg-background border-border/70 text-foreground w-32"
                                 />
                             </div>
                         ) : (
-                            <span className="text-sm text-slate-500 italic">Geschlossen</span>
+                            <span className="text-sm text-foreground0 italic">Geschlossen</span>
                         )}
                     </div>
                 );

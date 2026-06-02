@@ -242,10 +242,10 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                     <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                                <GraduationCap className="w-6 h-6 text-slate-900" />
+                                <GraduationCap className="w-6 h-6 text-foreground" />
                             </div>
                             <div className="flex-1">
-                                <p className="font-semibold text-white">Einarbeitung läuft</p>
+                                <p className="font-semibold text-foreground">Einarbeitung läuft</p>
                                 <p className="text-sm text-amber-300">{onboardingProgress}% abgeschlossen</p>
                             </div>
                             <Button onClick={() => setShowOnboardingTour(true)} variant="outline" size="sm" className="border-amber-500 text-amber-400 hover:bg-amber-500/10">
@@ -289,7 +289,7 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
                 {/* Clock In/Out */}
                 <Card className="p-6 bg-card border-border">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl"
+                        <div className="w-16 h-16 rounded-full flex items-center justify-center text-foreground font-bold text-2xl"
                             style={{ backgroundColor: currentEmployee.color || '#64748b' }}>
                             {currentEmployee.name?.charAt(0).toUpperCase()}
                         </div>

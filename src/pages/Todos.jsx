@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { Plus, CheckSquare, Tag, Search, X, ListChecks, Trash2, Archive, CheckCheck, Square, FolderInput } from 'lucide-react';
@@ -48,17 +49,20 @@ export default function Todos() {
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
 
     const { data: user } = useQuery({
         queryKey: ['user'],
-        queryFn: () => base44.auth.me()
+        queryFn: () => base44.auth.me(),
+        staleTime: STALE.SLOW,
     });
 
     const { data: dbCategories = [] } = useQuery({
         queryKey: ['todo-categories'],
         queryFn: () => base44.entities.TodoCategory.list('name'),
+        staleTime: STALE.SLOW,
     });
     const DEFAULT_CATEGORIES = ['Einkauf', 'Reparatur', 'Event', 'Bar', 'Lager', 'Küche', 'Sonstiges'];
     const allAvailableCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCategories.map(c => c.name)]));

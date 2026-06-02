@@ -147,7 +147,7 @@ export default function AccountingCashbook() {
                     </div>
                     <div className="flex items-center gap-2">
                         <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
-                        <Button size="sm" onClick={() => setModalOpen(true)} className="bg-amber-600 hover:bg-amber-700 text-white h-8 gap-1">
+                        <Button size="sm" onClick={() => setModalOpen(true)} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground h-8 gap-1">
                             <Plus className="w-4 h-4" />
                         </Button>
                     </div>
@@ -187,7 +187,7 @@ export default function AccountingCashbook() {
                                 </div>
                             </div>
                             <Button size="sm" onClick={importAllPending}
-                                className="bg-amber-600 hover:bg-amber-700 text-white h-8 text-xs gap-1 shrink-0">
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground h-8 text-xs gap-1 shrink-0">
                                 <ArrowDownToLine className="w-3.5 h-3.5" /> Alle importieren
                             </Button>
                         </div>
@@ -232,7 +232,7 @@ export default function AccountingCashbook() {
                     <Card className="p-12 text-center text-muted-foreground bg-card border-border">
                         <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         <p>Keine Buchungen für diesen Monat</p>
-                        <Button onClick={() => setModalOpen(true)} className="mt-4 bg-amber-600 hover:bg-amber-700 text-white">
+                        <Button onClick={() => setModalOpen(true)} className="mt-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground">
                             <Plus className="w-4 h-4 mr-2" />Erste Buchung
                         </Button>
                     </Card>
@@ -292,7 +292,7 @@ export default function AccountingCashbook() {
             {/* FAB */}
             <button
                 onClick={() => setModalOpen(true)}
-                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-amber-600 hover:bg-amber-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
+                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
             >
                 <Plus className="w-6 h-6" />
             </button>
@@ -365,7 +365,7 @@ export default function AccountingCashbook() {
                         </div>
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
-                            <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700 text-white" disabled={createMutation.isPending}>
+                            <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground" disabled={createMutation.isPending}>
                                 {createMutation.isPending ? 'Speichern...' : 'Buchen'}
                             </Button>
                         </div>

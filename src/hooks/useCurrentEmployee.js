@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { base44 } from '@/api/base44Client';
 
 /**
@@ -16,6 +17,6 @@ export function useCurrentEmployee() {
             });
             return employees[0] || null;
         },
-        staleTime: 5 * 60 * 1000 // 5 minutes
+        staleTime: STALE.MEDIUM // 5 minutes
     });
 }

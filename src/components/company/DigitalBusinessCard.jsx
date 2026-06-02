@@ -130,8 +130,8 @@ END:VCARD`;
 
     if (!companyInfo?.company_name) {
         return (
-            <Card className="bg-slate-800/50 border-slate-700">
-                <CardContent className="py-12 text-center text-slate-400">
+            <Card className="bg-card/50 border-border">
+                <CardContent className="py-12 text-center text-muted-foreground">
                     Bitte zuerst Firmendaten eingeben
                 </CardContent>
             </Card>
@@ -141,10 +141,10 @@ END:VCARD`;
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Visitenkarten-Vorschau */}
-            <Card className="bg-gradient-to-br from-slate-800 to-slate-900 border-slate-700">
+            <Card className="bg-gradient-to-br from-card to-background border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">Visitenkarte</CardTitle>
-                    <CardDescription className="text-slate-400">
+                    <CardTitle className="text-foreground">Visitenkarte</CardTitle>
+                    <CardDescription className="text-muted-foreground">
                         So sieht deine digitale Visitenkarte aus
                     </CardDescription>
                 </CardHeader>
@@ -160,30 +160,30 @@ END:VCARD`;
                             </div>
                         )}
                         <div className="text-center mb-6">
-                            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                            <h2 className="text-2xl font-bold text-foreground mb-2">
                                 {companyInfo.company_name}
                             </h2>
                             {companyInfo.description && (
-                                <p className="text-sm text-slate-600">
+                                <p className="text-sm text-muted-foreground">
                                     {companyInfo.description}
                                 </p>
                             )}
                         </div>
                         <div className="space-y-3 text-sm">
                             {companyInfo.phone && (
-                                <div className="flex items-center gap-3 text-slate-700">
+                                <div className="flex items-center gap-3 text-foreground">
                                     <Phone className="w-4 h-4 text-amber-600" />
                                     <span>{companyInfo.phone}</span>
                                 </div>
                             )}
                             {companyInfo.email && (
-                                <div className="flex items-center gap-3 text-slate-700">
+                                <div className="flex items-center gap-3 text-foreground">
                                     <Mail className="w-4 h-4 text-amber-600" />
                                     <span>{companyInfo.email}</span>
                                 </div>
                             )}
                             {(companyInfo.street || companyInfo.city) && (
-                                <div className="flex items-start gap-3 text-slate-700">
+                                <div className="flex items-start gap-3 text-foreground">
                                     <MapPin className="w-4 h-4 text-amber-600 mt-0.5" />
                                     <span>
                                         {companyInfo.street && <>{companyInfo.street}<br /></>}
@@ -192,7 +192,7 @@ END:VCARD`;
                                 </div>
                             )}
                             {companyInfo.website && (
-                                <div className="flex items-center gap-3 text-slate-700">
+                                <div className="flex items-center gap-3 text-foreground">
                                     <Globe className="w-4 h-4 text-amber-600" />
                                     <span>{companyInfo.website}</span>
                                 </div>
@@ -200,8 +200,8 @@ END:VCARD`;
                         </div>
                         {formatOpeningHours(companyInfo.opening_hours) && (
                             <div className="mt-4 pt-4 border-t border-slate-200">
-                                <p className="text-xs text-slate-600 font-medium mb-1">Öffnungszeiten:</p>
-                                <p className="text-xs text-slate-700 whitespace-pre-line">
+                                <p className="text-xs text-muted-foreground font-medium mb-1">Öffnungszeiten:</p>
+                                <p className="text-xs text-foreground whitespace-pre-line">
                                     {formatOpeningHours(companyInfo.opening_hours)}
                                 </p>
                             </div>
@@ -219,7 +219,7 @@ END:VCARD`;
                         <Button
                             onClick={shareCard}
                             variant="outline"
-                            className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-800"
+                            className="flex-1 border-border/70 text-foreground/75 hover:bg-card"
                         >
                             <Share2 className="w-4 h-4 mr-2" />
                             Teilen
@@ -229,10 +229,10 @@ END:VCARD`;
             </Card>
 
             {/* QR-Code */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card/50 border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">QR-Code</CardTitle>
-                    <CardDescription className="text-slate-400">
+                    <CardTitle className="text-foreground">QR-Code</CardTitle>
+                    <CardDescription className="text-muted-foreground">
                         Zum Scannen mit dem Smartphone
                     </CardDescription>
                 </CardHeader>
@@ -247,21 +247,21 @@ END:VCARD`;
                                 />
                             </div>
                             <div className="text-center">
-                                <p className="text-sm text-slate-400 mb-4">
+                                <p className="text-sm text-muted-foreground mb-4">
                                     Scannen, um Kontaktdaten direkt ins Adressbuch zu speichern
                                 </p>
                                 <Button
                                     onClick={downloadQRCode}
                                     variant="outline"
-                                    className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
+                                    className="w-full border-border/70 text-foreground/75 hover:bg-card"
                                 >
                                     <Download className="w-4 h-4 mr-2" />
                                     QR-Code herunterladen
                                 </Button>
                             </div>
-                            <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
-                                <h4 className="text-sm font-medium text-white mb-2">💡 Verwendung:</h4>
-                                <ul className="text-xs text-slate-400 space-y-1">
+                            <div className="bg-background/50 rounded-lg p-4 border border-border">
+                                <h4 className="text-sm font-medium text-foreground mb-2">💡 Verwendung:</h4>
+                                <ul className="text-xs text-muted-foreground space-y-1">
                                     <li>• Drucke den QR-Code auf Flyer oder Plakate</li>
                                     <li>• Zeige ihn auf einem Tablet in der Bar</li>
                                     <li>• Füge ihn in E-Mail-Signaturen ein</li>
@@ -270,7 +270,7 @@ END:VCARD`;
                             </div>
                         </div>
                     ) : (
-                        <div className="py-12 text-center text-slate-400">
+                        <div className="py-12 text-center text-muted-foreground">
                             QR-Code wird generiert...
                         </div>
                     )}

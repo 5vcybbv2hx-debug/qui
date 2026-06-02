@@ -157,7 +157,7 @@ export default function MobileTeamCalendarView({
                                             />
                                         ))}
                                         {events.length > 3 && (
-                                            <div className="w-1 h-1 rounded-full bg-slate-500" />
+                                            <div className="w-1 h-1 rounded-full bg-secondary" />
                                         )}
                                     </div>
                                 )}

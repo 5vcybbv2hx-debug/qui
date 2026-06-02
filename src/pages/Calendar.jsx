@@ -471,6 +471,7 @@ export default function CalendarPage() {
                             reservations={reservations}
                             events={events}
                             employees={employees}
+                            wcMatches={wcMatches}
                             onShiftSwap={(shift) => { setShiftSwapData(shift); setSelectedDayDetail(null); }}
                         />
 

@@ -204,6 +204,7 @@ export default function TeamCalendar() {
                 employees={employees}
                 maintenanceTasks={maintenanceTasks}
                 reservations={reservations}
+                wcMatches={wcMatches}
             />
 
             {/* Shift Swap Modal */}

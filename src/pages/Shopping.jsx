@@ -33,7 +33,7 @@ const getSupplierColor = (index) => {
 };
 
 const statusConfig = {
-    'offen': { label: 'Offen', icon: Clock, color: 'text-slate-500' },
+    'offen': { label: 'Offen', icon: Clock, color: 'text-foreground0' },
     'bestellt': { label: 'Bestellt', icon: Package, color: 'text-blue-600' },
     'erhalten': { label: 'Erhalten', icon: Check, color: 'text-green-600' }
 };
@@ -309,8 +309,8 @@ export default function Shopping() {
                 <div className="flex flex-col gap-4 mb-8">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl font-bold text-white tracking-tight">Einkaufsliste</h1>
-                            <p className="text-slate-400 text-sm mt-1">
+                            <h1 className="text-2xl font-bold text-foreground tracking-tight">Einkaufsliste</h1>
+                            <p className="text-muted-foreground text-sm mt-1">
                                 {openItems.length} offene Artikel
                             </p>
                         </div>
@@ -318,7 +318,7 @@ export default function Shopping() {
                             <div className="flex gap-2 flex-wrap">
                                 <Button
                                     onClick={() => setArticlePickerOpen(true)}
-                                    className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold"
+                                    className="bg-amber-500 hover:bg-amber-600 text-foreground font-bold"
                                 >
                                     <Search className="w-4 h-4 mr-2" />
                                     Artikel hinzufügen
@@ -334,7 +334,7 @@ export default function Shopping() {
                                 <Button 
                                     onClick={() => setScannerOpen(true)}
                                     variant="outline"
-                                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                                    className="border-border/70 text-foreground/75 hover:bg-card"
                                 >
                                     <Camera className="w-4 h-4 mr-2" />
                                     Scannen
@@ -342,7 +342,7 @@ export default function Shopping() {
                                 <Button 
                                     onClick={() => openModal()}
                                     variant="outline"
-                                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
+                                    className="border-border/70 text-foreground/75 hover:bg-card"
                                 >
                                     <Plus className="w-4 h-4 mr-2" />
                                     Manuell
@@ -373,10 +373,10 @@ export default function Shopping() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-                    <TabsList className={`grid w-full mb-6 bg-slate-900/50 border border-slate-800/50`} style={{ gridTemplateColumns: `repeat(${activeSuppliers.length + 1}, minmax(0, 1fr))` }}>
-                        <TabsTrigger value="alle" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">Alle</TabsTrigger>
+                    <TabsList className={`grid w-full mb-6 bg-background/50 border border-border/50`} style={{ gridTemplateColumns: `repeat(${activeSuppliers.length + 1}, minmax(0, 1fr))` }}>
+                        <TabsTrigger value="alle" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">Alle</TabsTrigger>
                         {activeSuppliers.map(supplier => (
-                            <TabsTrigger key={supplier.id} value={supplier.name} className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-slate-900">
+                            <TabsTrigger key={supplier.id} value={supplier.name} className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-foreground">
                                 {supplier.name}
                             </TabsTrigger>
                         ))}
@@ -421,7 +421,7 @@ export default function Shopping() {
                                                     status: 'offen',
                                                     notes: 'Mindestbestand unterschritten'
                                                 })}
-                                                className="h-10 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm transition-colors flex-shrink-0"
+                                                className="h-10 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-foreground font-bold text-sm transition-colors flex-shrink-0"
                                             >
                                                 + Übernehmen
                                             </button>
@@ -434,12 +434,12 @@ export default function Shopping() {
                         {/* Open Items */}
                         {openItems.length > 0 && (
                             <div>
-                                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                                     Offen ({openItems.length})
                                 </h3>
                                 <div className="grid gap-3">
                                     {openItems.map(item => (
-                                        <Card key={item.id} className="p-4 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl hover:border-amber-500/30 transition-all">
+                                        <Card key={item.id} className="p-4 bg-background/50 border-border/50 backdrop-blur-xl hover:border-amber-500/30 transition-all">
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-start gap-3 mb-2">
@@ -454,7 +454,7 @@ export default function Shopping() {
                                                             ) : null;
                                                         })()}
                                                         <div className="flex-1">
-                                                           <h4 className="font-semibold text-white">
+                                                           <h4 className="font-semibold text-foreground">
                                                                {item.item_name}
                                                            </h4>
                                                            <Badge className={cn("text-xs mt-1 border", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
@@ -462,12 +462,12 @@ export default function Shopping() {
                                                            </Badge>
                                                         </div>
                                                         </div>
-                                                        <div className="text-sm text-slate-300 mb-3">
+                                                        <div className="text-sm text-foreground/75 mb-3">
                                                         <span className="font-semibold">{item.quantity}</span>
                                                         {item.unit && <span> {item.unit}</span>}
                                                         </div>
                                                         {item.notes && (
-                                                        <p className="text-sm text-slate-400 italic">{item.notes}</p>
+                                                        <p className="text-sm text-muted-foreground italic">{item.notes}</p>
                                                         )}
                                                 </div>
                                                 <div className="flex gap-2">
@@ -475,7 +475,7 @@ export default function Shopping() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleStatusChange(item, 'bestellt')}
-                                                        className="text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 border-0"
+                                                        className="text-foreground bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 border-0"
                                                     >
                                                         <Package className="w-4 h-4" />
                                                     </Button>
@@ -483,7 +483,7 @@ export default function Shopping() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => openModal(item)}
-                                                        className="border-slate-700/50 text-slate-300 hover:bg-slate-800/50"
+                                                        className="border-border/50 text-foreground/75 hover:bg-card/50"
                                                     >
                                                         Bearbeiten
                                                     </Button>
@@ -506,7 +506,7 @@ export default function Shopping() {
                         {/* Ordered Items */}
                         {orderedItems.length > 0 && (
                             <div>
-                                <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                                     Bestellt ({orderedItems.length})
                                 </h3>
                                 <div className="grid gap-3">
@@ -516,14 +516,14 @@ export default function Shopping() {
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <Package className="w-4 h-4 text-blue-400" />
-                                                        <h4 className="font-semibold text-white">
+                                                        <h4 className="font-semibold text-foreground">
                                                             {item.item_name}
                                                         </h4>
                                                         <Badge className={cn("text-xs border", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
                                                             {item.category}
                                                         </Badge>
                                                     </div>
-                                                    <div className="text-sm text-slate-300">
+                                                    <div className="text-sm text-foreground/75">
                                                         <span className="font-semibold">{item.quantity}</span>
                                                         {item.unit && <span> {item.unit}</span>}
                                                     </div>
@@ -533,7 +533,7 @@ export default function Shopping() {
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleStatusChange(item, 'erhalten')}
-                                                        className="text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 border-0"
+                                                        className="text-foreground bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 border-0"
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </Button>
@@ -557,14 +557,14 @@ export default function Shopping() {
                         {receivedItems.length > 0 && (
                             <div>
                                 <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                                         Erhalten ({receivedItems.length})
                                     </h3>
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={handleDeleteReceived}
-                                        className="text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-0"
+                                        className="text-foreground bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-0"
                                     >
                                         <Trash2 className="w-4 h-4 mr-2" />
                                         Alle löschen
@@ -577,14 +577,14 @@ export default function Shopping() {
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <Check className="w-4 h-4 text-green-400" />
-                                                        <h4 className="font-medium text-slate-400 line-through">
+                                                        <h4 className="font-medium text-muted-foreground line-through">
                                                             {item.item_name}
                                                         </h4>
                                                         <Badge className={cn("text-xs border", getSupplierColor(suppliers.findIndex(s => s.name === item.category)))}>
                                                             {item.category}
                                                         </Badge>
                                                     </div>
-                                                    <div className="text-sm text-slate-400">
+                                                    <div className="text-sm text-muted-foreground">
                                                         <span className="font-semibold">{item.quantity}</span>
                                                         {item.unit && <span> {item.unit}</span>}
                                                     </div>
@@ -592,7 +592,7 @@ export default function Shopping() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="text-slate-500 hover:text-red-400 hover:bg-red-500/10"
+                                                    className="text-foreground0 hover:text-red-400 hover:bg-red-500/10"
                                                     onClick={() => handleDelete(item.id)}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -605,10 +605,10 @@ export default function Shopping() {
                         )}
 
                         {filteredItems.length === 0 && (
-                            <Card className="p-12 bg-slate-900/50 border-slate-800/50 backdrop-blur-xl">
-                                <div className="text-center text-slate-400">
+                            <Card className="p-12 bg-background/50 border-border/50 backdrop-blur-xl">
+                                <div className="text-center text-muted-foreground">
                                     <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                                    <p className="text-lg font-medium text-white">Keine Artikel</p>
+                                    <p className="text-lg font-medium text-foreground">Keine Artikel</p>
                                     <p className="text-sm mt-1">Füge Artikel zur Einkaufsliste hinzu</p>
                                 </div>
                             </Card>
@@ -714,7 +714,7 @@ export default function Shopping() {
                                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900">
+                                <Button type="submit" className="flex-1 bg-card hover:bg-background">
                                     {selectedItem ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>

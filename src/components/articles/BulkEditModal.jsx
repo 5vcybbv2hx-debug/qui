@@ -85,7 +85,7 @@ export default function BulkEditModal({ open, onClose, selectedArticles, onClear
                 </DialogHeader>
 
                 {/* Selected Articles */}
-                <div className="flex flex-wrap gap-2 p-3 bg-slate-100 rounded-lg max-h-32 overflow-y-auto">
+                <div className="flex flex-wrap gap-2 p-3 bg-secondary/50 rounded-lg max-h-32 overflow-y-auto">
                     {selectedArticles.map(article => (
                         <Badge key={article.id} variant="secondary">
                             {article.name}
@@ -151,7 +151,7 @@ export default function BulkEditModal({ open, onClose, selectedArticles, onClear
                                 onChange={(e) => setNewSupplier(e.target.value)}
                                 placeholder="z.B. C+C, Metro..."
                             />
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-foreground0">
                                 Der Lieferant wird zu allen ausgewählten Artikeln hinzugefügt
                             </p>
                         </div>

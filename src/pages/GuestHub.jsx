@@ -87,7 +87,7 @@ export default function GuestHub() {
     });
 
     // ── Data queries ─────────────────────────────────────────────────────────
-    const { data: activeReservations = [], isLoading: activeLoading } = useReservations();
+    const { data: activeReservations = [], isLoading: activeLoading, isError: reservationsError } = useReservations();
     const { data: archivedReservations = [] } = useArchivedReservations();
     const allReservations = useMemo(() => [...activeReservations, ...archivedReservations], [activeReservations, archivedReservations]);
     
@@ -224,6 +224,12 @@ export default function GuestHub() {
     };
 
     if (!permissions.canViewReservations) return <PermissionDenied message="Keine Berechtigung." />;
+
+    if (reservationsError) return (
+        <div className="min-h-screen bg-background px-4 py-6">
+            <ErrorState text="Reservierungen konnten nicht geladen werden." retry={() => window.location.reload()} />
+        </div>
+    );
 
     if (activeLoading) return (
         <div className="min-h-screen bg-background pb-24 md:pb-8 px-4 pt-4 space-y-3">

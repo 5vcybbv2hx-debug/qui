@@ -98,6 +98,8 @@ import StorageLocationScan from './pages/StorageLocationScan';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import BusinessCard from './pages/BusinessCard';
+import ShiftAnalytics from './pages/ShiftAnalytics';
+import WeeklyTasks from './pages/WeeklyTasks';
 import WorldCupSchedule from './pages/WorldCupSchedule';
 
 // Special pages (manual imports — non-standard routing)
@@ -168,6 +170,8 @@ const CORE_PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "BusinessCard": BusinessCard,
+    "ShiftAnalytics": ShiftAnalytics,
+    "WeeklyTasks": WeeklyTasks,
     "WorldCupSchedule": WorldCupSchedule,
 };
 

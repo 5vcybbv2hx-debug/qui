@@ -104,7 +104,7 @@ export default function AccountingDebitors() {
                     </div>
                     <div className="flex items-center gap-2">
                         <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
-                        <Button size="sm" onClick={() => setModalOpen(true)} className="bg-green-600 hover:bg-green-700 text-white gap-1 h-8">
+                        <Button size="sm" onClick={() => setModalOpen(true)} className="bg-green-500 hover:bg-green-600 text-primary-foreground gap-1 h-8">
                             <Plus className="w-4 h-4" /> Rechnung
                         </Button>
                     </div>
@@ -143,7 +143,7 @@ export default function AccountingDebitors() {
                     <Card className="p-12 text-center text-muted-foreground bg-card border-border">
                         <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
                         <p>Keine Ausgangsrechnungen</p>
-                        <Button onClick={() => setModalOpen(true)} className="mt-4 bg-green-600 hover:bg-green-700 text-white">
+                        <Button onClick={() => setModalOpen(true)} className="mt-4 bg-green-500 hover:bg-green-600 text-primary-foreground">
                             <Plus className="w-4 h-4 mr-2" />Rechnung erstellen
                         </Button>
                     </Card>
@@ -217,7 +217,7 @@ export default function AccountingDebitors() {
 
             <button
                 onClick={() => setModalOpen(true)}
-                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
+                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-green-500 hover:bg-green-600 text-primary-foreground rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
             >
                 <Plus className="w-6 h-6" />
             </button>
@@ -269,7 +269,7 @@ export default function AccountingDebitors() {
                         </div>
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
-                            <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white" disabled={createMutation.isPending}>
+                            <Button type="submit" className="flex-1 bg-green-500 hover:bg-green-600 text-primary-foreground" disabled={createMutation.isPending}>
                                 {createMutation.isPending ? 'Speichern...' : 'Erstellen'}
                             </Button>
                         </div>

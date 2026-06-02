@@ -113,7 +113,7 @@ export default function MonthlyReportExport({ isVisible }) {
                             <Button
                                 onClick={() => handleExport('pdf')}
                                 disabled={loading}
-                                className="flex-1 bg-red-600 hover:bg-red-700"
+                                className="flex-1 bg-red-500 hover:bg-red-600"
                             >
                                 {loading ? (
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -125,7 +125,7 @@ export default function MonthlyReportExport({ isVisible }) {
                             <Button
                                 onClick={() => handleExport('csv')}
                                 disabled={loading}
-                                className="flex-1 bg-green-600 hover:bg-green-700"
+                                className="flex-1 bg-green-500 hover:bg-green-600"
                             >
                                 {loading ? (
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

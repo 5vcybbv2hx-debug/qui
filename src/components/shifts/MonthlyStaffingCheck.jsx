@@ -51,7 +51,7 @@ export default function MonthlyStaffingCheck() {
             <Button 
                 variant="outline" 
                 onClick={() => setModalOpen(true)}
-                className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                className="border-border/70 hover:bg-secondary text-foreground/75"
             >
                 <Calendar className="w-4 h-4 mr-2" />
                 Monatsanalyse
@@ -113,7 +113,7 @@ export default function MonthlyStaffingCheck() {
                         {/* Employee List */}
                         <div className="space-y-2">
                             {isLoading ? (
-                                <p className="text-center text-slate-500 py-8">Lädt...</p>
+                                <p className="text-center text-muted-foreground py-8">Lädt...</p>
                             ) : (
                                 stats.map(emp => (
                                     <Card 

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { format, parseISO, addDays } from 'date-fns';
 import { Plus, Download, Search, Calendar } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -46,7 +47,7 @@ export default function Reservations() {
     const { data: tables = [] } = useQuery({
         queryKey: ['tables'],
         queryFn: () => base44.entities.Table.list(),
-        staleTime: 2 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
     // Run lifecycle processing once after data loads (idempotent)

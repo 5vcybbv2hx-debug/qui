@@ -241,7 +241,7 @@ export default function AccountingExport() {
                                 <h3 className="font-semibold text-foreground text-sm">Daten vorab laden</h3>
                                 <p className="text-xs text-muted-foreground mt-0.5">Klick hier, um alle Daten zu laden, bevor du den Export startest</p>
                             </div>
-                            <Button onClick={() => setReadyToLoad(true)} className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
+                            <Button onClick={() => setReadyToLoad(true)} className="bg-purple-500 hover:bg-purple-600 text-primary-foreground gap-2">
                                 <Download className="w-4 h-4" /> Daten laden
                             </Button>
                         </div>
@@ -267,7 +267,7 @@ export default function AccountingExport() {
                                 <p className="text-xs text-muted-foreground">Exportiere... {exportProgress}%</p>
                             </div>
                         )}
-                        <Button onClick={runFullExport} disabled={isExporting} className="w-full mt-3 bg-purple-600 hover:bg-purple-700 text-white gap-2">
+                        <Button onClick={runFullExport} disabled={isExporting} className="w-full mt-3 bg-purple-500 hover:bg-purple-600 text-primary-foreground gap-2">
                             {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             {isExporting ? 'Exportiere...' : 'Alle Dateien herunterladen'}
                         </Button>

@@ -5,7 +5,8 @@
  */
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { UserCheck, Clock, AlertTriangle, X, CheckCircle2, Loader2 } from 'lucide-react';
@@ -27,7 +28,7 @@ export default function BulkClockInPanel({ todayShifts, employees, isManager, cu
         queryKey: ['clock-entries-today'],
         queryFn: () => base44.entities.ClockEntry.list('-clock_in', 200),
         enabled: isManager,
-        staleTime: 30000
+        staleTime: STALE.FAST
     });
 
     const alreadyClockedInIds = useMemo(() => {

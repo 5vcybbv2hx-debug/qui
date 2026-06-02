@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -16,7 +17,7 @@ export default function NotificationSettings() {
     const { data: currentUser } = useQuery({
         queryKey: ['user'],
         queryFn: () => base44.auth.me(),
-        staleTime: 10 * 60 * 1000
+        staleTime: STALE.SLOW
     });
 
     const { data: settings } = useQuery({

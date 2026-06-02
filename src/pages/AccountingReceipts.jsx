@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -166,7 +167,7 @@ export default function AccountingReceipts() {
     const { data: receipts = [] } = useQuery({
         queryKey: ['accounting-receipts'],
         queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
-        staleTime: 2 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     const createMutation = useMutation({

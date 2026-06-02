@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Calendar, Clock, Users, AlertTriangle, TrendingUp } from 'lucide-react';
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,8 @@ export default function ShiftAnalytics() {
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
 
     const { data: allShifts = [] } = useQuery({
@@ -28,7 +30,7 @@ export default function ShiftAnalytics() {
             const to = format(endOfMonth(new Date()), 'yyyy-MM-dd');
             return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, '-date', 500);
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.SLOW,
     });
 
     const weekStart = startOfWeek(selectedWeek, { locale: de, weekStartsOn: 1 });

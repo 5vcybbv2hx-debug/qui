@@ -297,7 +297,7 @@ export default function AccountingDashboard() {
 
                 {/* Schnellnavigation */}
                 <div>
-                    <h2 className="font-semibold text-foreground mb-3 text-sm uppercase tracking-wide text-muted-foreground">Bereiche</h2>
+                    <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Schnellzugriff</h2>
                     <div className="grid grid-cols-2 gap-2">
                         {[
                             { label: 'Kassenbuch', icon: BookOpen, href: '/AccountingCashbook', color: 'text-amber-400', bg: 'bg-amber-500/10' },
@@ -311,11 +311,14 @@ export default function AccountingDashboard() {
                             { label: 'Monatsabschluss', icon: Calendar, href: '/AccountingMonthlyClosing', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
                         ].map(item => (
                             <Link key={item.href} to={item.href}>
-                                <Card className="p-4 bg-card border-border hover:border-primary/30 hover:bg-accent/30 active:scale-[0.98] transition-all cursor-pointer group">
-                                    <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform', item.bg)}>
-                                        <item.icon className={cn('w-5 h-5', item.color)} />
+                                <Card className="p-3.5 bg-card border-border hover:border-primary/30 hover:bg-accent/30 active:scale-[0.98] transition-all cursor-pointer group">
+                                    <div className="flex items-center justify-between mb-2.5">
+                                        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform', item.bg)}>
+                                            <item.icon className={cn('w-4 h-4', item.color)} />
+                                        </div>
+                                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-muted-foreground/70 transition-colors" />
                                     </div>
-                                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                                    <p className="text-xs font-semibold text-foreground leading-snug">{item.label}</p>
                                 </Card>
                             </Link>
                         ))}

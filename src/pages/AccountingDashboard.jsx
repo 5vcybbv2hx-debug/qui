@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -73,7 +74,7 @@ export default function AccountingDashboard() {
             const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
             return base44.entities.CashbookEntry.filter({ date_gte: from }, '-date', 500);
         },
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: receipts = [] } = useQuery({
@@ -82,7 +83,7 @@ export default function AccountingDashboard() {
             const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
             return base44.entities.AccountingReceipt.filter({ receipt_date_gte: from }, '-receipt_date', 500);
         },
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: creditorInvoices = [] } = useQuery({
@@ -91,7 +92,7 @@ export default function AccountingDashboard() {
             const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
             return base44.entities.CreditorInvoice.filter({ invoice_date_gte: from }, '-invoice_date', 300);
         },
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: debitorInvoices = [] } = useQuery({
@@ -100,7 +101,7 @@ export default function AccountingDashboard() {
             const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
             return base44.entities.DebitorInvoice.filter({ invoice_date_gte: from }, '-invoice_date', 300);
         },
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: dailyRevenues = [] } = useQuery({
@@ -109,31 +110,31 @@ export default function AccountingDashboard() {
             const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
             return base44.entities.DailyRevenue.filter({ date_gte: from }, '-date', 365);
         },
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: closings = [] } = useQuery({
         queryKey: ['monthly-closings'],
         queryFn: () => base44.entities.MonthlyClosing.list('-year'),
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: recurringExpenses = [] } = useQuery({
         queryKey: ['recurring-expenses'],
         queryFn: () => base44.entities.RecurringExpense.list('title'),
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: recurringOccurrences = [] } = useQuery({
         queryKey: ['recurring-expense-occurrences'],
         queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month'),
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: liabilities = [] } = useQuery({
         queryKey: ['liabilities'],
         queryFn: () => base44.entities.Liability.list('-due_date'),
-        staleTime: 5 * 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const stats = useMemo(() => {

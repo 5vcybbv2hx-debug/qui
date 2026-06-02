@@ -146,7 +146,7 @@ export default function TeamCalendarExport({ shifts = [], vacations = [], holida
                 variant="outline"
                 onClick={generateCSV}
                 disabled={exporting}
-                className="border-slate-600 text-slate-300 gap-2"
+                className="border-border/70 text-foreground/75 gap-2"
                 title="Als CSV exportieren"
             >
                 <FileJson className="w-4 h-4" />
@@ -156,7 +156,7 @@ export default function TeamCalendarExport({ shifts = [], vacations = [], holida
                 variant="outline"
                 onClick={generatePDF}
                 disabled={exporting}
-                className="border-slate-600 text-slate-300 gap-2"
+                className="border-border/70 text-foreground/75 gap-2"
                 title="Als PDF exportieren"
             >
                 <FileText className="w-4 h-4" />

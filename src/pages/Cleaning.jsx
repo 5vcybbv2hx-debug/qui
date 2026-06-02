@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
@@ -83,7 +84,7 @@ export default function Cleaning() {
     const { data: allTasks = [], isLoading, isError: tasksError, error: tasksErrorObj } = useQuery({
         queryKey: ['cleaning'],
         queryFn: () => base44.entities.CleaningTask.filter({ is_active: true }, 'area', 200),
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
     const { handleError } = useErrorHandler();
 
@@ -100,7 +101,7 @@ export default function Cleaning() {
     const { data: allAreas = [] } = useQuery({
         queryKey: ['cleaning-areas'],
         queryFn: () => base44.entities.CleaningArea.list('order'),
-        staleTime: 30 * 60 * 1000,
+        staleTime: STALE.SLOW,
     });
 
     const { data: shifts = [] } = useQuery({
@@ -109,7 +110,7 @@ export default function Cleaning() {
             const today = format(new Date(), 'yyyy-MM-dd');
             return base44.entities.Shift.filter({ date: today }, 'start_time', 50);
         },
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
 
@@ -117,7 +118,7 @@ export default function Cleaning() {
     const { data: reports = [] } = useQuery({
         queryKey: ['cleaning-reports'],
         queryFn: () => base44.entities.CleaningReport.list('-created_date', 20),
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
     // Filtere saisonale Bereiche (April-Oktober)

@@ -56,12 +56,12 @@ export default function UnavailabilityManager() {
         <div className="space-y-6">
             {/* Ausstehend */}
             <div>
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                     <Clock className="w-4 h-4 text-yellow-400" />
                     Wünsche ausstehend ({pending.length})
                 </h3>
                 {pending.length === 0 ? (
-                    <p className="text-sm text-slate-500 text-center py-4">Keine ausstehenden Wunschtage</p>
+                    <p className="text-sm text-foreground0 text-center py-4">Keine ausstehenden Wunschtage</p>
                 ) : (
                     <div className="space-y-2">
                         {pending.map(req => (
@@ -70,23 +70,23 @@ export default function UnavailabilityManager() {
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <p className="font-semibold text-white text-sm">{getFullName(req)}</p>
+                                            <p className="font-semibold text-foreground text-sm">{getFullName(req)}</p>
                                             <Badge className="bg-yellow-600/20 text-yellow-400 border-yellow-600/30 text-xs">Ausstehend</Badge>
                                         </div>
                                         <p className="text-sm text-amber-300 font-medium">
                                             {format(parseISO(req.date), 'EEE, dd. MMM yyyy', { locale: de })}
                                             {req.end_date && req.end_date !== req.date && (
-                                                <span className="text-slate-400"> – {format(parseISO(req.end_date), 'dd. MMM', { locale: de })}</span>
+                                                <span className="text-muted-foreground"> – {format(parseISO(req.end_date), 'dd. MMM', { locale: de })}</span>
                                             )}
                                         </p>
-                                        <p className="text-sm text-slate-300 mt-1">{req.reason}</p>
+                                        <p className="text-sm text-foreground/75 mt-1">{req.reason}</p>
                                     </div>
                                     <div className="flex gap-2 shrink-0">
-                                        <Button size="sm" className="bg-green-700 hover:bg-green-600 text-white gap-1 text-xs px-2"
+                                        <Button size="sm" className="bg-green-700 hover:bg-green-600 text-foreground gap-1 text-xs px-2"
                                             onClick={e => { e.stopPropagation(); updateMutation.mutate({ id: req.id, status: 'genehmigt', note: '' }); }}>
                                             <CheckCircle2 className="w-3.5 h-3.5" /> Einplanen
                                         </Button>
-                                        <Button size="sm" className="bg-red-700 hover:bg-red-600 text-white gap-1 text-xs px-2"
+                                        <Button size="sm" className="bg-red-700 hover:bg-red-600 text-foreground gap-1 text-xs px-2"
                                             onClick={e => { e.stopPropagation(); setSelectedReq(req); setResponseNote(''); }}>
                                             <XCircle className="w-3.5 h-3.5" /> Ablehnen
                                         </Button>
@@ -101,18 +101,18 @@ export default function UnavailabilityManager() {
             {/* Entschieden */}
             {decided.length > 0 && (
                 <div>
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Bereits entschieden</h3>
+                    <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3">Bereits entschieden</h3>
                     <div className="space-y-2">
                         {decided.slice(0, 10).map(req => (
-                            <Card key={req.id} className="p-3 bg-slate-900 border-slate-800 opacity-75">
+                            <Card key={req.id} className="p-3 bg-background border-border opacity-75">
                                 <div className="flex items-center gap-3">
                                     {req.status === 'genehmigt'
                                         ? <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
                                         : <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                                     }
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-slate-300">{getFullName(req)} – {format(parseISO(req.date), 'dd. MMM', { locale: de })}</p>
-                                        <p className="text-xs text-slate-500 truncate">{req.reason}</p>
+                                        <p className="text-sm font-medium text-foreground/75">{getFullName(req)} – {format(parseISO(req.date), 'dd. MMM', { locale: de })}</p>
+                                        <p className="text-xs text-foreground0 truncate">{req.reason}</p>
                                     </div>
                                     <Badge className={req.status === 'genehmigt'
                                         ? 'bg-green-600/20 text-green-400 border-green-600/30 text-xs'
@@ -134,15 +134,15 @@ export default function UnavailabilityManager() {
                     </DialogHeader>
                     {selectedReq && (
                         <div className="space-y-4 mt-2">
-                            <div className="p-4 bg-slate-800 rounded-lg space-y-1">
-                                <p className="font-semibold text-white">{getFullName(selectedReq)}</p>
+                            <div className="p-4 bg-card rounded-lg space-y-1">
+                                <p className="font-semibold text-foreground">{getFullName(selectedReq)}</p>
                                 <p className="text-amber-400 text-sm font-medium">
                                     {format(parseISO(selectedReq.date), 'EEE, dd. MMM yyyy', { locale: de })}
                                     {selectedReq.end_date && selectedReq.end_date !== selectedReq.date && (
                                         <span> – {format(parseISO(selectedReq.end_date), 'dd. MMM', { locale: de })}</span>
                                     )}
                                 </p>
-                                <p className="text-slate-300 text-sm">{selectedReq.reason}</p>
+                                <p className="text-foreground/75 text-sm">{selectedReq.reason}</p>
                             </div>
                             <div className="space-y-2">
                                 <Label className="flex items-center gap-1"><MessageSquare className="w-4 h-4" /> Notiz (optional)</Label>

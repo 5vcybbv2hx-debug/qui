@@ -299,7 +299,7 @@ export default function AccountingBank() {
                         <Card className="p-8 text-center text-muted-foreground col-span-2 border-dashed border-border">
                             <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
                             <p className="text-sm font-medium">Noch keine Bankkonten</p>
-                            <Button onClick={() => setShowAddAccount(true)} size="sm" className="mt-3 bg-blue-600 hover:bg-blue-700 text-white">
+                            <Button onClick={() => setShowAddAccount(true)} size="sm" className="mt-3 bg-blue-500 hover:bg-blue-600 text-primary-foreground">
                                 <Plus className="w-4 h-4 mr-1" /> Konto hinzufügen
                             </Button>
                         </Card>
@@ -315,7 +315,7 @@ export default function AccountingBank() {
                                 <p className="text-xs text-muted-foreground mt-0.5">CSV-Export aus deinem Online-Banking (Sparkasse, Volksbank, DKB, N26 …)</p>
                             </div>
                             <label className="cursor-pointer">
-                                <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 pointer-events-none">
+                                <Button size="sm" className="bg-blue-500 hover:bg-blue-600 text-primary-foreground gap-1.5 pointer-events-none">
                                     {importing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                     CSV hochladen
                                 </Button>
@@ -337,7 +337,7 @@ export default function AccountingBank() {
                                 <Button size="sm" variant="outline" onClick={() => setImportPreview(null)}>
                                     <X className="w-4 h-4" />
                                 </Button>
-                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white gap-1"
+                                <Button size="sm" className="bg-green-500 hover:bg-green-600 text-primary-foreground gap-1"
                                     onClick={() => bulkCreateTransactions.mutate(importPreview.rows)}
                                     disabled={bulkCreateTransactions.isPending}>
                                     {bulkCreateTransactions.isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -477,7 +477,7 @@ export default function AccountingBank() {
                         <Button variant="outline" onClick={() => setShowAddAccount(false)} className="flex-1">Abbrechen</Button>
                         <Button
                             onClick={() => createAccount.mutate({ ...accountForm, current_balance: parseFloat(accountForm.current_balance) || null })}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-primary-foreground"
                             disabled={!accountForm.name || !accountForm.bank_name || createAccount.isPending}
                         >
                             {createAccount.isPending ? 'Speichern…' : 'Konto speichern'}

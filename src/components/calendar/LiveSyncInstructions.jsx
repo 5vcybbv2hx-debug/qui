@@ -48,13 +48,13 @@ export default function LiveSyncInstructions() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Kalender-URL</label>
+                        <label className="text-sm font-medium text-foreground">Kalender-URL</label>
                         <div className="flex gap-2">
                             <input
                                 type="text"
                                 value={calendarUrl}
                                 readOnly
-                                className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-600"
+                                className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 text-muted-foreground"
                             />
                             <Button
                                 variant="outline"
@@ -73,11 +73,11 @@ export default function LiveSyncInstructions() {
                         <Card className="p-4 border-slate-200">
                             <div className="flex items-center gap-2 mb-3">
                                 <div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center">
-                                    <span className="text-white font-bold text-sm">G</span>
+                                    <span className="text-foreground font-bold text-sm">G</span>
                                 </div>
                                 <h4 className="font-semibold text-slate-800">Google Kalender</h4>
                             </div>
-                            <ol className="text-sm text-slate-600 space-y-2 list-decimal list-inside">
+                            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                                 <li>Öffne <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1">Google Kalender <ExternalLink className="w-3 h-3" /></a></li>
                                 <li>Klicke auf das <strong>+</strong> neben "Andere Kalender"</li>
                                 <li>Wähle <strong>"Per URL hinzufügen"</strong></li>
@@ -88,12 +88,12 @@ export default function LiveSyncInstructions() {
                         {/* Apple Calendar */}
                         <Card className="p-4 border-slate-200">
                             <div className="flex items-center gap-2 mb-3">
-                                <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center">
-                                    <span className="text-white font-bold text-sm"></span>
+                                <div className="w-8 h-8 rounded bg-card flex items-center justify-center">
+                                    <span className="text-foreground font-bold text-sm"></span>
                                 </div>
                                 <h4 className="font-semibold text-slate-800">Apple Kalender</h4>
                             </div>
-                            <ol className="text-sm text-slate-600 space-y-2 list-decimal list-inside">
+                            <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                                 <li>Öffne die <strong>Kalender App</strong> auf Mac/iPhone</li>
                                 <li>Gehe zu <strong>Ablage → Neues Kalenderabonnement</strong> (Mac) oder <strong>Einstellungen → Accounts → Account hinzufügen</strong> (iPhone)</li>
                                 <li>Füge die obige URL ein</li>
@@ -102,7 +102,7 @@ export default function LiveSyncInstructions() {
                         </Card>
                     </div>
 
-                    <div className="bg-slate-50 rounded-lg p-4 text-sm text-slate-600">
+                    <div className="bg-slate-50 rounded-lg p-4 text-sm text-muted-foreground">
                         <p className="font-medium text-slate-800 mb-2">Was wird synchronisiert?</p>
                         <ul className="space-y-1 list-disc list-inside">
                             <li><strong>Schichten:</strong> Alle geplanten Mitarbeiter-Schichten</li>

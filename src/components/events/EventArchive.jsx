@@ -19,7 +19,7 @@ const eventTypeColors = {
     'DJ-Night': 'bg-blue-100 text-blue-700 border-blue-200',
     'Special Event': 'bg-amber-100 text-amber-700 border-amber-200',
     'Private Feier': 'bg-green-100 text-green-700 border-green-200',
-    'Sonstiges': 'bg-slate-100 text-slate-700 border-slate-200'
+    'Sonstiges': 'bg-secondary/50 text-foreground border-slate-200'
 };
 
 export default function EventArchive({ events, onEdit, onDelete }) {
@@ -45,14 +45,14 @@ export default function EventArchive({ events, onEdit, onDelete }) {
         <div className="space-y-4">
             {Object.entries(groupedEvents).map(([monthKey, monthEvents]) => (
                 <div key={monthKey}>
-                    <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 px-1">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
                         {monthKey}
                     </h3>
                     <div className="space-y-2">
                         {monthEvents.map(event => (
                             <Card 
                                 key={event.id}
-                                className="bg-slate-800 border-slate-700 overflow-hidden"
+                                className="bg-card border-border overflow-hidden"
                             >
                                 <button
                                     onClick={() => setExpandedId(expandedId === event.id ? null : event.id)}
@@ -62,14 +62,14 @@ export default function EventArchive({ events, onEdit, onDelete }) {
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="flex-1 text-left">
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <CardTitle className="text-base text-white">
+                                                    <CardTitle className="text-base text-foreground">
                                                         {event.title}
                                                     </CardTitle>
                                                     <Badge className={eventTypeColors[event.event_type]} variant="outline">
                                                         {event.event_type}
                                                     </Badge>
                                                 </div>
-                                                <p className="text-sm text-slate-400">
+                                                <p className="text-sm text-muted-foreground">
                                                     {formatDateWithDay(event.date)}
                                                 </p>
                                             </div>
@@ -78,9 +78,9 @@ export default function EventArchive({ events, onEdit, onDelete }) {
                                                     {event.status}
                                                 </Badge>
                                                 {expandedId === event.id ? (
-                                                    <ChevronUp className="w-4 h-4 text-slate-400" />
+                                                    <ChevronUp className="w-4 h-4 text-muted-foreground" />
                                                 ) : (
-                                                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                                                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
                                                 )}
                                             </div>
                                         </div>
@@ -88,11 +88,11 @@ export default function EventArchive({ events, onEdit, onDelete }) {
                                 </button>
 
                                 {expandedId === event.id && (
-                                    <CardContent className="pb-4 pt-0 space-y-3 border-t border-slate-700">
+                                    <CardContent className="pb-4 pt-0 space-y-3 border-t border-border">
                                         {event.start_time && (
                                             <div>
-                                                <p className="text-xs text-slate-500 uppercase">Zeit</p>
-                                                <p className="text-sm text-slate-300">
+                                                <p className="text-xs text-foreground0 uppercase">Zeit</p>
+                                                <p className="text-sm text-foreground/75">
                                                     {event.start_time}{event.end_time && ` - ${event.end_time}`}
                                                 </p>
                                             </div>
@@ -100,26 +100,26 @@ export default function EventArchive({ events, onEdit, onDelete }) {
 
                                         {event.description && (
                                             <div>
-                                                <p className="text-xs text-slate-500 uppercase">Beschreibung</p>
-                                                <p className="text-sm text-slate-300">{event.description}</p>
+                                                <p className="text-xs text-foreground0 uppercase">Beschreibung</p>
+                                                <p className="text-sm text-foreground/75">{event.description}</p>
                                             </div>
                                         )}
 
                                         {event.expected_guests && (
                                             <div>
-                                                <p className="text-xs text-slate-500 uppercase">Erwartete Gäste</p>
-                                                <p className="text-sm text-slate-300">{event.expected_guests}</p>
+                                                <p className="text-xs text-foreground0 uppercase">Erwartete Gäste</p>
+                                                <p className="text-sm text-foreground/75">{event.expected_guests}</p>
                                             </div>
                                         )}
 
                                         {event.notes && (
                                             <div>
-                                                <p className="text-xs text-slate-500 uppercase">Notizen</p>
-                                                <p className="text-sm text-slate-300 italic">{event.notes}</p>
+                                                <p className="text-xs text-foreground0 uppercase">Notizen</p>
+                                                <p className="text-sm text-foreground/75 italic">{event.notes}</p>
                                             </div>
                                         )}
 
-                                        <div className="flex gap-2 pt-2 border-t border-slate-700">
+                                        <div className="flex gap-2 pt-2 border-t border-border">
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
@@ -127,7 +127,7 @@ export default function EventArchive({ events, onEdit, onDelete }) {
                                                     e.stopPropagation();
                                                     onEdit(event);
                                                 }}
-                                                className="flex-1 text-slate-300 hover:text-amber-400 hover:bg-amber-500/10"
+                                                className="flex-1 text-foreground/75 hover:text-amber-400 hover:bg-amber-500/10"
                                             >
                                                 <Edit className="w-3 h-3 mr-1" />
                                                 Bearbeiten
@@ -154,8 +154,8 @@ export default function EventArchive({ events, onEdit, onDelete }) {
             ))}
 
             {events.length === 0 && (
-                <Card className="p-8 bg-slate-800 border-slate-700">
-                    <div className="text-center text-slate-400">
+                <Card className="p-8 bg-card border-border">
+                    <div className="text-center text-muted-foreground">
                         <p className="text-sm">Keine archivierten Events vorhanden</p>
                     </div>
                 </Card>

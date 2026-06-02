@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { Plus, Calendar as CalendarIcon, Trash2, Edit, Search, Lightbulb } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,13 +71,13 @@ export default function Events() {
     const { data: allEvents = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('date', 500),
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: allIdeas = [] } = useQuery({
         queryKey: ['eventIdeas'],
         queryFn: () => base44.entities.EventIdea.list('-created_date', 200),
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     const now = new Date();

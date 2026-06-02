@@ -53,14 +53,14 @@ export default function TipCalculator({ open, onOpenChange, date, revenue, staff
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogContent className="bg-card border-border">
                 <DialogHeader>
-                    <DialogTitle className="text-white">Trinkgeld berechnen</DialogTitle>
+                    <DialogTitle className="text-foreground">Trinkgeld berechnen</DialogTitle>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <Label htmlFor="percentage" className="text-slate-300">Trinkgeldprozentsatz (%)</Label>
+                        <Label htmlFor="percentage" className="text-foreground/75">Trinkgeldprozentsatz (%)</Label>
                         <Input 
                             id="percentage"
                             type="number" 
@@ -69,7 +69,7 @@ export default function TipCalculator({ open, onOpenChange, date, revenue, staff
                             max="100"
                             value={tipPercentage}
                             onChange={(e) => setTipPercentage(e.target.value)}
-                            className="bg-slate-700 border-slate-600 text-white mt-1"
+                            className="bg-secondary border-border/70 text-foreground mt-1"
                         />
                     </div>
 

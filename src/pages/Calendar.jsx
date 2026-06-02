@@ -313,6 +313,7 @@ export default function CalendarPage() {
                             requirements={requirements}
                             vacationRequests={vacationRequests}
                             unavailabilityRequests={unavailabilityRequests}
+                            wcMatches={wcMatches}
                             onAddShift={handleAddShift}
                             onSelectShift={handleSelectShift}
                             onShiftMove={handleShiftMove}

@@ -90,33 +90,33 @@ export default function ArticleStatisticsDashboard({ articles = [] }) {
     <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 text-sm">Gesamtumsatz</p>
-                <p className="text-3xl font-bold text-white mt-1">{totalRevenue.toFixed(2)} €</p>
+                <p className="text-muted-foreground text-sm">Gesamtumsatz</p>
+                <p className="text-3xl font-bold text-foreground mt-1">{totalRevenue.toFixed(2)} €</p>
               </div>
               <TrendingUp className="w-10 h-10 text-amber-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 text-sm">Gesamtmenge</p>
-                <p className="text-3xl font-bold text-white mt-1">{totalQuantity}</p>
+                <p className="text-muted-foreground text-sm">Gesamtmenge</p>
+                <p className="text-3xl font-bold text-foreground mt-1">{totalQuantity}</p>
               </div>
               <Package className="w-10 h-10 text-cyan-500 opacity-50" />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="pt-6">
             <div>
-              <p className="text-slate-400 text-sm">Durchschnitt pro Artikel</p>
-              <p className="text-3xl font-bold text-white mt-1">{totalQuantity > 0 ? (totalRevenue / totalQuantity).toFixed(2) : 0} €</p>
+              <p className="text-muted-foreground text-sm">Durchschnitt pro Artikel</p>
+              <p className="text-3xl font-bold text-foreground mt-1">{totalQuantity > 0 ? (totalRevenue / totalQuantity).toFixed(2) : 0} €</p>
             </div>
           </CardContent>
         </Card>
@@ -125,9 +125,9 @@ export default function ArticleStatisticsDashboard({ articles = [] }) {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 10 Artikel */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
-            <CardTitle className="text-white">Top 10 Artikel nach Umsatz</CardTitle>
+            <CardTitle className="text-foreground">Top 10 Artikel nach Umsatz</CardTitle>
           </CardHeader>
           <CardContent>
             {topArticles.length > 0 ? (
@@ -141,15 +141,15 @@ export default function ArticleStatisticsDashboard({ articles = [] }) {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-slate-400 text-center py-8">Keine Daten</p>
+              <p className="text-muted-foreground text-center py-8">Keine Daten</p>
             )}
           </CardContent>
         </Card>
 
         {/* Warengruppen Pie Chart */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-card/50 border-border">
           <CardHeader>
-            <CardTitle className="text-white">Umsatz nach Warengruppe</CardTitle>
+            <CardTitle className="text-foreground">Umsatz nach Warengruppe</CardTitle>
           </CardHeader>
           <CardContent>
             {categoryChartData.length > 0 ? (
@@ -173,7 +173,7 @@ export default function ArticleStatisticsDashboard({ articles = [] }) {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-slate-400 text-center py-8">Keine Daten</p>
+              <p className="text-muted-foreground text-center py-8">Keine Daten</p>
             )}
           </CardContent>
         </Card>
@@ -181,55 +181,55 @@ export default function ArticleStatisticsDashboard({ articles = [] }) {
 
       {/* Detaillierte Warengruppen */}
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold text-white">Warengruppen Übersicht</h2>
+        <h2 className="text-2xl font-bold text-foreground">Warengruppen Übersicht</h2>
         {Object.values(groupedData).map(mainGroup => (
-          <Card key={mainGroup.name} className="bg-slate-800/50 border-slate-700">
+          <Card key={mainGroup.name} className="bg-card/50 border-border">
             <div
               onClick={() => setExpandedCategory(expandedCategory === mainGroup.name ? null : mainGroup.name)}
-              className="px-6 py-4 cursor-pointer hover:bg-slate-700/30 transition-colors flex items-center justify-between"
+              className="px-6 py-4 cursor-pointer hover:bg-secondary/30 transition-colors flex items-center justify-between"
             >
               <div className="flex-1">
-                <h3 className="text-lg font-bold text-white">{mainGroup.name}</h3>
+                <h3 className="text-lg font-bold text-foreground">{mainGroup.name}</h3>
                 <div className="flex gap-4 mt-2 text-sm">
-                  <span className="text-slate-400">
+                  <span className="text-muted-foreground">
                     Umsatz: <span className="text-amber-400 font-semibold">{mainGroup.totalRevenue.toFixed(2)} €</span>
                   </span>
-                  <span className="text-slate-400">
+                  <span className="text-muted-foreground">
                     Menge: <span className="text-cyan-400 font-semibold">{mainGroup.totalQuantity}</span>
                   </span>
-                  <span className="text-slate-400">
+                  <span className="text-muted-foreground">
                     Anteil: <span className="text-green-400 font-semibold">{mainGroup.totalPercentage}%</span>
                   </span>
                 </div>
               </div>
               <div className="text-right">
-                <Badge className="bg-amber-600/80 text-white">
+                <Badge className="bg-amber-600/80 text-foreground">
                   {Object.keys(mainGroup.items).length} Gruppen
                 </Badge>
               </div>
             </div>
 
             {expandedCategory === mainGroup.name && (
-              <div className="border-t border-slate-700 divide-y divide-slate-700">
+              <div className="border-t border-border divide-y divide-slate-700">
                 {Object.values(mainGroup.items).map(subGroup => (
-                  <div key={subGroup.name} className="px-6 py-4 bg-slate-900/40">
+                  <div key={subGroup.name} className="px-6 py-4 bg-background/40">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-white">{subGroup.name}</h4>
+                      <h4 className="font-semibold text-foreground">{subGroup.name}</h4>
                       <div className="flex gap-3 text-sm">
-                        <Badge variant="outline" className="text-slate-300 border-slate-600">
+                        <Badge variant="outline" className="text-foreground/75 border-border/70">
                           {subGroup.percentage}%
                         </Badge>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {subGroup.articles.map(article => (
-                        <div key={article.id} className="bg-slate-900 rounded p-3 border border-slate-700/50">
-                          <p className="text-white font-medium text-sm truncate">{article.name}</p>
+                        <div key={article.id} className="bg-background rounded p-3 border border-border/50">
+                          <p className="text-foreground font-medium text-sm truncate">{article.name}</p>
                           <div className="flex justify-between mt-2 text-xs">
-                            <span className="text-slate-400">
+                            <span className="text-muted-foreground">
                               Umsatz: <span className="text-amber-400">{article.revenue?.toFixed(2) || 0} €</span>
                             </span>
-                            <span className="text-slate-400">
+                            <span className="text-muted-foreground">
                               Menge: <span className="text-cyan-400">{article.quantity || 0}</span>
                             </span>
                           </div>

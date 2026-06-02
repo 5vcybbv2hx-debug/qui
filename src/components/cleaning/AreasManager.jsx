@@ -107,17 +107,17 @@ export default function AreasManager({ trigger }) {
                     <div className="space-y-6 mt-4">
                         {/* Bereiche Liste */}
                         <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-slate-700">Vorhandene Bereiche</h3>
+                            <h3 className="text-sm font-semibold text-foreground">Vorhandene Bereiche</h3>
                             <div className="space-y-2 max-h-64 overflow-y-auto">
                                 {areas.length === 0 ? (
-                                    <p className="text-sm text-slate-500 text-center py-4">Noch keine Bereiche vorhanden</p>
+                                    <p className="text-sm text-foreground0 text-center py-4">Noch keine Bereiche vorhanden</p>
                                 ) : (
                                     areas.map((area) => (
                                         <div 
                                             key={area.id}
                                             className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200"
                                         >
-                                            <GripVertical className="w-4 h-4 text-slate-400" />
+                                            <GripVertical className="w-4 h-4 text-muted-foreground" />
                                             <div 
                                                 className="w-4 h-4 rounded-full"
                                                 style={{ backgroundColor: area.color }}
@@ -148,7 +148,7 @@ export default function AreasManager({ trigger }) {
 
                         {/* Neuer Bereich Formular */}
                         <div className="space-y-3 pt-4 border-t border-slate-200">
-                            <h3 className="text-sm font-semibold text-slate-700">
+                            <h3 className="text-sm font-semibold text-foreground">
                                 {editingArea ? 'Bereich bearbeiten' : 'Neuer Bereich'}
                             </h3>
                             <form onSubmit={handleSubmit} className="space-y-4">

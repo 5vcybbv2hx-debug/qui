@@ -242,14 +242,14 @@ ${articlesToPrint.map(article => {
             <Button
                 onClick={() => setOpen(true)}
                 variant="outline"
-                className="border-blue-600 text-white bg-blue-600 hover:bg-blue-700"
+                className="border-blue-600 text-foreground bg-blue-600 hover:bg-blue-700"
             >
                 <Printer className="w-4 h-4 mr-2" />
                 Etiketten drucken
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-slate-800 text-white border-slate-700">
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card text-foreground border-border">
                     <DialogHeader>
                         <DialogTitle>Etiketten drucken (62mm x 29mm)</DialogTitle>
                     </DialogHeader>
@@ -265,7 +265,7 @@ ${articlesToPrint.map(article => {
                         </div>
 
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm text-slate-400">
+                            <p className="text-sm text-muted-foreground">
                                 {selectedArticles.length} von {articles.length} ausgewählt
                             </p>
                             <div className="flex gap-2">
@@ -273,7 +273,7 @@ ${articlesToPrint.map(article => {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setSelectedArticles(articles.map(a => a.id))}
-                                    className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
+                                    className="border-border/70 text-foreground bg-secondary hover:bg-secondary"
                                 >
                                     Alle
                                 </Button>
@@ -281,7 +281,7 @@ ${articlesToPrint.map(article => {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => setSelectedArticles([])}
-                                    className="border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
+                                    className="border-border/70 text-foreground bg-secondary hover:bg-secondary"
                                 >
                                     Keine
                                 </Button>
@@ -297,7 +297,7 @@ ${articlesToPrint.map(article => {
                                         "p-3 rounded-lg cursor-pointer transition-all border-2",
                                         selectedArticles.includes(article.id)
                                             ? "bg-blue-900/30 border-blue-500"
-                                            : "bg-slate-900 border-slate-700 hover:border-slate-600"
+                                            : "bg-background border-border hover:border-border/70"
                                     )}
                                 >
                                     <div className="flex items-center gap-3">
@@ -305,17 +305,17 @@ ${articlesToPrint.map(article => {
                                             "w-5 h-5 rounded border-2 flex items-center justify-center",
                                             selectedArticles.includes(article.id)
                                                 ? "bg-blue-600 border-blue-600"
-                                                : "border-slate-600"
+                                                : "border-border/70"
                                         )}>
                                             {selectedArticles.includes(article.id) && (
-                                                <svg className="w-3 h-3 text-white" fill="none" strokeWidth="2" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-3 h-3 text-foreground" fill="none" strokeWidth="2" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                                 </svg>
                                             )}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-semibold text-white text-sm">{article.name}</p>
-                                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                                            <p className="font-semibold text-foreground text-sm">{article.name}</p>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                                 {article.barcode && <span className="font-mono">{article.barcode}</span>}
                                                 {article.category && <span>• {article.category}</span>}
                                             </div>
@@ -325,11 +325,11 @@ ${articlesToPrint.map(article => {
                             ))}
                         </div>
 
-                        <div className="flex gap-2 pt-4 border-t border-slate-700">
+                        <div className="flex gap-2 pt-4 border-t border-border">
                             <Button
                                 onClick={() => setOpen(false)}
                                 variant="outline"
-                                className="flex-1 border-slate-600 text-white bg-slate-600 hover:bg-slate-700"
+                                className="flex-1 border-border/70 text-foreground bg-secondary hover:bg-secondary"
                             >
                                 Abbrechen
                             </Button>

@@ -260,27 +260,27 @@ export default function Restock() {
              <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Auffülliste</h1>
-                    <p className="text-slate-400 text-sm mt-1">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Auffülliste</h1>
+                    <p className="text-muted-foreground text-sm mt-1">
                         {todayItems.filter(i => !i.is_completed).length} offen · {todayItems.filter(i => i.is_completed).length} erledigt
                     </p>
                 </div>
 
                 {/* Scanner */}
-                <Card className="p-6 bg-slate-800 border-slate-700 shadow-sm mb-6">
+                <Card className="p-6 bg-card border-border shadow-sm mb-6">
                     <form onSubmit={handleBarcodeSubmit} className="space-y-4">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
-                                <Scan className="w-6 h-6 text-slate-300" />
+                            <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                                <Scan className="w-6 h-6 text-foreground/75" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-white">Artikel scannen</h3>
-                                <p className="text-sm text-slate-400">Per Kamera oder Eingabe</p>
+                                <h3 className="font-semibold text-foreground">Artikel scannen</h3>
+                                <p className="text-sm text-muted-foreground">Per Kamera oder Eingabe</p>
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-slate-300">Artikel scannen</Label>
+                            <Label className="text-foreground/75">Artikel scannen</Label>
                             <div className="relative">
                                 <Input
                                     ref={barcodeInputRef}
@@ -291,11 +291,11 @@ export default function Restock() {
                                         setSelectedArticle('');
                                     }}
                                     placeholder="Barcode eingeben oder Artikel suchen..."
-                                    className="text-lg bg-slate-900 border-slate-600 text-white"
+                                    className="text-lg bg-background border-border/70 text-foreground"
                                     autoFocus
                                 />
                                 {barcode && (
-                                    <div className="absolute top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-10">
+                                    <div className="absolute top-full left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-card border border-border/70 rounded-lg shadow-xl z-10">
                                         {(() => {
                                             const matches = articles.filter(a => 
                                                 a.barcode === barcode ||
@@ -305,7 +305,7 @@ export default function Restock() {
                                             
                                             if (matches.length === 0) {
                                                 return (
-                                                    <div className="px-4 py-3 text-center text-slate-400 text-sm">
+                                                    <div className="px-4 py-3 text-center text-muted-foreground text-sm">
                                                         Kein Artikel gefunden
                                                     </div>
                                                 );
@@ -319,10 +319,10 @@ export default function Restock() {
                                                         setSelectedArticle(article.id);
                                                         setBarcode('');
                                                     }}
-                                                    className="w-full px-4 py-2.5 text-left hover:bg-slate-700 border-b border-slate-700 last:border-0 transition-colors"
+                                                    className="w-full px-4 py-2.5 text-left hover:bg-secondary border-b border-border last:border-0 transition-colors"
                                                 >
-                                                    <div className="font-medium text-white">{article.name}</div>
-                                                    <div className="text-xs text-slate-400 mt-0.5">
+                                                    <div className="font-medium text-foreground">{article.name}</div>
+                                                    <div className="text-xs text-muted-foreground mt-0.5">
                                                         {article.category} • {article.barcode}
                                                     </div>
                                                 </button>
@@ -338,7 +338,7 @@ export default function Restock() {
                                 type="button"
                                 variant="outline"
                                 onClick={() => setScannerOpen(true)}
-                                className="border-slate-600 bg-slate-600 hover:bg-slate-700 text-white"
+                                className="border-border/70 bg-secondary hover:bg-secondary text-foreground"
                             >
                                 <Camera className="w-4 h-4 mr-2" />
                                 Kamera
@@ -358,7 +358,7 @@ export default function Restock() {
                 {/* To-Do Liste */}
                 <div>
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-white">
+                        <h2 className="text-lg font-semibold text-foreground">
                             Heutige Auffüllliste
                         </h2>
                         {todayItems.filter(i => i.is_completed).length > 0 && (
@@ -366,7 +366,7 @@ export default function Restock() {
                                 variant="outline"
                                 size="sm"
                                 onClick={handleDeleteCompleted}
-                                className="border-slate-600 bg-slate-600 hover:bg-slate-700 text-white"
+                                className="border-border/70 bg-secondary hover:bg-secondary text-foreground"
                             >
                                 <CheckCheck className="w-4 h-4 mr-2" />
                                 Erledigte löschen
@@ -388,19 +388,19 @@ export default function Restock() {
                                 return Object.entries(groupedItems).map(([category, items]) => (
                                     <div key={category}>
                                         <div className="flex items-center gap-2 mb-2">
-                                            <div className="h-px bg-slate-700 flex-1" />
+                                            <div className="h-px bg-secondary flex-1" />
                                             <h3 className="text-sm font-semibold text-amber-400 px-2">
                                                 {category}
                                             </h3>
-                                            <div className="h-px bg-slate-700 flex-1" />
+                                            <div className="h-px bg-secondary flex-1" />
                                         </div>
                                         <div className="space-y-2">
                                             {items.map(item => (
                                                 <Card 
                                                     key={item.id} 
                                                     className={cn(
-                                                        "p-4 bg-slate-800 border-slate-700 shadow-sm transition-all",
-                                                        item.is_completed && "opacity-50 bg-slate-800/50"
+                                                        "p-4 bg-card border-border shadow-sm transition-all",
+                                                        item.is_completed && "opacity-50 bg-card/50"
                                                     )}
                                                 >
                                                     <div className="flex items-center gap-3">
@@ -410,28 +410,28 @@ export default function Restock() {
                                                                 "w-6 h-6 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
                                                                 item.is_completed 
                                                                     ? "bg-green-600 border-green-600" 
-                                                                    : "border-slate-600 hover:border-green-500"
+                                                                    : "border-border/70 hover:border-green-500"
                                                             )}
                                                         >
-                                                            {item.is_completed && <Check className="w-4 h-4 text-white" />}
+                                                            {item.is_completed && <Check className="w-4 h-4 text-foreground" />}
                                                         </button>
 
                                                         {item.article_image_url && (
                                                             <img 
                                                                 src={item.article_image_url} 
                                                                 alt={item.article_name}
-                                                                className="w-12 h-12 rounded-lg object-cover border border-slate-700"
+                                                                className="w-12 h-12 rounded-lg object-cover border border-border"
                                                             />
                                                         )}
 
                                                         <div className="flex-1 min-w-0">
                                                             <h3 className={cn(
                                                                 "font-medium truncate",
-                                                                item.is_completed ? "text-slate-500 line-through" : "text-white"
+                                                                item.is_completed ? "text-foreground0 line-through" : "text-foreground"
                                                             )}>
                                                                 {item.article_name}
                                                             </h3>
-                                                            <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                                                            <div className="flex items-center gap-2 text-xs text-foreground0 mt-0.5">
                                                                 <button
                                                                     onClick={() => handleQuantityEdit(item)}
                                                                     className="font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1"
@@ -447,7 +447,7 @@ export default function Restock() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="text-slate-500 hover:text-red-500 hover:bg-red-900/20"
+                                                            className="text-foreground0 hover:text-red-500 hover:bg-red-900/20"
                                                             onClick={() => handleDelete(item.id)}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
@@ -461,8 +461,8 @@ export default function Restock() {
                             })()}
                         </div>
                     ) : (
-                        <Card className="p-8 bg-slate-800 border-slate-700 shadow-sm">
-                            <div className="text-center text-slate-500">
+                        <Card className="p-8 bg-card border-border shadow-sm">
+                            <div className="text-center text-foreground0">
                                 <Scan className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                 <p>Noch keine Artikel gescannt</p>
                                 <p className="text-xs mt-1">Scanne Artikel, um sie zur Liste hinzuzufügen</p>

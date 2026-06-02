@@ -138,7 +138,7 @@ export default function ImageEditor({ open, onClose, imageUrl, onSave }) {
                                     className={cn(
                                         'px-3 py-2 rounded-lg border text-sm font-medium transition-all',
                                         aspectRatio === ar.value
-                                            ? 'bg-amber-500 text-slate-900 border-amber-500'
+                                            ? 'bg-amber-500 text-foreground border-amber-500'
                                             : 'border-border text-muted-foreground'
                                     )}
                                 >

@@ -2,7 +2,8 @@
  * useReservations.js
  * React Query hooks for the Reservations feature.
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { useMemo } from 'react';
 import {
     reservationService,
@@ -22,7 +23,7 @@ export function useReservations() {
     return useQuery({
         queryKey: RES_KEYS.active,
         queryFn:  () => reservationService.list(false),
-        staleTime: 2 * 60_000,
+        staleTime: STALE.MEDIUM,
     });
 }
 

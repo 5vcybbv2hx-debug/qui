@@ -12,12 +12,12 @@ import { Plus, Trash2, CheckCircle2, Lightbulb, Edit } from 'lucide-react';
 const statusColors = {
     'Idee': 'bg-blue-100 text-blue-700',
     'geplant': 'bg-amber-100 text-amber-700',
-    'verworfen': 'bg-slate-100 text-slate-700',
+    'verworfen': 'bg-slate-100 text-foreground',
     'umgesetzt': 'bg-green-100 text-green-700'
 };
 
 const priorityColors = {
-    'niedrig': 'text-slate-400',
+    'niedrig': 'text-muted-foreground',
     'mittel': 'text-amber-400',
     'hoch': 'text-orange-400',
     'sehr_hoch': 'text-red-400'
@@ -103,11 +103,11 @@ export default function EventIdeas({
                         placeholder="Idee suchen..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="flex-1 bg-slate-900 border-slate-700"
+                        className="flex-1 bg-background border-border"
                     />
                     <Button
                         onClick={() => openModal()}
-                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs h-10"
+                        className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-foreground text-xs h-10"
                     >
                         <Plus className="w-4 h-4 mr-1" />
                         <span className="hidden sm:inline">Neue Idee</span>
@@ -124,8 +124,8 @@ export default function EventIdeas({
                             className={cn(
                                 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all border',
                                 statusFilter === status
-                                    ? 'bg-blue-500 text-white border-blue-500'
-                                    : 'bg-slate-800 text-slate-300 border-slate-700 hover:border-slate-600'
+                                    ? 'bg-blue-500 text-foreground border-blue-500'
+                                    : 'bg-card text-foreground/75 border-border hover:border-border/70'
                             )}
                         >
                             {status === 'alle' ? 'Alle' : status}
@@ -139,12 +139,12 @@ export default function EventIdeas({
                 {filteredIdeas.map(idea => (
                     <Card 
                         key={idea.id}
-                        className="bg-slate-800 border-slate-700 flex flex-col"
+                        className="bg-card border-border flex flex-col"
                     >
                         <CardHeader className="pb-2">
                             <div className="space-y-2">
                                 <div className="flex items-start justify-between gap-2">
-                                    <CardTitle className="text-base text-white flex-1 line-clamp-2">
+                                    <CardTitle className="text-base text-foreground flex-1 line-clamp-2">
                                         {idea.title}
                                     </CardTitle>
                                     <Badge className={statusColors[idea.status]}>
@@ -152,7 +152,7 @@ export default function EventIdeas({
                                     </Badge>
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <Badge variant="outline" className="bg-slate-700 text-slate-200 border-slate-600 text-xs">
+                                    <Badge variant="outline" className="bg-secondary text-foreground/80 border-border/70 text-xs">
                                         {idea.category}
                                     </Badge>
                                     <div className={cn("text-xs font-semibold", priorityColors[idea.priority])}>
@@ -164,7 +164,7 @@ export default function EventIdeas({
 
                         <CardContent className="flex-1 space-y-3">
                             {idea.description && (
-                                <p className="text-sm text-slate-400 line-clamp-2">
+                                <p className="text-sm text-muted-foreground line-clamp-2">
                                     {idea.description}
                                 </p>
                             )}
@@ -176,12 +176,12 @@ export default function EventIdeas({
                             </div>
 
                             {idea.notes && (
-                                <p className="text-xs text-slate-500 italic">
+                                <p className="text-xs text-foreground0 italic">
                                     {idea.notes}
                                 </p>
                             )}
 
-                            <div className="flex gap-2 pt-2 border-t border-slate-700">
+                            <div className="flex gap-2 pt-2 border-t border-border">
                                 {idea.status !== 'umgesetzt' && (
                                     <Button
                                         size="sm"
@@ -197,7 +197,7 @@ export default function EventIdeas({
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => openModal(idea)}
-                                    className="flex-1 text-slate-300 hover:text-amber-400 hover:bg-amber-500/10 text-xs"
+                                    className="flex-1 text-foreground/75 hover:text-amber-400 hover:bg-amber-500/10 text-xs"
                                 >
                                     <Edit className="w-3 h-3 mr-1" />
                                     <span className="hidden sm:inline">Bearbeiten</span>
@@ -218,8 +218,8 @@ export default function EventIdeas({
             </div>
 
             {filteredIdeas.length === 0 && (
-                <Card className="p-8 bg-slate-800 border-slate-700">
-                    <div className="text-center text-slate-400">
+                <Card className="p-8 bg-card border-border">
+                    <div className="text-center text-muted-foreground">
                         <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
                         <p className="text-sm">Keine Eventideen gefunden</p>
                     </div>
@@ -332,10 +332,10 @@ export default function EventIdeas({
                         </div>
 
                         <div className="flex gap-2 pt-4">
-                            <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800">
+                            <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1 border-border text-foreground/75 hover:bg-card">
                                 Abbrechen
                             </Button>
-                            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white">
+                            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-foreground">
                                 {selectedIdea ? 'Speichern' : 'Hinzufügen'}
                             </Button>
                         </div>

@@ -221,10 +221,10 @@ export default function SalesAnalyticsDashboard() {
         <div className="space-y-6">
             {/* Header with Time Range Selector */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <h2 className="text-2xl font-bold text-white">Verkaufs-Analyse</h2>
+                <h2 className="text-2xl font-bold text-foreground">Verkaufs-Analyse</h2>
                 <div className="flex gap-3">
                     <Select value={timeRange} onValueChange={setTimeRange}>
-                        <SelectTrigger className="w-40 bg-slate-800 border-slate-700 text-white">
+                        <SelectTrigger className="w-40 bg-card border-border text-foreground">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -239,9 +239,9 @@ export default function SalesAnalyticsDashboard() {
             </div>
 
             {/* Filters */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-card/50 border-border">
                 <CardHeader className="pb-3">
-                    <CardTitle className="text-white text-sm flex items-center gap-2">
+                    <CardTitle className="text-foreground text-sm flex items-center gap-2">
                         <Filter className="w-4 h-4" />
                         Filter
                         {activeFiltersCount > 0 && (
@@ -254,9 +254,9 @@ export default function SalesAnalyticsDashboard() {
                 <CardContent className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         <div>
-                            <label className="text-xs text-slate-400 mb-1 block">Kategorie</label>
+                            <label className="text-xs text-muted-foreground mb-1 block">Kategorie</label>
                             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
+                                <SelectTrigger className="bg-background border-border/70 text-foreground">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -268,9 +268,9 @@ export default function SalesAnalyticsDashboard() {
                             </Select>
                         </div>
                         <div>
-                            <label className="text-xs text-slate-400 mb-1 block">Zahlungsart</label>
+                            <label className="text-xs text-muted-foreground mb-1 block">Zahlungsart</label>
                             <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
-                                <SelectTrigger className="bg-slate-900 border-slate-600 text-white">
+                                <SelectTrigger className="bg-background border-border/70 text-foreground">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -291,7 +291,7 @@ export default function SalesAnalyticsDashboard() {
                                         setSelectedCategory('all');
                                         setSelectedPaymentMethod('all');
                                     }}
-                                    className="w-full border-slate-600 text-slate-300 hover:bg-slate-700"
+                                    className="w-full border-border/70 text-foreground/75 hover:bg-secondary"
                                 >
                                     <X className="w-4 h-4 mr-2" />
                                     Filter zurücksetzen
@@ -310,8 +310,8 @@ export default function SalesAnalyticsDashboard() {
                         <DollarSign className="w-4 h-4 text-amber-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">{kpis.totalRevenue.toFixed(2)} €</div>
-                        <p className="text-xs text-slate-400 mt-1">{kpis.reportCount} Berichte</p>
+                        <div className="text-2xl font-bold text-foreground">{kpis.totalRevenue.toFixed(2)} €</div>
+                        <p className="text-xs text-muted-foreground mt-1">{kpis.reportCount} Berichte</p>
                     </CardContent>
                 </Card>
 
@@ -321,8 +321,8 @@ export default function SalesAnalyticsDashboard() {
                         <ShoppingCart className="w-4 h-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">{kpis.totalTransactions}</div>
-                        <p className="text-xs text-slate-400 mt-1">Verkäufe</p>
+                        <div className="text-2xl font-bold text-foreground">{kpis.totalTransactions}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Verkäufe</p>
                     </CardContent>
                 </Card>
 
@@ -332,8 +332,8 @@ export default function SalesAnalyticsDashboard() {
                         <TrendingUp className="w-4 h-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">{kpis.avgTransaction.toFixed(2)} €</div>
-                        <p className="text-xs text-slate-400 mt-1">pro Transaktion</p>
+                        <div className="text-2xl font-bold text-foreground">{kpis.avgTransaction.toFixed(2)} €</div>
+                        <p className="text-xs text-muted-foreground mt-1">pro Transaktion</p>
                     </CardContent>
                 </Card>
 
@@ -343,15 +343,15 @@ export default function SalesAnalyticsDashboard() {
                         <Award className="w-4 h-4 text-purple-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-white">{topSellers.length}</div>
-                        <p className="text-xs text-slate-400 mt-1">verschiedene Produkte</p>
+                        <div className="text-2xl font-bold text-foreground">{topSellers.length}</div>
+                        <p className="text-xs text-muted-foreground mt-1">verschiedene Produkte</p>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Charts */}
             <Tabs defaultValue="trend" className="space-y-4">
-                <TabsList className="bg-slate-800 border border-slate-700 flex-wrap h-auto">
+                <TabsList className="bg-card border border-border flex-wrap h-auto">
                     <TabsTrigger value="trend" className="data-[state=active]:bg-amber-600">Umsatztrend</TabsTrigger>
                     <TabsTrigger value="topsellers" className="data-[state=active]:bg-amber-600">Top-Seller</TabsTrigger>
                     <TabsTrigger value="categories" className="data-[state=active]:bg-amber-600">Kategorien</TabsTrigger>
@@ -361,11 +361,11 @@ export default function SalesAnalyticsDashboard() {
                 </TabsList>
 
                 <TabsContent value="trend">
-                    <Card className="bg-slate-800/50 border-slate-700">
+                    <Card className="bg-card/50 border-border">
                         <CardHeader>
-                            <CardTitle className="text-white flex items-center justify-between">
+                            <CardTitle className="text-foreground flex items-center justify-between">
                                 <span>Umsatzentwicklung</span>
-                                <span className="text-sm font-normal text-slate-400">
+                                <span className="text-sm font-normal text-muted-foreground">
                                     {parseInt(timeRange) > 180 ? 'Monatlich' : parseInt(timeRange) > 60 ? 'Wöchentlich' : 'Täglich'}
                                 </span>
                             </CardTitle>
@@ -402,9 +402,9 @@ export default function SalesAnalyticsDashboard() {
                 </TabsContent>
 
                 <TabsContent value="topsellers">
-                    <Card className="bg-slate-800/50 border-slate-700">
+                    <Card className="bg-card/50 border-border">
                         <CardHeader>
-                            <CardTitle className="text-white flex items-center justify-between">
+                            <CardTitle className="text-foreground flex items-center justify-between">
                                 <span>Top 10 Verkaufsschlager</span>
                                 {drilldownItem && (
                                     <Button
@@ -422,20 +422,20 @@ export default function SalesAnalyticsDashboard() {
                         <CardContent>
                             {drilldownItem ? (
                                 <div className="space-y-4">
-                                    <div className="bg-slate-900 rounded-lg p-4">
-                                        <h3 className="text-lg font-semibold text-white mb-2">{drilldownItem.name}</h3>
+                                    <div className="bg-background rounded-lg p-4">
+                                        <h3 className="text-lg font-semibold text-foreground mb-2">{drilldownItem.name}</h3>
                                         <div className="grid grid-cols-3 gap-4 text-sm">
                                             <div>
-                                                <p className="text-slate-400">Gesamtumsatz</p>
+                                                <p className="text-muted-foreground">Gesamtumsatz</p>
                                                 <p className="text-xl font-bold text-amber-500">{drilldownItem.revenue.toFixed(2)} €</p>
                                             </div>
                                             <div>
-                                                <p className="text-slate-400">Verkaufte Menge</p>
-                                                <p className="text-xl font-bold text-white">{drilldownItem.quantity}</p>
+                                                <p className="text-muted-foreground">Verkaufte Menge</p>
+                                                <p className="text-xl font-bold text-foreground">{drilldownItem.quantity}</p>
                                             </div>
                                             <div>
-                                                <p className="text-slate-400">Ø Preis</p>
-                                                <p className="text-xl font-bold text-white">
+                                                <p className="text-muted-foreground">Ø Preis</p>
+                                                <p className="text-xl font-bold text-foreground">
                                                     {(drilldownItem.revenue / drilldownItem.quantity).toFixed(2)} €
                                                 </p>
                                             </div>
@@ -466,9 +466,9 @@ export default function SalesAnalyticsDashboard() {
                 </TabsContent>
 
                 <TabsContent value="categories">
-                    <Card className="bg-slate-800/50 border-slate-700">
+                    <Card className="bg-card/50 border-border">
                         <CardHeader>
-                            <CardTitle className="text-white">Umsatz nach Kategorie</CardTitle>
+                            <CardTitle className="text-foreground">Umsatz nach Kategorie</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
@@ -497,9 +497,9 @@ export default function SalesAnalyticsDashboard() {
                 </TabsContent>
 
                 <TabsContent value="payment">
-                    <Card className="bg-slate-800/50 border-slate-700">
+                    <Card className="bg-card/50 border-border">
                         <CardHeader>
-                            <CardTitle className="text-white">Zahlungsarten-Verteilung</CardTitle>
+                            <CardTitle className="text-foreground">Zahlungsarten-Verteilung</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
@@ -519,10 +519,10 @@ export default function SalesAnalyticsDashboard() {
                 </TabsContent>
 
                 <TabsContent value="heatmap">
-                    <Card className="bg-slate-800/50 border-slate-700">
+                    <Card className="bg-card/50 border-border">
                         <CardHeader>
-                            <CardTitle className="text-white">Umsatz nach Wochentag & Uhrzeit</CardTitle>
-                            <p className="text-sm text-slate-400 mt-1">Hellere Farben = höherer Umsatz</p>
+                            <CardTitle className="text-foreground">Umsatz nach Wochentag & Uhrzeit</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">Hellere Farben = höherer Umsatz</p>
                         </CardHeader>
                         <CardContent>
                             {hourlyHeatmap.length > 0 ? (
@@ -556,7 +556,7 @@ export default function SalesAnalyticsDashboard() {
                                     </ScatterChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="text-center py-12 text-slate-400">
+                                <div className="text-center py-12 text-muted-foreground">
                                     Keine Stundendaten verfügbar
                                 </div>
                             )}
@@ -565,10 +565,10 @@ export default function SalesAnalyticsDashboard() {
                 </TabsContent>
 
                 <TabsContent value="scatter">
-                    <Card className="bg-slate-800/50 border-slate-700">
+                    <Card className="bg-card/50 border-border">
                         <CardHeader>
-                            <CardTitle className="text-white">Preis vs. Verkaufsmenge</CardTitle>
-                            <p className="text-sm text-slate-400 mt-1">Größere Punkte = höherer Umsatz</p>
+                            <CardTitle className="text-foreground">Preis vs. Verkaufsmenge</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">Größere Punkte = höherer Umsatz</p>
                         </CardHeader>
                         <CardContent>
                             {scatterData.length > 0 ? (
@@ -607,7 +607,7 @@ export default function SalesAnalyticsDashboard() {
                                     </ScatterChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="text-center py-12 text-slate-400">
+                                <div className="text-center py-12 text-muted-foreground">
                                     Keine Preisdaten verfügbar
                                 </div>
                             )}

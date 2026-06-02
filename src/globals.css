@@ -1,60 +1,67 @@
-css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   BarShift Pro — Design System
+   Theme Tokens · Mobile · Micro-Interactions · Typography
+   ═══════════════════════════════════════════════════════════════ */
+
 @layer base {
   :root {
     color-scheme: dark;
-    --background: 222.2 47.4% 11.2%;
-    --foreground: 210 40% 98%;
-    --card: 217.2 32.6% 17.5%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 47.4% 11.2%;
+    --background:         222.2 47.4% 11.2%;
+    --foreground:         210 40% 98%;
+    --card:               217.2 32.6% 17.5%;
+    --card-foreground:    210 40% 98%;
+    --popover:            222.2 47.4% 11.2%;
     --popover-foreground: 210 40% 98%;
-    --primary: 38 92% 50%;
+    --primary:            38 92% 50%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary:          217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 80%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --muted:              217.2 32.6% 17.5%;
+    --muted-foreground:   215 20.2% 80%;
+    --accent:             217.2 32.6% 17.5%;
+    --accent-foreground:  210 40% 98%;
+    --destructive:        0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 38 92% 50%;
-    --radius: 0.75rem;
+    --border:             217.2 32.6% 17.5%;
+    --input:              217.2 32.6% 17.5%;
+    --ring:               38 92% 50%;
+    --radius:             0.75rem;
   }
 }
 
+/* ── Safe Area Utilities ─────────────────────────────────────── */
 @layer utilities {
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
-  }
-  
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  
-  .pl-safe {
-    padding-left: env(safe-area-inset-left);
-  }
-  
-  .pr-safe {
-    padding-right: env(safe-area-inset-right);
-  }
+  .pt-safe  { padding-top:    env(safe-area-inset-top); }
+  .pb-safe  { padding-bottom: env(safe-area-inset-bottom); }
+  .pl-safe  { padding-left:   env(safe-area-inset-left); }
+  .pr-safe  { padding-right:  env(safe-area-inset-right); }
 }
 
+/* ── Base Reset ──────────────────────────────────────────────── */
 * {
   -webkit-tap-highlight-color: transparent;
 }
 
-button,
-a,
-[role="button"],
-.icon {
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  overscroll-behavior: none;
+  /* Subpixel antialiasing for sharp text */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+p, span, div:not(button):not(a):not([role="button"]),
+li, h1, h2, h3, h4, h5, h6 {
+  user-select: text;
+}
+
+button, a, [role="button"], .icon {
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -62,6 +69,24 @@ a,
   -webkit-touch-callout: none;
 }
 
+/* ── iOS Quirks ──────────────────────────────────────────────── */
+
+/* Verhindert Zoom beim Tippen in Inputs auf iOS */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Dialog Overlay Blur auf iOS */
+@supports (-webkit-backdrop-filter: blur(1px)) {
+  [data-radix-dialog-overlay] {
+    -webkit-backdrop-filter: blur(12px);
+    background: hsl(var(--background) / 0.7);
+  }
+}
+
+/* ── Touch Targets (44px minimum — WCAG 2.5.5) ──────────────── */
 @media (max-width: 768px) {
   button,
   a,
@@ -80,147 +105,23 @@ a,
   }
 }
 
-p,
-span,
-div:not(button):not(a):not([role="button"]),
-li,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  user-select: text;
-}
+/* ── Scrollbars ──────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 4px; height: 4px; }
+::-webkit-scrollbar-track    { background: transparent; }
+::-webkit-scrollbar-thumb    { background: hsl(var(--border)); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
 
-body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-feature-settings: "rlig" 1, "calt" 1;
-  overscroll-behavior: none;
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── BarShift Pro — Globale Fixes ─────────────────────────── */
-
-/* iOS: verhindert Zoom beim Tippen in Inputs */
-@media (max-width: 768px) {
-  input, select, textarea {
-    font-size: 16px !important;
-  }
-}
-
-/* Einheitliche Scrollbars */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 9999px; }
-
-/* Dialog Overlay Blur auf iOS */
-@supports (-webkit-backdrop-filter: blur(1px)) {
-  [data-radix-dialog-overlay] {
-    -webkit-backdrop-filter: blur(8px);
-  }
-}
-
-/* Einheitliche Role-Badges (ersetzt hardcodierte Farben in Employees.jsx) */
-.role-badge-aushilfe { @apply bg-muted text-muted-foreground border border-border rounded-lg px-2 py-0.5 text-xs font-medium; }
-.role-badge-vollzeit  { @apply bg-blue-500/15 text-blue-400 border border-blue-500/30 rounded-lg px-2 py-0.5 text-xs font-medium; }
-.role-badge-manager   { @apply bg-purple-500/15 text-purple-400 border border-purple-500/30 rounded-lg px-2 py-0.5 text-xs font-medium; }
-
-/* Einheitliche Seiten-Header */
-.page-header { @apply flex items-center justify-between gap-3 mb-5; }
-.page-title  { @apply text-xl font-bold tracking-tight; }
-/* ── Premium Mobile Micro-Interactions ───────────────────── */
-
-/* Smooth press feedback on all interactive elements */
-button,
-a,
-[role="button"] {
-  transition: opacity 0.12s ease, transform 0.12s ease;
-}
-button:active,
-[role="button"]:active {
-  transform: scale(0.97);
-  opacity: 0.85;
-}
-
-/* Card press effect for clickable cards */
-.card-pressable {
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-  cursor: pointer;
-}
-.card-pressable:active {
-  transform: scale(0.985);
-}
-.card-pressable:hover {
-  box-shadow: 0 0 0 1px hsl(var(--border)), 0 4px 16px -4px hsl(var(--primary) / 0.12);
-}
-
-/* Smooth page transitions */
-.page-enter {
-  animation: pageSlideIn 0.2s ease-out;
-}
-@keyframes pageSlideIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Skeleton shimmer — more premium than static pulse */
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--muted)) 25%,
-    hsl(var(--secondary)) 50%,
-    hsl(var(--muted)) 75%
-  );
-  background-size: 800px 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-}
-
-/* Status dot indicator */
-.status-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.status-dot-green  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
-.status-dot-amber  { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
-.status-dot-red    { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
-.status-dot-muted  { background: hsl(var(--muted-foreground)); }
-
-/* Subtle glow on primary action buttons */
-.btn-primary-glow {
-  box-shadow: 0 0 12px hsl(var(--primary) / 0.25);
-  transition: box-shadow 0.2s ease;
-}
-.btn-primary-glow:hover {
-  box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
-}
-
-/* Pull-to-refresh feel — overscroll bounce only on scroll containers */
 .scroll-container {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
 }
 
-/* Bottom sheet backdrop blur (iOS-style) */
-.bottom-sheet-overlay {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  background: hsl(var(--background) / 0.6);
-}
-
-/* No-scrollbar utility (already used in some places, ensure global) */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Focus ring — visible for keyboard, invisible for touch */
+/* ── Focus Ring ──────────────────────────────────────────────── */
+/* Keyboard-visible, touch-invisible */
 @media (pointer: fine) {
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
@@ -230,4 +131,261 @@ button:active,
 }
 @media (pointer: coarse) {
   :focus-visible { outline: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MICRO-INTERACTIONS & ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Press Feedback ──────────────────────────────────────────── */
+button,
+a,
+[role="button"] {
+  transition: opacity 0.1s ease, transform 0.1s ease;
+}
+button:active,
+[role="button"]:active {
+  transform: scale(0.96);
+  opacity: 0.82;
+}
+/* Larger elements get softer press */
+button.text-base:active,
+button[class*="h-12"]:active,
+button[class*="h-14"]:active {
+  transform: scale(0.98);
+}
+
+/* ── Page Enter Animation ────────────────────────────────────── */
+.page-enter {
+  animation: pageEnter 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Sub-page slide from right (like native iOS push) */
+.page-enter-right {
+  animation: pageSlideRight 0.26s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes pageSlideRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Skeleton Shimmer ────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted) / 0.8)    0%,
+    hsl(var(--secondary) / 1)  40%,
+    hsl(var(--muted) / 0.8)   100%
+  );
+  background-size: 1200px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Skeleton base class ─────────────────────────────────────── */
+.skeleton {
+  border-radius: calc(var(--radius) * 0.6);
+  overflow: hidden;
+  position: relative;
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent            0%,
+    hsl(var(--accent) / 0.3) 50%,
+    transparent           100%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* ── Fade In (for lists, modals, etc.) ───────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.18s ease-out both;
+}
+/* Stagger helper — used via style="--delay: Xms" */
+.animate-stagger {
+  animation: fadeIn 0.18s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+/* ── Pop animation (for badges, notifications) ───────────────── */
+@keyframes pop {
+  0%   { transform: scale(0.85); opacity: 0; }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+.animate-pop {
+  animation: pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Pulse Dot (live indicator) ──────────────────────────────── */
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+.animate-pulse-dot {
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENT UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Status Dots ─────────────────────────────────────────────── */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot-green  { background: #22c55e; box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 8px rgba(34,197,94,0.6); }
+.status-dot-amber  { background: #f59e0b; box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 8px rgba(245,158,11,0.6); }
+.status-dot-red    { background: #ef4444; box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 8px rgba(239,68,68,0.6); }
+.status-dot-blue   { background: #3b82f6; box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 8px rgba(59,130,246,0.5); }
+.status-dot-muted  { background: hsl(var(--muted-foreground) / 0.5); }
+
+/* ── Glow Buttons ────────────────────────────────────────────── */
+.btn-glow {
+  box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  transition: box-shadow 0.25s ease, transform 0.1s ease;
+}
+.btn-glow:hover {
+  box-shadow: 0 4px 20px -4px hsl(var(--primary) / 0.45);
+}
+.btn-glow:active {
+  box-shadow: 0 2px 8px -2px hsl(var(--primary) / 0.3);
+}
+
+/* Amber glow variant */
+.btn-glow-amber {
+  box-shadow: 0 4px 14px -4px rgba(245,158,11,0.3);
+  transition: box-shadow 0.25s ease;
+}
+.btn-glow-amber:hover {
+  box-shadow: 0 6px 20px -4px rgba(245,158,11,0.5);
+}
+
+/* ── Clickable Cards ─────────────────────────────────────────── */
+.card-pressable {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.card-pressable:hover {
+  box-shadow: 0 0 0 1px hsl(var(--border)), 0 4px 20px -6px hsl(var(--primary) / 0.15);
+  transform: translateY(-1px);
+}
+.card-pressable:active {
+  transform: scale(0.985);
+  box-shadow: none;
+}
+
+/* ── Glass Card (for overlays, modals, hero sections) ────────── */
+.card-glass {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.6);
+}
+
+/* ── Bottom Sheet ────────────────────────────────────────────── */
+.bottom-sheet-overlay {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: hsl(var(--background) / 0.55);
+}
+
+/* ── Page Layout Helpers ─────────────────────────────────────── */
+.page-header { @apply flex items-center justify-between gap-3 mb-5; }
+.page-title  { @apply text-xl font-bold tracking-tight text-foreground; }
+
+/* ── Typography ──────────────────────────────────────────────── */
+/* Numeric values always use tabular figure spacing */
+.num { font-variant-numeric: tabular-nums; }
+
+/* ── Role Badges ─────────────────────────────────────────────── */
+.role-badge-aushilfe { @apply bg-muted text-muted-foreground border border-border rounded-lg px-2 py-0.5 text-xs font-medium; }
+.role-badge-vollzeit { @apply bg-blue-500/15 text-blue-400 border border-blue-500/30 rounded-lg px-2 py-0.5 text-xs font-medium; }
+.role-badge-manager  { @apply bg-purple-500/15 text-purple-400 border border-purple-500/30 rounded-lg px-2 py-0.5 text-xs font-medium; }
+
+/* ── Divider with label ──────────────────────────────────────── */
+.divider-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.divider-label::before,
+.divider-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: hsl(var(--border));
+}
+
+/* ── Gradient Text ───────────────────────────────────────────── */
+.text-gradient-amber {
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.text-gradient-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.6) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Number Badge Pill ───────────────────────────────────────── */
+.badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  animation: pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ── Input / Form Enhancements ───────────────────────────────── */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+/* ── Print Styles ────────────────────────────────────────────── */
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+  .print\:hidden { display: none !important; }
 }

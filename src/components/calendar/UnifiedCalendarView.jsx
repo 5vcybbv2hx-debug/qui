@@ -203,7 +203,7 @@ export default function UnifiedCalendarView({
                     <SlidersHorizontal className="w-4 h-4" />
                     Filter
                     {activeFilters > 0 && (
-                        <span className="bg-white/20 text-white text-xs px-1.5 py-0.5 rounded-full">{activeFilters}</span>
+                        <span className="bg-white/20 text-foreground text-xs px-1.5 py-0.5 rounded-full">{activeFilters}</span>
                     )}
                 </Button>
             </div>
@@ -280,7 +280,7 @@ export default function UnifiedCalendarView({
                                 <div className={cn(
                                     'flex items-center justify-center w-8 h-8 md:w-7 md:h-7 rounded-full text-sm font-bold mb-2 transition-all',
                                     isToday
-                                        ? 'bg-amber-500 text-slate-900'
+                                        ? 'bg-amber-500 text-foreground'
                                         : 'text-foreground group-hover:bg-accent/50'
                                 )}>
                                     {format(day, 'd')}

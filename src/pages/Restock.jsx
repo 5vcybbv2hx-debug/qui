@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
@@ -40,7 +41,7 @@ export default function Restock() {
     const { data: restockItems = [] } = useQuery({
         queryKey: ['restock-items'],
         queryFn: () => base44.entities.RestockItem.list('-created_date', 100),
-        staleTime: 60_000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: articles = [], isLoading: articlesLoading, isError: articlesError, error: articlesErrorObj } = useQuery({

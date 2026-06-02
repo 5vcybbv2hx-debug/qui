@@ -293,8 +293,8 @@ export default function BarAssistant({ isManager }) {
                     open && !minimized
                         ? 'bg-foreground text-background'
                         : isManager
-                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-slate-900 hover:shadow-amber-500/40'
-                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-slate-900 hover:shadow-blue-500/40'
+                            ? 'bg-gradient-to-br from-amber-500 to-orange-600 text-foreground hover:shadow-amber-500/40'
+                            : 'bg-gradient-to-br from-blue-500 to-cyan-600 text-foreground hover:shadow-blue-500/40'
                 )}
                 style={{
                     right: `${position.right}px`,
@@ -350,7 +350,7 @@ export default function BarAssistant({ isManager }) {
                                     ? 'bg-gradient-to-br from-amber-500 to-orange-600'
                                     : 'bg-gradient-to-br from-blue-500 to-cyan-600'
                             )}>
-                                <Bot className="w-4 h-4 text-slate-900" />
+                                <Bot className="w-4 h-4 text-foreground" />
                             </div>
                             <div className="flex-1">
                                 <p className="text-sm font-bold text-foreground">{assistantLabel}</p>
@@ -415,13 +415,13 @@ export default function BarAssistant({ isManager }) {
                                                     ? 'bg-gradient-to-br from-amber-500 to-orange-600'
                                                     : 'bg-gradient-to-br from-blue-500 to-cyan-600'
                                             )}>
-                                                <Bot className="w-3 h-3 text-slate-900" />
+                                                <Bot className="w-3 h-3 text-foreground" />
                                             </div>
                                         )}
                                         <div className={cn(
                                             'max-w-[85%] px-3 py-2.5 rounded-2xl text-sm',
                                             msg.role === 'user'
-                                                ? 'bg-amber-500 text-slate-900 rounded-br-sm'
+                                                ? 'bg-amber-500 text-foreground rounded-br-sm'
                                                 : 'bg-secondary text-foreground rounded-bl-sm'
                                         )}>
                                             {msg.role === 'assistant' ? (
@@ -465,7 +465,7 @@ export default function BarAssistant({ isManager }) {
                                             ? 'bg-gradient-to-br from-amber-500 to-orange-600'
                                             : 'bg-gradient-to-br from-blue-500 to-cyan-600'
                                     )}>
-                                        <Bot className="w-3 h-3 text-slate-900" />
+                                        <Bot className="w-3 h-3 text-foreground" />
                                     </div>
                                     <div className="bg-secondary px-3 py-2.5 rounded-2xl rounded-bl-sm flex items-center gap-2">
                                         <Loader2 className={cn('w-3.5 h-3.5 animate-spin', isManager ? 'text-amber-400' : 'text-blue-400')} />
@@ -503,7 +503,7 @@ export default function BarAssistant({ isManager }) {
                                             : 'bg-gradient-to-br from-blue-500 to-cyan-600 hover:shadow-lg hover:shadow-blue-500/20'
                                     )}
                                 >
-                                    <Send className="w-4 h-4 text-slate-900" />
+                                    <Send className="w-4 h-4 text-foreground" />
                                 </button>
                             </div>
                         </div>

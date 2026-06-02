@@ -260,7 +260,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                                 <Sparkles className="w-4 h-4" />
                             </Button>
                         </div>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-foreground0">
                             Tipp: Scanne einen Barcode oder generiere einen eigenen Code für Artikel ohne EAN
                         </p>
                     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { RepeatIcon, Check, X, Clock, Calendar, AlertCircle, User, Search, Users } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
@@ -60,7 +61,7 @@ export default function ShiftSwaps() {
             const to = format(addDays(new Date(), 60), 'yyyy-MM-dd');
             return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, 'date', 200);
         },
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     const updateMutation = useMutation({

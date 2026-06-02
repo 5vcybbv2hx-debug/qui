@@ -115,7 +115,7 @@ export default function BulkImporter() {
             <Button 
                 onClick={() => setOpen(true)}
                 variant="outline"
-                className="border-blue-600 text-white bg-blue-600 hover:bg-blue-700"
+                className="border-blue-600 text-foreground bg-blue-600 hover:bg-blue-700"
             >
                 <Upload className="w-4 h-4 mr-2" />
                 Import
@@ -144,11 +144,11 @@ export default function BulkImporter() {
                                 htmlFor="file-upload" 
                                 className="cursor-pointer flex flex-col items-center gap-2"
                             >
-                                <Upload className="w-12 h-12 text-slate-400" />
-                                <p className="text-sm font-medium text-slate-700">
+                                <Upload className="w-12 h-12 text-muted-foreground" />
+                                <p className="text-sm font-medium text-foreground">
                                     {file ? file.name : 'Datei auswählen'}
                                 </p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-foreground0">
                                     CSV, Excel oder JSON
                                 </p>
                             </label>
@@ -157,7 +157,7 @@ export default function BulkImporter() {
                         {progress > 0 && (
                             <div className="space-y-2">
                                 <Progress value={progress} className="w-full" />
-                                <p className="text-xs text-center text-slate-600">
+                                <p className="text-xs text-center text-muted-foreground">
                                     {progress < 40 ? 'Hochladen...' : 
                                      progress < 60 ? 'Daten extrahieren...' : 
                                      progress < 100 ? 'Artikel importieren...' : 

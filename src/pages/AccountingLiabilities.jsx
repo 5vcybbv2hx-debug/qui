@@ -30,7 +30,7 @@ const STATUS_CFG = {
     ratenzahlung: { label: 'Ratenzahlung',   dot: 'bg-purple-400',        badge: 'bg-purple-500/15 text-purple-400 border-purple-500/20' },
     ueberfaellig: { label: 'Überfällig',     dot: 'bg-red-500',           badge: 'bg-red-500/15 text-red-400 border-red-500/20' },
     bezahlt:      { label: 'Bezahlt',        dot: 'bg-green-400',         badge: 'bg-green-500/15 text-green-400 border-green-500/20' },
-    gestundet:    { label: 'Gestundet',      dot: 'bg-slate-400',         badge: 'bg-secondary text-muted-foreground border-border' },
+    gestundet:    { label: 'Gestundet',      dot: 'bg-secondary',         badge: 'bg-secondary text-muted-foreground border-border' },
 };
 
 const PRIORITY_CFG = {
@@ -352,7 +352,7 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                         <TrendingDown className="w-5 h-5 text-red-400" />
                         <h1 className="text-lg font-bold text-foreground">Verbindlichkeiten</h1>
                     </div>
-                    <Button size="sm" onClick={openAdd} className="bg-red-600 hover:bg-red-700 text-white gap-1 h-8 shrink-0">
+                    <Button size="sm" onClick={openAdd} className="bg-red-500 hover:bg-red-600 text-white gap-1 h-8 shrink-0">
                         <Plus className="w-4 h-4" />
                     </Button>
                 </div>
@@ -361,10 +361,10 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                     {[{ k: 'liste', l: 'Alle' }, { k: 'woche', l: 'Diese Woche' }, { k: 'monat', l: 'Monat' }].map(t => (
                         <button key={t.k} onClick={() => setView(t.k)}
                             className={cn('px-3 py-1.5 text-xs font-medium rounded-lg transition-all',
-                                view === t.k ? 'bg-red-600 text-white' : 'bg-secondary text-muted-foreground')}>
+                                view === t.k ? 'bg-red-500/90 text-white' : 'bg-secondary text-muted-foreground')}>
                             {t.l}
                             {t.k === 'woche' && thisWeek.length > 0 && (
-                                <span className="ml-1.5 bg-red-500 text-white rounded-full text-[10px] px-1.5 py-0.5">{thisWeek.length}</span>
+                                <span className="ml-1.5 bg-red-500/20 text-red-400 rounded-full text-[10px] px-1.5 py-0.5">{thisWeek.length}</span>
                             )}
                         </button>
                     ))}
@@ -442,7 +442,7 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                             <Card className="p-12 text-center text-muted-foreground bg-card border-border">
                                 <TrendingDown className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                 <p className="text-sm">Keine Verbindlichkeiten</p>
-                                <Button onClick={openAdd} className="mt-4 bg-red-600 hover:bg-red-700 text-white gap-2">
+                                <Button onClick={openAdd} className="mt-4 bg-red-500 hover:bg-red-600 text-white gap-2">
                                     <Plus className="w-4 h-4" /> Erfassen
                                 </Button>
                             </Card>
@@ -524,7 +524,7 @@ Antworte auf Deutsch, kurz und strukturiert.`,
 
             {/* FAB */}
             <button onClick={openAdd}
-                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110">
+                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110">
                 <Plus className="w-6 h-6" />
             </button>
 
@@ -731,7 +731,7 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                         </div>
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" onClick={closeModal} className="flex-1">Abbrechen</Button>
-                            <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                            <Button type="submit" className="flex-1 bg-red-500 hover:bg-red-600 text-white"
                                 disabled={createMutation.isPending || updateMutation.isPending}>
                                 {editItem ? 'Speichern' : 'Erfassen'}
                             </Button>
@@ -788,7 +788,7 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                         </div>
                         <div className="flex gap-2">
                             <Button type="button" variant="outline" onClick={() => setPaymentModalOpen(false)} className="flex-1">Abbrechen</Button>
-                            <Button type="submit" className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            <Button type="submit" className="flex-1 bg-green-500 hover:bg-green-600 text-primary-foreground"
                                 disabled={createPaymentMutation.isPending}>
                                 Zahlung buchen
                             </Button>

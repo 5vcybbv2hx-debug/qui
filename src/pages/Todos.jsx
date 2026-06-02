@@ -290,16 +290,24 @@ export default function Todos() {
              <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
 
                 {/* Aufgabenbereiche Banner */}
-                <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-card rounded-xl border border-border">
-                    <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-                        <CheckSquare className="w-4 h-4 text-amber-400" />
-                        <span className="text-[10px] font-bold text-amber-400">Aufgaben</span>
-                        <span className="text-[9px] text-muted-foreground">flexibel</span>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                            <CheckSquare className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-amber-400">Aufgaben</p>
+                            <p className="text-[10px] text-muted-foreground">{openCount} offen</p>
+                        </div>
                     </div>
-                    <Link to={createPageUrl('WeeklyTasks')} className="flex flex-col items-center gap-1 p-2 rounded-lg bg-card border border-border hover:bg-accent/50 transition-colors text-center">
-                        <ListChecks className="w-4 h-4 text-blue-400" />
-                        <span className="text-[10px] font-semibold text-foreground">Wochenaufgaben</span>
-                        <span className="text-[9px] text-muted-foreground">Planung</span>
+                    <Link to={createPageUrl('WeeklyTasks')} className="flex items-center gap-2.5 p-3 rounded-xl bg-secondary/50 border border-border hover:bg-accent/50 active:scale-[0.98] transition-all">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
+                            <ListChecks className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold text-foreground">Wochenaufgaben</p>
+                            <p className="text-[10px] text-muted-foreground">Planung →</p>
+                        </div>
                     </Link>
                 </div>
 
@@ -319,13 +327,13 @@ export default function Todos() {
                                 </Button>
                                 <Button size="sm" variant="outline"
                                     onClick={() => { setSelectMode(s => !s); setSelectedIds(new Set()); }}
-                                    className={cn('h-9', selectMode ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border/50 text-muted-foreground')}>
+                                    className={cn('h-9', selectMode ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border/50 text-muted-foreground')}>
                                     <CheckCheck className="w-4 h-4" />
                                 </Button>
                             </>
                         )}
                         <Button size="sm" onClick={() => { setSelectedTodo(null); setModalOpen(true); }}
-                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20 h-9">
+                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground shadow-lg shadow-amber-500/20 h-9">
                             <Plus className="w-4 h-4 mr-1" />
                             <span className="hidden sm:inline">Neue Aufgabe</span>
                             <span className="sm:hidden">Neu</span>
@@ -360,7 +368,7 @@ export default function Todos() {
                             onClick={() => setFiltersOpen(f => !f)}
                             className={cn(
                                 'h-11 px-3 rounded-lg border text-sm font-medium transition-all flex items-center gap-1.5 shrink-0',
-                                (filtersOpen || hasActiveFilters) ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground hover:text-foreground bg-card'
+                                (filtersOpen || hasActiveFilters) ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border text-muted-foreground hover:text-foreground bg-card'
                             )}
                         >
                             <span>Filter</span>
@@ -386,7 +394,7 @@ export default function Todos() {
                                         <button key={s}
                                             onClick={() => setStatusFilter(s)}
                                             className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
-                                                statusFilter === s ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground'
+                                                statusFilter === s ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border text-muted-foreground'
                                             )}>
                                             {s === 'offen' ? 'Offen' : s === 'in_bearbeitung' ? 'Aktiv' : s === 'erledigt' ? 'Erledigt' : 'Alle'}
                                         </button>
@@ -400,7 +408,7 @@ export default function Todos() {
                                         <button key={p}
                                             onClick={() => setPriorityFilter(p)}
                                             className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
-                                                priorityFilter === p ? 'bg-amber-500 text-slate-900 border-amber-500' : 'border-border text-muted-foreground'
+                                                priorityFilter === p ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border text-muted-foreground'
                                             )}>
                                             {icon} {label}
                                         </button>

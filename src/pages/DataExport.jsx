@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -267,13 +268,13 @@ function QuickStatCard({ icon: Icon, label, entity, color }) {
     const { data = [] } = useQuery({
         queryKey: ['export-stat', entity],
         queryFn: () => base44.entities[entity]?.list('-created_date', 1) || [],
-        staleTime: 60000,
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: countData = [] } = useQuery({
         queryKey: ['export-count', entity],
         queryFn: () => base44.entities[entity]?.list('-created_date', 5000) || [],
-        staleTime: 60000,
+        staleTime: STALE.MEDIUM,
     });
 
     return (

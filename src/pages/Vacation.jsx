@@ -205,6 +205,12 @@ export default function Vacation() {
     const pendingRequests = visibleRequests.filter(r => r.status === 'beantragt');
     const [showTaxReport, setShowTaxReport] = React.useState(false);
 
+    if (vacationError) return (
+        <div className="min-h-screen bg-background px-4 py-6">
+            <ErrorState text="Urlaubsanträge konnten nicht geladen werden." retry={() => window.location.reload()} />
+        </div>
+    );
+
     if (permissions.isLoading) return (
         <div className="min-h-screen bg-background p-4 space-y-4">
             <ListSkeleton count={1} height="h-12" />

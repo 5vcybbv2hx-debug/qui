@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -56,7 +57,7 @@ export default function AccountingCashbook() {
     const { data: entries = [], isLoading } = useQuery({
         queryKey: ['cashbook-entries'],
         queryFn: () => base44.entities.CashbookEntry.list('-date', 500),
-        staleTime: 2 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: dailyRevenues = [] } = useQuery({

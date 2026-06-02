@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { cn } from "@/lib/utils";
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import { LoadingState, ListSkeleton, ErrorState } from '@/components/ui/StateDisplay';
 
 const statusConfig = {
     'beantragt': { label: 'Beantragt', color: 'bg-blue-100 text-blue-700', icon: Clock },
@@ -203,6 +204,13 @@ export default function Vacation() {
     const currentEmployeeStats = currentEmployee ? employeeStats[currentEmployee.id] : null;
     const pendingRequests = visibleRequests.filter(r => r.status === 'beantragt');
     const [showTaxReport, setShowTaxReport] = React.useState(false);
+
+    if (permissions.isLoading) return (
+        <div className="min-h-screen bg-background p-4 space-y-4">
+            <ListSkeleton count={1} height="h-12" />
+            <ListSkeleton count={3} height="h-32" />
+        </div>
+    );
 
     if (!permissions.isLoading && (!permissions.canViewVacation || (!permissions.isManager && !isFullTimeEmployee))) {
         return <PermissionDenied message="Urlaub ist für Aushilfen nicht verfügbar. Nutze die 'Nicht verfügbar'-Funktion im Schichtplan." />;

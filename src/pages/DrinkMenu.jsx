@@ -21,6 +21,7 @@ import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
+import { LoadingState, ListSkeleton, ErrorState } from '@/components/ui/StateDisplay';
 
 export default function DrinkMenuPage() {
     const permissions = usePermissions();
@@ -57,7 +58,13 @@ export default function DrinkMenuPage() {
         }
     });
 
-    if (permissions.isLoading) return <div className="flex justify-center p-8">Lädt...</div>;
+    if (permissions.isLoading || isLoading) return (
+        <div className="min-h-screen bg-background p-4 md:p-6 space-y-4">
+            <ListSkeleton count={1} height="h-10" />
+            <ListSkeleton count={2} height="h-8" />
+            <ListSkeleton count={6} height="h-28" />
+        </div>
+    );
     if (!permissions.isManager && !permissions.isAdmin) return <PermissionDenied />;
 
     const categories = ["all", ...new Set(items.map(item => item.category))];

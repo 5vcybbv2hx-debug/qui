@@ -1,6 +1,7 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { CheckCircle2, Circle, ClipboardList, Loader2, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,14 +16,14 @@ export default function CleaningChecklist() {
     const { data: currentUser } = useQuery({
         queryKey: ['user'],
         queryFn: () => base44.auth.me(),
-        staleTime: 10 * 60 * 1000
+        staleTime: STALE.SLOW
     });
 
     const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['cleaning-tasks-area', area],
         queryFn: () => base44.entities.CleaningTask.filter({ area, is_active: true }, 'title'),
         enabled: !!area,
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
     const updateMutation = useMutation({

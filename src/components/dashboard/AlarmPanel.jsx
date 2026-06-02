@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -327,7 +328,7 @@ export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, today
     const { data: notes = [] } = useQuery({
         queryKey: ['team-notes-alarm'],
         queryFn: () => base44.entities.TeamNote.list('-created_date', 50),
-        staleTime: 60000
+        staleTime: STALE.MEDIUM
     });
 
     const allItems = useMemo(() => {

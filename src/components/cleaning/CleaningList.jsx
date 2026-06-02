@@ -68,13 +68,13 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                         "text-xs",
                                         completedCount === areaTasks.length 
                                             ? "border-emerald-500 text-emerald-500" 
-                                            : "border-slate-600 text-slate-400"
+                                            : "border-border/70 text-muted-foreground"
                                     )}
                                 >
                                     {completedCount}/{areaTasks.length}
                                 </Badge>
                             </div>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-muted-foreground">
                                 {Math.round(progress)}%
                             </span>
                         </div>
@@ -162,7 +162,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                                         "border-emerald-500 bg-emerald-500"
                                                     )}
                                                 >
-                                                    <Check className="w-3 h-3 text-white" />
+                                                    <Check className="w-3 h-3 text-foreground" />
                                                 </button>
 
                                                 <div className="flex-1 min-w-0">
@@ -176,7 +176,7 @@ export default function CleaningList({ tasks, areas, onComplete, onReset, userNa
                                                        {task.completed_by && (
                                                            <Link 
                                                                to={createPageUrl('Employees')}
-                                                               className="text-[10px] text-slate-500 hover:text-amber-500 transition-colors flex items-center gap-1"
+                                                               className="text-[10px] text-foreground0 hover:text-amber-500 transition-colors flex items-center gap-1"
                                                                onClick={(e) => e.stopPropagation()}
                                                            >
                                                                👤 {task.completed_by.split(' ')[0]}

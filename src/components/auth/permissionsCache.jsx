@@ -31,11 +31,12 @@ export async function loadPermissions() {
         const user = await base44.auth.me();
 
         // 2. Fetch matching employee record (by email)
+        // Note: is_active may be missing on older records, so we filter by email only
+        // and then exclude explicitly deactivated employees (is_active === false)
         const employees = await base44.entities.Employee.filter({
-            email:     user.email,
-            is_active: true,
+            email: user.email,
         });
-        const employee = employees[0] ?? null;
+        const employee = employees.find(e => e.is_active !== false) ?? null;
 
         // 3. Build context
         const ctx = {

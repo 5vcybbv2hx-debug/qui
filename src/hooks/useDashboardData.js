@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { format, startOfWeek, endOfWeek, parseISO, addDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek, parseISO, addDays, subDays } from 'date-fns';
 import { getTodayOperationDate } from '@/lib/nightUtils';
 import { getTaskStatus } from '@/lib/maintenanceUtils';
 import { STALE } from '@/lib/queryUtils';
@@ -10,23 +10,26 @@ export function useDashboardData({ isManager, currentEmployee }) {
     const today = format(new Date(), 'yyyy-MM-dd');
     const twoWeeksLater = format(addDays(new Date(), 14), 'yyyy-MM-dd');
 
-    const { data: shiftsRaw = [] } = useQuery({
+    // FIX 1: Server-side date filter for shifts — only fetch what we need
+    const { data: shifts = [] } = useQuery({
         queryKey: ['shifts-dashboard', today],
-        queryFn: () => base44.entities.Shift.list('date', 200),
+        queryFn: () => base44.entities.Shift.filter({ date_gte: today, date_lte: twoWeeksLater }, 'date', 200),
         staleTime: STALE.SLOW,
     });
 
-    const shifts = shiftsRaw.filter(s => s.date >= today && s.date <= twoWeeksLater);
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('date', 30),
         staleTime: STALE.SLOW,
     });
+
+    // FIX 2: Align queryKey with useReservations hook to share cache
     const { data: reservations = [] } = useQuery({
-        queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 30),
+        queryKey: ['reservations', 'active'],
+        queryFn: () => base44.entities.Reservation.filter({ is_archived: false }, '-date', 200),
         staleTime: STALE.MEDIUM,
     });
+
     const { data: todos = [] } = useQuery({
         queryKey: ['todos'],
         queryFn: () => base44.entities.TodoItem.filter({ is_archived: false }),
@@ -59,12 +62,13 @@ export function useDashboardData({ isManager, currentEmployee }) {
         queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 100 : 30),
         staleTime: STALE.MEDIUM,
     });
+
     // Ausstehend = status='eingereicht' ODER employee_confirmed=true — noch nicht vom Manager genehmigt
-    // (entspricht exakt dem Filter in TimeApprovalPanel)
     const pendingTimeEntries = isManager ? timeEntries.filter(e =>
         (e.status === 'eingereicht' || e.employee_confirmed === true) &&
         e.status !== 'genehmigt'
     ) : [];
+
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
         queryFn: () => base44.entities.VacationRequest.list('-created_date', 30),

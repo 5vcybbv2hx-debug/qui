@@ -5,7 +5,7 @@ import {
     Settings, FileText, BarChart2, Trash2, ClipboardList,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
     Palmtree, ListChecks, Video, QrCode, Layers, Zap,
-    Receipt, TrendingDown, Download, Euro, Building2, AlertTriangle
+    Receipt, TrendingDown, Download, Euro, Building2, AlertTriangle, Trophy
 } from 'lucide-react';
 
 /**
@@ -94,6 +94,7 @@ export const mainNavigation = [
             { name: 'Schichttausch', page: 'ShiftSwaps',     icon: ArrowLeftRight, permission: 'canRequestShiftSwap'   },
             { name: 'Berechtigungen',page: 'Permissions',    icon: Shield,         permission: 'canEditEmployeePermissions'},
             { name: 'Teamsitzung',   page: 'TeamMeeting',    icon: Video,          permission: 'canViewTeamMeeting'        },
+            { name: 'WM-Spielplan',  page: 'WorldCupSchedule', icon: Trophy,         permission: 'canViewTeamMeeting'        },
         ]
     },
 ];

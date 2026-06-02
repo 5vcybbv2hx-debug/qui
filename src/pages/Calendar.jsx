@@ -29,6 +29,8 @@ import ProvisionalReviewPanel from '@/components/provisional/ProvisionalReviewPa
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
+import WorldCupDayBanner from '@/components/worldcup/WorldCupDayBanner';
+import { useWorldCupMatches } from '@/components/worldcup/useWorldCupMatches';
 
 const VIEWS = [
     { id: 'schichtplan', label: 'Schichtplan', icon: CalendarDays },
@@ -101,6 +103,8 @@ export default function CalendarPage() {
         queryKey: ['provisional-shift-requests'],
         queryFn: () => base44.entities.ProvisionalShiftRequest.list('-date', 500)
     });
+
+    const { data: wcMatches = [] } = useWorldCupMatches();
 
     const approvedVacations = vacationRequests.filter(v => v.status === 'genehmigt');
 
@@ -329,6 +333,13 @@ export default function CalendarPage() {
                                         </Button>
                                     )}
                                 </div>
+
+                                {/* WM-Spiele an diesem Tag */}
+                                <WorldCupDayBanner
+                                    matches={wcMatches}
+                                    dateStr={format(selectedDate, 'yyyy-MM-dd')}
+                                />
+
                                 {selectedDateShifts.length > 0 ? (
                                     <div className="grid gap-2">
                                         {selectedDateShifts.map(shift => {

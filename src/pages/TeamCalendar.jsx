@@ -12,6 +12,11 @@ import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import TeamCalendarExport from '@/components/calendar/TeamCalendarExport';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
 import DayDetailDrawer from '@/components/calendar/DayDetailDrawer';
+import WorldCupDayBanner from '@/components/worldcup/WorldCupDayBanner';
+import { useWorldCupMatches } from '@/components/worldcup/useWorldCupMatches';
+import { Link } from 'react-router-dom';
+import { Trophy } from 'lucide-react';
+import { isToday } from 'date-fns';
 
 export default function TeamCalendar() {
     const permissions = usePermissions();
@@ -58,6 +63,9 @@ export default function TeamCalendar() {
     const currentYear = new Date().getFullYear();
     const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
 
+    const { data: wcMatches = [] } = useWorldCupMatches();
+    const todayStr = new Date().toISOString().split('T')[0];
+
 
 
     if (!permissions.canViewShifts) {
@@ -93,9 +101,28 @@ export default function TeamCalendar() {
                         </div>
                     </div>
 
+                    {/* WM-Spiele heute */}
+                    <WorldCupDayBanner matches={wcMatches} dateStr={todayStr} />
+
+                    {/* WM-Quicklinks */}
+                    {wcMatches.length > 0 && (
+                        <div className="flex gap-2 flex-wrap mb-2">
+                            <Link to="/WorldCupSchedule">
+                                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-medium hover:bg-amber-500/20 transition-colors">
+                                    <Trophy className="w-3.5 h-3.5" />
+                                    Alle WM-Spiele
+                                </button>
+                            </Link>
+                            <Link to="/WorldCupSchedule?filter=germany">
+                                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs font-medium hover:bg-yellow-500/20 transition-colors">
+                                    🇩🇪 Deutschland-Spiele
+                                </button>
+                            </Link>
+                        </div>
+                    )}
+
                     {/* Heute im Dienst */}
                     {(() => {
-                        const todayStr = new Date().toISOString().split('T')[0];
                         const todayShifts = shifts.filter(s => s.date === todayStr);
                         return (
                             <Card className="p-4">

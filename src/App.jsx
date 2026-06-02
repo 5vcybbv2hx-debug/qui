@@ -30,6 +30,7 @@ import MeinTag from './pages/MeinTag';
 import ModuleCenter from './pages/ModuleCenter';
 
 import BusinessCalendar from './pages/BusinessCalendar';
+import WorldCupSchedule from './pages/WorldCupSchedule';
 import DataQuality from './pages/DataQuality';
 
 const { Pages, CorePages, SpecialPagesWithLayout, PublicPages, Layout, mainPage } = pagesConfig;
@@ -181,6 +182,13 @@ const AuthenticatedApp = () => {
           <RoleGuard permission="isManager">
             <DataQuality />
           </RoleGuard>
+        </LayoutWrapper>
+      } />
+
+      {/* WM-Spielplan */}
+      <Route path="/WorldCupSchedule" element={
+        <LayoutWrapper currentPageName="WorldCupSchedule">
+          <WorldCupSchedule />
         </LayoutWrapper>
       } />
 

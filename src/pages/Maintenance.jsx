@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { STALE } from '@/lib/queryUtils';
 import { Button } from "@/components/ui/button";
 import { Plus, Wrench, CheckCircle2, AlertCircle, Clock, ChevronRight } from "lucide-react";
 import MaintenanceModal from "../components/maintenance/MaintenanceModal";
@@ -137,6 +138,7 @@ export default function MaintenancePage() {
     const { data: tasks = [], isLoading } = useQuery({
         queryKey: ['maintenance-tasks'],
         queryFn:  () => base44.entities.MaintenanceTask.filter({ is_active: true }),
+        staleTime: STALE.MEDIUM,
     });
 
     const completeMutation = useMutation({

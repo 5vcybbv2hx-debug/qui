@@ -14,7 +14,7 @@ const wastageTypes = [
     { value: 'Bruch', label: 'Bruch', icon: '💥', color: 'bg-red-100 text-red-700' },
     { value: 'Nachtwächter', label: 'Nachtwächter', icon: '🍺', color: 'bg-amber-100 text-amber-700' },
     { value: 'Verderb', label: 'Verderb', icon: '🦠', color: 'bg-purple-100 text-purple-700' },
-    { value: 'Sonstiges', label: 'Sonstiges', icon: '📋', color: 'bg-slate-100 text-slate-700' }
+    { value: 'Sonstiges', label: 'Sonstiges', icon: '📋', color: 'bg-secondary/50 text-foreground' }
 ];
 
 const emptyItem = { barcode: '', article_name: '', article_image_url: '', quantity: '1', unit: 'Stück', type: 'Bruch', notes: '' };
@@ -173,33 +173,33 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-amber-400" />
-                    <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Vorlagen</h2>
+                    <h2 className="text-sm font-semibold text-foreground/75 uppercase tracking-wider">Vorlagen</h2>
                 </div>
-                <Button size="sm" variant="outline" onClick={openCreate} className="border-slate-600 text-slate-300 hover:bg-slate-700">
+                <Button size="sm" variant="outline" onClick={openCreate} className="border-border/70 text-foreground/75 hover:bg-secondary">
                     <Plus className="w-3.5 h-3.5 mr-1" />
                     Vorlage
                 </Button>
             </div>
 
             {templates.length === 0 ? (
-                <Card className="p-4 bg-slate-800 border-slate-700 border-dashed text-center">
-                    <p className="text-slate-500 text-sm">Noch keine Vorlagen. Erstelle Vorlagen für häufige Schwund-Einträge.</p>
+                <Card className="p-4 bg-card border-border border-dashed text-center">
+                    <p className="text-foreground0 text-sm">Noch keine Vorlagen. Erstelle Vorlagen für häufige Schwund-Einträge.</p>
                 </Card>
             ) : (
                 <div className="flex flex-wrap gap-2">
                     {templates.map(template => {
                         const count = getTemplateItemCount(template);
                         return (
-                            <Card key={template.id} className="bg-slate-800 border-slate-700 flex items-center gap-2 px-3 py-2 hover:border-amber-500/50 transition-colors group">
+                            <Card key={template.id} className="bg-card border-border flex items-center gap-2 px-3 py-2 hover:border-amber-500/50 transition-colors group">
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-white truncate">{template.name}</p>
-                                    <p className="text-xs text-slate-400">{count} Artikel</p>
+                                    <p className="text-sm font-medium text-foreground truncate">{template.name}</p>
+                                    <p className="text-xs text-muted-foreground">{count} Artikel</p>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openEdit(template)} className="p-1 text-slate-500 hover:text-slate-300">
+                                    <button onClick={() => openEdit(template)} className="p-1 text-foreground0 hover:text-foreground/75">
                                         <Pencil className="w-3.5 h-3.5" />
                                     </button>
-                                    <button onClick={() => handleDelete(template.id)} className="p-1 text-slate-500 hover:text-red-400">
+                                    <button onClick={() => handleDelete(template.id)} className="p-1 text-foreground0 hover:text-red-400">
                                         <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
@@ -207,7 +207,7 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                                     size="sm"
                                     onClick={() => handleApplyClick(template)}
                                     disabled={applyMutation.isPending}
-                                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-2 h-7"
+                                    className="bg-amber-600 hover:bg-amber-700 text-foreground text-xs px-2 h-7"
                                 >
                                     Eintragen
                                 </Button>
@@ -219,21 +219,21 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
 
             {/* Date picker dialog for applying template */}
             <Dialog open={dateDialogOpen} onOpenChange={setDateDialogOpen}>
-                <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-sm">
+                <DialogContent className="bg-card border-border text-foreground max-w-sm">
                     <DialogHeader>
                         <DialogTitle>Für welches Datum eintragen?</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-2 py-2">
-                        <Label className="text-slate-300">Datum</Label>
+                        <Label className="text-foreground/75">Datum</Label>
                         <Input
                             type="date"
                             value={applyDate}
                             onChange={e => setApplyDate(e.target.value)}
-                            className="bg-slate-900 border-slate-600 text-white"
+                            className="bg-background border-border/70 text-foreground"
                         />
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDateDialogOpen(false)} className="border-slate-600 text-slate-300">
+                        <Button variant="outline" onClick={() => setDateDialogOpen(false)} className="border-border/70 text-foreground/75">
                             Abbrechen
                         </Button>
                         <Button
@@ -248,24 +248,24 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
             </Dialog>
 
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogContent className="bg-card border-border text-foreground max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>{editingTemplate ? 'Vorlage bearbeiten' : 'Neue Vorlage'}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div className="space-y-1.5">
-                            <Label className="text-slate-300">Vorlagenname</Label>
+                            <Label className="text-foreground/75">Vorlagenname</Label>
                             <Input
                                 value={templateName}
                                 onChange={e => setTemplateName(e.target.value)}
                                 placeholder="z.B. Abend-Routine"
-                                className="bg-slate-900 border-slate-600 text-white"
+                                className="bg-background border-border/70 text-foreground"
                             />
                         </div>
 
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <Label className="text-slate-300">Artikel</Label>
+                                <Label className="text-foreground/75">Artikel</Label>
                                 <Button size="sm" variant="ghost" onClick={addItem} className="text-amber-400 hover:text-amber-300 h-7 px-2">
                                     <Plus className="w-3.5 h-3.5 mr-1" /> Artikel hinzufügen
                                 </Button>
@@ -279,14 +279,14 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                                 ).slice(0, 5);
 
                                 return (
-                                    <div key={idx} className="p-3 bg-slate-900 rounded-lg border border-slate-700 space-y-2 relative">
+                                    <div key={idx} className="p-3 bg-background rounded-lg border border-border space-y-2 relative">
                                         {items.length > 1 && (
-                                            <button onClick={() => removeItem(idx)} className="absolute top-2 right-2 text-slate-500 hover:text-red-400">
+                                            <button onClick={() => removeItem(idx)} className="absolute top-2 right-2 text-foreground0 hover:text-red-400">
                                                 <X className="w-4 h-4" />
                                             </button>
                                         )}
                                         <div className="space-y-1.5">
-                                            <Label className="text-slate-400 text-xs">Artikel {idx + 1}</Label>
+                                            <Label className="text-muted-foreground text-xs">Artikel {idx + 1}</Label>
                                             <div className="relative">
                                                 <Input
                                                     value={articleSearches[idx] || ''}
@@ -298,15 +298,15 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                                                     }}
                                                     onBlur={() => setTimeout(() => setShowSuggestions(prev => prev.map((s, i) => i === idx ? false : s)), 150)}
                                                     placeholder="Artikel suchen..."
-                                                    className="bg-slate-800 border-slate-600 text-white text-sm"
+                                                    className="bg-card border-border/70 text-foreground text-sm"
                                                 />
                                                 {showSuggestions[idx] && suggestions.length > 0 && (
-                                                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-slate-800 border border-slate-600 rounded-lg overflow-hidden">
+                                                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-card border border-border/70 rounded-lg overflow-hidden">
                                                         {suggestions.map(a => (
                                                             <button key={a.id} type="button" onMouseDown={() => selectArticle(idx, a)}
-                                                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-700 text-left">
+                                                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary text-left">
                                                                 {a.image_url && <img src={a.image_url} alt="" className="w-6 h-6 rounded object-cover" />}
-                                                                <span className="text-sm text-white truncate">{a.name}</span>
+                                                                <span className="text-sm text-foreground truncate">{a.name}</span>
                                                             </button>
                                                         ))}
                                                     </div>
@@ -316,9 +316,9 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div className="space-y-1">
-                                                <Label className="text-slate-400 text-xs">Art</Label>
+                                                <Label className="text-muted-foreground text-xs">Art</Label>
                                                 <Select value={item.type} onValueChange={v => updateItem(idx, 'type', v)}>
-                                                    <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-8 text-sm">
+                                                    <SelectTrigger className="bg-card border-border/70 text-foreground h-8 text-sm">
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -329,22 +329,22 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                                                 </Select>
                                             </div>
                                             <div className="space-y-1">
-                                                <Label className="text-slate-400 text-xs">Menge</Label>
+                                                <Label className="text-muted-foreground text-xs">Menge</Label>
                                                 <Input
                                                     type="number" step="0.1" min="0.1"
                                                     value={item.quantity}
                                                     onChange={e => updateItem(idx, 'quantity', e.target.value)}
-                                                    className="bg-slate-800 border-slate-600 text-white h-8 text-sm"
+                                                    className="bg-card border-border/70 text-foreground h-8 text-sm"
                                                 />
                                             </div>
                                         </div>
                                         <div className="space-y-1">
-                                            <Label className="text-slate-400 text-xs">Notiz (optional)</Label>
+                                            <Label className="text-muted-foreground text-xs">Notiz (optional)</Label>
                                             <Input
                                                 value={item.notes}
                                                 onChange={e => updateItem(idx, 'notes', e.target.value)}
                                                 placeholder="z.B. Regelmäßiger Bruch"
-                                                className="bg-slate-800 border-slate-600 text-white h-8 text-sm"
+                                                className="bg-card border-border/70 text-foreground h-8 text-sm"
                                             />
                                         </div>
                                     </div>
@@ -353,7 +353,7 @@ export default function WastageTemplates({ articles, currentUser, onApply }) {
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-slate-600 text-slate-300">
+                        <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-border/70 text-foreground/75">
                             Abbrechen
                         </Button>
                         <Button

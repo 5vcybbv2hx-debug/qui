@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { format, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Bell, CheckCircle2, Trash2, Eye, Filter, AlertCircle, Settings, Link as LinkIcon } from 'lucide-react';
@@ -38,13 +39,13 @@ export default function Notifications() {
     const { data: currentUser } = useQuery({
         queryKey: ['user'],
         queryFn: () => base44.auth.me(),
-        staleTime: 10 * 60 * 1000
+        staleTime: STALE.SLOW
     });
 
     const { data: allNotifications = [] } = useQuery({
         queryKey: ['notifications'],
         queryFn: () => base44.entities.Notification.list('-created_date', 200),
-        staleTime: 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: userSettings } = useQuery({

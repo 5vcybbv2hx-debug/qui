@@ -5,7 +5,8 @@
  */
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { format, subDays, addDays, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
@@ -95,13 +96,13 @@ export default function GuestHub() {
     const { data: tables = [] } = useQuery({
         queryKey: ['tables'],
         queryFn: () => base44.entities.Table.list(),
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: rooms = [] } = useQuery({
         queryKey: ['rooms'],
         queryFn: () => base44.entities.Room.list(),
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
     // ── Mutations ────────────────────────────────────────────────────────────

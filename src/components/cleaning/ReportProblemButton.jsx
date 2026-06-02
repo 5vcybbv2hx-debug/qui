@@ -62,9 +62,9 @@ export default function ReportProblemButton({ task, userName }) {
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                        <div className="p-3 bg-slate-100 rounded-lg border border-slate-200">
-                            <p className="text-sm font-medium text-slate-900">{task.title}</p>
-                            <p className="text-xs text-slate-600 mt-1">Bereich: {task.area}</p>
+                        <div className="p-3 bg-secondary/50 rounded-lg border border-slate-200">
+                            <p className="text-sm font-medium text-foreground">{task.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Bereich: {task.area}</p>
                         </div>
 
                         <div className="space-y-2">

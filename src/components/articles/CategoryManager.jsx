@@ -95,7 +95,7 @@ export default function CategoryManager() {
             <Button
                 variant="outline"
                 onClick={() => openModal()}
-                className="border-slate-600 hover:bg-slate-700 text-slate-300"
+                className="border-border/70 hover:bg-secondary text-foreground/75"
             >
                 <Tag className="w-4 h-4 mr-2" />
                 Kategorien

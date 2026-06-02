@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { format, parseISO, startOfWeek, endOfWeek, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Clock, LogIn, LogOut, CheckCircle2, FileText, TrendingUp } from 'lucide-react';
@@ -43,7 +44,7 @@ export default function TimeTrackingWidget({ currentEmployee }) {
             10
         ),
         enabled: !!currentEmployee?.id,
-        staleTime: 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: activeClockEntry } = useQuery({

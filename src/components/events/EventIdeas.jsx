@@ -12,7 +12,7 @@ import { Plus, Trash2, CheckCircle2, Lightbulb, Edit } from 'lucide-react';
 const statusColors = {
     'Idee': 'bg-blue-100 text-blue-700',
     'geplant': 'bg-amber-100 text-amber-700',
-    'verworfen': 'bg-slate-100 text-foreground',
+    'verworfen': 'bg-secondary/50 text-foreground',
     'umgesetzt': 'bg-green-100 text-green-700'
 };
 

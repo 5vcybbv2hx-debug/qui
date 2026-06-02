@@ -451,6 +451,7 @@ export default function CalendarPage() {
                             employees={employees}
                             reservations={reservations}
                             events={events}
+                            wcMatches={wcMatches}
                             onEventClick={handleEventClick}
                             onDayClick={(day) => setSelectedDayDetail(day)}
                             selectedEmployees={selectedEmployees}

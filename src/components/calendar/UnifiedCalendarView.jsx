@@ -10,6 +10,11 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 const EVENT_STYLES = {
+    wcmatch: {
+        bg: 'bg-green-500/20 border-l-2 border-green-500 hover:bg-green-500/30',
+        dot: 'bg-green-400',
+        text: 'text-green-200',
+    },
     shift: {
         bg: 'bg-amber-500/20 border-l-2 border-amber-500 hover:bg-amber-500/30',
         dot: 'bg-amber-400',
@@ -50,6 +55,7 @@ export default function UnifiedCalendarView({
     employees = [],
     reservations = [],
     events = [],
+    wcMatches = [],
     onEventClick = () => {},
     onDayClick = () => {},
     selectedEmployees = [],
@@ -106,6 +112,14 @@ export default function UnifiedCalendarView({
         events.forEach(ev => {
             if (ev.date === dayStr) {
                 dayEvents.push({ type: 'event', id: `event-${ev.id}`, data: ev });
+            }
+        });
+
+        // WM-Spiele
+        wcMatches.forEach(match => {
+            const matchDate = match.kickoff_time ? match.kickoff_time.slice(0, 10) : null;
+            if (matchDate === dayStr) {
+                dayEvents.push({ type: 'wcmatch', id: `wc-${match.id}`, data: match });
             }
         });
 
@@ -275,6 +289,8 @@ export default function UnifiedCalendarView({
                                             ? `🎂 ${event.data.name}`
                                             : event.type === 'event'
                                             ? `🎉 ${event.data.title}`
+                                            : event.type === 'wcmatch'
+                                            ? `⚽ ${event.data.home_team} – ${event.data.away_team}`
                                             : event.data.name;
 
                                         return (
@@ -328,6 +344,10 @@ export default function UnifiedCalendarView({
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <div className="w-3 h-3 rounded-sm bg-purple-500/30 border-l-2 border-purple-500" />
                     Geburtstag
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-3 h-3 rounded-sm bg-green-500/30 border-l-2 border-green-500" />
+                    ⚽ WM-Spiel
                 </div>
             </div>
 

@@ -171,6 +171,7 @@ export default function TeamCalendar() {
                         maintenanceTasks={maintenanceTasks}
                         events={events}
                         reservations={reservations}
+                        wcMatches={wcMatches}
                         onEventClick={handleEventClick}
                         selectedEmployees={selectedEmployees}
                         onEmployeeToggle={setSelectedEmployees}

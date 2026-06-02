@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     BookOpen, Receipt, TrendingUp, TrendingDown, AlertTriangle,
-    CheckCircle2, Clock, ArrowRight, Download, FileText, Layers,
+    CheckCircle2, Clock, ChevronRight, ArrowRight, Download, FileText, Layers,
     BarChart2, Euro, CreditCard, Calendar, RefreshCw, Building2
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isAfter, subMonths } from 'date-fns';
@@ -20,27 +20,29 @@ import { cn } from '@/lib/utils';
 const fmt = (n) => n?.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00';
 
 function KpiCard({ icon: Icon, label, value, sub, color = 'amber', onClick }) {
-    const colors = {
-        amber: 'from-amber-500/10 to-amber-600/5 border-amber-500/20 text-amber-400',
-        green: 'from-green-500/10 to-green-600/5 border-green-500/20 text-green-400',
-        red: 'from-red-500/10 to-red-600/5 border-red-500/20 text-red-400',
-        blue: 'from-blue-500/10 to-blue-600/5 border-blue-500/20 text-blue-400',
-        purple: 'from-purple-500/10 to-purple-600/5 border-purple-500/20 text-purple-400',
+    const colorMap = {
+        amber:  { grad: 'from-amber-500/10 to-amber-600/5 border-amber-500/20',   icon: 'bg-amber-500/15',   text: 'text-amber-400'   },
+        green:  { grad: 'from-green-500/10 to-green-600/5 border-green-500/20',   icon: 'bg-green-500/15',   text: 'text-green-400'   },
+        red:    { grad: 'from-red-500/10 to-red-600/5 border-red-500/20',         icon: 'bg-red-500/15',     text: 'text-red-400'     },
+        blue:   { grad: 'from-blue-500/10 to-blue-600/5 border-blue-500/20',      icon: 'bg-blue-500/15',    text: 'text-blue-400'    },
+        purple: { grad: 'from-purple-500/10 to-purple-600/5 border-purple-500/20', icon: 'bg-purple-500/15', text: 'text-purple-400'  },
     };
+    const cl = colorMap[color] || colorMap.amber;
     return (
         <Card
             onClick={onClick}
             className={cn(
-                'p-4 bg-gradient-to-br border cursor-pointer hover:scale-[1.02] transition-all',
-                colors[color]
+                'p-4 bg-gradient-to-br border transition-all',
+                onClick && 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]',
+                cl.grad
             )}
         >
             <div className="flex items-start justify-between mb-3">
-                <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', `bg-${color}-500/15`)}>
-                    <Icon className="w-5 h-5" className="w-5 h-5" />
+                <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', cl.icon)}>
+                    <Icon className={cn("w-5 h-5", cl.text)} />
                 </div>
             </div>
-            <p className="text-2xl font-bold text-foreground">{value}</p>
+            <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
             <p className="text-xs font-medium text-muted-foreground mt-0.5">{label}</p>
             {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
         </Card>

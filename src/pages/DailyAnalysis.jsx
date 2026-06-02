@@ -68,7 +68,7 @@ export default function DailyAnalysis() {
 
     const { data: dailyRevenues = [] } = useQuery({
         queryKey: ['daily-revenues'],
-        queryFn: () => base44.entities.DailyRevenue.list('-date'),
+        queryFn: () => base44.entities.DailyRevenue.list('-date', 180),
         staleTime: 2 * 60 * 1000,
     });
 
@@ -114,7 +114,7 @@ export default function DailyAnalysis() {
 
     const { data: tipDistributions = [] } = useQuery({
         queryKey: ['tip-distributions'],
-        queryFn: () => base44.entities.TipDistribution.list('-date'),
+        queryFn: () => base44.entities.TipDistribution.list('-date', 180),
         staleTime: 2 * 60 * 1000,
     });
 
@@ -126,7 +126,7 @@ export default function DailyAnalysis() {
 
     const { data: salesReports = [] } = useQuery({
         queryKey: ['sales-reports'],
-        queryFn: () => base44.entities.SalesReport.list('-report_date'),
+        queryFn: () => base44.entities.SalesReport.list('-report_date', 100),
         staleTime: 2 * 60 * 1000,
     });
 

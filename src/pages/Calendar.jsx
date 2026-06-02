@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { STALE } from '@/lib/queryUtils';
+import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
     CalendarDays, Users, Plus, Download, Filter, X, CalendarOff
@@ -43,6 +44,10 @@ export default function CalendarPage() {
     const permissions = usePermissions();
 
     const [view, setView] = useState('schichtplan');
+    // viewMonth drives the shift query window — keeps data scoped to ±1 month
+    const [viewMonth, setViewMonth] = useState(new Date());
+    const shiftFrom = format(subMonths(startOfMonth(viewMonth), 1), 'yyyy-MM-dd');
+    const shiftTo   = format(addMonths(endOfMonth(viewMonth), 1), 'yyyy-MM-dd');
 
     // Schichtplan state
     const [modalOpen, setModalOpen] = useState(false);
@@ -66,42 +71,50 @@ export default function CalendarPage() {
     // --- Shared data ---
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
 
     const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 1000)
+        queryKey: ['shifts', shiftFrom, shiftTo],
+        queryFn: () => base44.entities.Shift.filter({ date_gte: shiftFrom, date_lte: shiftTo }, 'date', 300),
+        staleTime: STALE.SLOW,
     });
 
     const { data: reservations = [] } = useQuery({
-        queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 200)
+        queryKey: ['reservations', 'active'],
+        queryFn: () => base44.entities.Reservation.filter({ is_archived: false }, '-date', 200),
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: requirements = [] } = useQuery({
         queryKey: ['shift-requirements'],
-        queryFn: () => base44.entities.ShiftRequirement.list()
+        queryFn: () => base44.entities.ShiftRequirement.list(),
+        staleTime: STALE.SLOW,
     });
 
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list()
+        queryFn: () => base44.entities.VacationRequest.list('-created_date', 200),
+        staleTime: STALE.SLOW,
     });
 
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
-        queryFn: () => base44.entities.Event.list('-date', 200)
+        queryFn: () => base44.entities.Event.list('-date', 200),
+        staleTime: STALE.SLOW,
     });
 
     const { data: unavailabilityRequests = [] } = useQuery({
         queryKey: ['unavailability-requests-all'],
-        queryFn: () => base44.entities.UnavailabilityRequest.list('-date', 500)
+        queryFn: () => base44.entities.UnavailabilityRequest.list('-date', 500),
+        staleTime: STALE.SLOW,
     });
 
     const { data: provisionalRequests = [] } = useQuery({
         queryKey: ['provisional-shift-requests'],
-        queryFn: () => base44.entities.ProvisionalShiftRequest.list('-date', 500)
+        queryFn: () => base44.entities.ProvisionalShiftRequest.list('-date', 500),
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: wcMatches = [] } = useWorldCupMatches();
@@ -115,8 +128,8 @@ export default function CalendarPage() {
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
         onSuccess: (newShift) => {
-            queryClient.setQueryData(['shifts'], (old) => [newShift, ...(old || [])]);
-            queryClient.invalidateQueries(['shifts']);
+            queryClient.setQueryData(['shifts', shiftFrom, shiftTo], (old) => [newShift, ...(old || [])]);
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
         }
@@ -125,16 +138,16 @@ export default function CalendarPage() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Shift.update(id, data),
         onMutate: async ({ id, data }) => {
-            await queryClient.cancelQueries(['shifts']);
-            const previous = queryClient.getQueryData(['shifts']);
-            queryClient.setQueryData(['shifts'], (old) =>
+            await queryClient.cancelQueries({ queryKey: ['shifts'] });
+            const previous = queryClient.getQueryData(['shifts', shiftFrom, shiftTo]);
+            queryClient.setQueryData(['shifts', shiftFrom, shiftTo], (old) =>
                 (old || []).map(s => s.id === id ? { ...s, ...data } : s)
             );
             return { previous };
         },
         onError: (err, vars, context) => queryClient.setQueryData(['shifts'], context.previous),
         onSuccess: () => {
-            queryClient.invalidateQueries(['shifts']);
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
         }
@@ -143,14 +156,14 @@ export default function CalendarPage() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Shift.delete(id),
         onMutate: async (id) => {
-            await queryClient.cancelQueries(['shifts']);
-            const previous = queryClient.getQueryData(['shifts']);
-            queryClient.setQueryData(['shifts'], (old) => (old || []).filter(s => s.id !== id));
+            await queryClient.cancelQueries({ queryKey: ['shifts'] });
+            const previous = queryClient.getQueryData(['shifts', shiftFrom, shiftTo]);
+            queryClient.setQueryData(['shifts', shiftFrom, shiftTo], (old) => (old || []).filter(s => s.id !== id));
             return { previous };
         },
         onError: (err, vars, context) => queryClient.setQueryData(['shifts'], context.previous),
         onSuccess: () => {
-            queryClient.invalidateQueries(['shifts']);
+            queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
         }

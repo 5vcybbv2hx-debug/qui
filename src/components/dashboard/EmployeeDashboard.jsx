@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isFuture, isToday, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
@@ -32,46 +33,49 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
             'date', 100
         ),
         enabled: !!currentEmployee?.id,
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.SLOW,
     });
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries', currentEmployee?.id],
-        queryFn: () => base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }),
+        queryFn: () => base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 100),
         enabled: !!currentEmployee?.id,
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.SLOW
     });
     const { data: clockEntries = [] } = useQuery({
         queryKey: ['clock-entries', currentEmployee?.id],
-        queryFn: () => base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }),
+        queryFn: () => base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 50),
         enabled: !!currentEmployee?.id,
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.FAST
     });
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('-date', 30),
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.SLOW,
     });
     const { data: reservations = [] } = useQuery({
-        queryKey: ['reservations'],
-        queryFn: () => base44.entities.Reservation.list('-date', 30),
-        staleTime: 5 * 60 * 1000
+        queryKey: ['reservations', 'active'],
+        queryFn: () => base44.entities.Reservation.filter({ is_archived: false }, '-date', 100),
+        staleTime: STALE.MEDIUM,
     });
     const { data: todos = [] } = useQuery({
         queryKey: ['todos'],
-        queryFn: () => base44.entities.TodoItem.filter({ is_archived: false })
+        queryFn: () => base44.entities.TodoItem.filter({ is_archived: false }, '-created_date', 100),
+        staleTime: STALE.SLOW,
     });
     const { data: cleaningTasks = [] } = useQuery({
         queryKey: ['cleaning-tasks'],
         queryFn: () => base44.entities.CleaningTask.filter({ is_active: true }, 'area', 100),
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.SLOW,
     });
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list('-created_date', 50)
+        queryFn: () => base44.entities.VacationRequest.list('-created_date', 50),
+        staleTime: STALE.SLOW,
     });
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true })
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: STALE.SLOW,
     });
     const { data: onboardingItems = [] } = useQuery({
         queryKey: ['onboarding-items', currentEmployee?.id],

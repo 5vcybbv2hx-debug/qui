@@ -36,6 +36,7 @@ export const mainNavigation = [
         pages: [
             { name: 'Gäste & Tische',     page: 'GuestHub',        icon: MapPin,       permission: 'canViewReservations' },
             { name: 'Aufgaben',           page: 'Todos',           icon: CheckSquare,  permission: 'canViewTodos'        },
+            { name: 'Wochenaufgaben',      page: 'WeeklyTasks',     icon: ListChecks,   permission: 'canViewTodos'        },
             { name: 'Putzliste',          page: 'Cleaning',        icon: Brush,        permission: 'canViewCleaning'     },
             { name: 'Auffüllliste',       page: 'Restock',         icon: RefreshCw,    permission: 'canViewRestock'      },
             { name: 'Einkaufsliste',      page: 'Shopping',        icon: ShoppingCart, permission: 'canViewShopping'     },
@@ -88,6 +89,7 @@ export const mainNavigation = [
         pages: [
             { name: 'Mitarbeiter',   page: 'Employees',      icon: Users,          permission: 'canViewEmployees'      },
             { name: 'Schichtplan',   page: 'Calendar',       icon: Calendar,       permission: 'canViewShifts'         },
+            { name: 'Schichtanalyse', page: 'ShiftAnalytics', icon: BarChart2,      permission: 'canViewAnalytics'      },
             { name: 'Teamkalender',  page: 'TeamCalendar',   icon: Calendar,       permission: 'canViewTeamCalendar'   },
             { name: 'Zeiterfassung', page: 'TimeManagement', icon: Clock,          permission: 'canViewOwnTimeEntries' },
             { name: 'Urlaub',        page: 'Vacation',       icon: Palmtree,       permission: 'canViewVacation' },

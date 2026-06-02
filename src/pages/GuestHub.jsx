@@ -225,6 +225,13 @@ export default function GuestHub() {
 
     if (!permissions.canViewReservations) return <PermissionDenied message="Keine Berechtigung." />;
 
+    if (activeLoading) return (
+        <div className="min-h-screen bg-background pb-24 md:pb-8 px-4 pt-4 space-y-3">
+            <ListSkeleton count={1} height="h-14" />
+            <ListSkeleton count={4} height="h-24" />
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-8">
             <div className="max-w-2xl mx-auto">

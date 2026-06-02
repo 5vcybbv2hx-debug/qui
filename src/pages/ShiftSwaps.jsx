@@ -17,6 +17,7 @@ import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import ShiftMarketplaceModal from '@/components/shifts/ShiftMarketplaceModal';
 import DirectSwapModal from '@/components/shifts/DirectSwapModal';
 import { 
+import { LoadingState, ListSkeleton, ErrorState } from '@/components/ui/StateDisplay';
   sortBidsByTimestamp, 
   groupBidsByStatus, 
   formatBidTime, 
@@ -272,6 +273,13 @@ export default function ShiftSwaps() {
             </div>
         );
     }
+
+    if (loadingRequests) return (
+        <div className="min-h-screen bg-background px-4 py-6 space-y-4">
+            <ListSkeleton count={1} height="h-10" />
+            <ListSkeleton count={4} height="h-28" />
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-background p-6">

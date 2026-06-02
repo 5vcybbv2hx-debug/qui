@@ -61,10 +61,10 @@ export function SalesForecast({ salesData }) {
 
     if (!forecast || forecast.length === 0) {
         return (
-            <Card className="bg-slate-800 border-slate-700">
+            <Card className="bg-card border-border">
                 <CardHeader>
-                    <CardTitle className="text-white">Umsatz-Prognose</CardTitle>
-                    <CardDescription className="text-slate-400">
+                    <CardTitle className="text-foreground">Umsatz-Prognose</CardTitle>
+                    <CardDescription className="text-muted-foreground">
                         Nicht genügend Daten für eine Prognose (mind. 7 Tage benötigt)
                     </CardDescription>
                 </CardHeader>
@@ -73,49 +73,49 @@ export function SalesForecast({ salesData }) {
     }
 
     return (
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-card border-border">
             <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-emerald-400" />
                     7-Tage Umsatz-Prognose
                 </CardTitle>
-                <CardDescription className="text-slate-400">
+                <CardDescription className="text-muted-foreground">
                     Basierend auf historischen Daten der letzten 4 Wochen
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-slate-900/50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                    <div className="bg-background/50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                             <Calendar className="w-4 h-4" />
                             Ø Pro Tag
                         </div>
-                        <div className="text-2xl font-bold text-white">{avgDaily}€</div>
+                        <div className="text-2xl font-bold text-foreground">{avgDaily}€</div>
                     </div>
                     
-                    <div className="bg-slate-900/50 rounded-lg p-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                    <div className="bg-background/50 rounded-lg p-4">
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                             <DollarSign className="w-4 h-4" />
                             7-Tage Total
                         </div>
-                        <div className="text-2xl font-bold text-white">{weeklyTotal}€</div>
+                        <div className="text-2xl font-bold text-foreground">{weeklyTotal}€</div>
                     </div>
                     
-                    <div className="bg-slate-900/50 rounded-lg p-4 col-span-2">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+                    <div className="bg-background/50 rounded-lg p-4 col-span-2">
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                             {trend === 'up' ? (
                                 <TrendingUp className="w-4 h-4 text-emerald-400" />
                             ) : trend === 'down' ? (
                                 <TrendingDown className="w-4 h-4 text-red-400" />
                             ) : (
-                                <TrendingUp className="w-4 h-4 text-slate-400" />
+                                <TrendingUp className="w-4 h-4 text-muted-foreground" />
                             )}
                             Trend
                         </div>
                         <div className={cn(
                             "text-2xl font-bold",
-                            trend === 'up' ? "text-emerald-400" : trend === 'down' ? "text-red-400" : "text-slate-400"
+                            trend === 'up' ? "text-emerald-400" : trend === 'down' ? "text-red-400" : "text-muted-foreground"
                         )}>
                             {trend === 'up' ? '+' : trend === 'down' ? '-' : '±'}{trendPercent}%
                         </div>
@@ -177,15 +177,15 @@ export function SalesForecast({ salesData }) {
                 <div className="flex items-center justify-center gap-6 text-sm">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-emerald-400 rounded"></div>
-                        <span className="text-slate-400">Optimistisch (+15%)</span>
+                        <span className="text-muted-foreground">Optimistisch (+15%)</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-blue-400 rounded"></div>
-                        <span className="text-slate-400">Prognose</span>
+                        <span className="text-muted-foreground">Prognose</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-red-400 rounded"></div>
-                        <span className="text-slate-400">Konservativ (-15%)</span>
+                        <span className="text-muted-foreground">Konservativ (-15%)</span>
                     </div>
                 </div>
             </CardContent>

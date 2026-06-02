@@ -37,7 +37,7 @@ function KpiCard({ icon: Icon, label, value, sub, color = 'amber', onClick }) {
         >
             <div className="flex items-start justify-between mb-3">
                 <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', `bg-${color}-500/15`)}>
-                    <Icon className="w-5 h-5" style={{ color: `var(--tw-${color})` }} />
+                    <Icon className="w-5 h-5" className="w-5 h-5" />
                 </div>
             </div>
             <p className="text-2xl font-bold text-foreground">{value}</p>
@@ -206,7 +206,7 @@ export default function AccountingDashboard() {
                         <p className="text-xs text-muted-foreground">{monthLabel}</p>
                     </div>
                     <Link to="/AccountingExport">
-                        <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5">
+                        <Button size="sm" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground gap-1.5 shadow-sm shadow-amber-500/20">
                             <Download className="w-4 h-4" />
                             Export
                         </Button>
@@ -311,8 +311,8 @@ export default function AccountingDashboard() {
                             { label: 'Monatsabschluss', icon: Calendar, href: '/AccountingMonthlyClosing', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
                         ].map(item => (
                             <Link key={item.href} to={item.href}>
-                                <Card className="p-4 bg-card border-border hover:border-border/80 hover:bg-accent/30 transition-all cursor-pointer">
-                                    <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center mb-2', item.bg)}>
+                                <Card className="p-4 bg-card border-border hover:border-primary/30 hover:bg-accent/30 active:scale-[0.98] transition-all cursor-pointer group">
+                                    <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform', item.bg)}>
                                         <item.icon className={cn('w-5 h-5', item.color)} />
                                     </div>
                                     <p className="text-sm font-medium text-foreground">{item.label}</p>

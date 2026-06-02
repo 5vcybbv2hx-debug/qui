@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart, Lightbulb, CheckSquare, X, Sparkles, ChefHat } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
@@ -65,23 +66,26 @@ export default function Recipes() {
 
     const { data: recipes = [] } = useQuery({
         queryKey: ['recipes'],
-        queryFn: () => base44.entities.Recipe.list('name')
+        queryFn: () => base44.entities.Recipe.list('name', 500),
+        staleTime: STALE.SLOW,
     });
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list('name')
+        queryFn: () => base44.entities.Article.list('name', 500),
+        staleTime: STALE.SLOW,
     });
 
     const { data: shoppingList = [] } = useQuery({
         queryKey: ['shopping-list'],
-        queryFn: () => base44.entities.ShoppingList.list()
+        queryFn: () => base44.entities.ShoppingList.list(),
+        staleTime: STALE.SLOW,
     });
 
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Recipe.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['recipes']);
+            queryClient.invalidateQueries({ queryKey: ['recipes'] });
             closeModal();
         }
     });
@@ -89,7 +93,7 @@ export default function Recipes() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Recipe.update(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries(['recipes']);
+            queryClient.invalidateQueries({ queryKey: ['recipes'] });
             closeModal();
         }
     });
@@ -97,7 +101,7 @@ export default function Recipes() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Recipe.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries(['recipes']);
+            queryClient.invalidateQueries({ queryKey: ['recipes'] });
         }
     });
 

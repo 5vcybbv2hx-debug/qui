@@ -224,7 +224,7 @@ export default function AccountingFixedCosts() {
                     </div>
                     <div className="flex items-center gap-2">
                         <Input type="month" value={selectedMonth} onChange={e => setSelectedMonth(e.target.value)} className="h-8 text-xs w-36" />
-                        <Button size="sm" onClick={openAdd} className="bg-orange-600 hover:bg-orange-700 text-white gap-1 h-8 shrink-0">
+                        <Button size="sm" onClick={openAdd} className="bg-orange-500 hover:bg-orange-600 text-primary-foreground gap-1 h-8 shrink-0">
                             <Plus className="w-4 h-4" />
                         </Button>
                     </div>
@@ -234,7 +234,7 @@ export default function AccountingFixedCosts() {
                     {[{ k: 'monat', l: 'Monatsansicht' }, { k: 'verwaltung', l: 'Verwaltung' }].map(t => (
                         <button key={t.k} onClick={() => setView(t.k)}
                             className={cn('px-3 py-1.5 text-xs font-medium rounded-lg transition-all',
-                                view === t.k ? 'bg-orange-600 text-white' : 'bg-secondary text-muted-foreground'
+                                view === t.k ? 'bg-orange-500/90 text-primary-foreground' : 'bg-secondary text-muted-foreground'
                             )}>
                             {t.l}
                         </button>
@@ -305,7 +305,7 @@ export default function AccountingFixedCosts() {
                             <Card className="p-12 text-center text-muted-foreground bg-card border-border">
                                 <RefreshCw className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                 <p className="text-sm">Keine Fixkosten für {monthLabel}</p>
-                                <Button onClick={openAdd} className="mt-4 bg-orange-600 hover:bg-orange-700 text-white gap-2">
+                                <Button onClick={openAdd} className="mt-4 bg-orange-500 hover:bg-orange-600 text-primary-foreground gap-2">
                                     <Plus className="w-4 h-4" /> Fixkosten anlegen
                                 </Button>
                             </Card>
@@ -373,7 +373,7 @@ export default function AccountingFixedCosts() {
                             <Card className="p-12 text-center text-muted-foreground bg-card border-border">
                                 <RefreshCw className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                 <p className="text-sm">Noch keine Fixkosten angelegt</p>
-                                <Button onClick={openAdd} className="mt-4 bg-orange-600 hover:bg-orange-700 text-white gap-2">
+                                <Button onClick={openAdd} className="mt-4 bg-orange-500 hover:bg-orange-600 text-primary-foreground gap-2">
                                     <Plus className="w-4 h-4" /> Fixkosten anlegen
                                 </Button>
                             </Card>
@@ -419,7 +419,7 @@ export default function AccountingFixedCosts() {
             {/* FAB */}
             <button
                 onClick={openAdd}
-                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-orange-600 hover:bg-orange-700 text-white rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
+                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-orange-500 hover:bg-orange-600 text-primary-foreground rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
             >
                 <Plus className="w-6 h-6" />
             </button>
@@ -611,7 +611,7 @@ export default function AccountingFixedCosts() {
                         </div>
                         <div className="flex gap-2 pt-2">
                             <Button type="button" variant="outline" onClick={closeModal} className="flex-1">Abbrechen</Button>
-                            <Button type="submit" className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                            <Button type="submit" className="flex-1 bg-orange-500 hover:bg-orange-600 text-primary-foreground"
                                 disabled={createExpenseMutation.isPending || updateExpenseMutation.isPending}>
                                 {editItem ? 'Speichern' : 'Anlegen'}
                             </Button>

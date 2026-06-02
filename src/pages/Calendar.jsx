@@ -226,7 +226,7 @@ export default function CalendarPage() {
                                 onClick={() => setView(v.id)}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                                     view === v.id
-                                        ? 'bg-amber-600 text-white shadow'
+                                        ? 'bg-amber-600 text-foreground shadow'
                                         : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             >
@@ -365,7 +365,7 @@ export default function CalendarPage() {
                                                     className={`flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border transition-colors ${permissions.canEditShifts ? 'cursor-pointer hover:border-amber-600' : 'cursor-default'}`}
                                                 >
                                                     <div
-                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-foreground font-bold text-sm flex-shrink-0"
                                                         style={{ backgroundColor: employee?.color || '#64748b' }}
                                                     >
                                                         {shift.employee_name?.charAt(0)}

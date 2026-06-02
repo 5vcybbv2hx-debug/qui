@@ -17,8 +17,8 @@ import PDFExportButton from '@/components/export/PDFExportButton';
 import UnavailabilityManager from '@/components/availability/UnavailabilityManager';
 
 const priorityColors = {
-    'niedrig': 'bg-blue-100 text-blue-700',
-    'normal': 'bg-slate-100 text-slate-700',
+    'niedrig': 'bg-blue-500/15 text-primary',
+    'normal': 'bg-secondary/50 text-foreground',
     'hoch': 'bg-red-100 text-red-700'
 };
 
@@ -259,13 +259,13 @@ export default function TeamMeeting() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-background">
             <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-white">Teamsitzung</h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Teamsitzung</h1>
+                        <p className="text-muted-foreground text-sm mt-1">
                             {currentSchedule ? `${format(new Date(currentSchedule.date), 'EEEE, dd.MM.yyyy', { locale: de })} um ${currentSchedule.time} Uhr` : 'Noch kein Termin festgelegt'}
                         </p>
                     </div>
@@ -281,7 +281,7 @@ export default function TeamMeeting() {
                                 }}
                                 variant="outline"
                                 size="sm"
-                                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                                className="border-primary text-primary hover:bg-primary/10"
                             >
                                 <Settings className="w-4 h-4 mr-2" />
                                 Termin
@@ -317,7 +317,7 @@ export default function TeamMeeting() {
                         
                         {/* RSVP für Teamsitzung */}
                         {currentEmployee && currentSchedule && (
-                            <div className="flex gap-2 bg-slate-800 rounded-lg p-2">
+                            <div className="flex gap-2 bg-card rounded-lg p-2">
                                 <Button
                                     onClick={() => handleRsvp('zusage')}
                                     variant={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'default' : 'outline'}
@@ -386,25 +386,25 @@ export default function TeamMeeting() {
                 {/* Stats - nur für aktive Themen */}
                 {!showArchive && (
                     <div className="grid grid-cols-3 gap-3 mb-6">
-                        <Card className="bg-slate-800 border-slate-700">
+                        <Card className="bg-card border-border">
                             <CardContent className="p-4 text-center">
                                 <Clock className="w-6 h-6 mx-auto mb-2 text-amber-400" />
-                                <p className="text-2xl font-bold text-white">{groupedTopics.offen.length}</p>
-                                <p className="text-xs text-slate-400">Offen</p>
+                                <p className="text-2xl font-bold text-foreground">{groupedTopics.offen.length}</p>
+                                <p className="text-xs text-muted-foreground">Offen</p>
                             </CardContent>
                         </Card>
-                        <Card className="bg-slate-800 border-slate-700">
+                        <Card className="bg-card border-border">
                             <CardContent className="p-4 text-center">
                                 <MessageSquare className="w-6 h-6 mx-auto mb-2 text-purple-400" />
-                                <p className="text-2xl font-bold text-white">{groupedTopics.besprochen.length}</p>
-                                <p className="text-xs text-slate-400">Besprochen</p>
+                                <p className="text-2xl font-bold text-foreground">{groupedTopics.besprochen.length}</p>
+                                <p className="text-xs text-muted-foreground">Besprochen</p>
                             </CardContent>
                         </Card>
-                        <Card className="bg-slate-800 border-slate-700">
+                        <Card className="bg-card border-border">
                             <CardContent className="p-4 text-center">
                                 <CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-400" />
-                                <p className="text-2xl font-bold text-white">{groupedTopics.erledigt.length}</p>
-                                <p className="text-xs text-slate-400">Erledigt</p>
+                                <p className="text-2xl font-bold text-foreground">{groupedTopics.erledigt.length}</p>
+                                <p className="text-xs text-muted-foreground">Erledigt</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -412,9 +412,9 @@ export default function TeamMeeting() {
 
                 {/* Manager RSVP Übersicht */}
                 {permissions.isManager && currentSchedule && (
-                    <Card className="bg-slate-800 border-slate-700 p-4 mb-6">
+                    <Card className="bg-card border-border p-4 mb-6">
                         <div className="space-y-4">
-                            <h3 className="font-semibold text-white">Zusagen für {format(new Date(currentSchedule.date), 'dd.MM.yyyy', { locale: de })}</h3>
+                            <h3 className="font-semibold text-foreground">Zusagen für {format(new Date(currentSchedule.date), 'dd.MM.yyyy', { locale: de })}</h3>
                             
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 text-center">
@@ -425,9 +425,9 @@ export default function TeamMeeting() {
                                     <p className="text-2xl font-bold text-red-400">{rsvpData.filter(r => r.status === 'absage').length}</p>
                                     <p className="text-xs text-red-300">Abgesagt</p>
                                 </div>
-                                <div className="bg-slate-700/50 border border-slate-600 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-slate-300">{employees.length - rsvpData.length}</p>
-                                    <p className="text-xs text-slate-400">Offen</p>
+                                <div className="bg-secondary/50 border border-border/70 rounded-lg p-3 text-center">
+                                    <p className="text-2xl font-bold text-foreground/80">{employees.length - rsvpData.length}</p>
+                                    <p className="text-xs text-muted-foreground">Offen</p>
                                 </div>
                             </div>
 
@@ -462,11 +462,11 @@ export default function TeamMeeting() {
                                     const respondedEmployeeIds = new Set(rsvpData.map(r => r.employee_id));
                                     const pendingEmployees = employees.filter(emp => !respondedEmployeeIds.has(emp.id));
                                     return pendingEmployees.length > 0 ? (
-                                        <div className="bg-slate-700/30 border border-slate-600/50 rounded-lg p-3">
-                                            <p className="text-xs font-semibold text-slate-300 mb-2">OFFEN ({pendingEmployees.length})</p>
+                                        <div className="bg-secondary/30 border border-border/70/50 rounded-lg p-3">
+                                            <p className="text-xs font-semibold text-foreground/80 mb-2">OFFEN ({pendingEmployees.length})</p>
                                             <div className="space-y-1">
                                                 {pendingEmployees.map(emp => (
-                                                    <p key={emp.id} className="text-sm text-slate-400">○ {emp.name}</p>
+                                                    <p key={emp.id} className="text-sm text-muted-foreground">○ {emp.name}</p>
                                                 ))}
                                             </div>
                                         </div>
@@ -479,12 +479,12 @@ export default function TeamMeeting() {
 
                 {/* Info für Mitarbeiter */}
                 {!permissions.isManager && (
-                    <Card className="bg-blue-900/20 border-blue-700 p-4 mb-6">
+                    <Card className="bg-blue-500/10 border-blue-500/30 p-4 mb-6">
                         <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 shrink-0" />
+                            <AlertCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                             <div>
-                                <p className="text-sm text-blue-300 font-medium mb-1">Vertrauliche Themen</p>
-                                <p className="text-xs text-blue-400">
+                                <p className="text-sm text-primary font-semibold mb-1">Vertrauliche Themen</p>
+                                <p className="text-xs text-primary">
                                     Eingereichte Themen werden direkt an die Manager weitergeleitet und sind nur für dich und das Management einsehbar. Du siehst hier nur deine eigenen Einreichungen.
                                 </p>
                             </div>
@@ -497,14 +497,14 @@ export default function TeamMeeting() {
                     ['offen', 'besprochen', 'erledigt'].map(status => (
                         groupedTopics[status].length > 0 && (
                             <div key={status} className="mb-6">
-                                <h2 className="text-sm font-semibold text-slate-400 uppercase mb-3">
+                                <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
                                     {status === 'offen' ? 'Offene Themen' : status === 'besprochen' ? 'Besprochen' : 'Erledigt'}
                                 </h2>
                                 <div className="space-y-3">
                                     {groupedTopics[status].map(topic => (
                                         <Card 
                                             key={topic.id}
-                                            className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors"
+                                            className="bg-card border-border hover:bg-card transition-colors"
                                         >
                                             <CardContent className="p-4">
                                                 <div className="flex items-start justify-between gap-3">
@@ -513,17 +513,17 @@ export default function TeamMeeting() {
                                                         onClick={() => openDetail(topic)}
                                                     >
                                                         <div className="flex items-center gap-2 mb-2">
-                                                            <h3 className="font-semibold text-white">{topic.topic}</h3>
+                                                            <h3 className="font-semibold text-foreground">{topic.topic}</h3>
                                                             <Badge className={priorityColors[topic.priority]}>
                                                                 {topic.priority}
                                                             </Badge>
                                                         </div>
                                                         {topic.description && (
-                                                            <p className="text-sm text-slate-400 mb-2 line-clamp-2">
+                                                            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                                                                 {topic.description}
                                                             </p>
                                                         )}
-                                                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                                             <span>Von: {topic.employee_name}</span>
                                                             <span>•</span>
                                                             <span>{format(new Date(topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
@@ -539,10 +539,10 @@ export default function TeamMeeting() {
                                                                     e.stopPropagation();
                                                                     handleStatusChange('offen', topic);
                                                                 }}
-                                                                className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
+                                                                className="p-2 rounded-lg hover:bg-secondary transition-colors"
                                                                 title="Zurück zu offen"
                                                             >
-                                                                <RotateCcw className="w-4 h-4 text-blue-400" />
+                                                                <RotateCcw className="w-4 h-4 text-primary" />
                                                             </button>
                                                         )}
                                                         {status !== 'erledigt' && (
@@ -571,7 +571,7 @@ export default function TeamMeeting() {
                         {topics.map(topic => (
                             <Card 
                                 key={topic.id}
-                                className="bg-slate-800 border-slate-700 hover:bg-slate-750 transition-colors"
+                                className="bg-card border-border hover:bg-card transition-colors"
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">
@@ -580,17 +580,17 @@ export default function TeamMeeting() {
                                             onClick={() => openDetail(topic)}
                                         >
                                             <div className="flex items-center gap-2 mb-2">
-                                                <h3 className="font-semibold text-white">{topic.topic}</h3>
+                                                <h3 className="font-semibold text-foreground">{topic.topic}</h3>
                                                 <Badge className={priorityColors[topic.priority]}>
                                                     {topic.priority}
                                                 </Badge>
                                             </div>
                                             {topic.description && (
-                                                <p className="text-sm text-slate-400 mb-2 line-clamp-2">
+                                                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                                                     {topic.description}
                                                 </p>
                                             )}
-                                            <div className="flex items-center gap-3 text-xs text-slate-500">
+                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                                 <span>Von: {topic.employee_name}</span>
                                                 <span>•</span>
                                                 <span>{format(new Date(topic.archived_at || topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
@@ -606,10 +606,10 @@ export default function TeamMeeting() {
                                                     setSelectedTopic(topic);
                                                     handleArchiveToggle(topic);
                                                 }}
-                                                className="p-2 rounded-lg hover:bg-blue-500/20 transition-colors"
+                                                className="p-2 rounded-lg hover:bg-primary/15 transition-colors"
                                                 title="Aus Archiv entfernen"
                                             >
-                                                <RotateCcw className="w-4 h-4 text-blue-400" />
+                                                <RotateCcw className="w-4 h-4 text-primary" />
                                             </button>
                                         </div>
                                     </div>
@@ -621,15 +621,15 @@ export default function TeamMeeting() {
 
                 {topics.length === 0 && (
                     <div className="text-center py-12">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-                        <p className="text-slate-400">Noch keine Besprechungspunkte</p>
+                        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                        <p className="text-muted-foreground">Noch keine Besprechungspunkte</p>
                     </div>
                 )}
 
                 {/* Terminwünsche – nur für Manager sichtbar */}
                 {permissions.isManager && (
-                    <div className="mt-8 border-t border-slate-700 pt-6">
-                        <h2 className="text-lg font-bold text-white mb-4">Wunschtage der Aushilfen</h2>
+                    <div className="mt-8 border-t border-border pt-6">
+                        <h2 className="text-lg font-bold text-foreground mb-4">Wunschtage der Aushilfen</h2>
                         <UnavailabilityManager />
                     </div>
                 )}
@@ -685,7 +685,7 @@ export default function TeamMeeting() {
                                     <Button type="button" variant="outline" onClick={() => setScheduleModalOpen(false)} className="flex-1">
                                         Abbrechen
                                     </Button>
-                                    <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700">
+                                    <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
                                         Speichern
                                     </Button>
                                 </div>
@@ -763,9 +763,9 @@ export default function TeamMeeting() {
                                         </Badge>
                                     </div>
                                     {selectedTopic.description && (
-                                        <p className="text-sm text-slate-600 mb-3">{selectedTopic.description}</p>
+                                        <p className="text-sm text-muted-foreground mb-3">{selectedTopic.description}</p>
                                     )}
-                                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                         <span>Von: {selectedTopic.employee_name}</span>
                                         <span>•</span>
                                         <span>{format(new Date(selectedTopic.created_date), 'dd.MM.yyyy HH:mm', { locale: de })}</span>
@@ -815,7 +815,7 @@ export default function TeamMeeting() {
                                             <Button
                                                 onClick={() => handleNotesUpdate(selectedTopic.manager_notes)}
                                                 size="sm"
-                                                className="bg-blue-600 hover:bg-blue-700"
+                                                className="bg-primary hover:bg-primary/90 text-primary-foreground"
                                             >
                                                 Notizen speichern
                                             </Button>
@@ -829,7 +829,7 @@ export default function TeamMeeting() {
                                                         handleArchiveToggle(selectedTopic);
                                                         setDetailModalOpen(false);
                                                     }}
-                                                    className="flex-1 border-blue-600 text-blue-600 hover:bg-blue-50"
+                                                    className="flex-1 border-primary text-primary hover:bg-primary/10"
                                                 >
                                                     <RotateCcw className="w-4 h-4 mr-2" />
                                                     Wiederherstellen

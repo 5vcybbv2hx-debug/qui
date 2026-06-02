@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { ErrorState } from '@/components/ui/StateDisplay';
 import { useQuery } from '@tanstack/react-query'
 import { STALE } from '@/lib/queryUtils';;
 import ProvisionalShiftEntry from '@/components/provisional/ProvisionalShiftEntry';
@@ -131,7 +132,7 @@ export default function MyShiftsPage() {
             <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
                 {/* Header */}
                 <div className="space-y-2">
-                    <h1 className="text-3xl font-bold text-foreground">Meine Schichten</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Meine Schichten</h1>
                     <p className="text-muted-foreground">Deine persönliche Schichtübersicht</p>
                 </div>
 

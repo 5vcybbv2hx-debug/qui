@@ -198,19 +198,19 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
 
     return (
         <>
-        <div className="bg-slate-800 rounded-xl shadow-sm border border-slate-700 overflow-hidden">
+        <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between p-3 sm:p-4 bg-slate-900/50 border-b border-slate-700">
+            <div className="flex items-center justify-between p-3 sm:p-4 bg-background/50 border-b border-border">
                 <Button 
                     variant="ghost" 
                     size="icon"
                     onClick={() => handleNavigation(-1)}
-                    className="hover:bg-slate-700 text-slate-300"
+                    className="hover:bg-secondary text-foreground/75"
                 >
                     <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="flex items-center gap-3">
-                    <h3 className="font-bold text-white text-base sm:text-lg">
+                    <h3 className="font-bold text-foreground text-base sm:text-lg">
                         {format(currentDate, 'MMMM yyyy', { locale: de })}
                     </h3>
                     <Button
@@ -230,47 +230,47 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                     variant="ghost" 
                     size="icon"
                     onClick={() => handleNavigation(1)}
-                    className="hover:bg-slate-700 text-slate-300"
+                    className="hover:bg-secondary text-foreground/75"
                 >
                     <ChevronRight className="w-5 h-5" />
                 </Button>
             </div>
 
             {/* Legend */}
-            <div className="flex flex-wrap gap-3 px-3 py-2 bg-slate-900/40 border-b border-slate-700 text-[10px]">
+            <div className="flex flex-wrap gap-3 px-3 py-2 bg-background/40 border-b border-border text-[10px]">
                 <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded bg-green-500"></div>
-                    <span className="text-slate-400">Bestätigt</span>
+                    <span className="text-muted-foreground">Bestätigt</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded border-2 border-dashed border-yellow-400 bg-yellow-400/20"></div>
-                    <span className="text-slate-400">Vorläufig</span>
+                    <span className="text-muted-foreground">Vorläufig</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-3 rounded bg-slate-600 opacity-50"></div>
-                    <span className="text-slate-400">Abgelehnt</span>
+                    <div className="w-3 h-3 rounded bg-secondary opacity-50"></div>
+                    <span className="text-muted-foreground">Abgelehnt</span>
                 </div>
                 {wcMatches.length > 0 && <>
                     <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded bg-green-600/80"></div>
-                        <span className="text-slate-400">⚽ WM</span>
+                        <span className="text-muted-foreground">⚽ WM</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded bg-orange-500/90"></div>
-                        <span className="text-slate-400">⭐ Topspiel</span>
+                        <span className="text-muted-foreground">⭐ Topspiel</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded bg-yellow-400/90"></div>
-                        <span className="text-slate-400">🇩🇪 Deutschland</span>
+                        <span className="text-muted-foreground">🇩🇪 Deutschland</span>
                     </div>
                 </>}
             </div>
 
             {/* Weekday Headers */}
-            <div className="grid grid-cols-7 border-b border-slate-700 bg-slate-900/30">
+            <div className="grid grid-cols-7 border-b border-border bg-background/30">
                 {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day, idx) => (
-                    <div key={idx} className="py-2 text-center border-r border-slate-700 last:border-r-0">
-                        <span className="text-sm font-semibold text-slate-400 uppercase tracking-wider">{day}</span>
+                    <div key={idx} className="py-2 text-center border-r border-border last:border-r-0">
+                        <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{day}</span>
                     </div>
                 ))}
             </div>
@@ -311,7 +311,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 isToday && "bg-amber-500/5 ring-2 ring-inset ring-amber-500/30",
                                 isSelected && "bg-amber-600/10 ring-2 ring-inset ring-amber-600",
                                 understaffed && "bg-red-500/5",
-                                !isCurrentMonth && "opacity-40 bg-slate-900/30"
+                                !isCurrentMonth && "opacity-40 bg-background/30"
                             )}
                             onClick={() => setSelectedDate(day)}
                             onDragOver={handleDragOver}
@@ -321,7 +321,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             <div className="absolute top-1.5 right-1.5 z-10">
                                 <div className={cn(
                                     "flex items-center gap-1 px-1.5 py-0.5 rounded-md",
-                                    isToday ? "bg-amber-600 text-white" : "bg-slate-900/50 text-slate-300"
+                                    isToday ? "bg-amber-600 text-foreground" : "bg-background/50 text-foreground/75"
                                 )}>
                                     <span className="text-sm font-bold">
                                         {format(day, 'd')}
@@ -347,7 +347,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                 <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-0.5">
                                     {birthdays.map(emp => (
                                         <div key={emp.id}
-                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-pink-500/80 text-white shadow-sm max-w-[90px]">
+                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-pink-500/80 text-foreground shadow-sm max-w-[90px]">
                                             <span className="text-[9px]">🎂</span>
                                             <span className="text-[9px] font-semibold truncate leading-tight">{emp.name.split(' ')[0]}</span>
                                         </div>
@@ -358,7 +358,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                             {/* Feiertag Banner */}
                             {holidayName && (
                                 <div className="absolute top-1.5 left-1.5 right-16 z-10">
-                                    <div className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded font-semibold truncate shadow-sm">
+                                    <div className="bg-red-600 text-foreground text-[9px] px-1.5 py-0.5 rounded font-semibold truncate shadow-sm">
                                         {holidayName}
                                     </div>
                                 </div>
@@ -373,8 +373,8 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                             m.is_germany_game
                                                 ? "bg-yellow-400/90 text-black"
                                                 : m.is_top_game
-                                                ? "bg-orange-500/90 text-white"
-                                                : "bg-green-600/80 text-white"
+                                                ? "bg-orange-500/90 text-foreground"
+                                                : "bg-green-600/80 text-foreground"
                                         )}>
                                             {m.is_germany_game ? '🇩🇪' : m.is_top_game ? '⭐' : '⚽'} {m.home_team} – {m.away_team}
                                         </div>
@@ -407,7 +407,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                             <p className="text-[9px] opacity-80 leading-tight">{shift.start_time.slice(0,5)}-{shift.end_time.slice(0,5)}</p>
                                         </div>
                                         {shift.shift_type && (
-                                            <Badge className="text-[8px] h-3.5 px-1 bg-white/20 border-0 text-white">{shift.shift_type.slice(0,3)}</Badge>
+                                            <Badge className="text-[8px] h-3.5 px-1 bg-white/20 border-0 text-foreground">{shift.shift_type.slice(0,3)}</Badge>
                                         )}
                                     </div>
                                 ))}
@@ -427,7 +427,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                             "px-1.5 py-1 rounded text-[10px] font-medium flex items-center gap-1 flex-shrink-0 border-2 border-dashed",
                                             permissions.isManager && req.status === 'ausstehend' ? 'cursor-pointer hover:brightness-125' : 'cursor-default',
                                             req.status === 'abgelehnt'
-                                                ? "bg-slate-700/40 border-slate-500 text-slate-400 opacity-60"
+                                                ? "bg-secondary/40 border-border/50 text-muted-foreground opacity-60"
                                                 : req.status === 'bestätigt'
                                                 ? "bg-green-600/30 border-green-500 text-green-300"
                                                 : "bg-yellow-500/15 border-yellow-400 text-yellow-300"
@@ -492,7 +492,7 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="w-full h-6 rounded-none bg-slate-900/90 hover:bg-amber-600 text-slate-400 hover:text-white border-t border-slate-700"
+                                        className="w-full h-6 rounded-none bg-background/90 hover:bg-amber-600 text-muted-foreground hover:text-foreground border-t border-border"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onAddShift(day);
@@ -513,28 +513,28 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
         {provisionalPopup && (
             <div
                 ref={popupRef}
-                className="fixed z-50 bg-slate-800 border border-yellow-500/40 rounded-xl shadow-2xl p-3 min-w-[220px]"
+                className="fixed z-50 bg-card border border-yellow-500/40 rounded-xl shadow-2xl p-3 min-w-[220px]"
                 style={{ top: Math.min(provisionalPopup.y, window.innerHeight - 160), left: Math.min(provisionalPopup.x, window.innerWidth - 240) }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="mb-2.5">
-                    <p className="font-bold text-white text-sm">{provisionalPopup.req.employee_name}</p>
+                    <p className="font-bold text-foreground text-sm">{provisionalPopup.req.employee_name}</p>
                     <p className="text-yellow-300 text-xs">{provisionalPopup.req.date} · {provisionalPopup.req.start_time}–{provisionalPopup.req.end_time}</p>
-                    {provisionalPopup.req.shift_type && <p className="text-slate-400 text-xs">{provisionalPopup.req.shift_type}</p>}
-                    {provisionalPopup.req.comment && <p className="text-slate-400 text-[10px] italic mt-1">"{provisionalPopup.req.comment}"</p>}
+                    {provisionalPopup.req.shift_type && <p className="text-muted-foreground text-xs">{provisionalPopup.req.shift_type}</p>}
+                    {provisionalPopup.req.comment && <p className="text-muted-foreground text-[10px] italic mt-1">"{provisionalPopup.req.comment}"</p>}
                 </div>
                 <div className="flex gap-2">
                     <button
                         disabled={provisionalMutation.isPending}
                         onClick={() => provisionalMutation.mutate({ req: provisionalPopup.req, action: 'abgelehnt' })}
-                        className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-red-600/80 hover:bg-red-600 text-white text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-red-600/80 hover:bg-red-600 text-foreground text-xs font-medium transition-colors"
                     >
                         <XCircle className="w-3.5 h-3.5" /> Ablehnen
                     </button>
                     <button
                         disabled={provisionalMutation.isPending}
                         onClick={() => provisionalMutation.mutate({ req: provisionalPopup.req, action: 'bestätigt' })}
-                        className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg bg-green-600 hover:bg-green-700 text-foreground text-xs font-medium transition-colors"
                     >
                         <CheckCircle2 className="w-3.5 h-3.5" /> Bestätigen
                     </button>

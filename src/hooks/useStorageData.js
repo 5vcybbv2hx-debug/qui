@@ -2,7 +2,8 @@
  * Centralized storage data hooks.
  * Use these in all Storage tabs to ensure consistent queries and cache behavior.
  */
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { base44 } from '@/api/base44Client';
 import { QK } from '@/lib/queryKeys';
 
@@ -10,7 +11,7 @@ export function useAreas() {
   return useQuery({
     queryKey: QK.areas(),
     queryFn: () => base44.entities.Area.list('order,name', 100),
-    staleTime: 30_000,
+    staleTime: STALE.FAST,
   });
 }
 
@@ -20,7 +21,7 @@ export function useFurniture(areaId) {
     queryFn: () => areaId
       ? base44.entities.Furniture.filter({ area_id: areaId }, 'sort_order,name', 500)
       : base44.entities.Furniture.list('sort_order,name', 500),
-    staleTime: 30_000,
+    staleTime: STALE.FAST,
   });
 }
 
@@ -30,7 +31,7 @@ export function useContainers(furnitureId) {
     queryFn: () => furnitureId
       ? base44.entities.Container.filter({ furniture_id: furnitureId }, 'sort_order,name', 500)
       : base44.entities.Container.list('sort_order,name', 500),
-    staleTime: 30_000,
+    staleTime: STALE.FAST,
   });
 }
 
@@ -40,7 +41,7 @@ export function useSlots(filter) {
     queryFn: () => filter
       ? base44.entities.StorageSlot.filter(filter, 'full_name', 1000)
       : base44.entities.StorageSlot.list('full_name', 1000),
-    staleTime: 15_000,
+    staleTime: STALE.FAST,
   });
 }
 
@@ -50,7 +51,7 @@ export function useAssignments(filter) {
     queryFn: () => filter
       ? base44.entities.StorageAssignment.filter(filter, 'article_name', 1000)
       : base44.entities.StorageAssignment.filter({ is_active: true }, 'article_name', 1000),
-    staleTime: 15_000,
+    staleTime: STALE.FAST,
   });
 }
 
@@ -60,6 +61,6 @@ export function useArticles(filter) {
     queryFn: () => filter
       ? base44.entities.Article.filter(filter, 'name', 1000)
       : base44.entities.Article.filter({ is_active: true }, 'name', 1000),
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
 }

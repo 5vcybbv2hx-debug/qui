@@ -33,6 +33,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import SignaturePad from '@/components/employees/SignaturePad';
 import EmployeeAvatar from '@/components/employees/EmployeeAvatar';
+import { LoadingState, ListSkeleton, ErrorState } from '@/components/ui/StateDisplay';
 
 const COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#84cc16', 
@@ -384,6 +385,15 @@ export default function Employees() {
                 : [...prev, skill]
         );
     };
+
+    if (permissions.isLoading) return (
+        <div className="min-h-screen bg-background px-4 py-6 space-y-4">
+            <ListSkeleton count={1} height="h-10" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => <ListSkeleton key={i} count={1} height="h-40" />)}
+            </div>
+        </div>
+    );
 
     if (!permissions.isLoading && !permissions.canViewEmployees) {
         return <PermissionDenied message="Du hast keine Berechtigung, die Mitarbeiterliste zu sehen." />;

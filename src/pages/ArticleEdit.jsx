@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import SmartCombobox from '@/components/ui/SmartCombobox';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { Camera, X, Image as ImageIcon, Crop, Save } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +35,7 @@ export default function ArticleEditPage() {
     const { data: allArticles = [] } = useQuery({
         queryKey: ['articles'],
         queryFn: () => base44.entities.Article.list('order'),
-        staleTime: 5 * 60 * 1000
+        staleTime: STALE.MEDIUM
     });
 
     const { data: allSuppliers = [] } = useQuery({

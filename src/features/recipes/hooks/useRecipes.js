@@ -3,7 +3,8 @@
  * React Query hooks for the Recipes feature.
  * Cost calculation logic is imported from the service — not repeated in JSX.
  */
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { useMemo } from 'react';
 import { recipeService, calcRecipeCost, calcMargin } from '../services/recipeService';
 import { toast } from 'sonner';
@@ -19,7 +20,7 @@ export function useRecipes() {
     return useQuery({
         queryKey: RECIPE_KEYS.all,
         queryFn:  recipeService.list,
-        staleTime: 10 * 60_000,
+        staleTime: STALE.SLOW,
     });
 }
 

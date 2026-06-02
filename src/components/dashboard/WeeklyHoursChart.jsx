@@ -1,5 +1,6 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '@/lib/queryUtils';;
 import { base44 } from '@/api/base44Client';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format, startOfWeek, endOfWeek, parseISO, subWeeks } from 'date-fns';
@@ -19,7 +20,7 @@ export default function WeeklyHoursChart({ employees = [] }) {
     const { data: timeEntries = [], isLoading } = useQuery({
         queryKey: ['weekly-hours-chart', rangeStart, rangeEnd],
         queryFn: () => base44.entities.TimeEntry.list('-date', 2000),
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     // Build per-employee hours for current week

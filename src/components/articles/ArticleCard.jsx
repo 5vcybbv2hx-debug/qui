@@ -32,13 +32,13 @@ const ArticleCard = memo(function ArticleCard({
 
     return (
         <Card 
-            className={`p-4 bg-slate-800 border-slate-700 ${isSelected ? 'ring-2 ring-amber-500' : ''} ${isLowStock ? 'border-red-500' : ''}`}
+            className={`p-4 bg-card border-border ${isSelected ? 'ring-2 ring-amber-500' : ''} ${isLowStock ? 'border-red-500' : ''}`}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
             <div className="flex items-start justify-between mb-3">
                 {dragHandleProps && (
-                    <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-slate-600 hover:text-slate-400 mt-1 mr-1 touch-none">
+                    <div {...dragHandleProps} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-muted-foreground mt-1 mr-1 touch-none">
                         <GripVertical className="w-4 h-4" />
                     </div>
                 )}
@@ -49,7 +49,7 @@ const ArticleCard = memo(function ArticleCard({
                         className="mt-1"
                     />
                     <div className="flex-1">
-                        <div className="w-full aspect-square rounded-lg mb-2 overflow-hidden bg-slate-700 flex items-center justify-center">
+                        <div className="w-full aspect-square rounded-lg mb-2 overflow-hidden bg-secondary flex items-center justify-center">
                             {article.image_url ? (
                                 <LazyImage
                                     src={article.image_url}
@@ -57,14 +57,14 @@ const ArticleCard = memo(function ArticleCard({
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <Package className="w-8 h-8 text-slate-500" />
+                                <Package className="w-8 h-8 text-foreground0" />
                             )}
                         </div>
-                        <h3 className="font-semibold text-white text-sm mb-1">{article.name}</h3>
+                        <h3 className="font-semibold text-foreground text-sm mb-1">{article.name}</h3>
                         {article.manufacturer && (
-                            <p className="text-xs text-slate-400 mb-0.5">🏭 {article.manufacturer}</p>
+                            <p className="text-xs text-muted-foreground mb-0.5">🏭 {article.manufacturer}</p>
                         )}
-                        <p className="text-xs text-slate-500 font-mono">{article.barcode}</p>
+                        <p className="text-xs text-foreground0 font-mono">{article.barcode}</p>
                     </div>
                 </div>
                 <div className="flex gap-1">
@@ -72,7 +72,7 @@ const ArticleCard = memo(function ArticleCard({
                         variant="ghost"
                         size="icon"
                         onClick={() => onEdit(article)}
-                        className="h-11 w-11 text-slate-400 hover:text-white"
+                        className="h-11 w-11 text-muted-foreground hover:text-foreground"
                     >
                         <Pencil className="w-4 h-4" />
                     </Button>
@@ -97,7 +97,7 @@ const ArticleCard = memo(function ArticleCard({
                     </Badge>
                 )}
                 
-                <div className="text-xs text-slate-400 space-y-1">
+                <div className="text-xs text-muted-foreground space-y-1">
                     {(article.shelf_id || article.storage_location) && (
                         <p className="flex items-center gap-1 text-blue-400 font-medium">
                             <MapPin className="w-3 h-3" />

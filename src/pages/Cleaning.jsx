@@ -346,7 +346,7 @@ export default function Cleaning() {
                              size="sm"
                              variant="outline"
                              onClick={generateWeeklyReport}
-                             className="text-white bg-green-600 hover:bg-green-700 border-green-600 text-xs h-9"
+                             className="bg-green-500/15 text-green-400 border-green-500/30 hover:bg-green-500/25 text-xs h-9"
                          >
                              <FileText className="w-3 h-3 mr-1" />
                              <span className="hidden sm:inline">Wochenbericht</span>
@@ -357,7 +357,7 @@ export default function Cleaning() {
                              size="sm"
                              variant="outline"
                              onClick={endDay}
-                             className="text-white bg-orange-600 hover:bg-orange-700 border-orange-600 text-xs h-9"
+                             className="bg-orange-500/15 text-orange-400 border-orange-500/30 hover:bg-orange-500/25 text-xs h-9"
                          >
                              <RefreshCw className="w-3 h-3 mr-1" />
                              <span className="hidden sm:inline">Tag beenden</span>
@@ -366,7 +366,7 @@ export default function Cleaning() {
                          <Button 
                              size="sm"
                              onClick={() => setModalOpen(true)}
-                             className="bg-amber-600 hover:bg-amber-700 text-xs h-9"
+                             className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground text-xs h-9 shadow-sm shadow-amber-500/20"
                          >
                              <Plus className="w-3 h-3 mr-1" />
                              <span className="hidden sm:inline">Aufgabe</span>
@@ -376,17 +376,34 @@ export default function Cleaning() {
                 </div>
 
                 {/* Progress */}
-                <div className="bg-card rounded-2xl border border-border p-4 sm:p-6 mb-6">
-                    <div className="flex items-center justify-between mb-3">
+                <div className={`rounded-2xl border p-4 sm:p-5 mb-5 transition-all ${
+                    progress === 100 
+                        ? 'bg-emerald-500/10 border-emerald-500/30' 
+                        : progress >= 50 
+                            ? 'bg-amber-500/8 border-amber-500/20'
+                            : 'bg-card border-border'
+                }`}>
+                    <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-emerald-500" />
-                            <span className="font-medium text-foreground">Fortschritt</span>
+                            {progress === 100 
+                                ? <Sparkles className="w-5 h-5 text-emerald-400" />
+                                : <CheckSquare className="w-5 h-5 text-amber-400" />
+                            }
+                            <span className="font-semibold text-foreground text-sm">
+                                {progress === 100 ? 'Alles erledigt! 🎉' : 'Tagesfortschritt'}
+                            </span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                            {completedCount} von {tasks.length} erledigt
-                        </span>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">{completedCount}/{tasks.length}</span>
+                            <span className={`text-lg font-bold tabular-nums ${
+                                progress === 100 ? 'text-emerald-400' : 'text-foreground'
+                            }`}>{progress}%</span>
+                        </div>
                     </div>
-                    <Progress value={progress} className="h-2" />
+                    <Progress 
+                        value={progress} 
+                        className={`h-2.5 ${progress === 100 ? '[&>div]:bg-emerald-500' : '[&>div]:bg-amber-500'}`}
+                    />
                 </div>
 
                 {/* Task List */}

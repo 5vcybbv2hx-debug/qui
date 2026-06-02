@@ -33,8 +33,8 @@ export default function QuickStockUpdate({ open, onClose, article, onUpdate }) {
 
                 <div className="space-y-4 mt-4">
                     <div className="p-3 bg-slate-50 rounded-lg">
-                        <p className="font-medium text-slate-900">{article.name}</p>
-                        <p className="text-sm text-slate-600 mt-1">
+                        <p className="font-medium text-foreground">{article.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
                             Aktuell: {article.current_stock || 0} {article.unit}
                         </p>
                     </div>
@@ -86,7 +86,7 @@ export default function QuickStockUpdate({ open, onClose, article, onUpdate }) {
                                 placeholder="z.B. 10 oder -3"
                                 step="any"
                             />
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-foreground0">
                                 Positiv zum Hinzufügen, negativ zum Entfernen
                             </p>
                         </div>

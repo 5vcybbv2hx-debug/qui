@@ -75,7 +75,6 @@ import Onboarding from './pages/Onboarding';
 import Permissions from './pages/Permissions';
 import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
-import PublicMenu from './pages/PublicMenu';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
 import Reservations from './pages/Reservations';
@@ -83,7 +82,6 @@ import Restock from './pages/Restock';
 import SalesAnalysis from './pages/SalesAnalysis';
 import GuestHub from './pages/GuestHub';
 import Settings from './pages/Settings';
-import ShiftAnalytics from './pages/ShiftAnalytics';
 import ShiftSwaps from './pages/ShiftSwaps';
 import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
@@ -99,7 +97,6 @@ import Storage from './pages/Storage';
 import StorageLocationScan from './pages/StorageLocationScan';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
-import WeeklyTasks from './pages/WeeklyTasks';
 import BusinessCard from './pages/BusinessCard';
 import WorldCupSchedule from './pages/WorldCupSchedule';
 
@@ -111,7 +108,6 @@ import Opening from './pages/Opening';
 import EmployeeProfile from './pages/EmployeeProfile';
 
 import Stationsplan from './pages/Stationsplan';
-import OperatorDashboard from './pages/OperatorDashboard';
 import DataProtection from './pages/DataProtection';
 import Impressum from './pages/Impressum';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -150,7 +146,6 @@ const CORE_PAGES = {
     "Onboarding": Onboarding,
     "Permissions": Permissions,
     "PriceCalculator": PriceCalculator,
-    "PublicMenu": PublicMenu,
     "Recipes": Recipes,
     "Reports": Reports,
     "Reservations": Reservations,
@@ -158,7 +153,6 @@ const CORE_PAGES = {
     "SalesAnalysis": SalesAnalysis,
     "GuestHub": GuestHub,
     "Settings": Settings,
-    "ShiftAnalytics": ShiftAnalytics,
     "ShiftSwaps": ShiftSwaps,
     "Shifts": Shifts,
     "Shopping": Shopping,
@@ -173,7 +167,6 @@ const CORE_PAGES = {
     "Storage": Storage,
     "Warehouse": Warehouse,
     "Wastage": Wastage,
-    "WeeklyTasks": WeeklyTasks,
     "BusinessCard": BusinessCard,
     "WorldCupSchedule": WorldCupSchedule,
 };
@@ -187,7 +180,6 @@ const SPECIAL_PAGES_WITH_LAYOUT = {
     "EmployeeProfile": EmployeeProfile,
 
     "Stationsplan": Stationsplan,
-    "OperatorDashboard": OperatorDashboard,
     "DataProtection": DataProtection,
     "Impressum": Impressum,
     "PrivacyPolicy": PrivacyPolicy,

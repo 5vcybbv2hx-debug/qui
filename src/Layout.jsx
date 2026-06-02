@@ -52,6 +52,14 @@ export default function Layout({ children, currentPageName }) {
     const swapInboxCount = useSwapInboxCount(
         permissions.employeeId ? { id: permissions.employeeId } : null
     );
+    // Badge-Counter für Mehr-Button (ungelesene Notifications)
+    const [unreadNotifCount, setUnreadNotifCount] = React.useState(0);
+    React.useEffect(() => {
+        if (!currentUser?.email) return;
+        base44.entities.Notification.filter({ recipient_email: currentUser.email, is_read: false }, '-created_date', 10)
+            .then(r => setUnreadNotifCount(r?.length || 0))
+            .catch(() => {});
+    }, [currentUser?.email]);
 
     // OneSignal: mit Employee-ID initialisieren sobald eingeloggt
     useOneSignal({
@@ -200,6 +208,9 @@ export default function Layout({ children, currentPageName }) {
                         <h1 className="text-lg font-bold text-foreground flex-1">
                             {getPageName(currentPageName)}
                         </h1>
+                        {(permissions.isManager || permissions.isAdmin) && currentUser && (
+                            <NotificationBell userEmail={currentUser.email} userRole={currentUser.role} />
+                        )}
                         <button
                             onClick={() => setSearchOpen(true)}
                             className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-accent/50 active:bg-accent text-muted-foreground hover:text-foreground transition-all"
@@ -379,10 +390,13 @@ export default function Layout({ children, currentPageName }) {
                                     )}
                                 >
                                     <div className={cn(
-                                        'relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-150',
-                                        active && 'bg-foreground/10'
+                                        'relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200',
+                                        active ? 'bg-primary/15' : ''
                                     )}>
-                                        <item.icon className="w-5 h-5" />
+                                        {active && (
+                                            <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                                        )}
+                                        <item.icon className={cn('w-5 h-5 transition-all duration-200', active && 'scale-110')} />
                                         {item.page === 'ShiftSwaps' && swapInboxCount > 0 && (
                                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold leading-none">
                                                 {swapInboxCount > 9 ? '9+' : swapInboxCount}
@@ -401,8 +415,13 @@ export default function Layout({ children, currentPageName }) {
                             onClick={() => { haptics.selection(); setSettingsOpen(true); }}
                             className="flex flex-col items-center justify-center gap-0.5 py-2 flex-1 rounded-xl transition-colors min-h-[56px] text-muted-foreground"
                         >
-                            <div className="flex items-center justify-center w-8 h-8 rounded-xl">
+                            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl">
                                 <Settings className="w-5 h-5" />
+                                {unreadNotifCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold leading-none">
+                                        {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                                    </span>
+                                )}
                             </div>
                             <span className="text-[10px] leading-tight font-medium">Mehr</span>
                         </button>
@@ -499,10 +518,10 @@ export default function Layout({ children, currentPageName }) {
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentPageName}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.3 }}
+                                initial={{ opacity: 0, y: isRootPage ? 8 : 12, x: isRootPage ? 0 : 16 }}
+                                animate={{ opacity: 1, y: 0, x: 0 }}
+                                exit={{ opacity: 0, y: isRootPage ? -4 : 0, x: isRootPage ? 0 : -16 }}
+                                transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
                                 className="pt-[calc(4rem+env(safe-area-inset-top))] md:pt-0"
                             >
                                 {children}

@@ -291,7 +291,7 @@ export default function AccountingMonthlyClosing() {
                         <Button
                             onClick={() => setConfirmOpen(true)}
                             disabled={progress < 100}
-                            className={cn('w-full gap-2', progress === 100 ? 'bg-green-600 hover:bg-green-700 text-white' : 'opacity-50 cursor-not-allowed')}
+                            className={cn('w-full gap-2', progress === 100 ? 'bg-green-500 hover:bg-green-600 text-primary-foreground' : 'opacity-50 cursor-not-allowed')}
                         >
                             <Lock className="w-4 h-4" />Monat abschließen & sperren
                         </Button>
@@ -349,7 +349,7 @@ export default function AccountingMonthlyClosing() {
                         <Textarea placeholder="Abschlussnotizen (optional)..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
                         <div className="flex gap-2">
                             <Button variant="outline" onClick={() => setConfirmOpen(false)} className="flex-1">Abbrechen</Button>
-                            <Button onClick={handleClose} className="flex-1 bg-green-600 hover:bg-green-700 text-white" disabled={createClosingMutation.isPending || updateClosingMutation.isPending}>
+                            <Button onClick={handleClose} className="flex-1 bg-green-500 hover:bg-green-600 text-primary-foreground" disabled={createClosingMutation.isPending || updateClosingMutation.isPending}>
                                 Abschließen
                             </Button>
                         </div>

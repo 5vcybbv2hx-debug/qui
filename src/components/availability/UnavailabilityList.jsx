@@ -75,7 +75,7 @@ export default function UnavailabilityList() {
     return (
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-muted-foreground">
                     Trage Tage ein, an denen du gerne arbeiten würdest. Der Manager berücksichtigt deine Wünsche bei der Schichtplanung.
                 </p>
                 <Button onClick={() => setModalOpen(true)} size="sm" className="bg-amber-600 hover:bg-amber-700 gap-2 shrink-0">
@@ -84,9 +84,9 @@ export default function UnavailabilityList() {
             </div>
 
             {sorted.length === 0 ? (
-                <Card className="p-8 text-center bg-slate-900 border-slate-800">
-                    <Clock className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                    <p className="text-slate-400 text-sm">Noch keine Wunschtage eingetragen</p>
+                <Card className="p-8 text-center bg-background border-border">
+                    <Clock className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">Noch keine Wunschtage eingetragen</p>
                 </Card>
             ) : (
                 <div className="space-y-3">
@@ -94,24 +94,24 @@ export default function UnavailabilityList() {
                         const config = statusConfig[req.status] || statusConfig.ausstehend;
                         const StatusIcon = config.icon;
                         return (
-                            <Card key={req.id} className="p-4 bg-slate-900 border-slate-800">
+                            <Card key={req.id} className="p-4 bg-background border-border">
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                                            <p className="font-semibold text-white text-sm">
+                                            <p className="font-semibold text-foreground text-sm">
                                                 {format(parseISO(req.date), 'EEE, dd. MMM yyyy', { locale: de })}
                                                 {req.end_date && req.end_date !== req.date && (
-                                                    <span className="text-slate-400"> – {format(parseISO(req.end_date), 'dd. MMM yyyy', { locale: de })}</span>
+                                                    <span className="text-muted-foreground"> – {format(parseISO(req.end_date), 'dd. MMM yyyy', { locale: de })}</span>
                                                 )}
                                             </p>
                                         </div>
-                                        <p className="text-sm text-slate-300 mb-2">{req.reason}</p>
+                                        <p className="text-sm text-foreground/75 mb-2">{req.reason}</p>
                                         <Badge className={`text-xs border flex items-center gap-1 w-fit ${config.color}`}>
                                             <StatusIcon className="w-3 h-3" />
                                             {config.label}
                                         </Badge>
                                         {req.response_note && (
-                                            <p className="text-xs text-slate-400 mt-1 italic">Notiz: {req.response_note}</p>
+                                            <p className="text-xs text-muted-foreground mt-1 italic">Notiz: {req.response_note}</p>
                                         )}
                                     </div>
                                     {req.status === 'ausstehend' && (

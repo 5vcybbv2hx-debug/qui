@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { STALE } from '@/lib/queryUtils';;
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,13 +40,13 @@ export default function DrinkMenuPage() {
     const { data: items = [], isLoading } = useQuery({
         queryKey: ['menu-items'],
         queryFn: () => base44.entities.MenuItem.list('-category', 1000),
-        staleTime: 5 * 60 * 1000,
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: articles = [] } = useQuery({
         queryKey: ['articles'],
         queryFn: () => base44.entities.Article.list('name', 200),
-        staleTime: 10 * 60 * 1000,
+        staleTime: STALE.SLOW,
     });
 
     const toggleAvailabilityMutation = useMutation({

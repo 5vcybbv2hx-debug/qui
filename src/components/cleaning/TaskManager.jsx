@@ -70,7 +70,7 @@ export default function TaskManager({ task, areas }) {
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                className="h-8 w-8 text-muted-foreground hover:text-muted-foreground"
                 onClick={() => setModalOpen(true)}
             >
                 <Pencil className="w-4 h-4" />

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { STALE } from '@/lib/queryUtils';;
-import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
+import { LoadingState, ListSkeleton, ErrorState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
@@ -390,7 +390,7 @@ export default function Cleaning() {
                 </div>
 
                 {/* Task List */}
-                {isLoading ? <LoadingState text="Lade Putzaufgaben…" /> :
+                {isLoading ? <div className="space-y-3"><ListSkeleton count={4} height="h-20" /></div> :
                  tasksError ? <ErrorFallback error={tasksErrorObj} title="Putzaufgaben konnten nicht geladen werden" onRetry={() => queryClient.invalidateQueries({ queryKey: ['cleaning'] })} /> : (
                     <Tabs defaultValue="active" className="space-y-4">
                         <TabsList className="bg-card border border-border grid w-full grid-cols-2">

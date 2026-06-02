@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { ErrorState, ListSkeleton } from '@/components/ui/StateDisplay';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { STALE } from '@/lib/queryUtils';;
 import { format, parseISO } from 'date-fns';
@@ -168,6 +169,12 @@ export default function Notifications() {
 
     const sortedFiltered = sortByPriorityAndDate(filteredNotifications);
     const unreadCount = notifications.filter(n => !n.read_by?.includes(currentUser.email)).length;
+
+    if (notifsError) return (
+        <div className="min-h-screen bg-background px-4 py-6">
+            <ErrorState text="Benachrichtigungen konnten nicht geladen werden." retry={() => window.location.reload()} />
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-0">

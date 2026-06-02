@@ -97,15 +97,15 @@ export default function DrinkMenuPage() {
 
     return (
         <div className="min-h-screen bg-background p-4 md:p-6 print:p-0">
-            <div className="max-w-7xl mx-auto space-y-6 print:space-y-0">
+            <div className="max-w-3xl mx-auto space-y-5 print:space-y-0">
                 {/* Header Row */}
                 <div className="flex justify-between items-start gap-4 print:hidden">
                     <div>
-                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                            <Wine className="h-8 w-8 text-primary" />
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                            <Wine className="h-6 w-6 text-primary" />
                             Getränkekarte
                         </h1>
-                        <p className="text-muted-foreground mt-1">Verwaltung der Getränke und Preise</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">{items.length} Artikel im Sortiment</p>
                     </div>
                     <div className="flex gap-2 flex-wrap justify-end">
                         {(permissions.isAdmin || permissions.isManager) && (

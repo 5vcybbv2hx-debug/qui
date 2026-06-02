@@ -23,6 +23,7 @@ export const EMPLOYEE_ROLES = {
     VOLLZEIT:  'Vollzeit',
     BARKEEPER: 'Barkeeper',
     AUSHILFE:  'Aushilfe',
+    ORGA:      'Orga',
     TERMINAL:  'terminal',  // kiosk/clock-in terminal — severely restricted
 };
 
@@ -54,19 +55,19 @@ export const PERMISSION_MATRIX = {
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     // Aushilfe bekommt kein volles Dashboard — sie sehen nur MeinTag
-    canViewDashboard:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    canViewDashboard:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
     // MeinTag ist in Dashboard integriert — bleibt für Rückwärtskompatibilität
-    canViewMeinTag:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    canViewMeinTag:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
 
     // ── Schichten & Kalender ──────────────────────────────────────────────────
-    canViewShifts:               { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
+    canViewShifts:               { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: true  },
     canEditShifts:               { roles: [M.MANAGER],                                       terminal: false },
     canDeleteShifts:             { roles: [M.MANAGER],                                       terminal: false },
     canExportShifts:             { roles: [M.MANAGER],                                       terminal: false },
     canApproveShiftSwaps:        { roles: [M.MANAGER],                                       terminal: false },
-    canRequestShiftSwap:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
-    canViewTeamCalendar:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
-    canViewTeamMeeting:          { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    canRequestShiftSwap:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
+    canViewTeamCalendar:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.ORGA],      terminal: false },
+    canViewTeamMeeting:          { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
 
     // ── Reservierungen ────────────────────────────────────────────────────────
     // Aushilfe sieht keine Reservierungen
@@ -123,15 +124,15 @@ export const PERMISSION_MATRIX = {
     canAssignTodos:              { roles: [M.MANAGER],                                       terminal: false },
 
     // ── Team-Notizen ─────────────────────────────────────────────────────────
-    canViewTeamNotes:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    canViewTeamNotes:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
     canViewManagerNotes:         { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
-    canCreateTeamNotes:          { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    canCreateTeamNotes:          { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
     canEditTeamNotes:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],              terminal: false },
     canDeleteTeamNotes:          { roles: [M.MANAGER],                                       terminal: false },
     canPinTeamNotes:             { roles: [M.MANAGER],                                       terminal: false },
 
     // ── Mitarbeiter ───────────────────────────────────────────────────────────
-    canViewEmployees:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    canViewEmployees:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
     canEditEmployees:            { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
     canViewEmployeeDetails:      { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
     canEditEmployeeShortName:    { roles: [M.MANAGER],      sensitive: true,                 terminal: false },
@@ -139,15 +140,15 @@ export const PERMISSION_MATRIX = {
     canViewEmployeeHistory:      { roles: [M.MANAGER],                                       terminal: false },
 
     // ── Rezepte & Getränkekarte ───────────────────────────────────────────────
-    canViewRecipes:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
+    canViewRecipes:              { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: true  },
     canCreateRecipes:            { roles: [M.MANAGER, M.BARKEEPER],                          terminal: false },
     canEditRecipes:              { roles: [M.MANAGER, M.BARKEEPER],                          terminal: false },
     canDeleteRecipes:            { roles: [M.MANAGER],                                       terminal: false },
-    canViewDrinkMenu:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: true  },
+    canViewDrinkMenu:            { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: true  },
     canEditDrinkMenu:            { roles: [M.MANAGER, M.BARKEEPER],                          terminal: false },
 
     // ── Zeiterfassung ─────────────────────────────────────────────────────────
-    canViewOwnTimeEntries:       { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE], terminal: false },
+    canViewOwnTimeEntries:       { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
     canViewVacation:             { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER],             terminal: false },
     canViewTeamTimeEntries:      { roles: [M.MANAGER],                                       terminal: false },
     canApproveTimeEntries:       { roles: [M.MANAGER],      sensitive: true,                 terminal: false },

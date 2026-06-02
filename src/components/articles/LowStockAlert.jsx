@@ -61,7 +61,7 @@ export default function LowStockAlert() {
             >
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 Bestandsalarm
-                <Badge className="ml-2 bg-red-600 text-white">
+                <Badge className="ml-2 bg-red-600 text-foreground">
                     {lowStockArticles.length}
                 </Badge>
             </Button>
@@ -77,7 +77,7 @@ export default function LowStockAlert() {
 
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                            <p className="text-sm text-slate-600">
+                            <p className="text-sm text-muted-foreground">
                                 {lowStockArticles.length} Artikel unter Mindestbestand
                             </p>
                             <Button
@@ -107,7 +107,7 @@ export default function LowStockAlert() {
                                                     <h4 className="font-semibold text-slate-800">
                                                         {article.name}
                                                     </h4>
-                                                    <p className="text-xs text-slate-600">
+                                                    <p className="text-xs text-muted-foreground">
                                                         {article.barcode}
                                                     </p>
                                                 </div>
@@ -115,19 +115,19 @@ export default function LowStockAlert() {
 
                                             <div className="flex items-center gap-4 text-sm">
                                                 <div>
-                                                    <span className="text-slate-600">Aktuell: </span>
+                                                    <span className="text-muted-foreground">Aktuell: </span>
                                                     <span className="font-semibold text-red-600">
                                                         {article.current_stock || 0}
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <span className="text-slate-600">Minimum: </span>
+                                                    <span className="text-muted-foreground">Minimum: </span>
                                                     <span className="font-semibold">
                                                         {article.min_stock}
                                                     </span>
                                                 </div>
                                                 <div>
-                                                    <span className="text-slate-600">Fehlend: </span>
+                                                    <span className="text-muted-foreground">Fehlend: </span>
                                                     <span className="font-semibold text-orange-600">
                                                         {article.min_stock - (article.current_stock || 0)}
                                                     </span>
@@ -135,7 +135,7 @@ export default function LowStockAlert() {
                                             </div>
 
                                             {article.suppliers?.length > 0 && (
-                                                <p className="text-xs text-slate-500 mt-2">
+                                                <p className="text-xs text-foreground0 mt-2">
                                                     📦 {article.suppliers.join(', ')}
                                                 </p>
                                             )}

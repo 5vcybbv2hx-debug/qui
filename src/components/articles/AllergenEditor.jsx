@@ -116,7 +116,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all ${
                                 isSelected
                                     ? 'bg-amber-500/20 border-amber-500/60 text-amber-300'
-                                    : 'bg-transparent border-slate-600 text-slate-400 hover:border-slate-400 hover:text-slate-300'
+                                    : 'bg-transparent border-border/70 text-muted-foreground hover:border-slate-400 hover:text-foreground/75'
                             }`}
                         >
                             {isSelected && <span className="mr-1">✓</span>}

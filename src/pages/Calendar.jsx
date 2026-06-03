@@ -356,13 +356,14 @@ export default function CalendarPage() {
 
                                 {selectedDateShifts.length > 0 ? (
                                     <div className="grid gap-2">
-                                        {selectedDateShifts.map(shift => {
+                                        {selectedDateShifts.map((shift, idx) => {
                                             const employee = employees.find(e => e.id === shift.employee_id);
                                             return (
                                                 <div
                                                     key={shift.id}
                                                     onClick={() => permissions.canEditShifts && handleSelectShift(shift)}
-                                                    className={`flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border transition-colors ${permissions.canEditShifts ? 'cursor-pointer hover:border-amber-600' : 'cursor-default'}`}
+                                                    className={`flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border transition-colors animate-stagger ${permissions.canEditShifts ? 'cursor-pointer hover:border-amber-600' : 'cursor-default'}`}
+                                                    style={{ '--delay': `${idx * 40}ms` }}
                                                 >
                                                     <div
                                                         className="w-10 h-10 rounded-lg flex items-center justify-center text-foreground font-bold text-sm flex-shrink-0"

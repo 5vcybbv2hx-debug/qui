@@ -137,6 +137,10 @@ export default function Articles() {
         else createMutation.mutate(data);
     }, [updateMutation, createMutation]);
 
+    const handleStockChange = useCallback((id, newStock) => {
+        updateMutation.mutate({ id, data: { current_stock: newStock } });
+    }, [updateMutation]);
+
     const handleDelete = useCallback((id) => {
         confirm('Artikel löschen', 'Möchtest du diesen Artikel wirklich löschen?',
             () => deleteMutation.mutate(id), undefined, 'destructive');
@@ -370,7 +374,7 @@ export default function Articles() {
                         </div>
 
                         {/* Kategorie-Chips */}
-                        <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar" style={{ maskImage: 'linear-gradient(to right, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 85%, transparent 100%)' }}>
                             <button
                                 onClick={() => setFilterCategory('all')}
                                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap border ${
@@ -517,6 +521,7 @@ export default function Articles() {
                                                                                    onToggleSelect={toggleSelectArticle}
                                                                                    onEdit={handleEdit}
                                                                                    onDelete={handleDelete}
+                                                                                   onStockChange={handleStockChange}
                                                                                    dragHandleProps={aDraggable.dragHandleProps}
                                                                                    isManager={permissions.isManager}
                                                                                 />
@@ -539,6 +544,29 @@ export default function Articles() {
                         )}
                     </Droppable>
                 </DragDropContext>
+
+                {/* Empty state */}
+                {groupedArticles.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <Package className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                        <p className="text-sm font-medium text-foreground">Keine Artikel gefunden</p>
+                        <p className="text-xs text-muted-foreground mt-1 mb-4">
+                            {searchTerm ? `Keine Treffer für „${searchTerm}"` : 'Passe die Filter an oder lege einen neuen Artikel an.'}
+                        </p>
+                        {(searchTerm || filterCategory !== 'all' || filterSupplier !== 'all' || filterStock !== 'all' || filterMissing !== 'all') && (
+                            <Button variant="outline" size="sm" onClick={() => {
+                                setSearchTerm('');
+                                setFilterCategory('all');
+                                setFilterSupplier('all');
+                                setFilterManufacturer('all');
+                                setFilterStock('all');
+                                setFilterMissing('all');
+                            }}>
+                                Filter zurücksetzen
+                            </Button>
+                        )}
+                    </div>
+                )}
 
                 {groupedArticles.length === 0 && (
                     <div className="text-center py-16 text-muted-foreground">

@@ -23,7 +23,7 @@ import PayrollReportSender from '@/components/reports/PayrollReportSender';
 import { validateArbZG, formatWarnings } from '@/components/timetracking/ArbZGValidator';
 
 const statusConfig = {
-    'entwurf': { label: 'Entwurf', color: 'bg-slate-500/15 text-slate-600 dark:text-slate-400', icon: FileText },
+    'entwurf': { label: 'Entwurf', color: 'bg-slate-500/15 text-muted-foreground/50 dark:text-muted-foreground', icon: FileText },
     'eingereicht': { label: 'Eingereicht', color: 'bg-blue-500/15 text-blue-600 dark:text-blue-400', icon: Clock },
     'ausstehend': { label: 'Ausstehend', color: 'bg-amber-500/15 text-amber-600 dark:text-amber-400', icon: Clock },
     'genehmigt': { label: 'Genehmigt', color: 'bg-green-500/15 text-green-600 dark:text-green-400', icon: CheckCircle2 }
@@ -508,7 +508,7 @@ export default function TimeTracking() {
     const employeeNames = [...new Set(visibleEntries.map(e => e.employee_name))].sort();
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background animate-page-enter">
             <div className="max-w-6xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="mb-6 sm:mb-8">
@@ -537,7 +537,7 @@ export default function TimeTracking() {
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-4">
                                 <div 
-                                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-bold text-lg sm:text-2xl"
+                                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-foreground font-bold text-lg sm:text-2xl"
                                     style={{ backgroundColor: currentEmployee.color || '#64748b' }}
                                 >
                                     {currentEmployee.name?.charAt(0).toUpperCase()}
@@ -640,8 +640,8 @@ export default function TimeTracking() {
                             )}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {activeClockEntries.map(entry => (
-                                <Card key={entry.id} className="p-3 bg-card border-border">
+                            {activeClockEntries.map((entry, idx) => (
+                                <Card key={entry.id} style={{ '--delay': `${idx*50}ms` }} className="p-3 animate-stagger bg-card border-border">
                                     <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold text-foreground text-sm truncate">{entry.employee_name}</p>
@@ -659,7 +659,7 @@ export default function TimeTracking() {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <Badge className={entry.status === 'clocked_in' ? 'bg-green-600 text-xs' : 'bg-slate-600 text-xs'}>
+                                            <Badge className={entry.status === 'clocked_in' ? 'bg-green-600 text-xs' : 'bg-secondary text-xs'}>
                                                 {entry.status === 'clocked_in' ? 'Aktiv' : 'Fertig'}
                                             </Badge>
                                             {entry.total_hours && (
@@ -732,7 +732,7 @@ export default function TimeTracking() {
                 {/* TEAM Stats – nur für Manager */}
                 {permissions.isManager && (
                     <div className="mb-1">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Gesamt Team</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Gesamt Team</p>
                         <div className="grid grid-cols-3 gap-2 sm:gap-4">
                             <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/20 to-card border-border/50">
                                 <div className="flex items-center justify-between">
@@ -778,7 +778,7 @@ export default function TimeTracking() {
                             <span className="hidden sm:inline">← Vorheriger</span>
                             <span className="sm:hidden">←</span>
                         </Button>
-                        <div className="flex items-center gap-1 sm:gap-2 text-white">
+                        <div className="flex items-center gap-1 sm:gap-2 text-foreground">
                             <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                             <span className="font-semibold text-sm sm:text-base">{format(selectedMonth, 'MMM yyyy', { locale: de })}</span>
                         </div>
@@ -909,7 +909,7 @@ export default function TimeTracking() {
                                                                    </Badge>
                                                                )}
                                                                {entry.status === 'genehmigt' && (
-                                                                   <Badge className="bg-slate-700 text-slate-300 text-[10px] sm:text-xs">
+                                                                   <Badge className="bg-secondary text-foreground/80 text-[10px] sm:text-xs">
                                                                        🔒 Gesperrt
                                                                    </Badge>
                                                                )}
@@ -935,7 +935,7 @@ export default function TimeTracking() {
                                                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">{entry.notes}</p>
                                                            )}
                                                            {entry.status === 'genehmigt' && entry.manager_approved_by && (
-                                                               <p className="text-[10px] text-slate-500 mt-1">
+                                                               <p className="text-[10px] text-muted-foreground/70 mt-1">
                                                                    Genehmigt von {entry.manager_approved_by} am {format(parseISO(entry.manager_approved_at), 'dd.MM.yyyy HH:mm', { locale: de })}
                                                                </p>
                                                            )}

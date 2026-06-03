@@ -114,9 +114,9 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                 </div>
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {stats.map((stat) => (
+                    {stats.map((stat, idx) => (
                         <Link to={createPageUrl(stat.link)} key={stat.title}>
-                            <Card className="bg-card border-border hover:border-primary/30 transition-all group hover:shadow-xl">
+                            <Card className="bg-card border-border hover:border-primary/30 transition-all group hover:shadow-xl card-pressable animate-stagger" style={{ '--delay': `${idx * 60}ms` }}>
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <div className={`${stat.color} p-3 rounded-2xl shadow-lg`}>
@@ -125,7 +125,7 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                                         {stat.badge && <Badge variant="warning" className="text-xs">{stat.badge}</Badge>}
                                     </div>
                                     <p className="text-sm text-muted-foreground mb-2">{stat.title}</p>
-                                    <p className="text-3xl font-bold text-foreground">{stat.value}</p>
+                                    <p className="text-3xl font-bold text-foreground num animate-pop">{stat.value}</p>
                                 </CardContent>
                             </Card>
                         </Link>
@@ -219,9 +219,9 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                         { page: 'Cleaning', color: 'bg-pink-600', icon: Sparkles, label: 'Putzen', sub: `${cleaningProgress}% erledigt` },
                         { page: 'Events', color: 'bg-indigo-600', icon: Calendar, label: 'Events', sub: `${todayEvents.length} heute` },
                         { page: 'Warehouse', color: 'bg-teal-600', icon: Package, label: 'Lager', sub: `${articles.length} Artikel` },
-                    ].map(({ page, color, icon: Icon, label, sub }) => (
+                    ].map(({ page, color, icon: Icon, label, sub }, idx) => (
                         <Link key={label} to={createPageUrl(page)}>
-                            <Card className="bg-card border-border hover:bg-accent/50 transition-colors">
+                            <Card className="bg-card border-border hover:bg-accent/50 transition-colors card-pressable animate-stagger" style={{ '--delay': `${idx * 55}ms` }}>
                                 <CardContent className="p-4 text-center">
                                     <div className={`w-12 h-12 rounded-lg ${color} mb-3 mx-auto flex items-center justify-center`}>
                                         <Icon className="w-6 h-6 text-white" />

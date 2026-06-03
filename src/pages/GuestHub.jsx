@@ -416,11 +416,12 @@ export default function GuestHub() {
                                 />
                             ) : (
                                 <div className="space-y-3">
-                                    {filteredReservations.map(res => (
+                                    {filteredReservations.map((res, idx) => (
                                         <div
                                             key={res.id}
                                             onClick={() => { setSelectedRes(res); setResModalOpen(true); }}
-                                            className="p-4 rounded-xl border border-border bg-card hover:bg-accent/50 cursor-pointer transition-all"
+                                            className="p-4 rounded-xl border border-border bg-card hover:bg-accent/50 cursor-pointer transition-all card-pressable animate-stagger"
+                                            style={{ '--delay': `${idx * 45}ms` }}
                                         >
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="flex-1 min-w-0">
@@ -438,11 +439,11 @@ export default function GuestHub() {
                                                 </div>
                                                 <span className={cn(
                                                     'text-xs px-2 py-1 rounded-full font-medium shrink-0',
-                                                    res.status === 'vorgemerkt' ? 'bg-blue-500/20 text-blue-600' :
-                                                    res.status === 'bestätigt' ? 'bg-yellow-500/20 text-yellow-600' :
-                                                    res.status === 'erschienen' ? 'bg-green-500/20 text-green-600' :
-                                                    res.status === 'no-show' ? 'bg-red-500/20 text-red-600' :
-                                                    'bg-gray-500/20 text-gray-600'
+                                                    res.status === 'vorgemerkt' ? 'bg-blue-500/15 text-blue-400' :
+                                                    res.status === 'bestätigt' ? 'bg-yellow-500/15 text-yellow-400' :
+                                                    res.status === 'erschienen' ? 'bg-green-500/15 text-green-400' :
+                                                    res.status === 'no-show' ? 'bg-red-500/15 text-red-400' :
+                                                    'bg-secondary text-muted-foreground'
                                                 )}>
                                                     {res.status === 'vorgemerkt' ? '🔵' : 
                                                      res.status === 'bestätigt' ? '🟡' :

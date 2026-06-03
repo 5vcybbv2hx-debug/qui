@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePermissions } from '@/components/auth/usePermissions';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import PDFExportButton from '@/components/export/PDFExportButton';
+import TeamMeetingPrintView from '@/components/team-meeting/TeamMeetingPrintView';
+import { FileText } from 'lucide-react';
 import UnavailabilityManager from '@/components/availability/UnavailabilityManager';
 
 const priorityColors = {
@@ -41,6 +42,7 @@ export default function TeamMeeting() {
         description: '',
         priority: 'normal'
     });
+    const [printViewOpen, setPrintViewOpen] = useState(false);
     const [scheduleData, setScheduleData] = useState({
         date: '',
         time: '',
@@ -339,20 +341,15 @@ export default function TeamMeeting() {
                             </div>
                         )}
                         {permissions.isManager && (
-                            <PDFExportButton
-                                data={topics}
-                                filename="teamsitzung"
-                                title="Teamsitzung - Besprechungspunkte"
-                                columns={[
-                                    { label: 'Von', field: 'employee_name' },
-                                    { label: 'Thema', field: 'topic' },
-                                    { label: 'Priorität', field: 'priority' },
-                                    { label: 'Status', field: 'status' },
-                                    { label: 'Erstellt', render: (t) => format(new Date(t.created_date), 'dd.MM.yyyy') }
-                                ]}
+                            <Button
+                                onClick={() => setPrintViewOpen(true)}
                                 variant="outline"
-                                className="border-green-600 text-green-600 hover:bg-green-50"
-                            />
+                                size="sm"
+                                className="border-cyan-600 text-cyan-500 hover:bg-cyan-500/10"
+                            >
+                                <FileText className="w-4 h-4 mr-2" />
+                                Agenda drucken
+                            </Button>
                         )}
                         <Button 
                             onClick={() => setModalOpen(true)}
@@ -627,6 +624,14 @@ export default function TeamMeeting() {
                         <p className="text-muted-foreground">Noch keine Besprechungspunkte</p>
                     </div>
                 )}
+
+                {/* Print View Modal */}
+                <TeamMeetingPrintView
+                    open={printViewOpen}
+                    onClose={() => setPrintViewOpen(false)}
+                    topics={allTopics}
+                    schedule={currentSchedule}
+                />
 
                 {/* Terminwünsche – nur für Manager sichtbar */}
                 {permissions.isManager && (

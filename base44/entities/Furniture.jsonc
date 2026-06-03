@@ -8,27 +8,34 @@
     },
     "area_name": {
       "type": "string",
-      "description": "Name des Bereichs (f\u00fcr schnellen Zugriff)"
+      "description": "Name des Bereichs (Denormalisierung)"
     },
     "name": {
       "type": "string",
-      "description": "Name des M\u00f6bels (z.B. Regal A, Schrank 1)"
+      "description": "Name des Möbels (z.B. Kühlschrank Bar, Regal Links)"
     },
     "type": {
       "type": "string",
       "enum": [
         "Regal",
         "Schrank",
+        "Kühlschrank",
+        "Tiefkühlschrank",
+        "Schubladenbox",
         "Tisch",
-        "K\u00e4sewagen",
+        "Kiste",
         "Sonstiges"
       ],
-      "description": "M\u00f6beltyp"
+      "description": "Möbeltyp"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optionale Beschreibung"
     },
     "is_active": {
       "type": "boolean",
       "default": true,
-      "description": "M\u00f6bel aktiv"
+      "description": "Möbel aktiv"
     },
     "sort_order": {
       "type": "number",

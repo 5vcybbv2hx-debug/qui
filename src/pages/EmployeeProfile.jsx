@@ -1,29 +1,113 @@
-import React from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { STALE } from '@/lib/queryUtils';;
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
+import { usePermissions } from '@/components/auth/usePermissions';
+import EmployeeAvatar from '@/components/employees/EmployeeAvatar';
+import EmployeeDeleteDialog from '@/components/employees/EmployeeDeleteDialog';
+import PermissionsManager from '@/components/employees/PermissionsManager';
+import SalaryHistoryModal from '@/components/employees/SalaryHistoryModal';
+import EmployeePersonalFormExport from '@/components/employees/EmployeePersonalFormExport';
+import RVBefreiungExport from '@/components/employees/RVBefreiungExport';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import PersonalBogenForm from '@/components/employees/PersonalBogenForm';
-import ShortNameEditor from '@/components/employees/ShortNameEditor';
-import DocumentManager from '@/components/employees/DocumentManager';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import { calculateCompletion, isComplete } from '@/lib/employeeCompleteness';
-import { usePermissions } from '@/components/auth/usePermissions';
-import { createPageUrl } from '@/utils';
-import { ArrowLeft, CheckCircle2, AlertCircle, Loader2, Save } from 'lucide-react';
+import { createNotification } from '@/utils/createNotification';
+import {
+  ArrowLeft, Save, Loader2, Phone, MessageCircle, Mail,
+  UserPlus, ContactRound, Trash2, CheckCircle2, AlertCircle,
+  User, FileText, Shield, Banknote, ShoppingBag, ChevronDown, ChevronUp,
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+
+const COLORS = [
+  '#ef4444','#f97316','#f59e0b','#84cc16',
+  '#22c55e','#14b8a6','#06b6d4','#0ea5e9',
+  '#3b82f6','#6366f1','#8b5cf6','#a855f7',
+  '#d946ef','#ec4899','#f43f5e','#64748b',
+];
+
+const roleColors = {
+  'Aushilfe': 'bg-muted/80 text-muted-foreground border border-border',
+  'Vollzeit':  'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+  'Manager':   'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+  'Teilzeit':  'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
+};
+
+const TABS = [
+  { id: 'profil',    label: 'Profil',      icon: User },
+  { id: 'vertrag',   label: 'Vertrag',     icon: Banknote },
+  { id: 'zugang',    label: 'Zugang',      icon: Shield },
+  { id: 'dokumente', label: 'Dokumente',   icon: FileText },
+];
+
+// ── Reusable field row ─────────────────────────────────────────────────────
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
+// ── Section card ──────────────────────────────────────────────────────────
+function Section({ title, children }) {
+  return (
+    <div className="space-y-4">
+      {title && <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest pt-2">{title}</p>}
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
 
 export default function EmployeeProfile() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { isManager } = usePermissions();
-  const [formData, setFormData] = React.useState({});
+  const { id }         = useParams();
+  const navigate       = useNavigate();
+  const queryClient    = useQueryClient();
+  const permissions    = usePermissions();
+  const isNew          = id === 'new';
+
+  const BLANK = {
+    name: '', short_name: '', employee_number: '', role: 'Aushilfe',
+    skills: [], contract_type: '', hourly_rate: '', vacation_days_per_year: '',
+    weekly_hours: '', color: COLORS[0], phone: '', email: '', birthday: '',
+    birth_name: '', birth_place: '', nationality: '', entry_date: '',
+    tshirt_size: '', pullover_size: '', street: '', postal_code: '', city: '',
+    activity: '', education: '', tax_id: '', pension_number: '',
+    health_insurance: '', pension_exemption: false, has_main_job: false,
+    has_other_minijob: false, other_minijob_details: '', bank_name: '',
+    iban: '', bic: '', is_active: true,
+  };
+
+  const [form,        setForm]        = useState(BLANK);
+  const [activeTab,   setActiveTab]   = useState('profil');
+  const [showDelete,  setShowDelete]  = useState(false);
+  const [dirty,       setDirty]       = useState(false);
+
+  const set = (key, val) => { setForm(f => ({ ...f, [key]: val })); setDirty(true); };
+
+  // ── Data ─────────────────────────────────────────────────────────────────
+  const { data: employee, isLoading } = useQuery({
+    queryKey: ['employee', id],
+    queryFn: () => base44.entities.Employee.get(id),
+    enabled: !!id && !isNew,
+    staleTime: STALE.MEDIUM,
+    onSuccess: (e) => {
+      setForm({ ...BLANK, ...e });
+      setDirty(false);
+    },
+  });
 
   const { data: currentUser } = useQuery({
     queryKey: ['user'],
@@ -31,423 +115,523 @@ export default function EmployeeProfile() {
     staleTime: STALE.SLOW,
   });
 
-  // Fetch employee
-  const { data: employee, isLoading } = useQuery({
-    queryKey: ['employee', id],
-    queryFn: async () => {
-      return base44.entities.Employee.get(id);
-    },
-    enabled: !!id
-  });
+  // ── Derived permissions ───────────────────────────────────────────────────
+  const isOwn   = currentUser?.email === employee?.email;
+  const canEdit = isOwn || permissions.isManager;
 
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: (data) => base44.entities.Employee.update(id, data),
+  // ── Mutations ─────────────────────────────────────────────────────────────
+  const saveMut = useMutation({
+    mutationFn: async (data) => {
+      if (isNew) return base44.entities.Employee.create(data);
+      // Track salary changes
+      if (permissions.isManager && employee &&
+          (employee.hourly_rate !== data.hourly_rate || employee.contract_type !== data.contract_type)) {
+        await base44.entities.SalaryHistory.create({
+          employee_id: id, employee_name: data.name,
+          old_hourly_rate: employee.hourly_rate, new_hourly_rate: data.hourly_rate,
+          old_contract_type: employee.contract_type, new_contract_type: data.contract_type,
+          change_reason: 'Manuelle Anpassung',
+          effective_date: new Date().toISOString().split('T')[0],
+          changed_by: currentUser?.email || 'System',
+        });
+      }
+      await base44.entities.Employee.update(id, data);
+      if (isOwn && !permissions.isManager) {
+        await createNotification({ type: 'employee_update', title: 'Mitarbeiterdaten geändert', message: `${data.name} hat Profildaten aktualisiert.`, relatedId: id });
+      }
+    },
     onSuccess: () => {
-      toast.success('Personalbogen gespeichert');
-      queryClient.invalidateQueries({ queryKey: ['employee', id] });
       queryClient.invalidateQueries({ queryKey: ['employees'] });
+      queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      toast.success(isNew ? 'Mitarbeiter angelegt' : 'Gespeichert');
+      setDirty(false);
+      if (isNew) navigate(-1);
     },
-    onError: (error) => {
-      toast.error('Fehler beim Speichern: ' + error.message);
-    }
+    onError: e => toast.error('Fehler: ' + (e?.message || 'Unbekannt')),
   });
 
-  // Check permissions
-  const isCurrentUser = currentUser?.email === employee?.email;
-  const canEdit = isCurrentUser || isManager;
-  const canEditShortName = isManager;
+  const handleInvite = async () => {
+    try {
+      await base44.auth.sendMagicLink({ email: form.email });
+      toast.success(`Einladung an ${form.name} gesendet`);
+    } catch { toast.error('Einladung fehlgeschlagen'); }
+  };
 
-  // Initialize formData when employee loads
-  React.useEffect(() => {
-    if (employee) {
-      setFormData({
-        name: employee.name || '',
-        phone: employee.phone || '',
-        email: employee.email || '',
-        street: employee.street || '',
-        postal_code: employee.postal_code || '',
-        city: employee.city || '',
-        birthday: employee.birthday || '',
-        nationality: employee.nationality || '',
-        entry_date: employee.entry_date || '',
-        contract_type: employee.contract_type || '',
-        hourly_rate: employee.hourly_rate || '',
-        weekly_hours: employee.weekly_hours || '',
-        vacation_days_per_year: employee.vacation_days_per_year || '',
-        tax_id: employee.tax_id || '',
-        pension_number: employee.pension_number || '',
-        health_insurance: employee.health_insurance || '',
-        pension_exemption: employee.pension_exemption || false,
-        has_main_job: employee.has_main_job || false,
-        has_other_minijob: employee.has_other_minijob || false,
-        iban: employee.iban || '',
-        bic: employee.bic || '',
-        bank_name: employee.bank_name || '',
-        emergency_contact_name: employee.emergency_contact_name || '',
-        emergency_contact_phone: employee.emergency_contact_phone || '',
-      });
-    }
-  }, [employee]);
+  const handleVCard = () => {
+    const nameParts = form.name.trim().split(' ');
+    const last  = nameParts.slice(-1)[0] || '';
+    const first = nameParts.slice(0, -1).join(' ') || form.name;
+    const bday  = form.birthday ? form.birthday.replace(/-/g, '') : '';
+    const vcard = [
+      'BEGIN:VCARD', 'VERSION:3.0',
+      `FN:${form.name}`, `N:${last};${first};;;`,
+      form.phone ? `TEL;TYPE=CELL:${form.phone}` : '',
+      form.email ? `EMAIL:${form.email}` : '',
+      bday ? `BDAY:${bday}` : '',
+      'ORG:Bar Team', `TITLE:${form.role || ''}`,
+      'END:VCARD',
+    ].filter(Boolean).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([vcard], { type: 'text/vcard;charset=utf-8' }));
+    a.download = `${form.name.replace(/\s+/g, '_')}.vcf`;
+    a.click();
+  };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const handleOrderItem = (type, size) => {
+    base44.entities.TodoItem.create({
+      title: `${type === 'tshirt' ? 'T-Shirt' : 'Pullover'} bestellen: ${form.name} (${size})`,
+      category: 'Einkauf', priority: 'mittel', status: 'offen',
+    }).then(() => toast.success('Bestellung zur Aufgabenliste hinzugefügt!'));
+  };
 
-  if (!employee) {
-    return (
-      <div className="p-4 md:p-8">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Zurück
-        </Button>
-        <Alert className="border-red-500/20 bg-red-50 dark:bg-red-950/20">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription>Mitarbeiter nicht gefunden</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  // ── Loading / error states ─────────────────────────────────────────────
+  if (isLoading) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+    </div>
+  );
 
-  const completion = calculateCompletion(employee);
-  const isPersonalBogenComplete = isComplete(employee);
+  if (!isNew && !employee) return (
+    <div className="p-6 text-center">
+      <AlertCircle className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-30" />
+      <p className="text-muted-foreground">Mitarbeiter nicht gefunden.</p>
+      <Button variant="ghost" onClick={() => navigate(-1)} className="mt-4">← Zurück</Button>
+    </div>
+  );
+
+  const completion = employee ? calculateCompletion(employee) : 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-8">
-      <div className="max-w-4xl mx-auto px-3 md:px-4 py-4 md:py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+    <div className="min-h-screen bg-background pb-28 md:pb-8">
+      <div className="max-w-2xl mx-auto px-3 py-4">
+
+        {/* ── Top bar ─────────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 mb-5">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">{employee.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {employee.role} {employee.employee_number && `• ${employee.employee_number}`}
-            </p>
-          </div>
-          {isPersonalBogenComplete && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-green-600 dark:text-green-400">Vollständig</span>
+
+          {/* Avatar + name */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {!isNew && (
+              <EmployeeAvatar
+                employee={form}
+                size="sm"
+                upload={canEdit}
+                onUploaded={url => { set('profile_image_url', url); saveMut.mutate({ ...form, profile_image_url: url }); }}
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold text-foreground truncate">
+                {isNew ? 'Neuer Mitarbeiter' : form.name}
+              </h1>
+              {!isNew && (
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <Badge className={cn('text-[10px]', roleColors[form.role] || 'bg-muted text-muted-foreground')}>
+                    {form.role}
+                  </Badge>
+                  {completion < 100 && (
+                    <span className="text-[10px] text-amber-400">{completion}% vollständig</span>
+                  )}
+                  {completion === 100 && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                  )}
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Save button */}
+          {canEdit && (
+            <Button
+              onClick={() => saveMut.mutate(form)}
+              disabled={saveMut.isPending || !dirty}
+              className={cn(
+                'shrink-0 min-h-[44px] transition-all',
+                dirty ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-secondary text-muted-foreground'
+              )}
+            >
+              {saveMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span className="ml-1.5 hidden sm:inline">{dirty ? 'Speichern' : 'Gespeichert'}</span>
+            </Button>
           )}
         </div>
 
-        {/* Status Banner */}
-        {!isPersonalBogenComplete && (
-          <Alert className="mb-6 border-orange-500/20 bg-orange-50 dark:bg-orange-950/20">
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-            <AlertDescription className="text-orange-700 dark:text-orange-400">
-              Personalbogen zu {completion}% vollständig. Bitte fehlende Informationen nachtragen.
-            </AlertDescription>
-          </Alert>
+        {/* ── Quick contact strip (not for new) ────────────────────── */}
+        {!isNew && (form.phone || form.email) && (
+          <div className="flex gap-2 mb-5 overflow-x-auto pb-1 no-scrollbar">
+            {form.phone && (
+              <>
+                <a href={`tel:${form.phone}`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary border border-border text-sm text-foreground min-h-[44px] whitespace-nowrap"
+                >
+                  <Phone className="w-4 h-4 shrink-0" /> {form.phone}
+                </a>
+                <a href={`https://wa.me/${form.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-500/15 border border-green-500/30 text-green-400 text-sm min-h-[44px] whitespace-nowrap"
+                >
+                  <MessageCircle className="w-4 h-4 shrink-0" /> WhatsApp
+                </a>
+              </>
+            )}
+            {form.email && (
+              <a href={`mailto:${form.email}`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary border border-border text-sm text-muted-foreground min-h-[44px] whitespace-nowrap"
+              >
+                <Mail className="w-4 h-4 shrink-0" /> {form.email}
+              </a>
+            )}
+            {(form.phone || form.email) && (
+              <button onClick={handleVCard}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-secondary border border-border text-sm text-muted-foreground min-h-[44px] whitespace-nowrap hover:text-foreground transition-colors"
+              >
+                <ContactRound className="w-4 h-4 shrink-0" /> Kontakt
+              </button>
+            )}
+          </div>
         )}
 
-        {/* Short Name Editor */}
-        <ShortNameEditor
-          employee={employee}
-          isManager={canEditShortName}
-          currentUser={currentUser}
-          onUpdate={() => queryClient.invalidateQueries({ queryKey: ['employee', id] })}
-        />
-
-        {/* Content Tabs */}
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="general">Allgemein</TabsTrigger>
-            <TabsTrigger value="contract">Vertrag</TabsTrigger>
-            <TabsTrigger value="tax">Steuern</TabsTrigger>
-            <TabsTrigger value="bank">Bankdaten</TabsTrigger>
-            <TabsTrigger value="emergency">Notfall</TabsTrigger>
-          </TabsList>
-
-          {/* Allgemein Tab */}
-          <TabsContent value="general" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Persönliche Daten</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input value={formData.name} disabled className="bg-muted" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Telefon</Label>
-                    <Input
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>E-Mail</Label>
-                    <Input
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Geburtstag</Label>
-                    <Input
-                      type="date"
-                      value={formData.birthday}
-                      onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Nationalität</Label>
-                    <Input
-                      value={formData.nationality}
-                      onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Eintrittsdatum</Label>
-                    <Input
-                      type="date"
-                      value={formData.entry_date}
-                      onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Straße</Label>
-                    <Input
-                      value={formData.street}
-                      onChange={(e) => setFormData({ ...formData, street: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>PLZ</Label>
-                      <Input
-                        value={formData.postal_code}
-                        onChange={(e) => setFormData({ ...formData, postal_code: e.target.value })}
-                        disabled={!canEdit}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Stadt</Label>
-                      <Input
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        disabled={!canEdit}
-                      />
-                    </div>
-                  </div>
-                </div>
-                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Vertrag Tab */}
-          <TabsContent value="contract" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vertragsdaten</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Vertragsart</Label>
-                    <Input
-                      value={formData.contract_type}
-                      onChange={(e) => setFormData({ ...formData, contract_type: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Stundensatz (€)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.hourly_rate}
-                      onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Wochenstunden</Label>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      value={formData.weekly_hours}
-                      onChange={(e) => setFormData({ ...formData, weekly_hours: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Urlaubstage pro Jahr</Label>
-                    <Input
-                      type="number"
-                      value={formData.vacation_days_per_year}
-                      onChange={(e) => setFormData({ ...formData, vacation_days_per_year: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                </div>
-                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Steuern Tab */}
-          <TabsContent value="tax" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Steuer & Soziales</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Steuer-ID</Label>
-                    <Input
-                      value={formData.tax_id}
-                      onChange={(e) => setFormData({ ...formData, tax_id: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Rentenversicherungsnummer</Label>
-                    <Input
-                      value={formData.pension_number}
-                      onChange={(e) => setFormData({ ...formData, pension_number: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Krankenkasse</Label>
-                    <Input
-                      value={formData.health_insurance}
-                      onChange={(e) => setFormData({ ...formData, health_insurance: e.target.value })}
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.pension_exemption}
-                        onChange={(e) => setFormData({ ...formData, pension_exemption: e.target.checked })}
-                        disabled={!canEdit}
-                      />
-                      Rentenpflicht-Befreiung
-                    </Label>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.has_main_job}
-                        onChange={(e) => setFormData({ ...formData, has_main_job: e.target.checked })}
-                        disabled={!canEdit}
-                      />
-                      Versicherungspflichtige Hauptbeschäftigung
-                    </Label>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.has_other_minijob}
-                        onChange={(e) => setFormData({ ...formData, has_other_minijob: e.target.checked })}
-                        disabled={!canEdit}
-                      />
-                      Weitere geringfügige Beschäftigung
-                    </Label>
-                  </div>
-                </div>
-                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Bankdaten Tab */}
-          <TabsContent value="bank" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Bankverbindung</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Bankname</Label>
-                  <Input
-                    value={formData.bank_name}
-                    onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>IBAN</Label>
-                  <Input
-                    value={formData.iban}
-                    onChange={(e) => setFormData({ ...formData, iban: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>BIC</Label>
-                  <Input
-                    value={formData.bic}
-                    onChange={(e) => setFormData({ ...formData, bic: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                </div>
-                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Notfall Tab */}
-          <TabsContent value="emergency" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Notfallkontakt</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Name</Label>
-                  <Input
-                    value={formData.emergency_contact_name}
-                    onChange={(e) => setFormData({ ...formData, emergency_contact_name: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Telefon</Label>
-                  <Input
-                    value={formData.emergency_contact_phone}
-                    onChange={(e) => setFormData({ ...formData, emergency_contact_phone: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                </div>
-                {canEdit && <Button onClick={() => updateMutation.mutate(formData)} className="w-full"><Save className="w-4 h-4 mr-2" />Speichern</Button>}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* Footer Info */}
-        <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-xs text-muted-foreground">
-            Zuletzt aktualisiert: {new Date(employee.updated_date).toLocaleDateString('de-DE')}
-          </p>
+        {/* ── Tab bar ──────────────────────────────────────────────── */}
+        <div className="flex gap-1 bg-secondary/50 rounded-xl p-1 mb-6">
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-lg text-xs font-medium transition-all min-h-[52px] touch-manipulation',
+                activeTab === tab.id
+                  ? 'bg-amber-600 text-white shadow'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
         </div>
+
+        {/* ══════════════════════════════════════════════════════════
+            TAB: PROFIL
+        ══════════════════════════════════════════════════════════ */}
+        {activeTab === 'profil' && (
+          <div className="space-y-6">
+
+            <Section title="Basisdaten">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Name *">
+                  <Input value={form.name} onChange={e => set('name', e.target.value)} disabled={!canEdit} placeholder="Vorname Nachname" />
+                </Field>
+                <Field label="Kürzel">
+                  <Input value={form.short_name} onChange={e => set('short_name', e.target.value)} disabled={!permissions.isManager} maxLength={4} placeholder="z.B. MA" />
+                </Field>
+                <Field label="Personalnr.">
+                  <Input value={form.employee_number} onChange={e => set('employee_number', e.target.value)} disabled={!permissions.isManager} />
+                </Field>
+                <Field label="Rolle">
+                  <Select value={form.role} onValueChange={v => set('role', v)} disabled={!permissions.isManager}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {['Aushilfe','Vollzeit','Teilzeit','Manager'].map(r => (
+                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+              {permissions.isManager && (
+                <Field label="Fähigkeiten">
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {['Barkeeper','Service','Sonderaufgaben'].map(s => (
+                      <label key={s} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={form.skills?.includes(s)}
+                          onCheckedChange={v => set('skills', v ? [...(form.skills||[]), s] : (form.skills||[]).filter(x=>x!==s))}
+                        />
+                        <span className="text-sm text-foreground">{s}</span>
+                      </label>
+                    ))}
+                  </div>
+                </Field>
+              )}
+              {permissions.isManager && (
+                <Field label="Farbe">
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {COLORS.map(c => (
+                      <button key={c} type="button" onClick={() => set('color', c)}
+                        className={cn('w-7 h-7 rounded-full border-2 transition-all', form.color === c ? 'border-white scale-110' : 'border-transparent')}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </Field>
+              )}
+            </Section>
+
+            <Section title="Kontakt">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Telefon">
+                  <Input type="tel" value={form.phone} onChange={e => set('phone', e.target.value)} disabled={!canEdit} placeholder="+49 …" />
+                </Field>
+                <Field label="E-Mail">
+                  <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} disabled={!canEdit} />
+                </Field>
+              </div>
+            </Section>
+
+            <Section title="Persönliche Daten">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Geburtstag">
+                  <Input type="date" value={form.birthday} onChange={e => set('birthday', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <Field label="Geburtsname">
+                  <Input value={form.birth_name} onChange={e => set('birth_name', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <Field label="Geburtsort">
+                  <Input value={form.birth_place} onChange={e => set('birth_place', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <Field label="Nationalität">
+                  <Input value={form.nationality} onChange={e => set('nationality', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <Field label="Eintrittsdatum">
+                  <Input type="date" value={form.entry_date} onChange={e => set('entry_date', e.target.value)} disabled={!permissions.isManager} />
+                </Field>
+              </div>
+            </Section>
+
+            <Section title="Adresse">
+              <div className="space-y-3">
+                <Field label="Straße">
+                  <Input value={form.street} onChange={e => set('street', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="PLZ">
+                    <Input value={form.postal_code} onChange={e => set('postal_code', e.target.value)} disabled={!canEdit} />
+                  </Field>
+                  <Field label="Stadt">
+                    <Input value={form.city} onChange={e => set('city', e.target.value)} disabled={!canEdit} />
+                  </Field>
+                </div>
+              </div>
+            </Section>
+
+            {permissions.isManager && (
+              <Section title="Kleidung">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="T-Shirt Größe">
+                    <Input value={form.tshirt_size} onChange={e => set('tshirt_size', e.target.value)} disabled={!permissions.isManager} />
+                  </Field>
+                  <Field label="Pullover Größe">
+                    <Input value={form.pullover_size} onChange={e => set('pullover_size', e.target.value)} disabled={!permissions.isManager} />
+                  </Field>
+                </div>
+                {(form.tshirt_size || form.pullover_size) && (
+                  <div className="flex gap-2">
+                    {form.tshirt_size && (
+                      <Button variant="outline" size="sm" onClick={() => handleOrderItem('tshirt', form.tshirt_size)} className="flex-1">
+                        <ShoppingBag className="w-3.5 h-3.5 mr-1.5" /> T-Shirt bestellen
+                      </Button>
+                    )}
+                    {form.pullover_size && (
+                      <Button variant="outline" size="sm" onClick={() => handleOrderItem('pullover', form.pullover_size)} className="flex-1">
+                        <ShoppingBag className="w-3.5 h-3.5 mr-1.5" /> Pullover bestellen
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </Section>
+            )}
+
+            {permissions.isManager && !isNew && (
+              <Section title="">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 border border-border">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Mitarbeiter aktiv</p>
+                    <p className="text-xs text-muted-foreground">Deaktiviert = Ehemaliger</p>
+                  </div>
+                  <Switch checked={form.is_active} onCheckedChange={v => set('is_active', v)} />
+                </div>
+              </Section>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            TAB: VERTRAG
+        ══════════════════════════════════════════════════════════ */}
+        {activeTab === 'vertrag' && (
+          <div className="space-y-6">
+            <Section title="Vertrag & Vergütung">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Vertragsart">
+                  <Select value={form.contract_type} onValueChange={v => set('contract_type', v)} disabled={!permissions.isManager}>
+                    <SelectTrigger><SelectValue placeholder="Wählen…" /></SelectTrigger>
+                    <SelectContent>
+                      {['Minijob','Teilzeit','Vollzeit','Werkstudent'].map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Stundensatz (€)">
+                  <Input type="number" step="0.01" min="0" value={form.hourly_rate} onChange={e => set('hourly_rate', e.target.value)} disabled={!permissions.isManager} />
+                </Field>
+                <Field label="Wochenstunden">
+                  <Input type="number" step="0.5" value={form.weekly_hours} onChange={e => set('weekly_hours', e.target.value)} disabled={!permissions.isManager} />
+                </Field>
+                <Field label="Urlaubstage / Jahr">
+                  <Input type="number" value={form.vacation_days_per_year} onChange={e => set('vacation_days_per_year', e.target.value)} disabled={!permissions.isManager} />
+                </Field>
+                <Field label="Tätigkeit">
+                  <Input value={form.activity} onChange={e => set('activity', e.target.value)} disabled={!permissions.isManager} />
+                </Field>
+                <Field label="Ausbildung">
+                  <Input value={form.education} onChange={e => set('education', e.target.value)} disabled={!canEdit} />
+                </Field>
+              </div>
+            </Section>
+
+            <Section title="Steuer & Soziales">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Steuer-ID">
+                  <Input value={form.tax_id} onChange={e => set('tax_id', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <Field label="Rentenversicherungsnr.">
+                  <Input value={form.pension_number} onChange={e => set('pension_number', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <Field label="Krankenkasse">
+                  <Input value={form.health_insurance} onChange={e => set('health_insurance', e.target.value)} disabled={!canEdit} />
+                </Field>
+              </div>
+              <div className="space-y-3 pt-1">
+                {[
+                  { key: 'pension_exemption', label: 'RV-Befreiung beantragt', desc: 'Minijob — Rentenversicherungsbefreiung' },
+                  { key: 'has_main_job', label: 'Hauptbeschäftigung vorhanden', desc: 'Parallel zum Minijob' },
+                  { key: 'has_other_minijob', label: 'Weiterer Minijob vorhanden', desc: '' },
+                ].map(({ key, label, desc }) => (
+                  <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 border border-border">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{label}</p>
+                      {desc && <p className="text-xs text-muted-foreground">{desc}</p>}
+                    </div>
+                    <Switch checked={!!form[key]} onCheckedChange={v => set(key, v)} disabled={!canEdit} />
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            <Section title="Bankdaten">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Field label="Bank">
+                  <Input value={form.bank_name} onChange={e => set('bank_name', e.target.value)} disabled={!canEdit} />
+                </Field>
+                <Field label="IBAN">
+                  <Input value={form.iban} onChange={e => set('iban', e.target.value.toUpperCase())} disabled={!canEdit} />
+                </Field>
+                <Field label="BIC">
+                  <Input value={form.bic} onChange={e => set('bic', e.target.value.toUpperCase())} disabled={!canEdit} />
+                </Field>
+              </div>
+            </Section>
+
+            {!isNew && permissions.isManager && (
+              <Section title="">
+                <SalaryHistoryModal employee={form.id ? form : employee} />
+              </Section>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            TAB: ZUGANG
+        ══════════════════════════════════════════════════════════ */}
+        {activeTab === 'zugang' && (
+          <div className="space-y-4">
+            {permissions.isManager && !isNew && (
+              <>
+                {form.email && (
+                  <Button
+                    onClick={handleInvite}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white min-h-[44px]"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    App-Zugang senden an {form.email}
+                  </Button>
+                )}
+                {!form.email && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                    <p className="text-sm text-amber-400 font-medium">Keine E-Mail hinterlegt</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Bitte im Profil-Tab nachtragen, dann kann eine Einladung versendet werden.</p>
+                  </div>
+                )}
+                <div className="mt-4">
+                  <PermissionsManager
+                    employee={employee || form}
+                    onSave={async (perms) => {
+                      await base44.entities.Employee.update(id, { permissions: perms });
+                      queryClient.invalidateQueries({ queryKey: ['employees'] });
+                      toast.success('Berechtigungen aktualisiert');
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            {!permissions.isManager && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Nur Manager können Zugänge verwalten.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════════
+            TAB: DOKUMENTE
+        ══════════════════════════════════════════════════════════ */}
+        {activeTab === 'dokumente' && (
+          <div className="space-y-4">
+            {permissions.isManager && !isNew && (
+              <>
+                <EmployeePersonalFormExport
+                  employee={employee || form}
+                  onEmployeeUpdate={updated => queryClient.setQueryData(['employees'], prev => prev?.map(e => e.id === updated.id ? updated : e))}
+                />
+                <RVBefreiungExport
+                  employee={employee || form}
+                  onEmployeeUpdate={updated => queryClient.setQueryData(['employees'], prev => prev?.map(e => e.id === updated.id ? updated : e))}
+                />
+              </>
+            )}
+            {(!permissions.isManager || isNew) && (
+              <div className="text-center py-12 text-muted-foreground">
+                <FileText className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Keine Dokumente verfügbar.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Bottom actions (delete) ───────────────────────────── */}
+        {permissions.isManager && !isNew && (
+          <div className="mt-10 pt-6 border-t border-border">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDelete(true)}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive w-full min-h-[44px]"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Mitarbeiter löschen
+            </Button>
+          </div>
+        )}
       </div>
+
+      {showDelete && (
+        <EmployeeDeleteDialog
+          employee={employee || form}
+          currentUser={currentUser}
+          onClose={() => { setShowDelete(false); navigate(-1); }}
+        />
+      )}
     </div>
   );
 }

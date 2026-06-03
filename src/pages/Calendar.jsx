@@ -76,9 +76,10 @@ export default function CalendarPage() {
     });
 
     const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts', shiftFrom, shiftTo],
-        queryFn: () => base44.entities.Shift.filter({ date_gte: shiftFrom, date_lte: shiftTo }, 'date', 300),
-        staleTime: STALE.SLOW,
+        queryKey: ['shifts'],
+        queryFn: () => base44.entities.Shift.list('date', 2000),
+        staleTime: STALE.MEDIUM,
+        select: (data) => data.filter(s => s.date >= shiftFrom && s.date <= shiftTo),
     });
 
     const { data: reservations = [] } = useQuery({
@@ -127,8 +128,7 @@ export default function CalendarPage() {
     // --- Mutations (Schichtplan) ---
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
-        onSuccess: (newShift) => {
-            queryClient.setQueryData(['shifts', shiftFrom, shiftTo], (old) => [newShift, ...(old || [])]);
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
@@ -139,8 +139,8 @@ export default function CalendarPage() {
         mutationFn: ({ id, data }) => base44.entities.Shift.update(id, data),
         onMutate: async ({ id, data }) => {
             await queryClient.cancelQueries({ queryKey: ['shifts'] });
-            const previous = queryClient.getQueryData(['shifts', shiftFrom, shiftTo]);
-            queryClient.setQueryData(['shifts', shiftFrom, shiftTo], (old) =>
+            const previous = queryClient.getQueryData(['shifts']);
+            queryClient.setQueryData(['shifts'], (old) =>
                 (old || []).map(s => s.id === id ? { ...s, ...data } : s)
             );
             return { previous };
@@ -157,8 +157,8 @@ export default function CalendarPage() {
         mutationFn: (id) => base44.entities.Shift.delete(id),
         onMutate: async (id) => {
             await queryClient.cancelQueries({ queryKey: ['shifts'] });
-            const previous = queryClient.getQueryData(['shifts', shiftFrom, shiftTo]);
-            queryClient.setQueryData(['shifts', shiftFrom, shiftTo], (old) => (old || []).filter(s => s.id !== id));
+            const previous = queryClient.getQueryData(['shifts']);
+            queryClient.setQueryData(['shifts'], (old) => (old || []).filter(s => s.id !== id));
             return { previous };
         },
         onError: (err, vars, context) => queryClient.setQueryData(['shifts'], context.previous),

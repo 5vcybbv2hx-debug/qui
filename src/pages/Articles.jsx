@@ -309,7 +309,7 @@ export default function Articles() {
     if (!permissions.canEditShopping) return <PermissionDenied />;
 
     return (
-        <div>
+        <div className="animate-page-enter">
             <div className="max-w-6xl mx-auto px-4 py-4 sm:py-8 pb-24 md:pb-0">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
@@ -375,7 +375,7 @@ export default function Articles() {
                                 onClick={() => setFilterCategory('all')}
                                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap border ${
                                     filterCategory === 'all'
-                                        ? 'bg-amber-500 text-slate-900 border-amber-500'
+                                        ? 'bg-amber-500 text-foreground border-amber-500'
                                         : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground'
                                 }`}
                             >
@@ -390,7 +390,7 @@ export default function Articles() {
                                     }}
                                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors whitespace-nowrap border ${
                                         filterCategory === cat.name
-                                            ? 'bg-amber-500 text-slate-900 border-amber-500'
+                                            ? 'bg-amber-500 text-foreground border-amber-500'
                                             : 'bg-transparent text-muted-foreground border-border hover:bg-accent hover:text-foreground'
                                     }`}
                                 >
@@ -456,7 +456,7 @@ export default function Articles() {
                         {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-8">
                                 {groupedArticles.map((group, groupIdx) => (
-                                    <Draggable
+                                    <div style={{ '--delay': `${groupIdx * 60}ms` }} className="animate-stagger"><Draggable
                                         key={group.category.id}
                                         draggableId={`cat-${group.category.id}`}
                                         index={groupIdx}

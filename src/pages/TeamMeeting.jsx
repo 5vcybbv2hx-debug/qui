@@ -387,7 +387,7 @@ export default function TeamMeeting() {
                             <Button
                                 onClick={() => setProtocolModalOpen(true)}
                                 size="sm"
-                                className="bg-amber-600 hover:bg-amber-700 animate-pulse"
+                                className="bg-amber-600 hover:bg-amber-700"
                             >
                                 <ClipboardList className="w-4 h-4 mr-2" />
                                 Protokoll führen ✍️

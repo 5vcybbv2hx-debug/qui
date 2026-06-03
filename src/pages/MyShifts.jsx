@@ -169,19 +169,19 @@ export default function MyShiftsPage() {
                                                 </p>
                                             </div>
                                             {isSameDay(date, new Date()) && (
-                                                <Badge className="bg-amber-500 text-slate-900">Heute</Badge>
+                                                <Badge className="bg-amber-500 text-primary-foreground font-semibold animate-pop">Heute</Badge>
                                             )}
                                         </div>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-2">
-                                            {dayShifts.map(shift => {
+                                            {dayShifts.map((shift, sIdx) => {
                                                 const start = new Date(`2000-01-01 ${shift.start_time}`);
                                                 const end = new Date(`2000-01-01 ${shift.end_time}`);
                                                 const duration = differenceInMinutes(end, start) / 60;
                                                 
                                                 return (
-                                                    <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
+                                                    <div key={shift.id} className="flex animate-stagger" style={{ '--delay': `${(idx * 60) + (sIdx * 30)}ms` }} items-center gap-3 p-3 rounded-lg bg-accent/50">
                                                         <Clock className="w-5 h-5 text-amber-500" />
                                                         <div className="flex-1">
                                                             <p className="font-semibold text-foreground">
@@ -305,7 +305,7 @@ export default function MyShiftsPage() {
                                             const duration = differenceInMinutes(end, start) / 60;
                                             
                                             return (
-                                                <div key={shift.id} className="flex items-start gap-4 p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
+                                                <div key={shift.id} className="flex animate-stagger" style={{ '--delay': `${(idx * 60) + (sIdx * 30)}ms` }} items-start gap-4 p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
                                                     <div className="flex-shrink-0">
                                                         <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex flex-col items-center justify-center">
                                                             <p className="text-xs font-semibold text-amber-500">
@@ -322,7 +322,7 @@ export default function MyShiftsPage() {
                                                                 {format(shiftDate, 'EEEE, dd.MM.yyyy', { locale: de })}
                                                             </p>
                                                             {isSameDay(shiftDate, new Date()) && (
-                                                                <Badge className="bg-amber-500 text-slate-900">Heute</Badge>
+                                                                <Badge className="bg-amber-500 text-primary-foreground font-semibold animate-pop">Heute</Badge>
                                                             )}
                                                         </div>
                                                         <div className="flex items-center gap-2 mt-1">
@@ -362,7 +362,7 @@ export default function MyShiftsPage() {
                                         <CardTitle className="flex items-center gap-2 text-base">
                                             <Users className="w-4 h-4" />
                                             <span>{format(date, 'EEEE, dd.MM.', { locale: de })}</span>
-                                            {isToday && <Badge className="bg-amber-500 text-slate-900 text-xs">Heute</Badge>}
+                                            {isToday && <Badge className="bg-amber-500 text-primary-foreground text-xs">Heute</Badge>}
                                             <span className="ml-auto text-sm font-normal text-muted-foreground">{dayShifts.length} Schichten</span>
                                         </CardTitle>
                                     </CardHeader>
@@ -370,9 +370,9 @@ export default function MyShiftsPage() {
                                         {dayShifts.length > 0 ? (
                                             <div className="space-y-2">
                                                 {dayShifts.map(shift => (
-                                                    <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
+                                                    <div key={shift.id} className="flex animate-stagger" style={{ '--delay': `${(idx * 60) + (sIdx * 30)}ms` }} items-center gap-3 p-3 rounded-lg bg-accent/50">
                                                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
-                                                            <span className="text-slate-900 font-bold text-sm">
+                                                            <span className="text-primary-foreground font-bold text-sm">
                                                                 {shift.employee_name?.charAt(0) || '?'}
                                                             </span>
                                                         </div>
@@ -384,7 +384,7 @@ export default function MyShiftsPage() {
                                                             </p>
                                                         </div>
                                                         {shift.employee_id === employee.id && (
-                                                            <Badge className="bg-amber-500 text-slate-900 shrink-0">Du</Badge>
+                                                            <Badge className="bg-amber-500 text-primary-foreground shrink-0">Du</Badge>
                                                         )}
                                                     </div>
                                                 ))}

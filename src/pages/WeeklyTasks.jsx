@@ -133,8 +133,10 @@ function DaySection({ label, tasks, isToday, onComplete, onReset }) {
                 {open.length === 0 && done.length > 0 && (
                     <p className="text-center text-sm text-emerald-500 py-3 font-medium">✓ Alle Aufgaben erledigt!</p>
                 )}
-                {open.map(task => (
-                    <TaskRow key={task.id} task={task} onComplete={onComplete} onReset={onReset} />
+                {open.map((task, tIdx) => (
+                    <div key={task.id} className="animate-stagger" style={{ '--delay': `${tIdx * 35}ms` }}>
+                        <TaskRow task={task} onComplete={onComplete} onReset={onReset} />
+                    </div>
                 ))}
             </div>
 
@@ -335,7 +337,7 @@ export default function WeeklyTasks() {
                 )}
 
                 {/* Day sections */}
-                {sortedDays.map(jsDay => {
+                {sortedDays.map((jsDay, dayIdx) => {
                     const wd = WEEKDAYS.find(d => d.jsDay === jsDay);
                     const tasks = tasksByDay[jsDay] || [];
                     return (
@@ -346,6 +348,7 @@ export default function WeeklyTasks() {
                             isToday={jsDay === todayJsDay}
                             onComplete={handleComplete}
                             onReset={handleReset}
+                            animDelay={dayIdx * 60}
                         />
                     );
                 })}

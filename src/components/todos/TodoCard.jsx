@@ -76,7 +76,7 @@ export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDe
 
     return (
         <Card className={cn(
-            "border transition-all overflow-hidden",
+            "border transition-all overflow-hidden card-pressable",
             pCfg.cardBg || "bg-card border-border/50",
             isCompleted && "opacity-50"
         )}>
@@ -88,7 +88,7 @@ export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDe
                     {/* Status toggle - bigger touch target */}
                     <button
                         onClick={() => onStatusChange(todo, statusCycle[todo.status])}
-                        className={cn("mt-0.5 shrink-0 transition-all active:scale-90", statusColor)}
+                        className={cn("mt-0.5 shrink-0 transition-all active:scale-75", statusColor)}
                         title={`${statusConfig[todo.status]?.label} → weiterklicken`}
                     >
                         <StatusIcon className={cn("w-6 h-6", isInProgress && "animate-spin")} />
@@ -104,7 +104,7 @@ export default function TodoCard({ todo, employees, onStatusChange, onEdit, onDe
                             )}>
                                 {todo.title}
                                 {todo.priority === 'dringend' && !isCompleted && (
-                                    <span className="ml-1.5 text-sm text-red-400 font-bold">❗</span>
+                                    <span className="ml-1.5 text-sm text-red-400 font-bold animate-pop">❗</span>
                                 )}
                             </h4>
                             {!isCompleted && todo.description && (

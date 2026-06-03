@@ -106,7 +106,7 @@ function MaintenanceCard({ task, onEdit, onComplete, canEdit, isCompleting }) {
                             size="sm"
                             disabled={isCompleting}
                             onClick={() => { haptics.medium(); onComplete(task); }}
-                            className="flex-1 h-10 rounded-xl gap-1.5 bg-green-600 hover:bg-green-700 text-white font-semibold"
+                            className="flex-1 h-10 rounded-xl gap-1.5 bg-green-600 hover:bg-green-700 text-foreground font-semibold"
                         >
                             <CheckCircle2 className="w-4 h-4" />
                             {isCompleting ? 'Wird gespeichert…' : 'Wartung erledigt'}
@@ -179,7 +179,7 @@ export default function MaintenancePage() {
     if (!permissions.isManager) return <PermissionDenied />;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background animate-page-enter">
             <div className="max-w-2xl mx-auto px-4 pt-5 pb-28 space-y-5">
 
                 {/* ── Header ── */}
@@ -270,9 +270,8 @@ export default function MaintenancePage() {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {filteredTasks.map(task => (
-                            <MaintenanceCard
-                                key={task.id}
+                        {filteredTasks.map((task, idx) => (
+                            <div key={task.id} className="animate-stagger" style={{ '--delay': `${idx*45}ms` }}><MaintenanceCard
                                 task={task}
                                 canEdit={permissions.canEditEmployees}
                                 onEdit={openModal}

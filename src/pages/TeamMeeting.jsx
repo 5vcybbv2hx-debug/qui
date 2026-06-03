@@ -369,14 +369,14 @@ export default function TeamMeeting() {
                     <Button
                         onClick={() => setShowArchive(false)}
                         variant={!showArchive ? 'default' : 'outline'}
-                        className={!showArchive ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                        className={!showArchive ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600' : ''}
                     >
                         Aktiv
                     </Button>
                     <Button
                         onClick={() => setShowArchive(true)}
                         variant={showArchive ? 'default' : 'outline'}
-                        className={showArchive ? 'bg-amber-600 hover:bg-amber-700' : ''}
+                        className={showArchive ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600' : ''}
                     >
                         <Archive className="w-4 h-4 mr-2" />
                         Archiv
@@ -385,7 +385,7 @@ export default function TeamMeeting() {
 
                 {/* Stats - nur für aktive Themen */}
                 {!showArchive && (
-                    <div className="grid grid-cols-3 gap-3 mb-6">
+                    <div className="grid grid-cols-3 gap-3 mb-6 animate-fade-in">
                         <Card className="bg-card border-border">
                             <CardContent className="p-4 text-center">
                                 <Clock className="w-6 h-6 mx-auto mb-2 text-amber-400" />
@@ -417,13 +417,13 @@ export default function TeamMeeting() {
                             <h3 className="font-semibold text-foreground">Zusagen für {format(new Date(currentSchedule.date), 'dd.MM.yyyy', { locale: de })}</h3>
                             
                             <div className="grid grid-cols-3 gap-3">
-                                <div className="bg-green-900/30 border border-green-700 rounded-lg p-3 text-center">
+                                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
                                     <p className="text-2xl font-bold text-green-400">{rsvpData.filter(r => r.status === 'zusage').length}</p>
-                                    <p className="text-xs text-green-300">Zugesagt</p>
+                                    <p className="text-xs text-green-400">Zugesagt</p>
                                 </div>
-                                <div className="bg-red-900/30 border border-red-700 rounded-lg p-3 text-center">
+                                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
                                     <p className="text-2xl font-bold text-red-400">{rsvpData.filter(r => r.status === 'absage').length}</p>
-                                    <p className="text-xs text-red-300">Abgesagt</p>
+                                    <p className="text-xs text-red-400">Abgesagt</p>
                                 </div>
                                 <div className="bg-secondary/50 border border-border/70 rounded-lg p-3 text-center">
                                     <p className="text-2xl font-bold text-foreground/80">{employees.length - rsvpData.length}</p>
@@ -439,7 +439,7 @@ export default function TeamMeeting() {
                                         <p className="text-xs font-semibold text-green-300 mb-2">ZUGESAGT ({rsvpData.filter(r => r.status === 'zusage').length})</p>
                                         <div className="space-y-1">
                                             {rsvpData.filter(r => r.status === 'zusage').map(rsvp => (
-                                                <p key={rsvp.id} className="text-sm text-green-200">✓ {rsvp.employee_name}</p>
+                                                <p key={rsvp.id} className="text-sm text-green-400">✓ {rsvp.employee_name}</p>
                                             ))}
                                         </div>
                                     </div>
@@ -451,7 +451,7 @@ export default function TeamMeeting() {
                                         <p className="text-xs font-semibold text-red-300 mb-2">ABGESAGT ({rsvpData.filter(r => r.status === 'absage').length})</p>
                                         <div className="space-y-1">
                                             {rsvpData.filter(r => r.status === 'absage').map(rsvp => (
-                                                <p key={rsvp.id} className="text-sm text-red-200">✗ {rsvp.employee_name}</p>
+                                                <p key={rsvp.id} className="text-sm text-red-400">✗ {rsvp.employee_name}</p>
                                             ))}
                                         </div>
                                     </div>
@@ -501,10 +501,11 @@ export default function TeamMeeting() {
                                     {status === 'offen' ? 'Offene Themen' : status === 'besprochen' ? 'Besprochen' : 'Erledigt'}
                                 </h2>
                                 <div className="space-y-3">
-                                    {groupedTopics[status].map(topic => (
+                                    {groupedTopics[status].map((topic, tidx) => (
                                         <Card 
                                             key={topic.id}
-                                            className="bg-card border-border hover:bg-card transition-colors"
+                                            className="bg-card border-border hover:bg-accent/30 transition-colors animate-stagger card-pressable"
+                                            style={{ '--delay': `${tidx * 40}ms` }}
                                         >
                                             <CardContent className="p-4">
                                                 <div className="flex items-start justify-between gap-3">
@@ -568,10 +569,11 @@ export default function TeamMeeting() {
                     ))
                 ) : (
                     <div className="space-y-3">
-                        {topics.map(topic => (
+                        {topics.map((topic, tidx) => (
                             <Card 
                                 key={topic.id}
-                                className="bg-card border-border hover:bg-card transition-colors"
+                                className="bg-card border-border hover:bg-accent/30 transition-colors animate-stagger card-pressable"
+                                style={{ '--delay': `${tidx * 40}ms` }}
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">

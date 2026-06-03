@@ -142,7 +142,7 @@ export default function ShiftAnalytics() {
     const avgHoursPerDay = dailyStaffing.reduce((sum, day) => sum + day.hours, 0) / 7;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background animate-page-enter">
             <div className="max-w-7xl mx-auto px-4 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -273,8 +273,8 @@ export default function ShiftAnalytics() {
                                     <YAxis tick={{ fill: '#94a3b8' }} />
                                     <Tooltip 
                                         contentStyle={{ 
-                                            backgroundColor: '#1e293b', 
-                                            border: '1px solid #334155',
+                                            backgroundColor: 'hsl(var(--card))', 
+                                            border: '1px solid hsl(var(--border))',
                                             borderRadius: '8px'
                                         }}
                                         labelStyle={{ color: '#f1f5f9' }}
@@ -311,8 +311,8 @@ export default function ShiftAnalytics() {
                                     </Pie>
                                     <Tooltip 
                                         contentStyle={{ 
-                                            backgroundColor: '#1e293b', 
-                                            border: '1px solid #334155',
+                                            backgroundColor: 'hsl(var(--card))', 
+                                            border: '1px solid hsl(var(--border))',
                                             borderRadius: '8px',
                                             color: '#f1f5f9'
                                         }}

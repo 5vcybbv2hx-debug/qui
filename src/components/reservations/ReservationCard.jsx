@@ -38,7 +38,7 @@ export default function ReservationCard({ reservation: res, permissions, onEdit,
 
     return (
         <div className={cn(
-            'rounded-2xl border bg-card transition-colors',
+            'rounded-2xl border bg-card transition-colors card-pressable',
             res.is_archived ? 'opacity-60' : 'hover:bg-accent/20'
         )}>
             {/* ── Top row: name + status ─────────────────────────────────── */}

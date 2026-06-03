@@ -46,7 +46,7 @@ function getOperationPhase() {
     if (h >= 11 && h < 15) return { label: 'Mittagsbetrieb', color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/30' };
     if (h >= 15 && h < 18) return { label: 'Ruhephase', color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/30' };
     if (h >= 18 && h < 23) return { label: 'Abendbetrieb', color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/30' };
-    return { label: 'Nachtschicht', color: 'text-slate-400', bg: 'bg-slate-500/10 border-slate-500/30' };
+    return { label: 'Nachtschicht', color: 'text-muted-foreground', bg: 'bg-secondary/50 border-500/30' };
 }
 
 // ─── mini widgets ────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ function AlertPill({ icon: Icon, label, color = 'text-red-400', bg = 'bg-red-500
 function QuickLink({ page, icon: Icon, label, sub, color }) {
     return (
         <Link to={createPageUrl(page)}>
-            <Card className="bg-card border-border hover:bg-accent/50 active:scale-95 transition-all">
+            <Card className="bg-card border-border hover:bg-accent/50 active:scale-95 transition-all card-pressable animate-stagger">
                 <CardContent className="p-4 text-center">
                     <div className={cn('w-11 h-11 rounded-xl mx-auto mb-2 flex items-center justify-center', color)}>
                         <Icon className="w-5 h-5 text-white" />
@@ -174,7 +174,7 @@ function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employ
                     </Card>
                 ) : (
                     <div className="space-y-2">
-                        {myTodos.slice(0, 4).map(t => (
+                        {myTodos.slice(0, 4).map((t, tIdx) => (
                             <Link key={t.id} to={createPageUrl('Todos')}>
                                 <Card className={cn('border transition-colors hover:bg-accent/30',
                                     t.priority === 'dringend' ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-card'
@@ -362,8 +362,8 @@ function PlanningTab({ upcomingEvents, upcomingShifts }) {
                     </Card>
                 ) : (
                     <div className="space-y-2">
-                        {upcomingShifts.slice(0, 5).map(s => (
-                            <Card key={s.id} className="bg-card border-border">
+                        {upcomingShifts.slice(0, 5).map((s, sIdx) => (
+                            <Card key={s.id} className="bg-card border-border animate-stagger" style={{ '--delay': `${sIdx * 45}ms` }}>
                                 <CardContent className="p-3 flex items-center gap-3">
                                     <div className="text-center w-10 shrink-0">
                                         <p className="text-lg font-bold text-foreground leading-none">{format(parseISO(s.date), 'dd')}</p>
@@ -427,14 +427,14 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                     <h3 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
                         <FileText className="w-4 h-4 text-blue-400" />
                         Unterschriften erforderlich
-                        <span className="ml-auto bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        <span className="ml-auto badge-count animate-pop">
                             {needSignatures.length}
                         </span>
                     </h3>
                     <div className="space-y-2">
-                        {needSignatures.slice(0, 5).map(emp => (
+                        {needSignatures.slice(0, 5).map((emp, nIdx) => (
                             <Link key={emp.id} to={createPageUrl('Employees') + `?employee=${emp.id}`}>
-                                <Card className="bg-card border-border hover:bg-accent/30 transition-colors">
+                                <Card className="bg-card border-border hover:bg-accent/30 transition-colors animate-stagger" style={{ '--delay': `${nIdx * 50}ms` }}>
                                     <CardContent className="p-3 flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                                             style={{ backgroundColor: emp.color || '#64748b' }}>
@@ -469,7 +469,7 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                     <Users className="w-4 h-4 text-green-400" />
                     Aktive Mitarbeiter
                     {activeStaffCount > 0 && (
-                        <span className="ml-auto bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        <span className="ml-auto badge-count animate-pop">
                             {activeStaffCount}
                         </span>
                     )}
@@ -483,7 +483,7 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                     <CheckSquare className="w-4 h-4 text-amber-400" />
                     Zeiten zur Genehmigung
                     {pendingTimeEntries.length > 0 && (
-                        <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        <span className="ml-auto badge-count animate-pop">
                             {pendingTimeEntries.length}
                         </span>
                     )}
@@ -511,7 +511,7 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                     <div className="space-y-2">
                         {alerts.map((a, i) => (
                             <Link key={i} to={createPageUrl(a.to)}>
-                                <Card className={cn('border transition-colors hover:opacity-80', a.cardClass)}>
+                                <Card className={cn('border transition-colors hover:opacity-80 animate-stagger', a.cardClass)} style={{ '--delay': `${i * 50}ms` }}>
                                     <CardContent className="p-3 flex items-center gap-3">
                                         <a.icon className={cn('w-5 h-5 shrink-0', a.iconClass)} />
                                         <div className="flex-1">
@@ -538,9 +538,9 @@ function ManagerTab({ stats, alerts, employees, todos, shopping, articles, pendi
                         { page: 'Todos', icon: CheckSquare, label: 'Aufgaben', color: 'bg-orange-600' },
                         { page: 'Shopping', icon: ShoppingCart, label: 'Einkauf', color: 'bg-amber-600' },
                         { page: 'Cleaning', icon: Sparkles, label: 'Reinigung', color: 'bg-teal-600' },
-                    ].map(({ page, icon: Icon, label, color }) => (
+                    ].map(({ page, icon: Icon, label, color }, idx) => (
                         <Link key={label} to={createPageUrl(page)}>
-                            <Card className="bg-card border-border hover:bg-accent/30 active:scale-95 transition-all">
+                            <Card className="bg-card border-border hover:bg-accent/30 active:scale-95 transition-all animate-stagger" style={{ '--delay': `${idx * 50}ms` }}>
                                 <CardContent className="p-3 flex items-center gap-3">
                                     <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', color)}>
                                         <Icon className="w-4 h-4 text-white" />
@@ -801,7 +801,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             ].map(s => (
                                 <Card key={s.label} className="bg-card border-border">
                                     <CardContent className="p-3 text-center">
-                                        <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
+                                        <p className="text-lg font-bold text-foreground leading-none num animate-pop">{s.value}</p>
                                         <p className="text-[10px] text-muted-foreground mt-1">{s.sub}</p>
                                     </CardContent>
                                 </Card>
@@ -828,7 +828,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                         >
                             {tab.label}
                             {tab.id === 'manager' && isManager && pendingTimeEntries.length > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full text-[9px] text-white flex items-center justify-center font-bold">
+                                <span className="absolute -top-1 -right-1 badge-count animate-pop">
                                     {pendingTimeEntries.length}
                                 </span>
                             )}

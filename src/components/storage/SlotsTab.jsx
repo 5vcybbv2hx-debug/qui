@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Pencil, Trash2, Copy, Check, Printer, QrCode, ExternalLink, Package } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, Copy, Check, Printer, QrCode, ExternalLink, Package, Download } from 'lucide-react';
 import StorageLabelPrint from './StorageLabelPrint';
 import { generateShortCode, buildFullName } from './storageUtils';
 import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
@@ -15,22 +15,93 @@ import { LoadingState, ErrorState, EmptyState } from '@/components/ui/StateDispl
 const ALL = '__all__';
 
 // ── Inline QR preview using qrcode library ────────────────────────────────────
-function QrPreview({ slotId, onClose }) {
-  const canvasRef = useRef(null);
+function QrPreview({ slotId, slotName, slotCode, onClose }) {
+  const canvasRef  = useRef(null);
+  const labelRef   = useRef(null);
+  const [ready, setReady] = useState(false);
   const url = `${window.location.origin}/StorageLocationScan/${slotId}`;
 
+  // Build a labeled canvas: QR + name below
   useEffect(() => {
     let cancelled = false;
-    import('qrcode').then(QRCode => {
-      if (cancelled || !canvasRef.current) return;
-      QRCode.toCanvas(canvasRef.current, url, {
-        width: 200,
-        margin: 2,
+    import('qrcode').then(async (QRCode) => {
+      if (cancelled) return;
+
+      const QR_SIZE = 220;
+      const LABEL_H = 54;
+      const PAD     = 10;
+      const W       = QR_SIZE + PAD * 2;
+      const H       = QR_SIZE + LABEL_H + PAD * 2;
+
+      // Generate QR into temp canvas
+      const qrCanvas = document.createElement('canvas');
+      await QRCode.toCanvas(qrCanvas, url, {
+        width: QR_SIZE,
+        margin: 1,
+        errorCorrectionLevel: 'H',
         color: { dark: '#000000', light: '#ffffff' },
       });
+
+      // Compose onto label canvas
+      const out = canvasRef.current;
+      if (!out || cancelled) return;
+      out.width  = W;
+      out.height = H;
+      const ctx = out.getContext('2d');
+
+      // White background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
+
+      // QR
+      ctx.drawImage(qrCanvas, PAD, PAD, QR_SIZE, QR_SIZE);
+
+      // Divider
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(PAD, PAD + QR_SIZE + 6);
+      ctx.lineTo(W - PAD, PAD + QR_SIZE + 6);
+      ctx.stroke();
+
+      // Short code
+      const codeY = PAD + QR_SIZE + 22;
+      if (slotCode) {
+        ctx.font = 'bold 11px monospace';
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'center';
+        ctx.fillText(slotCode, W / 2, codeY - 4);
+      }
+
+      // Slot name — bold, centered, max 2 lines
+      const nameY = slotCode ? codeY + 16 : codeY + 4;
+      ctx.font = 'bold 15px Arial, sans-serif';
+      ctx.fillStyle = '#0f172a';
+      ctx.textAlign = 'center';
+      const maxW = W - PAD * 2 - 8;
+      const words = (slotName || '').split(' ');
+      let line1 = '', line2 = '';
+      for (const w of words) {
+        const test = line1 ? line1 + ' ' + w : w;
+        if (ctx.measureText(test).width > maxW && line1) { line2 = line2 ? line2 + ' ' + w : w; }
+        else { line1 = test; }
+      }
+      ctx.fillText(line1, W / 2, nameY);
+      if (line2) ctx.fillText(line2, W / 2, nameY + 18);
+
+      if (!cancelled) setReady(true);
     }).catch(console.error);
     return () => { cancelled = true; };
-  }, [url]);
+  }, [url, slotName, slotCode]);
+
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const a = document.createElement('a');
+    a.download = `qr-${(slotName || slotId).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_-]/g, '')}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  };
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -38,23 +109,34 @@ function QrPreview({ slotId, onClose }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="w-5 h-5 text-amber-500" />
-            QR-Code scannen
+            {slotName || 'QR-Code'}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4 py-2">
-          <div className="rounded-2xl overflow-hidden border-2 border-border p-2 bg-white">
-            <canvas ref={canvasRef} />
+        <div className="flex flex-col items-center gap-3 py-1">
+          <div className="rounded-2xl overflow-hidden border border-border bg-white shadow-sm">
+            <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%' }} />
           </div>
-          <p className="text-xs text-muted-foreground text-center break-all px-2">{url}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => window.open(url, '_blank')}
-          >
-            <ExternalLink className="w-3.5 h-3.5 mr-2" />
-            Im Browser öffnen
-          </Button>
+          <p className="text-[11px] text-muted-foreground text-center break-all px-2 leading-relaxed">{url}</p>
+          <div className="flex gap-2 w-full">
+            <Button
+              size="sm"
+              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={handleDownload}
+              disabled={!ready}
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+              PNG downloaden
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => window.open(url, '_blank')}
+            >
+              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+              Öffnen
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -72,7 +154,7 @@ export default function SlotsTab({ permissions }) {
   const [copiedId, setCopiedId]                 = useState(null);
   const [modal, setModal]                       = useState({ open: false, data: null });
   const [labelSlot, setLabelSlot]               = useState(null);
-  const [qrSlotId, setQrSlotId]                 = useState(null);
+  const [qrSlot, setQrSlot]                     = useState(null); // { id, name, code }
   const [form, setForm]                         = useState({ area_id: '', furniture_id: '', container_id: '', name: '', notes: '' });
 
   const { data: areas,      isLoading: aL, isError: aE } = useQuery({ queryKey: ['st-areas'],      queryFn: () => base44.entities.Area.list('name', 100) });
@@ -283,7 +365,7 @@ export default function SlotsTab({ permissions }) {
                         size="icon"
                         variant="ghost"
                         className="h-9 w-9 text-amber-500 hover:bg-amber-500/10"
-                        onClick={() => setQrSlotId(slot.id)}
+                        onClick={() => setQrSlot({ id: slot.id, name: slot.full_name || slot.name, code: slot.short_code })}
                         title="QR-Code anzeigen"
                       >
                         <QrCode className="w-4 h-4" />
@@ -318,7 +400,7 @@ export default function SlotsTab({ permissions }) {
       )}
 
       {/* QR quick preview dialog */}
-      {qrSlotId && <QrPreview slotId={qrSlotId} onClose={() => setQrSlotId(null)} />}
+      {qrSlot && <QrPreview slotId={qrSlot.id} slotName={qrSlot.name} slotCode={qrSlot.code} onClose={() => setQrSlot(null)} />}
 
       {/* Label Print dialog */}
       {labelSlot && (

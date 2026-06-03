@@ -857,6 +857,48 @@ export default function TeamMeeting() {
 
                                 {permissions.isManager && (
                                     <>
+                                        {/* Bearbeiten-Modus für Manager */}
+                                        {editMode ? (
+                                            <div className="space-y-3 border-t pt-4">
+                                                <div className="space-y-1">
+                                                    <Label>Thema</Label>
+                                                    <Input
+                                                        value={editFormData.topic}
+                                                        onChange={(e) => setEditFormData({ ...editFormData, topic: e.target.value })}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label>Beschreibung</Label>
+                                                    <Textarea
+                                                        value={editFormData.description}
+                                                        onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                                                        rows={3}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <Label>Priorität</Label>
+                                                    <Select value={editFormData.priority} onValueChange={(v) => setEditFormData({ ...editFormData, priority: v })}>
+                                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="niedrig">Niedrig</SelectItem>
+                                                            <SelectItem value="normal">Normal</SelectItem>
+                                                            <SelectItem value="hoch">Hoch</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" onClick={() => setEditMode(false)} className="flex-1">Abbrechen</Button>
+                                                    <Button onClick={handleEditSave} className="flex-1 bg-amber-600 hover:bg-amber-700">Speichern</Button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="border-t pt-3">
+                                                <Button variant="outline" onClick={() => setEditMode(true)} className="w-full border-amber-500 text-amber-400 hover:bg-amber-500/10">
+                                                    Thema bearbeiten
+                                                </Button>
+                                            </div>
+                                        )}
+
                                         <div className="border-t pt-4">
                                             <Label className="mb-2 block">Status ändern</Label>
                                             <div className="flex gap-2">

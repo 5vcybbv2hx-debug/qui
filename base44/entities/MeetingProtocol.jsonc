@@ -1,0 +1,77 @@
+{
+  "name": "MeetingProtocol",
+  "type": "object",
+  "properties": {
+    "meeting_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum der Teamsitzung"
+    },
+    "meeting_time": {
+      "type": "string",
+      "description": "Uhrzeit der Teamsitzung (HH:MM)"
+    },
+    "meeting_location": {
+      "type": "string",
+      "description": "Ort der Teamsitzung"
+    },
+    "scribe_employee_id": {
+      "type": "string",
+      "description": "ID des Protokollanten"
+    },
+    "scribe_employee_name": {
+      "type": "string",
+      "description": "Name des Protokollanten"
+    },
+    "live_notes": {
+      "type": "string",
+      "description": "Live-Notizen w\u00e4hrend der Sitzung"
+    },
+    "agenda_snapshot": {
+      "type": "string",
+      "description": "JSON-Snapshot der Agenda-Punkte zum Zeitpunkt der Sitzung (nur Manager)"
+    },
+    "ai_summary": {
+      "type": "string",
+      "description": "KI-generierte Zusammenfassung des Protokolls"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "entwurf",
+        "wartet_auf_freigabe",
+        "freigegeben"
+      ],
+      "default": "entwurf",
+      "description": "Status des Protokolls"
+    },
+    "approved_by": {
+      "type": "string",
+      "description": "Name des genehmigenden Managers"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Genehmigung"
+    },
+    "topics_marked_discussed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs der Topics die automatisch auf besprochen gesetzt wurden"
+    },
+    "attendees": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Liste der Teilnehmer"
+    }
+  },
+  "required": [
+    "meeting_date",
+    "scribe_employee_id",
+    "scribe_employee_name"
+  ]
+}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown, Settings, Send } from 'lucide-react';
+import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown, Settings, Send, ClipboardList } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import TeamMeetingPrintView from '@/components/team-meeting/TeamMeetingPrintView';
+import MeetingProtocolModal from '@/components/team-meeting/MeetingProtocolModal';
+import MeetingProtocolList from '@/components/team-meeting/MeetingProtocolList';
 import { FileText } from 'lucide-react';
 import UnavailabilityManager from '@/components/availability/UnavailabilityManager';
 
@@ -43,6 +45,8 @@ export default function TeamMeeting() {
         priority: 'normal'
     });
     const [printViewOpen, setPrintViewOpen] = useState(false);
+    const [protocolModalOpen, setProtocolModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'archiv' | 'protokolle'
     const [scheduleData, setScheduleData] = useState({
         date: '',
         time: '',
@@ -161,7 +165,8 @@ export default function TeamMeeting() {
         createScheduleMutation.mutate(scheduleData);
     };
 
-    const topics = showArchive 
+    const showArchive = activeTab === 'archiv';
+    const topics = showArchive
         ? allTopics.filter(t => t.is_archived)
         : allTopics.filter(t => !t.is_archived);
 
@@ -351,6 +356,17 @@ export default function TeamMeeting() {
                                 Agenda drucken
                             </Button>
                         )}
+                        {permissions.isManager && (
+                            <Button
+                                onClick={() => setProtocolModalOpen(true)}
+                                variant="outline"
+                                size="sm"
+                                className="border-amber-500 text-amber-400 hover:bg-amber-500/10"
+                            >
+                                <ClipboardList className="w-4 h-4 mr-2" />
+                                Protokoll
+                            </Button>
+                        )}
                         <Button 
                             onClick={() => setModalOpen(true)}
                             className="bg-amber-600 hover:bg-amber-700"
@@ -362,26 +378,34 @@ export default function TeamMeeting() {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-6">
-                    <Button
-                        onClick={() => setShowArchive(false)}
-                        variant={!showArchive ? 'default' : 'outline'}
-                        className={!showArchive ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600' : ''}
-                    >
-                        Aktiv
-                    </Button>
-                    <Button
-                        onClick={() => setShowArchive(true)}
-                        variant={showArchive ? 'default' : 'outline'}
-                        className={showArchive ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600' : ''}
-                    >
-                        <Archive className="w-4 h-4 mr-2" />
-                        Archiv
-                    </Button>
+                <div className="flex gap-1 p-1 bg-card border border-border rounded-xl mb-6">
+                    {[
+                        { id: 'agenda', label: 'Agenda', icon: MessageSquare },
+                        { id: 'archiv', label: 'Archiv', icon: Archive },
+                        { id: 'protokolle', label: 'Protokolle', icon: ClipboardList },
+                    ].map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => setActiveTab(id)}
+                            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-sm font-semibold transition-all ${
+                                activeTab === id
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            <Icon className="w-4 h-4" />
+                            <span className="hidden sm:inline">{label}</span>
+                        </button>
+                    ))}
                 </div>
 
+                {/* Protokolle Tab */}
+                {activeTab === 'protokolle' && (
+                    <MeetingProtocolList isManager={permissions.isManager} />
+                )}
+
                 {/* Stats - nur für aktive Themen */}
-                {!showArchive && (
+                {activeTab !== 'protokolle' && !showArchive && (
                     <div className="grid grid-cols-3 gap-3 mb-6 animate-fade-in">
                         <Card className="bg-card border-border">
                             <CardContent className="p-4 text-center">
@@ -408,7 +432,7 @@ export default function TeamMeeting() {
                 )}
 
                 {/* Manager RSVP Übersicht */}
-                {permissions.isManager && currentSchedule && (
+                {activeTab !== 'protokolle' && permissions.isManager && currentSchedule && (
                     <Card className="bg-card border-border p-4 mb-6">
                         <div className="space-y-4">
                             <h3 className="font-semibold text-foreground">Zusagen für {format(new Date(currentSchedule.date), 'dd.MM.yyyy', { locale: de })}</h3>
@@ -475,7 +499,7 @@ export default function TeamMeeting() {
                 )}
 
                 {/* Info für Mitarbeiter */}
-                {!permissions.isManager && (
+                {activeTab !== 'protokolle' && !permissions.isManager && (
                     <Card className="bg-blue-500/10 border-blue-500/30 p-4 mb-6">
                         <div className="flex items-start gap-3">
                             <AlertCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
@@ -490,7 +514,7 @@ export default function TeamMeeting() {
                 )}
 
                 {/* Topics by Status */}
-                {!showArchive ? (
+                {activeTab !== 'protokolle' && !showArchive ? (
                     ['offen', 'besprochen', 'erledigt'].map(status => (
                         groupedTopics[status].length > 0 && (
                             <div key={status} className="mb-6">
@@ -564,9 +588,10 @@ export default function TeamMeeting() {
                             </div>
                         )
                     ))
-                ) : (
+                ) : activeTab === 'archiv' ? (
                     <div className="space-y-3">
                         {topics.map((topic, tidx) => (
+
                             <Card 
                                 key={topic.id}
                                 className="bg-card border-border hover:bg-accent/30 transition-colors animate-stagger card-pressable"
@@ -616,14 +641,25 @@ export default function TeamMeeting() {
                             </Card>
                         ))}
                     </div>
-                )}
+                ) : null}
 
-                {topics.length === 0 && (
+                {activeTab !== 'protokolle' && topics.length === 0 && (
                     <div className="text-center py-12">
                         <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                         <p className="text-muted-foreground">Noch keine Besprechungspunkte</p>
                     </div>
                 )}
+
+                {/* Protocol Modal */}
+                <MeetingProtocolModal
+                    open={protocolModalOpen}
+                    onClose={() => setProtocolModalOpen(false)}
+                    schedule={currentSchedule}
+                    openTopics={allTopics.filter(t => !t.is_archived)}
+                    employees={employees}
+                    isManager={permissions.isManager}
+                    currentUser={currentEmployee}
+                />
 
                 {/* Print View Modal */}
                 <TeamMeetingPrintView

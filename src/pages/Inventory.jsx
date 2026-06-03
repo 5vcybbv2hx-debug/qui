@@ -187,14 +187,14 @@ export default function Inventory() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-900">
+        <div className="min-h-screen bg-background">
             <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-3 mb-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Inventur</h1>
-                            <p className="text-slate-400 text-sm mt-1">
+                            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Inventur</h1>
+                            <p className="text-muted-foreground text-sm mt-1">
                                 {countedArticles.length} von {filteredArticles.length} gezählt
                             </p>
                         </div>
@@ -204,7 +204,7 @@ export default function Inventory() {
                             ) : (
                                 <CloudOff className="w-5 h-5 text-amber-500" />
                             )}
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-muted-foreground">
                                 {isOnline ? 'Online' : 'Offline'}
                             </span>
                         </div>
@@ -245,7 +245,7 @@ export default function Inventory() {
                                 { label: 'Gesamtwert (€)', render: (a) => a.total_value?.toFixed(2) || '-' }
                             ]}
                             variant="outline"
-                            className="border-purple-600 text-white bg-purple-600 hover:bg-purple-700"
+                            className="border-purple-600 text-foreground bg-purple-600 hover:bg-purple-700"
                             disabled={Object.keys(counts).length === 0}
                         />
                         <Button 
@@ -259,7 +259,7 @@ export default function Inventory() {
                         <Button 
                             onClick={handleReset}
                             variant="outline"
-                            className="border-red-600 text-white bg-red-600 hover:bg-red-700"
+                            className="border-red-600 text-foreground bg-red-600 hover:bg-red-700"
                         >
                             <RotateCcw className="w-4 h-4 mr-2" />
                             Zurücksetzen
@@ -271,9 +271,9 @@ export default function Inventory() {
                 {lastScanned && (
                     <div className="mb-4 p-4 bg-green-600 rounded-lg border-2 border-green-400 animate-pulse">
                         <div className="flex items-center gap-2">
-                            <Camera className="w-5 h-5 text-white" />
+                            <Camera className="w-5 h-5 text-foreground" />
                             <div>
-                                <p className="font-semibold text-white">{lastScanned.name}</p>
+                                <p className="font-semibold text-foreground">{lastScanned.name}</p>
                                 <p className="text-sm text-green-100">Menge: {lastScanned.count}</p>
                             </div>
                         </div>
@@ -282,37 +282,37 @@ export default function Inventory() {
 
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3 mb-6">
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <p className="text-sm text-slate-400 mb-1">Gezählt</p>
-                        <p className="text-2xl font-bold text-white">{countedArticles.length}</p>
+                    <Card className="p-4 bg-card border-border">
+                        <p className="text-sm text-muted-foreground mb-1">Gezählt</p>
+                        <p className="text-2xl font-bold text-foreground">{countedArticles.length}</p>
                     </Card>
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <p className="text-sm text-slate-400 mb-1">Offen</p>
+                    <Card className="p-4 bg-card border-border">
+                        <p className="text-sm text-muted-foreground mb-1">Offen</p>
                         <p className="text-2xl font-bold text-amber-500">{uncountedArticles.length}</p>
                     </Card>
-                    <Card className="p-4 bg-slate-800 border-slate-700">
-                        <p className="text-sm text-slate-400 mb-1">Differenzen</p>
+                    <Card className="p-4 bg-card border-border">
+                        <p className="text-sm text-muted-foreground mb-1">Differenzen</p>
                         <p className="text-2xl font-bold text-red-500">{totalDiff}</p>
                     </Card>
                 </div>
 
                 {/* Search & Filter */}
-                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
+                <Card className="p-4 bg-card border-border mb-6">
                     <div className="flex flex-col sm:flex-row gap-3">
                         <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                             <Input
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 placeholder="Artikel suchen..."
-                                className="pl-10 bg-slate-900 border-slate-700 text-white"
+                                className="pl-10 bg-background border-border text-foreground"
                             />
                         </div>
                         <Select
                             value={filterCategory}
                             onValueChange={setFilterCategory}
                         >
-                            <SelectTrigger className="w-full sm:w-[200px] bg-slate-900 border-slate-700 text-white">
+                            <SelectTrigger className="w-full sm:w-[200px] bg-background border-border text-foreground">
                                 <SelectValue placeholder="Kategorie wählen" />
                             </SelectTrigger>
                             <SelectContent>
@@ -327,6 +327,7 @@ export default function Inventory() {
 
                 {/* Articles */}
                 {filteredArticles.length > 0 ? (
+                    <div className="animate-fade-in">
                     <VirtualizedList
                         items={filteredArticles}
                         height={Math.min(filteredArticles.length * 110, 800)}
@@ -341,15 +342,15 @@ export default function Inventory() {
                                 <Card 
                                     id={`article-${article.id}`}
                                     className={cn(
-                                        "p-4 bg-slate-800 border-slate-700 transition-all mx-0 my-1",
+                                        "p-4 bg-card border-border transition-all mx-0 my-1",
                                         activeArticle === article.id && "ring-2 ring-blue-500",
-                                        counted !== undefined && "bg-slate-800/50"
+                                        counted !== undefined && "bg-card/50"
                                     )}
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <h3 className="font-semibold text-white">{article.name}</h3>
+                                                <h3 className="font-semibold text-foreground">{article.name}</h3>
                                                 {hasDiff && (
                                                     <Badge variant="destructive" className="text-xs">
                                                         <AlertTriangle className="w-3 h-3 mr-1" />
@@ -357,7 +358,7 @@ export default function Inventory() {
                                                     </Badge>
                                                 )}
                                             </div>
-                                            <div className="flex items-center gap-3 text-sm text-slate-400">
+                                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                                 {article.barcode && (
                                                     <span className="font-mono">{article.barcode}</span>
                                                 )}
@@ -377,17 +378,17 @@ export default function Inventory() {
 
                                         <div className="flex items-center gap-4">
                                             <div className="text-center">
-                                                <p className="text-sm text-slate-400 mb-1">Soll</p>
-                                                <p className="text-lg font-semibold text-slate-300">{systemStock}</p>
+                                                <p className="text-sm text-muted-foreground mb-1">Soll</p>
+                                                <p className="text-lg font-semibold text-foreground/75">{systemStock}</p>
                                             </div>
 
                                             <div className="flex flex-col items-center gap-1">
-                                                <p className="text-sm text-slate-400">Ist</p>
+                                                <p className="text-sm text-muted-foreground">Ist</p>
                                                 <div className="flex items-center gap-1">
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCountChange(article.id, Math.max(0, (counted || 0) - 1))}
-                                                        className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors active:bg-slate-500"
+                                                        className="w-8 h-8 flex items-center justify-center rounded bg-secondary hover:bg-secondary text-foreground transition-colors active:bg-slate-500"
                                                     >
                                                         <Minus className="w-3.5 h-3.5" />
                                                     </button>
@@ -396,13 +397,13 @@ export default function Inventory() {
                                                         value={counted !== undefined ? counted : ''}
                                                         onChange={(e) => handleCountChange(article.id, e.target.value)}
                                                         placeholder="—"
-                                                        className="w-16 text-center bg-slate-900 border-slate-700 text-white text-lg font-semibold px-1"
+                                                        className="w-16 text-center bg-background border-border text-foreground text-lg font-semibold px-1"
                                                         min="0"
                                                     />
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCountChange(article.id, (counted || 0) + 1)}
-                                                        className="w-8 h-8 flex items-center justify-center rounded bg-slate-700 hover:bg-slate-600 text-white transition-colors active:bg-slate-500"
+                                                        className="w-8 h-8 flex items-center justify-center rounded bg-secondary hover:bg-secondary text-foreground transition-colors active:bg-slate-500"
                                                     >
                                                         <Plus className="w-3.5 h-3.5" />
                                                     </button>
@@ -414,7 +415,7 @@ export default function Inventory() {
                                                     "text-center min-w-[50px]",
                                                     diff > 0 && "text-green-400",
                                                     diff < 0 && "text-red-400",
-                                                    diff === 0 && "text-slate-400"
+                                                    diff === 0 && "text-muted-foreground"
                                                 )}>
                                                     <p className="text-sm mb-1">Diff</p>
                                                     <p className="text-lg font-bold">
@@ -433,7 +434,7 @@ export default function Inventory() {
                 {filteredArticles.length === 0 && (
                     <div className="text-center py-12">
                         <ClipboardCheck className="w-12 h-12 mx-auto mb-3 text-slate-600" />
-                        <p className="text-slate-400">Keine Artikel gefunden</p>
+                        <p className="text-muted-foreground">Keine Artikel gefunden</p>
                     </div>
                 )}
 

@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -103,11 +104,15 @@ export default function EmployeeProfile() {
     queryFn: () => base44.entities.Employee.get(id),
     enabled: !!id && !isNew,
     staleTime: STALE.MEDIUM,
-    onSuccess: (e) => {
-      setForm({ ...BLANK, ...e });
-      setDirty(false);
-    },
   });
+
+  // Sync employee data into form when loaded (onSuccess removed in React Query v5)
+  React.useEffect(() => {
+    if (employee) {
+      setForm({ ...BLANK, ...employee });
+      setDirty(false);
+    }
+  }, [employee?.id]);
 
   const { data: currentUser } = useQuery({
     queryKey: ['user'],

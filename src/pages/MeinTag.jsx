@@ -131,7 +131,7 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
                         <div className="flex items-center gap-2">
                             <div className={cn(
                                 'w-3 h-3 rounded-full',
-                                activeEntry ? onBreak ? 'bg-amber-400 animate-pulse' : 'bg-green-400 animate-pulse' : 'bg-slate-500'
+                                activeEntry ? onBreak ? 'bg-amber-400 animate-pulse' : 'bg-green-400 animate-pulse' : 'bg-muted-foreground'
                             )} />
                             <span className="font-semibold text-foreground">
                                 {activeEntry ? onBreak ? 'Pause' : 'Eingestempelt' : 'Nicht eingestempelt'}
@@ -264,9 +264,9 @@ function TodosWidget({ employee }) {
                 </Link>
             </div>
             <div className="space-y-2">
-                {myTodos.map(t => (
-                    <Card key={t.id} className={cn(
-                        'border transition-all',
+                {myTodos.map((t, tIdx) => (
+                    <Card key={t.id} style={{ '--delay': `${tIdx * 40}ms` }} className={cn(
+                        'border transition-all animate-stagger',
                         t.priority === 'dringend' ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-card'
                     )}>
                         <CardContent className="p-3 flex items-center gap-3">
@@ -459,9 +459,9 @@ function QuickActions({ permissions }) {
 
     return (
         <div className="grid grid-cols-4 gap-2">
-            {actions.map(a => (
+            {actions.map((a, aIdx) => (
                 <Link key={a.page} to={createPageUrl(a.page)}>
-                    <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-card border border-border hover:bg-accent/30 active:scale-95 transition-all">
+                    <div style={{ '--delay': `${aIdx * 40}ms` }} className="flex flex-col items-center gap-1.5 p-3 animate-stagger rounded-xl bg-card border border-border hover:bg-accent/30 active:scale-95 transition-all">
                         <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center', a.color)}>
                             <a.icon className="w-4 h-4 text-white" />
                         </div>
@@ -517,7 +517,7 @@ export default function MeinTag() {
     const specialColor = calendarEntry ? getSpecialDayColor(calendarEntry.day_type) : '';
 
     return (
-        <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <div className="min-h-screen bg-background animate-page-enter pb-28 md:pb-8">
             <div className="max-w-xl mx-auto px-3 py-4 space-y-5">
 
                 {/* Header */}
@@ -561,7 +561,7 @@ export default function MeinTag() {
                                 )}
                             </div>
                             {calendarEntry.is_closed && (
-                                <Badge className="text-[10px] bg-slate-700 text-slate-300 border-0 shrink-0">Geschlossen</Badge>
+                                <Badge className="text-[10px] bg-secondary text-foreground/80 border-0 shrink-0">Geschlossen</Badge>
                             )}
                         </CardContent>
                     </Card>

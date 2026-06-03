@@ -46,7 +46,7 @@ export default function TodayOverview({ shifts = [], events = [], reservations =
                     <div className="space-y-2">
                         {shiftsToShow.length > 0 ? (
                             shiftsToShow.map((shift, idx) => (
-                                <div key={shift.id} className="flex items-center gap-2 text-sm p-2 rounded animate-stagger" style={{ '--delay': `${idx * 35}ms` }} bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                                <div key={shift.id} className="flex items-center gap-2 text-sm p-2 rounded animate-stagger bg-secondary/30 hover:bg-secondary/50 transition-colors" style={{ '--delay': `${idx * 35}ms` }}>
                                     <div 
                                         className="w-3 h-3 rounded-full flex-shrink-0" 
                                         style={{ backgroundColor: shift.color || getEmployeeColor(shift.employee_id) }} 

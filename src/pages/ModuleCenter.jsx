@@ -130,7 +130,7 @@ const MODULE_REGISTRY = [
         name: 'Artikel & Lager',
         description: 'Artikelverwaltung, Bestand, Inventur, Lagerverwaltung, Schwund',
         icon: Package,
-        color: 'bg-slate-600',
+        color: 'bg-secondary',
         category: 'lager',
         page: 'Articles',
         dependents: ['rezepte', 'kalkulation', 'auffuellen', 'menu'],
@@ -202,7 +202,7 @@ const MODULE_REGISTRY = [
         name: 'Wartung & Instandhaltung',
         description: 'Wartungsaufgaben, Reparaturen, Kontakte, Kalender',
         icon: Wrench,
-        color: 'bg-zinc-600',
+        color: 'bg-secondary',
         category: 'betrieb',
         page: 'Maintenance',
     },
@@ -242,7 +242,7 @@ const CATEGORIES = {
     planung:    { name: 'Planung & Personal', color: 'text-purple-400' },
     gast:       { name: 'Gäste & Veranstaltungen', color: 'text-green-400' },
     betrieb:    { name: 'Betrieb & Operativ', color: 'text-amber-400'  },
-    lager:      { name: 'Lager & Einkauf', color: 'text-slate-400'   },
+    lager:      { name: 'Lager & Einkauf', color: 'text-muted-foreground'   },
     karte:      { name: 'Karte & Rezepte', color: 'text-red-400'    },
     analytics:  { name: 'Analytik & Reports', color: 'text-violet-400' },
     verwaltung: { name: 'Verwaltung', color: 'text-cyan-400'  },
@@ -383,7 +383,7 @@ export default function ModuleCenter() {
     }, {});
 
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-8">
+        <div className="min-h-screen bg-background pb-24 md:pb-8 animate-page-enter">
             <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
 
                 {/* Header */}
@@ -430,15 +430,16 @@ export default function ModuleCenter() {
 
                 {/* Module nach Kategorien */}
                 <div className="mt-6 space-y-8">
-                    {Object.entries(grouped).map(([cat, modules]) => (
-                        <div key={cat}>
+                    {Object.entries(grouped).map(([cat, modules], catIdx) => (
+                        <div key={cat} className="animate-stagger" style={{ '--delay': `${catIdx * 70}ms` }}>
                             <h3 className={cn('text-xs font-bold uppercase tracking-widest mb-3', CATEGORIES[cat]?.color || 'text-muted-foreground')}>
                                 {CATEGORIES[cat]?.name || cat}
                             </h3>
                             <div className="space-y-3">
-                                {modules.map(module => (
+                                {modules.map((module, mIdx) => (
                                     <ModuleCard
                                         key={module.id}
+                                        style={{ '--delay': `${mIdx * 50}ms` }}
                                         module={module}
                                         isEnabled={isEnabled(module)}
                                         onToggle={(v) => setModule(module.id, v)}

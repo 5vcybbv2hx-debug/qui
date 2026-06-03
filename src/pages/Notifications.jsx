@@ -189,7 +189,12 @@ export default function Notifications() {
                             <div>
                                 <h1 className="text-xl sm:text-2xl font-bold text-foreground">Benachrichtigungen</h1>
                                 <p className="text-sm text-muted-foreground">
-                                    {unreadCount > 0 ? `${unreadCount} neue Benachrichtigung${unreadCount > 1 ? 'en' : ''}` : 'Alle aktuell'}
+                                    {unreadCount > 0 ? (
+                                        <span className="flex items-center gap-1.5">
+                                            <span className="badge-count animate-pop">{unreadCount}</span>
+                                            neue Benachrichtigung{unreadCount > 1 ? 'en' : ''}
+                                        </span>
+                                    ) : 'Alle aktuell'}
                                 </p>
                             </div>
                         </div>
@@ -226,7 +231,7 @@ export default function Notifications() {
                     
                     <div className="flex flex-wrap gap-2 items-center">
                          {filteredNotifications.length > 0 && (
-                             <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 cursor-pointer text-sm text-slate-300">
+                             <label className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-accent cursor-pointer text-sm text-slate-300">
                                  <Checkbox 
                                      checked={selectedIds.size === filteredNotifications.length && filteredNotifications.length > 0}
                                      onCheckedChange={toggleSelectAll}
@@ -260,7 +265,7 @@ export default function Notifications() {
                                          variant="outline"
                                          size="sm"
                                          disabled={markAllAsReadMutation.isPending}
-                                         className="border-slate-600 text-slate-300 hover:bg-slate-700"
+                                         className="border-border text-muted-foreground hover:bg-accent"
                                      >
                                          <CheckCircle2 className="w-4 h-4 mr-2" />
                                          Alle als gelesen markieren
@@ -290,15 +295,16 @@ export default function Notifications() {
                 {/* Notifications List */}
                 <div className="space-y-3">
                     {sortedFiltered.length > 0 ? (
-                        sortedFiltered.map(notification => {
+                        sortedFiltered.map((notification, idx) => {
                             const isRead = notification.read_by?.includes(currentUser.email);
                             const isUnread = !isRead;
                             
                             return (
                                 <Card 
-                                    key={notification.id} 
+                                    key={notification.id}
+                                    style={{ '--delay': `${idx * 40}ms` }}
                                     className={cn(
-                                        "p-4 border-l-4 transition-all cursor-pointer",
+                                        "p-4 border-l-4 transition-all cursor-pointer animate-stagger",
                                         selectedIds.has(notification.id) && "bg-accent/30 border-accent",
                                         !selectedIds.has(notification.id) && (isRead ? "bg-card/50 border-l-transparent" : `bg-card border-l-${PRIORITY_COLORS[notification.priority]}`)
                                     )}
@@ -321,7 +327,7 @@ export default function Notifications() {
                                                     {notification.title}
                                                 </h3>
                                                 {isUnread && (
-                                                    <div className={cn("w-2 h-2 rounded-full shrink-0", PRIORITY_COLORS[notification.priority])} />
+                                                    <div className={cn("status-dot animate-pulse-dot shrink-0", PRIORITY_COLORS[notification.priority])} />
                                                 )}
                                             </div>
                                             

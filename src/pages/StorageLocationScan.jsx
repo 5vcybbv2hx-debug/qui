@@ -1,15 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
-import { base44 } from '@/api/base44Client';
 import { MapPin, Package, CheckCircle2, Circle, AlertTriangle, ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { base44 } from '@/api/base44Client';
 
 // ── Inline quantity editor row ────────────────────────────────────────────────
 function QuantityRow({ assignment, onUpdate }) {
   const [editing, setEditing] = useState(false);
-  const [val, setVal] = useState(String(assignment.quantity ?? ''));
-  const [saving, setSaving] = useState(false);
+  const [val,     setVal]     = useState(String(assignment.quantity ?? ''));
+  const [saving,  setSaving]  = useState(false);
   const [checked, setChecked] = useState(false);
 
   const isLow = assignment.min_stock != null && (assignment.quantity ?? 0) < assignment.min_stock;
@@ -19,12 +19,28 @@ function QuantityRow({ assignment, onUpdate }) {
     if (isNaN(n) || n === assignment.quantity) { setEditing(false); return; }
     setSaving(true);
     try {
-      await base44.entities.StorageAssignment.update(assignment.id, { quantity: n });
+      // Update via service role through backend function
+      await fetch(
+        `/api/apps/${import.meta.env.VITE_APP_ID || window.__BASE44_APP_ID__}/functions/updateSlotQuantity`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assignmentId: assignment.id, quantity: n }),
+        }
+      );
       onUpdate(assignment.id, n);
       setChecked(true);
       setTimeout(() => setChecked(false), 3000);
     } catch {
-      alert('Fehler beim Speichern');
+      // Fallback: try direct entity update (works if user is logged in)
+      try {
+        await base44.entities.StorageAssignment.update(assignment.id, { quantity: n });
+        onUpdate(assignment.id, n);
+        setChecked(true);
+        setTimeout(() => setChecked(false), 3000);
+      } catch {
+        alert('Fehler beim Speichern — bitte einloggen oder neu versuchen.');
+      }
     } finally {
       setSaving(false);
       setEditing(false);
@@ -34,9 +50,9 @@ function QuantityRow({ assignment, onUpdate }) {
   return (
     <div className={[
       'flex items-center gap-3 p-4 rounded-xl border transition-all duration-200',
-      checked   ? 'border-green-500/50 bg-green-500/5'  :
-      isLow     ? 'border-red-500/40 bg-red-500/5'      :
-                  'border-border bg-card',
+      checked ? 'border-green-500/50 bg-green-500/5'  :
+      isLow   ? 'border-red-500/40 bg-red-500/5'      :
+                'border-border bg-card',
     ].join(' ')}>
 
       {/* Check toggle */}
@@ -130,38 +146,56 @@ function QuantityRow({ assignment, onUpdate }) {
 
 // ── Main scan view ────────────────────────────────────────────────────────────
 export default function StorageLocationScan() {
-  const [slot, setSlot]             = useState(null);
+  const [slot,        setSlot]        = useState(null);
   const [assignments, setAssignments] = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(null);
-  const [showNotes, setShowNotes]   = useState(false);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState(null);
+  const [showNotes,   setShowNotes]   = useState(false);
 
+  // Extract slot ID from URL — supports both /:id and ?slotId=
   const pathParts = window.location.pathname.split('/');
-  const slotId    = pathParts[pathParts.length - 1];
+  const slotId    = pathParts[pathParts.length - 1] !== 'StorageLocationScan'
+    ? pathParts[pathParts.length - 1]
+    : new URLSearchParams(window.location.search).get('slotId');
+
+  // Detect app ID from meta tag or env
+  const getAppId = () => {
+    const meta = document.querySelector('meta[name="base44-app-id"]');
+    if (meta) return meta.getAttribute('content');
+    return window.__BASE44_APP_ID__ || '695532713e60f5ccfc3522b9';
+  };
 
   useEffect(() => {
-    if (!slotId || slotId === 'StorageLocationScan') {
+    if (!slotId) {
       setError('Kein Lagerplatz angegeben.');
       setLoading(false);
       return;
     }
-    Promise.all([
-      base44.entities.StorageSlot.filter({ id: slotId }),
-      base44.entities.StorageAssignment.filter({ storage_slot_id: slotId, is_active: true }),
-    ])
-      .then(([slots, assigns]) => {
-        if (!slots || slots.length === 0) {
-          setError('Lagerplatz nicht gefunden. Bitte QR-Code erneut scannen.');
-        } else {
+
+    const appId = getAppId();
+    // Use backend function — no auth required
+    fetch(`/api/apps/${appId}/functions/getSlotData?slotId=${encodeURIComponent(slotId)}`)
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Fehler');
+        setSlot(data.slot);
+        setAssignments(data.assignments || []);
+      })
+      .catch(async () => {
+        // Fallback: direct entity calls (works when logged in)
+        try {
+          const [slots, assigns] = await Promise.all([
+            base44.entities.StorageSlot.filter({ id: slotId }),
+            base44.entities.StorageAssignment.filter({ storage_slot_id: slotId, is_active: true }),
+          ]);
+          if (!slots || slots.length === 0) throw new Error('not found');
           setSlot(slots[0]);
           setAssignments(assigns || []);
+        } catch {
+          setError('Lagerplatz nicht gefunden. Bitte QR-Code erneut scannen.');
         }
-        setLoading(false);
       })
-      .catch(() => {
-        setError('Fehler beim Laden der Daten.');
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   }, [slotId]);
 
   const handleUpdate = useCallback((id, newQty) => {
@@ -295,7 +329,7 @@ export default function StorageLocationScan() {
           ))
         )}
 
-        {/* Low stock alert */}
+        {/* Low stock alert summary */}
         {lowCount > 0 && (
           <div className="mt-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5">
             <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
@@ -307,7 +341,6 @@ export default function StorageLocationScan() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

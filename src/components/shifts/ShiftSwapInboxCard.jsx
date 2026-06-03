@@ -100,10 +100,10 @@ export default function ShiftSwapInboxCard({ currentEmployee }) {
             </div>
 
             <div className="px-4 pb-4 pt-1 space-y-3">
-                {directRequests.map(request => (
-                    <div key={request.id} className="p-3 rounded-xl bg-orange-500/5 border border-orange-500/20">
+                {directRequests.map((request, idx) => (
+                    <div key={request.id} style={{ '--delay': `${idx*50}ms` }} className="p-3 rounded-xl animate-stagger bg-orange-500/5 border border-orange-500/20">
                         <div className="flex items-start gap-3 mb-3">
-                            <div className="w-9 h-9 rounded-full bg-slate-600 flex items-center justify-center text-white text-sm font-bold shrink-0 mt-0.5">
+                            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center text-white text-sm font-bold shrink-0 mt-0.5">
                                 {request.requesting_employee_name?.charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">

@@ -59,7 +59,7 @@ export default function DrinkMenuPage() {
     });
 
     if (permissions.isLoading || isLoading) return (
-        <div className="min-h-screen bg-background p-4 md:p-6 space-y-4">
+        <div className="min-h-screen bg-background animate-page-enter p-4 md:p-6 space-y-4">
             <ListSkeleton count={1} height="h-10" />
             <ListSkeleton count={2} height="h-8" />
             <ListSkeleton count={6} height="h-28" />
@@ -281,16 +281,17 @@ export default function DrinkMenuPage() {
                 {/* Getränke-Grid */}
                 {filteredItems.length > 0 && (
                     <div className="space-y-8 print:space-y-4">
-                        {Object.entries(groupedByCategory).map(([category, categoryItems]) => (
-                            <div key={category}>
+                        {Object.entries(groupedByCategory).map(([category, categoryItems], catIdx) => (
+                            <div key={category} className="animate-stagger" style={{ '--delay': `${catIdx * 70}ms` }}>
                                 <h2 className="text-lg font-semibold text-foreground mb-4 print:mb-2">{category}</h2>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 print:grid-cols-3 print:gap-2">
                                     {categoryItems
                                         .sort((a, b) => (a.order_position || 999) - (b.order_position || 999))
-                                        .map(item => (
+                                        .map((item, iIdx) => (
                                             <div 
                                                 key={item.id}
-                                                className={cn(
+                                                style={{ '--delay': `${iIdx * 40}ms` }}
+                                                className={cn('animate-stagger ',
                                                     "rounded-lg border border-border bg-card p-3 cursor-pointer transition-all hover:shadow-md print:page-break-inside-avoid",
                                                     !item.is_available ? 'opacity-50' : 'hover:border-primary'
                                                 )}

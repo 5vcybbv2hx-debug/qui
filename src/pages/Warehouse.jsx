@@ -22,7 +22,7 @@ export default function WarehousePage() {
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background animate-page-enter">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header */}
                 <div className="mb-4 sm:mb-6">

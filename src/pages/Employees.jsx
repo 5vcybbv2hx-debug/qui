@@ -390,7 +390,7 @@ export default function Employees() {
         <div className="min-h-screen bg-background px-4 py-6 space-y-4">
             <ListSkeleton count={1} height="h-10" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => <ListSkeleton key={i} count={1} height="h-40" />)}
+                {Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-40 rounded-xl skeleton animate-shimmer" style={{ '--delay': `${i * 80}ms` }} />)}
             </div>
         </div>
     );
@@ -492,10 +492,11 @@ export default function Employees() {
 
                     {/* Employee Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredActiveEmployees.map(employee => (
+                    {filteredActiveEmployees.map((employee, idx) => (
                         <Card 
                             key={employee.id}
-                            className="p-4 sm:p-5 bg-card border-border shadow-sm"
+                            className="p-4 sm:p-5 bg-card border-border shadow-sm card-pressable animate-stagger"
+                            style={{ '--delay': `${idx * 50}ms` }}
                         >
                             <div className="flex items-center gap-3 mb-4">
                                 <EmployeeAvatar employee={employee} size="sm" />

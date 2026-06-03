@@ -1,21 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Sparkles, CheckCircle, User, ClipboardList, FileCheck } from 'lucide-react';
+import { Loader2, Sparkles, CheckCircle, User, ClipboardList, FileCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 const STEPS = ['scribe', 'notes', 'ai', 'approve'];
 
-export default function MeetingProtocolModal({ open, onClose, schedule, openTopics, employees, isManager, currentUser }) {
+const TOPIC_STATUSES = [
+    { value: 'offen', label: '⬜ Offen', color: 'bg-secondary text-muted-foreground' },
+    { value: 'beschlossen', label: '✅ Beschlossen', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
+    { value: 'zu_klaeren', label: '🔄 Noch zu klären', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+    { value: 'keine_einigung', label: '❌ Keine Einigung', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+    { value: 'vertagt', label: '⏭️ Vertagt', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+];
+
+function TopicStatusRow({ topic, statusEntry, onChange }) {
+    const [expanded, setExpanded] = useState(false);
+    const current = TOPIC_STATUSES.find(s => s.value === (statusEntry?.status || 'offen'));
+
+    return (
+        <div className="border border-border rounded-lg overflow-hidden">
+            <div className="flex items-center gap-2 p-2.5 bg-secondary/20">
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{topic.topic}</p>
+                    <p className="text-xs text-muted-foreground">{topic.employee_name} · {topic.priority}</p>
+                </div>
+                <Select
+                    value={statusEntry?.status || 'offen'}
+                    onValueChange={(val) => onChange({ ...statusEntry, status: val })}
+                >
+                    <SelectTrigger className="w-44 h-8 text-xs">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {TOPIC_STATUSES.map(s => (
+                            <SelectItem key={s.value} value={s.value} className="text-xs">{s.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <button
+                    onClick={() => setExpanded(!expanded)}
+                    className="p-1 rounded hover:bg-secondary text-muted-foreground"
+                    title="Notiz hinzufügen"
+                >
+                    {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+            </div>
+            {expanded && (
+                <div className="p-2 border-t border-border bg-background">
+                    <Input
+                        placeholder="Kurze Notiz zu diesem Punkt..."
+                        value={statusEntry?.notes || ''}
+                        onChange={(e) => onChange({ ...statusEntry, notes: e.target.value })}
+                        className="text-xs h-8"
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function MeetingProtocolModal({ open, onClose, schedule, openTopics, employees, isManager, currentUser, existingProtocol }) {
     const queryClient = useQueryClient();
     const [step, setStep] = useState('scribe');
     const [scribeId, setScribeId] = useState('');
@@ -23,11 +78,29 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
     const [aiSummary, setAiSummary] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [protocolId, setProtocolId] = useState(null);
+    // { [topicId]: { status: string, notes: string } }
+    const [topicStatuses, setTopicStatuses] = useState({});
+
+    // Load existing protocol when scribe opens their own draft
+    useEffect(() => {
+        if (open && existingProtocol) {
+            setProtocolId(existingProtocol.id);
+            setScribeId(existingProtocol.scribe_employee_id);
+            setLiveNotes(existingProtocol.live_notes || '');
+            setAiSummary(existingProtocol.ai_summary || '');
+            if (existingProtocol.topic_statuses) {
+                try { setTopicStatuses(JSON.parse(existingProtocol.topic_statuses)); } catch (_) {}
+            }
+            setStep('notes'); // Protokollant startet direkt bei den Notizen
+        }
+    }, [open, existingProtocol?.id]);
 
     const selectedScribe = employees.find(e => e.id === scribeId);
-
-    // Load existing draft for this meeting date
     const meetingDate = schedule?.date || format(new Date(), 'yyyy-MM-dd');
+
+    const updateTopicStatus = (topicId, entry) => {
+        setTopicStatuses(prev => ({ ...prev, [topicId]: entry }));
+    };
 
     const saveDraftMutation = useMutation({
         mutationFn: (data) => {
@@ -44,33 +117,44 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
 
     const approveMutation = useMutation({
         mutationFn: async () => {
-            // 1. Alle offenen Topics auf "besprochen" setzen
-            const topicIds = openTopics.filter(t => t.status === 'offen').map(t => t.id);
-            await Promise.all(topicIds.map(id =>
-                base44.entities.TeamMeetingTopic.update(id, {
-                    status: 'besprochen',
-                    discussed_at: new Date().toISOString()
-                })
-            ));
+            // Mark topics based on their individual statuses
+            const topicUpdates = openTopics.map(t => {
+                const ts = topicStatuses[t.id];
+                let newStatus = t.status;
+                if (ts?.status === 'beschlossen' || ts?.status === 'zu_klaeren' || ts?.status === 'keine_einigung') {
+                    newStatus = 'besprochen';
+                } else if (ts?.status === 'vertagt') {
+                    newStatus = 'offen'; // bleibt offen, wird vertagt
+                } else if (!ts || ts.status === 'offen') {
+                    newStatus = 'besprochen'; // default: alle besprochenen
+                }
+                return base44.entities.TeamMeetingTopic.update(t.id, {
+                    status: newStatus,
+                    discussed_at: new Date().toISOString(),
+                    manager_notes: ts?.notes ? (t.manager_notes ? t.manager_notes + '\n' + ts.notes : ts.notes) : t.manager_notes
+                });
+            });
+            await Promise.all(topicUpdates);
 
-            // 2. Protokoll freigeben
             const agendaSnapshot = JSON.stringify(openTopics.map(t => ({
                 id: t.id,
                 topic: t.topic,
                 description: t.description,
                 priority: t.priority,
-                status: t.status,
+                status: topicStatuses[t.id]?.status || 'besprochen',
+                protocol_notes: topicStatuses[t.id]?.notes || '',
                 employee_name: t.employee_name,
                 manager_notes: t.manager_notes
             })));
 
             return base44.entities.MeetingProtocol.update(protocolId, {
                 ai_summary: aiSummary,
+                topic_statuses: JSON.stringify(topicStatuses),
                 agenda_snapshot: agendaSnapshot,
                 status: 'freigegeben',
                 approved_by: currentUser?.full_name || currentUser?.email,
                 approved_at: new Date().toISOString(),
-                topics_marked_discussed: topicIds
+                topics_marked_discussed: openTopics.map(t => t.id)
             });
         },
         onSuccess: () => {
@@ -87,16 +171,13 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
         setLiveNotes('');
         setAiSummary('');
         setProtocolId(null);
+        setTopicStatuses({});
     };
 
-    const handleClose = () => {
-        onClose();
-        // Don't reset — keep draft state
-    };
+    const handleClose = () => { onClose(); };
 
     const handleScribeNext = async () => {
         if (!scribeId) return;
-        // Save initial draft
         await saveDraftMutation.mutateAsync({
             meeting_date: meetingDate,
             meeting_time: schedule?.time || '',
@@ -110,15 +191,22 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
     };
 
     const handleNotesNext = async () => {
-        await saveDraftMutation.mutateAsync({ live_notes: liveNotes, status: 'entwurf' });
+        await saveDraftMutation.mutateAsync({
+            live_notes: liveNotes,
+            topic_statuses: JSON.stringify(topicStatuses),
+            status: 'entwurf'
+        });
         setStep('ai');
     };
 
     const handleGenerateAI = async () => {
         setIsGenerating(true);
-        const topicsList = openTopics.map(t =>
-            `- ${t.topic}${t.description ? ` (${t.description})` : ''}${t.manager_notes ? ` → Notizen: ${t.manager_notes}` : ''} [Priorität: ${t.priority}]`
-        ).join('\n');
+
+        const topicsList = openTopics.map(t => {
+            const ts = topicStatuses[t.id];
+            const statusLabel = TOPIC_STATUSES.find(s => s.value === (ts?.status || 'offen'))?.label || '';
+            return `- ${t.topic}${t.description ? ` (${t.description})` : ''} → Ergebnis: ${statusLabel}${ts?.notes ? ` — Notiz: ${ts.notes}` : ''}${t.manager_notes ? ` — Manager-Notiz: ${t.manager_notes}` : ''} [Priorität: ${t.priority}]`;
+        }).join('\n');
 
         const prompt = `Du bist ein professioneller Protokollant für ein Gastronomie-Team. 
 Erstelle ein strukturiertes, professionelles Teamsitzungsprotokoll auf Deutsch.
@@ -128,18 +216,18 @@ ${schedule?.time ? `Uhrzeit: ${schedule.time} Uhr` : ''}
 ${schedule?.location ? `Ort: ${schedule.location}` : ''}
 Protokollant: ${selectedScribe?.name || 'Unbekannt'}
 
-Agenda-Punkte:
+Agenda-Punkte mit Ergebnissen:
 ${topicsList || 'Keine Agenda-Punkte vorhanden'}
 
 Live-Notizen aus der Sitzung:
 ${liveNotes || 'Keine Live-Notizen'}
 
 Erstelle ein Protokoll mit folgender Struktur:
-1. Besprechungspunkte (jeden Punkt kurz zusammenfassen, Ergebnisse/Beschlüsse hervorheben)
+1. Besprechungspunkte (jeden Punkt mit Ergebnis: Beschlossen / Noch zu klären / Keine Einigung / Vertagt)
 2. Beschlüsse & Maßnahmen (klare Handlungspunkte mit Verantwortlichen falls erwähnt)
-3. Sonstiges
+3. Offene Punkte / nächste Sitzung
 
-Schreibe klar, präzise und professionell. Halte es kompakt.`;
+Schreibe klar, präzise und professionell.`;
 
         const result = await base44.integrations.Core.InvokeLLM({ prompt });
         setAiSummary(result);
@@ -149,6 +237,12 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
     };
 
     const stepIndex = STEPS.indexOf(step);
+
+    const statusSummary = openTopics.reduce((acc, t) => {
+        const s = topicStatuses[t.id]?.status || 'offen';
+        acc[s] = (acc[s] || 0) + 1;
+        return acc;
+    }, {});
 
     return (
         <Dialog open={open} onOpenChange={handleClose}>
@@ -164,7 +258,7 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                 <div className="flex items-center gap-1 mb-4">
                     {[
                         { key: 'scribe', label: 'Protokollant' },
-                        { key: 'notes', label: 'Live-Notizen' },
+                        { key: 'notes', label: 'Agenda & Notizen' },
                         { key: 'ai', label: 'KI-Protokoll' },
                         { key: 'approve', label: 'Freigabe' }
                     ].map((s, i) => (
@@ -225,6 +319,13 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                             </Card>
                         )}
 
+                        {selectedScribe && (
+                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs text-blue-300">
+                                <p className="font-medium mb-1">💡 So funktioniert es:</p>
+                                <p>{selectedScribe.name} öffnet auf seinem Gerät die Teamsitzungsseite und klickt auf "Protokoll führen". Dort kann er/sie alle Agendapunkte abhaken und Live-Notizen schreiben.</p>
+                            </div>
+                        )}
+
                         <div className="flex justify-end pt-2">
                             <Button
                                 onClick={handleScribeNext}
@@ -238,7 +339,7 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                     </div>
                 )}
 
-                {/* Step: Live Notes */}
+                {/* Step: Agenda + Live Notes */}
                 {step === 'notes' && (
                     <div className="space-y-4">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 rounded-lg p-3">
@@ -246,34 +347,43 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                             Protokollant: <strong className="text-foreground">{selectedScribe?.name}</strong>
                         </div>
 
-                        {/* Agenda Übersicht */}
-                        <div className="space-y-1.5">
-                            <Label>Agenda ({openTopics.length} Punkte)</Label>
-                            <div className="max-h-40 overflow-y-auto space-y-1 rounded-lg border border-border p-2">
+                        {/* Agendapunkte mit Status */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <Label>Agendapunkte abhaken ({openTopics.length})</Label>
+                                <div className="flex gap-1 flex-wrap justify-end">
+                                    {Object.entries(statusSummary).filter(([k]) => k !== 'offen').map(([k, v]) => {
+                                        const s = TOPIC_STATUSES.find(x => x.value === k);
+                                        return s ? <Badge key={k} className={cn('text-[10px]', s.color)}>{v} {s.label.split(' ')[0]}</Badge> : null;
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                                 {openTopics.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground text-center py-2">Keine offenen Agenda-Punkte</p>
+                                    <p className="text-xs text-muted-foreground text-center py-4">Keine offenen Agenda-Punkte</p>
                                 ) : openTopics.map(t => (
-                                    <div key={t.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-secondary/30">
-                                        <Badge className={cn('text-[10px] shrink-0', t.priority === 'hoch' ? 'bg-red-500/20 text-red-400' : t.priority === 'niedrig' ? 'bg-blue-500/20 text-blue-400' : 'bg-secondary text-muted-foreground')}>
-                                            {t.priority}
-                                        </Badge>
-                                        <span className="text-foreground truncate">{t.topic}</span>
-                                        <span className="text-muted-foreground shrink-0">— {t.employee_name}</span>
-                                    </div>
+                                    <TopicStatusRow
+                                        key={t.id}
+                                        topic={t}
+                                        statusEntry={topicStatuses[t.id]}
+                                        onChange={(entry) => updateTopicStatus(t.id, entry)}
+                                    />
                                 ))}
                             </div>
                         </div>
 
+                        {/* Live-Notizen */}
                         <div className="space-y-2">
-                            <Label>Live-Notizen während der Sitzung</Label>
+                            <Label>Sonstige Live-Notizen</Label>
                             <Textarea
                                 value={liveNotes}
                                 onChange={(e) => setLiveNotes(e.target.value)}
-                                placeholder="Notizen während der Besprechung tippen... z.B.:&#10;- Neue Öffnungszeiten ab Juli beschlossen&#10;- Max übernimmt die Getränkebestellung&#10;- Reinigungsplan wird überarbeitet"
-                                rows={10}
+                                placeholder="Weitere Notizen, Diskussionen, spontane Punkte...&#10;- z.B. Neue Öffnungszeiten ab Juli&#10;- Max übernimmt die Getränkebestellung"
+                                rows={6}
                                 className="font-mono text-sm"
                             />
-                            <p className="text-xs text-muted-foreground">Die KI fasst diese Notizen anschließend zu einem Protokoll zusammen.</p>
+                            <p className="text-xs text-muted-foreground">Die KI fasst die Agendapunkte + Notizen zu einem strukturierten Protokoll zusammen.</p>
                         </div>
 
                         <div className="flex justify-between pt-2">
@@ -301,14 +411,10 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                                 <div>
                                     <p className="font-semibold text-foreground">KI-Protokoll generieren</p>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        Die KI fasst deine Live-Notizen und die Agenda zu einem professionellen Protokoll zusammen.
+                                        Die KI fasst die Agendapunkte mit Ergebnissen und deine Notizen zu einem professionellen Protokoll zusammen.
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={handleGenerateAI}
-                                    disabled={isGenerating}
-                                    className="bg-amber-600 hover:bg-amber-700"
-                                >
+                                <Button onClick={handleGenerateAI} disabled={isGenerating} className="bg-amber-600 hover:bg-amber-700">
                                     {isGenerating ? (
                                         <><Loader2 className="w-4 h-4 animate-spin mr-2" />Protokoll wird erstellt…</>
                                     ) : (
@@ -333,10 +439,7 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                                 <p className="text-xs text-muted-foreground">Du kannst das Protokoll vor der Freigabe noch bearbeiten.</p>
                                 <div className="flex justify-between pt-2">
                                     <Button variant="outline" onClick={() => setStep('notes')}>← Zurück</Button>
-                                    <Button
-                                        onClick={() => setStep('approve')}
-                                        className="bg-amber-600 hover:bg-amber-700"
-                                    >
+                                    <Button onClick={() => setStep('approve')} className="bg-amber-600 hover:bg-amber-700">
                                         Zur Freigabe →
                                     </Button>
                                 </div>
@@ -364,6 +467,18 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                                     <p>✍️ Protokollant: <strong className="text-foreground">{selectedScribe?.name}</strong></p>
                                     <p>📋 Agenda: <strong className="text-foreground">{openTopics.length} Punkte</strong></p>
                                 </div>
+                                {/* Agendapunkt-Zusammenfassung */}
+                                <div className="flex flex-wrap gap-1.5 pt-1">
+                                    {TOPIC_STATUSES.filter(s => s.value !== 'offen').map(s => {
+                                        const count = openTopics.filter(t => topicStatuses[t.id]?.status === s.value).length;
+                                        if (!count) return null;
+                                        return <Badge key={s.value} className={cn('text-xs', s.color)}>{count}× {s.label}</Badge>;
+                                    })}
+                                    {(() => {
+                                        const unset = openTopics.filter(t => !topicStatuses[t.id] || topicStatuses[t.id].status === 'offen').length;
+                                        return unset > 0 ? <Badge className="text-xs bg-secondary text-muted-foreground">{unset}× werden als besprochen markiert</Badge> : null;
+                                    })()}
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -372,7 +487,7 @@ Schreibe klar, präzise und professionell. Halte es kompakt.`;
                                 <CardContent className="p-3 text-sm text-amber-400">
                                     <p className="font-medium mb-1">⚡ Bei Freigabe wird automatisch:</p>
                                     <ul className="space-y-0.5 text-amber-300 text-xs">
-                                        <li>• Alle offenen Agenda-Punkte auf "besprochen" gesetzt ({openTopics.filter(t => t.status === 'offen').length} Punkte)</li>
+                                        <li>• Agenda-Punkte erhalten ihren jeweiligen Status (Beschlossen / Zu klären / etc.)</li>
                                         <li>• Protokoll für alle Mitarbeiter sichtbar</li>
                                         <li>• Agenda-Snapshot für Manager gespeichert</li>
                                     </ul>

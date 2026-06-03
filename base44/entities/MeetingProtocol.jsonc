@@ -27,9 +27,13 @@
       "type": "string",
       "description": "Live-Notizen w\u00e4hrend der Sitzung"
     },
+    "topic_statuses": {
+      "type": "string",
+      "description": "JSON: { [topicId]: { status: 'beschlossen'|'zu_klaeren'|'keine_einigung'|'vertagt'|'offen', notes: string } }"
+    },
     "agenda_snapshot": {
       "type": "string",
-      "description": "JSON-Snapshot der Agenda-Punkte zum Zeitpunkt der Sitzung (nur Manager)"
+      "description": "JSON-Snapshot der Agenda-Punkte (nur Manager)"
     },
     "ai_summary": {
       "type": "string",

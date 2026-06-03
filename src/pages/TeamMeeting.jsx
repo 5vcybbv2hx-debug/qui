@@ -69,6 +69,22 @@ export default function TeamMeeting() {
         }
     });
 
+    // Check if current employee is the assigned scribe for an active protocol
+    const { data: activeProtocol } = useQuery({
+        queryKey: ['active-protocol', currentEmployee?.id],
+        queryFn: async () => {
+            if (!currentEmployee?.id) return null;
+            const protocols = await base44.entities.MeetingProtocol.filter({
+                scribe_employee_id: currentEmployee.id,
+                status: 'entwurf'
+            }, '-created_date', 1);
+            return protocols[0] || null;
+        },
+        enabled: !!currentEmployee?.id
+    });
+
+    const isScribe = activeProtocol?.scribe_employee_id === currentEmployee?.id;
+
     const { data: allTopics = [] } = useQuery({
         queryKey: ['team-meeting-topics', permissions.isManager, currentEmployee?.id],
         queryFn: async () => {
@@ -366,6 +382,17 @@ export default function TeamMeeting() {
                                 Protokoll
                             </Button>
                         )}
+                        {/* Protokollant-Button: nur für den zugewiesenen Protokollanten sichtbar */}
+                        {!permissions.isManager && isScribe && (
+                            <Button
+                                onClick={() => setProtocolModalOpen(true)}
+                                size="sm"
+                                className="bg-amber-600 hover:bg-amber-700 animate-pulse"
+                            >
+                                <ClipboardList className="w-4 h-4 mr-2" />
+                                Protokoll führen ✍️
+                            </Button>
+                        )}
                         <Button 
                             onClick={() => setModalOpen(true)}
                             className="bg-amber-600 hover:bg-amber-700"
@@ -658,6 +685,7 @@ export default function TeamMeeting() {
                     employees={employees}
                     isManager={permissions.isManager}
                     currentUser={currentEmployee}
+                    existingProtocol={isScribe ? activeProtocol : null}
                 />
 
                 {/* Print View Modal */}

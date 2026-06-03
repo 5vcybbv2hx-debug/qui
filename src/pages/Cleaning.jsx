@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { STALE } from '@/lib/queryUtils';;
-import { LoadingState, ListSkeleton, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
+import { LoadingState, ListSkeleton, ErrorState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff, Archive, CheckSquare } from 'lucide-react';
+import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff, Archive } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -300,7 +300,7 @@ export default function Cleaning() {
     }
 
      return (
-        <div className="min-h-screen bg-background pb-24 md:pb-0">
+        <div className="min-h-screen bg-background animate-page-enter pb-24 md:pb-0">
             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col gap-2 sm:gap-3 mb-5 sm:mb-6">
@@ -573,8 +573,8 @@ export default function Cleaning() {
                                     <p>Noch keine Berichte vorhanden</p>
                                 </div>
                             ) : (
-                                reports.map(report => (
-                                    <div key={report.id} className="p-5 bg-card rounded-xl border border-border shadow-sm">
+                                reports.map((report, idx) => (
+                                    <div key={report.id} style={{ '--delay': `${idx*55}ms` }} className="p-5 animate-stagger bg-card rounded-xl border border-border shadow-sm">
                                        <div className="flex items-start justify-between mb-4">
                                            <div className="flex items-start gap-3">
                                                <div className="flex-shrink-0 w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">

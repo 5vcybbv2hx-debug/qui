@@ -24,19 +24,19 @@ import { getHolidaysBW, getHolidayName } from '@/components/shifts/getHolidays';
 // ── Konfiguration ──────────────────────────────────────────────────────────
 
 export const DAY_TYPES = [
-    { id: 'normal',                   label: 'Normaler Betrieb',      color: 'bg-slate-500',   textColor: 'text-slate-300',  dot: 'bg-slate-400'   },
+    { id: 'normal',                   label: 'Normaler Betrieb',      color: 'bg-secondary/80',   textColor: 'text-foreground/70',  dot: 'bg-muted-foreground'   },
     { id: 'sonderoeffnung',           label: 'Sonderöffnung',         color: 'bg-amber-600',   textColor: 'text-amber-300',  dot: 'bg-amber-400'   },
     { id: 'vorfeiertag',              label: 'Vorfeiertag',           color: 'bg-orange-600',  textColor: 'text-orange-300', dot: 'bg-orange-400'  },
     { id: 'feiertag',                 label: 'Feiertag',              color: 'bg-red-600',     textColor: 'text-red-300',    dot: 'bg-red-400'     },
     { id: 'eventtag',                 label: 'Eventtag',              color: 'bg-purple-600',  textColor: 'text-purple-300', dot: 'bg-purple-400'  },
     { id: 'lange_nacht',              label: 'Lange Nacht',           color: 'bg-indigo-600',  textColor: 'text-indigo-300', dot: 'bg-indigo-400'  },
     { id: 'inventurtag',              label: 'Inventurtag',           color: 'bg-cyan-600',    textColor: 'text-cyan-300',   dot: 'bg-cyan-400'    },
-    { id: 'geschlossen',              label: 'Geschlossen',           color: 'bg-slate-700',   textColor: 'text-slate-400',  dot: 'bg-slate-500'   },
+    { id: 'geschlossen',              label: 'Geschlossen',           color: 'bg-secondary/50',   textColor: 'text-muted-foreground',  dot: 'bg-muted-foreground/60'   },
     { id: 'geschlossen_mit_reinigung',label: 'Geschl. + Reinigung',   color: 'bg-teal-700',    textColor: 'text-teal-300',   dot: 'bg-teal-400'    },
     { id: 'saisonstart',              label: 'Saisonstart',           color: 'bg-green-600',   textColor: 'text-green-300',  dot: 'bg-green-400'   },
     { id: 'saisonende',               label: 'Saisonende',            color: 'bg-yellow-700',  textColor: 'text-yellow-300', dot: 'bg-yellow-400'  },
     { id: 'betriebsferien',           label: 'Betriebsferien',        color: 'bg-pink-700',    textColor: 'text-pink-300',   dot: 'bg-pink-400'    },
-    { id: 'wartungstag',              label: 'Wartungstag',           color: 'bg-zinc-600',    textColor: 'text-zinc-300',   dot: 'bg-zinc-400'    },
+    { id: 'wartungstag',              label: 'Wartungstag',           color: 'bg-secondary',    textColor: 'text-foreground/70',  dot: 'bg-secondary'    },
 ];
 
 export function getDayTypeConfig(id) {
@@ -321,7 +321,7 @@ function MonthCalendar({ currentMonth, specialDays, onDayClick, openingHours }) 
                                 today && !special && !isHolidayDay ? 'ring-2 ring-primary bg-primary/10 text-primary font-bold' : '',
                                 special ? `${cfg.color} text-white` :
                                 isHolidayDay ? 'bg-red-500/20 text-red-300' :
-                                isRegularClosed ? 'bg-slate-700/40 text-muted-foreground' :
+                                isRegularClosed ? 'bg-secondary/40 text-muted-foreground' :
                                 'hover:bg-accent/50 text-foreground',
                             )}
                             title={holiday || (oh?.is_closed ? 'Regulär geschlossen' : oh ? `${oh.open_time || ''}–${oh.close_time || ''}` : '')}
@@ -351,7 +351,7 @@ function MonthCalendar({ currentMonth, specialDays, onDayClick, openingHours }) 
                                 <div key={label}>
                                     <p className="text-[9px] text-muted-foreground">{label}</p>
                                     {oh?.is_closed ? (
-                                        <p className="text-[9px] text-slate-500 font-medium">–</p>
+                                        <p className="text-[9px] text-muted-foreground font-medium">–</p>
                                     ) : oh ? (
                                         <p className="text-[9px] text-green-400 font-medium leading-tight">{oh.open_time?.slice(0,5) || '?'}</p>
                                     ) : (
@@ -563,7 +563,7 @@ export default function BusinessCalendar() {
     const specialCount = thisMonthDays.filter(d => d.day_type !== 'normal').length;
 
     return (
-        <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <div className="min-h-screen bg-background pb-28 md:pb-8 animate-page-enter">
             <div className="max-w-2xl mx-auto px-3 py-4">
 
                 {/* Header */}

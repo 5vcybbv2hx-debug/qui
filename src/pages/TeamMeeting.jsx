@@ -44,6 +44,8 @@ export default function TeamMeeting() {
         priority: 'normal'
     });
     const [printViewOpen, setPrintViewOpen] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [editFormData, setEditFormData] = useState({ topic: '', description: '', priority: 'normal' });
     const [protocolModalOpen, setProtocolModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'archiv' | 'protokolle'
     const [scheduleData, setScheduleData] = useState({
@@ -271,7 +273,18 @@ export default function TeamMeeting() {
 
     const openDetail = (topic) => {
         setSelectedTopic(topic);
+        setEditMode(false);
+        setEditFormData({ topic: topic.topic, description: topic.description || '', priority: topic.priority });
         setDetailModalOpen(true);
+    };
+
+    const handleEditSave = () => {
+        updateMutation.mutate({
+            id: selectedTopic.id,
+            data: { ...selectedTopic, ...editFormData }
+        }, {
+            onSuccess: () => setEditMode(false)
+        });
     };
 
     const groupedTopics = {
@@ -928,8 +941,49 @@ export default function TeamMeeting() {
                                 )}
 
                                 {!permissions.isManager && (
-                                    <div className="flex justify-end pt-4 border-t">
-                                        <Button onClick={() => setDetailModalOpen(false)}>
+                                    <div className="pt-4 border-t space-y-3">
+                                        {/* Bearbeiten – nur für eigene, noch offene Themen */}
+                                        {selectedTopic.employee_id === currentEmployee?.id && selectedTopic.status === 'offen' && (
+                                            editMode ? (
+                                                <div className="space-y-3">
+                                                    <div className="space-y-1">
+                                                        <Label>Thema</Label>
+                                                        <Input
+                                                            value={editFormData.topic}
+                                                            onChange={(e) => setEditFormData({ ...editFormData, topic: e.target.value })}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label>Beschreibung</Label>
+                                                        <Textarea
+                                                            value={editFormData.description}
+                                                            onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                                                            rows={3}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <Label>Priorität</Label>
+                                                        <Select value={editFormData.priority} onValueChange={(v) => setEditFormData({ ...editFormData, priority: v })}>
+                                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="niedrig">Niedrig</SelectItem>
+                                                                <SelectItem value="normal">Normal</SelectItem>
+                                                                <SelectItem value="hoch">Hoch</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <Button variant="outline" onClick={() => setEditMode(false)} className="flex-1">Abbrechen</Button>
+                                                        <Button onClick={handleEditSave} className="flex-1 bg-amber-600 hover:bg-amber-700">Speichern</Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <Button variant="outline" onClick={() => setEditMode(true)} className="w-full border-amber-500 text-amber-400 hover:bg-amber-500/10">
+                                                    Thema bearbeiten
+                                                </Button>
+                                            )
+                                        )}
+                                        <Button variant="outline" onClick={() => setDetailModalOpen(false)} className="w-full">
                                             Schließen
                                         </Button>
                                     </div>

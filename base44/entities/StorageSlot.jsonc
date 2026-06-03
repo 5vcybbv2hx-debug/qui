@@ -4,31 +4,39 @@
   "properties": {
     "area_id": {
       "type": "string",
-      "description": "ID des Bereichs"
+      "description": "ID des Bereichs (Area)"
+    },
+    "area_name": {
+      "type": "string",
+      "description": "Name des Bereichs (Denormalisierung)"
     },
     "furniture_id": {
       "type": "string",
-      "description": "ID des M\u00f6bels"
+      "description": "ID des Möbels (Furniture)"
     },
-    "container_id": {
+    "furniture_name": {
       "type": "string",
-      "description": "ID des Beh\u00e4lters"
+      "description": "Name des Möbels (Denormalisierung)"
+    },
+    "furniture_type": {
+      "type": "string",
+      "description": "Typ des Möbels (Denormalisierung)"
     },
     "name": {
       "type": "string",
-      "description": "Name des Fachs (z.B. Fach 1, Platz A)"
-    },
-    "position": {
-      "type": "string",
-      "description": "Position im Beh\u00e4lter (z.B. oben links, Ebene 2)"
+      "description": "Name des Fachs (z.B. Fach 1, Oben, Ebene 2)"
     },
     "full_name": {
       "type": "string",
-      "description": "Automatisch generierter Pfad: Area \u203a Furniture \u203a Container \u203a Slot"
+      "description": "Automatisch generierter Pfad: Bereich › Möbel › Fach"
     },
     "short_code": {
       "type": "string",
-      "description": "Automatisch generierter Code (z.B. LOC-AB12)"
+      "description": "Kurzcode für Etiketten (z.B. BAR-K1-F2)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optionale Notizen"
     },
     "is_active": {
       "type": "boolean",
@@ -39,7 +47,6 @@
   "required": [
     "area_id",
     "furniture_id",
-    "container_id",
     "name"
   ]
 }

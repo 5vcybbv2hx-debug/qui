@@ -483,7 +483,7 @@ export default function Todos() {
                                     </h3>
                                     <div className="space-y-2">
                                         {statusTodos.map((todo, idx) => (
-                                            <div key={todo.id} className="flex items-center gap-2">
+                                            <div key={todo.id} className="flex items-center gap-2 animate-stagger" style={{ '--delay': `${idx * 35}ms` }}>
                                                 {selectMode && (
                                                     <button onClick={() => toggleSelect(todo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center text-amber-400">
                                                         {selectedIds.has(todo.id)
@@ -515,8 +515,8 @@ export default function Todos() {
                     </div>
                 ) : (
                     <div className="space-y-2">
-                        {filteredTodos.map(todo => (
-                            <div key={todo.id} className="flex items-center gap-2">
+                        {filteredTodos.map((todo, idx) => (
+                            <div key={todo.id} className="flex items-center gap-2 animate-stagger" style={{ '--delay': `${idx * 35}ms` }}>
                                 {selectMode && (
                                     <button onClick={() => toggleSelect(todo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center text-amber-400">
                                         {selectedIds.has(todo.id)

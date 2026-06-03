@@ -31,7 +31,7 @@ const notificationTypes = [
     { key: 'cleaning_overdue', icon: Sparkles, title: 'Überfällige Reinigung', description: 'Hinweis wenn Reinigungsaufgaben überfällig sind', color: 'text-green-400' },
     { key: 'inventory_low', icon: Package, title: 'Niedriger Bestand', description: 'Warnung bei Artikeln unter Mindestbestand', color: 'text-orange-400' },
     { key: 'maintenance_due', icon: AlertTriangle, title: 'Wartung fällig', description: 'Erinnerung an fällige Wartungsaufgaben (7 Tage vorher)', color: 'text-yellow-400' },
-    { key: 'general_updates', icon: Bell, title: 'Allgemeine Updates', description: 'Wichtige Ankündigungen und Systemnachrichten', color: 'text-slate-400' }
+    { key: 'general_updates', icon: Bell, title: 'Allgemeine Updates', description: 'Wichtige Ankündigungen und Systemnachrichten', color: 'text-muted-foreground' }
 ];
 
 export default function Settings() {
@@ -176,7 +176,7 @@ export default function Settings() {
     ];
 
     return (
-         <div className="min-h-screen bg-background pb-24 md:pb-0">
+         <div className="min-h-screen bg-background pb-24 md:pb-0 animate-page-enter">
              <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                  {/* Header */}
                  <div className="mb-6 sm:mb-8">
@@ -229,7 +229,7 @@ export default function Settings() {
                             </p>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                {themes.map((themeOption) => {
+                                {themes.map((themeOption, tIdx) => {
                                     const Icon = themeOption.icon;
                                     const isActive = theme === themeOption.value;
                                     
@@ -237,6 +237,7 @@ export default function Settings() {
                                         <button
                                             key={themeOption.value}
                                             onClick={() => handleThemeChange(themeOption.value)}
+                                            style={{ '--delay': `${tIdx * 40}ms` }}
                                             className={`
                                                     relative p-4 rounded-xl border-2 transition-all
                                                     ${isActive 
@@ -519,10 +520,10 @@ export default function Settings() {
                         )}
 
                         <div className="space-y-3">
-                            {notificationTypes.map((type) => {
+                            {notificationTypes.map((type, nIdx) => {
                                 const Icon = type.icon;
                                 return (
-                                    <Card key={type.key} className="p-4 bg-card border-border">
+                                    <Card key={type.key} className="p-4 bg-card border-border animate-stagger" style={{ '--delay': `${nIdx * 50}ms` }}>
                                         <div className="flex items-start gap-4">
                                             <div className="p-2 bg-secondary rounded-lg shrink-0">
                                                 <Icon className={`w-5 h-5 ${type.color}`} />

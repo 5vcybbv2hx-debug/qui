@@ -271,13 +271,15 @@ export default function MaintenancePage() {
                 ) : (
                     <div className="space-y-3">
                         {filteredTasks.map((task, idx) => (
-                            <div key={task.id} className="animate-stagger" style={{ '--delay': `${idx*45}ms` }}><MaintenanceCard
-                                task={task}
-                                canEdit={permissions.canEditEmployees}
-                                onEdit={openModal}
-                                onComplete={(t) => completeMutation.mutate(t)}
-                                isCompleting={completeMutation.isPending && completeMutation.variables?.id === task.id}
-                            />
+                            <div key={task.id} className="animate-stagger" style={{ '--delay': `${idx*45}ms` }}>
+                                <MaintenanceCard
+                                    task={task}
+                                    canEdit={permissions.canEditEmployees}
+                                    onEdit={openModal}
+                                    onComplete={(t) => completeMutation.mutate(t)}
+                                    isCompleting={completeMutation.isPending && completeMutation.variables?.id === task.id}
+                                />
+                            </div>
                         ))}
                     </div>
                 )}

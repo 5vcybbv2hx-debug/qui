@@ -15,7 +15,7 @@ export default function TodayOverview({ shifts = [], events = [], reservations =
                     <Calendar className="w-5 h-5 text-green-500" />
                     Heute • {format(new Date(), 'EEEE, d. MMMM', { locale: de })}
                 </h3>
-                <p className="text-sm text-slate-500 italic text-center py-4">Nichts geplant für heute</p>
+                <p className="text-sm text-muted-foreground/70 italic text-center py-4">Nichts geplant für heute</p>
             </Card>
         );
     }
@@ -39,58 +39,58 @@ export default function TodayOverview({ shifts = [], events = [], reservations =
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <p className="text-xs text-slate-400 mb-2 uppercase flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground mb-2 uppercase flex items-center gap-2">
                         <Clock className="w-4 h-4" />
                         Schichten ({shifts.length})
                     </p>
                     <div className="space-y-2">
                         {shiftsToShow.length > 0 ? (
-                            shiftsToShow.map(shift => (
-                                <div key={shift.id} className="flex items-center gap-2 text-sm p-2 rounded bg-slate-900/30 hover:bg-slate-900/50 transition-colors">
+                            shiftsToShow.map((shift, idx) => (
+                                <div key={shift.id} className="flex items-center gap-2 text-sm p-2 rounded animate-stagger" style={{ '--delay': `${idx * 35}ms` }} bg-secondary/30 hover:bg-secondary/50 transition-colors">
                                     <div 
                                         className="w-3 h-3 rounded-full flex-shrink-0" 
                                         style={{ backgroundColor: shift.color || getEmployeeColor(shift.employee_id) }} 
                                     />
-                                    <span className="text-slate-300 truncate flex-1">{shift.employee_name}</span>
-                                    <span className="text-slate-500 text-xs whitespace-nowrap ml-2">{shift.start_time?.substring(0, 5)}-{shift.end_time?.substring(0, 5)}</span>
+                                    <span className="text-foreground/80 truncate flex-1">{shift.employee_name}</span>
+                                    <span className="text-muted-foreground/70 text-xs whitespace-nowrap ml-2">{shift.start_time?.substring(0, 5)}-{shift.end_time?.substring(0, 5)}</span>
                                 </div>
                             ))
                         ) : (
-                            <p className="text-sm text-slate-600 italic py-2">Keine Schichten</p>
+                            <p className="text-sm text-muted-foreground/50 italic py-2">Keine Schichten</p>
                         )}
-                        {shifts.length > maxItems && <p className="text-xs text-slate-500 pt-2">+{shifts.length - shiftsToShow.length} weitere</p>}
+                        {shifts.length > maxItems && <p className="text-xs text-muted-foreground/70 pt-2">+{shifts.length - shiftsToShow.length} weitere</p>}
                     </div>
                 </div>
 
                 <div>
-                    <p className="text-xs text-slate-400 mb-2 uppercase">Events ({events.length})</p>
+                    <p className="text-xs text-muted-foreground mb-2 uppercase">Events ({events.length})</p>
                     <div className="space-y-2">
-                        {eventsToShow.map(event => (
-                            <div key={event.id} className="flex items-start gap-2 text-sm">
+                        {eventsToShow.map((event, idx) => (
+                            <div key={event.id} className="flex items-start gap-2 text-sm animate-stagger" style={{ '--delay': `${idx * 35}ms` }}>
                                 <AlertCircle className="w-4 h-4 text-pink-500 mt-0.5" />
                                 <div className="flex-1">
-                                    <p className="text-slate-300 font-medium truncate">{event.title}</p>
-                                    {event.expected_guests && <p className="text-xs text-slate-500">{event.expected_guests} Gäste</p>}
+                                    <p className="text-foreground/80 font-medium truncate">{event.title}</p>
+                                    {event.expected_guests && <p className="text-xs text-muted-foreground/70">{event.expected_guests} Gäste</p>}
                                 </div>
                             </div>
                         ))}
-                        {events.length === 0 && <p className="text-sm text-slate-600 italic">Keine Events</p>}
+                        {events.length === 0 && <p className="text-sm text-muted-foreground/50 italic">Keine Events</p>}
                     </div>
                 </div>
 
                 <div>
-                    <p className="text-xs text-slate-400 mb-2 uppercase">Reservierungen ({reservations.length})</p>
+                    <p className="text-xs text-muted-foreground mb-2 uppercase">Reservierungen ({reservations.length})</p>
                     <div className="space-y-2">
-                        {reservationsToShow.map(res => (
-                            <div key={res.id} className="flex items-start gap-2 text-sm">
+                        {reservationsToShow.map((res, idx) => (
+                            <div key={res.id} className="flex items-start gap-2 text-sm animate-stagger" style={{ '--delay': `${idx * 35}ms` }}>
                                 <CalendarCheck className="w-4 h-4 text-blue-500 mt-0.5" />
                                 <div className="flex-1">
-                                    <p className="text-slate-300 truncate">{res.customer_name}</p>
-                                    <p className="text-xs text-slate-500">{res.time} • {res.guests} Gäste</p>
+                                    <p className="text-foreground/80 truncate">{res.customer_name}</p>
+                                    <p className="text-xs text-muted-foreground/70">{res.time} • {res.guests} Gäste</p>
                                 </div>
                             </div>
                         ))}
-                        {reservations.length === 0 && <p className="text-sm text-slate-600 italic">Keine Reservierungen</p>}
+                        {reservations.length === 0 && <p className="text-sm text-muted-foreground/50 italic">Keine Reservierungen</p>}
                     </div>
                 </div>
             </div>

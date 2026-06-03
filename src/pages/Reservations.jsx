@@ -236,14 +236,15 @@ export default function Reservations() {
                 {isLoading ? (
                     <div className="space-y-3">
                         {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-28 rounded-2xl bg-secondary/40 animate-pulse" />
+                            <div key={i} className="h-28 rounded-2xl skeleton animate-shimmer" />
                         ))}
                     </div>
                 ) : displayed.length > 0 ? (
                     <div className="space-y-2.5">
-                        {displayed.map(res => (
+                        {displayed.map((res, idx) => (
+                            <div key={res.id} className="animate-stagger" style={{ '--delay': `${idx * 45}ms` }}>
                             <ReservationCard
-                                key={res.id}
+                                key={res.id + '-card'}
                                 reservation={res}
                                 permissions={permissions}
                                 onEdit={(r)  => { setSelectedRes(r); setModalOpen(true); }}
@@ -253,6 +254,7 @@ export default function Reservations() {
                                 onCancel={handleCancel}
                                 tables={tables}
                             />
+                            </div>
                         ))}
                     </div>
                 ) : (

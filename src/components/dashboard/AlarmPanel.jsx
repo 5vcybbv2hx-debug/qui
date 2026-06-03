@@ -347,12 +347,12 @@ export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, today
 
     if (allItems.length === 0) {
         return (
-            <section>
+            <section className="animate-fade-in">
                 <SectionHeader criticalCount={0} total={0} />
                 <Card className="border-green-500/30 bg-green-500/5">
                     <CardContent className="p-4 flex items-center gap-3">
-                        <Check className="w-5 h-5 text-green-400 shrink-0" />
-                        <p className="text-sm text-green-300 font-medium">Alles in Ordnung – kein Handlungsbedarf</p>
+                        <span className="status-dot status-dot-green shrink-0" />
+                        <p className="text-sm text-green-400 font-medium">Alles in Ordnung – kein Handlungsbedarf</p>
                     </CardContent>
                 </Card>
             </section>
@@ -360,7 +360,7 @@ export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, today
     }
 
     return (
-        <section>
+        <section className="animate-fade-in">
             <SectionHeader criticalCount={criticalCount} total={allItems.length} />
             <div className="space-y-2">
                 {isManager && (
@@ -371,7 +371,15 @@ export default function AlarmPanel({ pendingTimeEntries, maintenanceTasks, today
                         currentUser={currentUser}
                     />
                 )}
-                {visibleItems.map(i => i.render)}
+                {visibleItems.map((item, idx) => (
+                    <div
+                        key={idx}
+                        className="animate-stagger"
+                        style={{ '--delay': `${idx * 50}ms` }}
+                    >
+                        {item.render}
+                    </div>
+                ))}
             </div>
             {allItems.length > 5 && (
                 <button
@@ -393,9 +401,10 @@ function SectionHeader({ criticalCount, total }) {
             <ShieldAlert className={cn('w-4 h-4', criticalCount > 0 ? 'text-red-400' : 'text-muted-foreground')} />
             <h3 className="text-sm font-bold text-foreground uppercase tracking-wide flex-1">Alarm-Panel</h3>
             {criticalCount > 0 && (
-                <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs animate-pulse">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/30 text-xs font-semibold text-red-400 animate-pop">
+                    <span className="status-dot status-dot-red animate-pulse-dot" />
                     {criticalCount} kritisch
-                </Badge>
+                </span>
             )}
             {total > 0 && criticalCount === 0 && (
                 <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30 text-xs">{total} offen</Badge>

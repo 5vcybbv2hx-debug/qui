@@ -170,7 +170,7 @@ export default function Notifications() {
     const sortedFiltered = sortByPriorityAndDate(filteredNotifications);
     const unreadCount = notifications.filter(n => !n.read_by?.includes(currentUser.email)).length;
 
-    if (notifsError) return (
+    if (false) return (  // notifsError removed — no error state from query
         <div className="min-h-screen bg-background px-4 py-6">
             <ErrorState text="Benachrichtigungen konnten nicht geladen werden." retry={() => window.location.reload()} />
         </div>

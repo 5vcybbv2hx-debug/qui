@@ -30,7 +30,7 @@ import QuickReservationSheet from '@/components/seating/QuickReservationSheet';
 import TableModal from '@/components/seating/TableModal';
 import RoomManager from '@/components/seating/RoomManager';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
+import { LoadingState, EmptyState, ErrorState, ListSkeleton } from '@/components/ui/StateDisplay';
 import GuestHubTodayTab from '@/components/reservations/GuestHubTodayTab';
 import GuestHubTablesTab from '@/components/seating/GuestHubTablesTab';
 

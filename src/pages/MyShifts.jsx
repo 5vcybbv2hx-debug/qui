@@ -181,7 +181,7 @@ export default function MyShiftsPage() {
                                                 const duration = differenceInMinutes(end, start) / 60;
                                                 
                                                 return (
-                                                    <div key={shift.id} className="flex animate-stagger" style={{ '--delay': `${(idx * 60) + (sIdx * 30)}ms` }} items-center gap-3 p-3 rounded-lg bg-accent/50">
+                                                    <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 animate-stagger" style={{ '--delay': `${sIdx * 30}ms` }}>
                                                         <Clock className="w-5 h-5 text-amber-500" />
                                                         <div className="flex-1">
                                                             <p className="font-semibold text-foreground">
@@ -305,7 +305,7 @@ export default function MyShiftsPage() {
                                             const duration = differenceInMinutes(end, start) / 60;
                                             
                                             return (
-                                                <div key={shift.id} className="flex animate-stagger" style={{ '--delay': `${(idx * 60) + (sIdx * 30)}ms` }} items-start gap-4 p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors">
+                                                <div key={shift.id} className="flex items-start gap-4 p-4 rounded-lg bg-accent/50 hover:bg-accent transition-colors animate-stagger" style={{ '--delay': `${upcomingShifts.indexOf(shift) * 60}ms` }}>
                                                     <div className="flex-shrink-0">
                                                         <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex flex-col items-center justify-center">
                                                             <p className="text-xs font-semibold text-amber-500">
@@ -370,7 +370,7 @@ export default function MyShiftsPage() {
                                         {dayShifts.length > 0 ? (
                                             <div className="space-y-2">
                                                 {dayShifts.map(shift => (
-                                                    <div key={shift.id} className="flex animate-stagger" style={{ '--delay': `${(idx * 60) + (sIdx * 30)}ms` }} items-center gap-3 p-3 rounded-lg bg-accent/50">
+                                                    <div key={shift.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/50 animate-stagger" style={{ '--delay': `${dayShifts.indexOf(shift) * 30}ms` }}>
                                                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
                                                             <span className="text-primary-foreground font-bold text-sm">
                                                                 {shift.employee_name?.charAt(0) || '?'}

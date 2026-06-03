@@ -2,12 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { STALE } from '@/lib/queryUtils';;
-import { LoadingState, ListSkeleton, ErrorState, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
+import { LoadingState, ListSkeleton, ErrorState, EmptyState } from '@/components/ui/StateDisplay';
 import { ErrorFallback, useErrorHandler } from '@/components/error/ErrorHandler';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff, Archive } from 'lucide-react';
+import { Plus, Sparkles, RefreshCw, FileText, AlertTriangle, Cloud, CloudOff, Archive, CheckSquare } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

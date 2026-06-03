@@ -25,11 +25,7 @@ export default function ShiftAnalytics() {
 
     const { data: allShifts = [] } = useQuery({
         queryKey: ['shifts-analytics'],
-        queryFn: () => {
-            const from = format(startOfMonth(subMonths(new Date(), 2)), 'yyyy-MM-dd');
-            const to = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-            return base44.entities.Shift.filter({ date_gte: from, date_lte: to }, '-date', 500);
-        },
+        queryFn: () => base44.entities.Shift.list('-date', 1000),
         staleTime: STALE.SLOW,
     });
 

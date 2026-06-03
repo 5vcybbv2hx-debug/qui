@@ -363,7 +363,7 @@ export default function Shopping() {
                                     allowCreate={false}
                                 />
                             </div>
-                            <Button type="submit" className="bg-amber-600 hover:bg-amber-700 h-11 shrink-0">
+                            <Button type="submit" className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 h-11 shrink-0 btn-glow-amber">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Hinzufügen
                             </Button>
@@ -394,8 +394,8 @@ export default function Shopping() {
                                     </h3>
                                 </div>
                                 <div className="grid gap-2">
-                                    {lowStockSuggestions.map(article => (
-                                        <div key={article.id} className="flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30">
+                                    {lowStockSuggestions.map((article, idx) => (
+                                        <div key={article.id} className="flex items-center gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 animate-stagger" style={{ '--delay': `${idx * 40}ms` }}>
                                             <div className="w-10 h-10 rounded-lg bg-secondary flex-shrink-0 overflow-hidden">
                                                 {article.image_url ? (
                                                     <img src={article.image_url} alt={article.name} className="w-full h-full object-cover" />
@@ -438,8 +438,8 @@ export default function Shopping() {
                                     Offen ({openItems.length})
                                 </h3>
                                 <div className="grid gap-3">
-                                    {openItems.map(item => (
-                                        <Card key={item.id} className="p-4 bg-background/50 border-border/50 backdrop-blur-xl hover:border-amber-500/30 transition-all">
+                                    {openItems.map((item, idx) => (
+                                        <Card key={item.id} className="p-4 bg-background/50 border-border/50 backdrop-blur-xl hover:border-amber-500/30 transition-all animate-stagger card-pressable" style={{ '--delay': `${idx * 45}ms` }}>
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-start gap-3 mb-2">
@@ -510,8 +510,8 @@ export default function Shopping() {
                                     Bestellt ({orderedItems.length})
                                 </h3>
                                 <div className="grid gap-3">
-                                    {orderedItems.map(item => (
-                                        <Card key={item.id} className="p-4 bg-blue-500/10 border-blue-500/30 backdrop-blur-xl">
+                                    {orderedItems.map((item, idx) => (
+                                        <Card key={item.id} className="p-4 bg-blue-500/10 border-blue-500/30 backdrop-blur-xl animate-stagger" style={{ '--delay': `${idx * 45}ms` }}>
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">
@@ -571,8 +571,8 @@ export default function Shopping() {
                                     </Button>
                                 </div>
                                 <div className="grid gap-3">
-                                    {receivedItems.map(item => (
-                                        <Card key={item.id} className="p-4 bg-green-500/10 border-green-500/30 opacity-75 backdrop-blur-xl">
+                                    {receivedItems.map((item, idx) => (
+                                        <Card key={item.id} className="p-4 bg-green-500/10 border-green-500/30 opacity-75 backdrop-blur-xl animate-stagger" style={{ '--delay': `${idx * 45}ms` }}>
                                             <div className="flex items-start justify-between gap-4">
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-2">

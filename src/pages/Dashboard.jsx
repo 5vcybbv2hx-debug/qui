@@ -19,7 +19,8 @@ export default function Dashboard() {
 
     const { data: user } = useQuery({
         queryKey: ['user'],
-        queryFn: () => base44.auth.me()
+        queryFn: () => base44.auth.me(),
+        staleTime: STALE.SLOW,
     });
 
     const { handleError } = useErrorHandler();

@@ -10,46 +10,52 @@ export function useDashboardData({ isManager, currentEmployee }) {
     const today = format(new Date(), 'yyyy-MM-dd');
     const twoWeeksLater = format(addDays(new Date(), 14), 'yyyy-MM-dd');
 
-    // FIX 1: Server-side date filter for shifts — only fetch what we need
     const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts-dashboard', today],
-        queryFn: () => base44.entities.Shift.filter({ date_gte: today, date_lte: twoWeeksLater }, 'date', 200),
+        queryKey: ['shifts-dashboard'],
+        queryFn: () => base44.entities.Shift.list('date', 300),
         staleTime: STALE.SLOW,
+        gcTime: 15 * 60_000,
     });
 
     const { data: events = [] } = useQuery({
         queryKey: ['events'],
         queryFn: () => base44.entities.Event.list('date', 30),
         staleTime: STALE.SLOW,
+        gcTime: 15 * 60_000,
     });
 
-    // FIX 2: Align queryKey with useReservations hook to share cache
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations', 'active'],
-        queryFn: () => base44.entities.Reservation.filter({ is_archived: false }, '-date', 200),
+        queryFn: () => base44.entities.Reservation.filter({ is_archived: false }, '-date', 100),
         staleTime: STALE.MEDIUM,
+        gcTime: 10 * 60_000,
     });
 
     const { data: todos = [] } = useQuery({
         queryKey: ['todos'],
         queryFn: () => base44.entities.TodoItem.filter({ is_archived: false }),
         staleTime: STALE.SLOW,
+        gcTime: 15 * 60_000,
     });
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true }),
         staleTime: STALE.SLOW,
+        gcTime: 20 * 60_000,
     });
     const { data: articles = [] } = useQuery({
         queryKey: ['articles-low-stock'],
-        queryFn: () => base44.entities.Article.list('name', 200),
+        queryFn: () => base44.entities.Article.list('name', 100),
         staleTime: STALE.SLOW,
+        gcTime: 15 * 60_000,
+        enabled: isManager,
         select: (data) => data.filter(a => a.min_stock > 0 && a.current_stock <= a.min_stock),
     });
     const { data: shopping = [] } = useQuery({
         queryKey: ['shopping-list'],
-        queryFn: () => base44.entities.ShoppingList.list(),
+        queryFn: () => base44.entities.ShoppingList.list('-created_date', 50),
         staleTime: STALE.SLOW,
+        enabled: isManager,
     });
     const { data: maintenanceTasks = [] } = useQuery({
         queryKey: ['maintenance-tasks'],
@@ -59,7 +65,7 @@ export function useDashboardData({ isManager, currentEmployee }) {
     });
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries-dashboard'],
-        queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 100 : 30),
+        queryFn: () => base44.entities.TimeEntry.list('-date', isManager ? 80 : 20),
         staleTime: STALE.MEDIUM,
     });
 
@@ -71,7 +77,7 @@ export function useDashboardData({ isManager, currentEmployee }) {
 
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list('-created_date', 30),
+        queryFn: () => base44.entities.VacationRequest.list('-created_date', 20),
         enabled: isManager,
         staleTime: STALE.SLOW,
     });

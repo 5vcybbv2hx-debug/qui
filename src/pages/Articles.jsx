@@ -456,7 +456,8 @@ export default function Articles() {
                         {(provided) => (
                             <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-8">
                                 {groupedArticles.map((group, groupIdx) => (
-                                    <div style={{ '--delay': `${groupIdx * 60}ms` }} className="animate-stagger"><Draggable
+                                    <div style={{ '--delay': `${groupIdx * 60}ms` }} className="animate-stagger">
+                                    <Draggable
                                         key={group.category.id}
                                         draggableId={`cat-${group.category.id}`}
                                         index={groupIdx}
@@ -531,6 +532,7 @@ export default function Articles() {
                                             </div>
                                         )}
                                     </Draggable>
+                                    </div>
                                 ))}
                                 {provided.placeholder}
                             </div>

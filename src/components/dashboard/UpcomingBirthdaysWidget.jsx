@@ -83,7 +83,7 @@ export default function UpcomingBirthdaysWidget({ employees = [] }) {
                                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold whitespace-nowrap ${
                                             daysUntil === 1 
                                                 ? 'bg-yellow-500/20 text-yellow-400' 
-                                                : 'bg-slate-500/20 text-slate-400'
+                                                : 'bg-slate-500/20 text-muted-foreground'
                                         }`}>
                                             in {daysUntil}d
                                         </span>

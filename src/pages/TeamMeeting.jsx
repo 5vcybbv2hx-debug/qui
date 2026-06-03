@@ -37,7 +37,6 @@ export default function TeamMeeting() {
     const [modalOpen, setModalOpen] = useState(false);
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedTopic, setSelectedTopic] = useState(null);
-    const [showArchive, setShowArchive] = useState(false);
     const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
     const [formData, setFormData] = useState({
         topic: '',

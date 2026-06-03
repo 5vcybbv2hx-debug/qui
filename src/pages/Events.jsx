@@ -27,7 +27,7 @@ const eventTypeColors = {
     'DJ-Night': 'bg-blue-100 text-blue-700 border-blue-200',
     'Special Event': 'bg-amber-100 text-amber-700 border-amber-200',
     'Private Feier': 'bg-green-100 text-green-700 border-green-200',
-    'Sonstiges': 'bg-slate-100 text-slate-700 border-slate-200'
+    'Sonstiges': 'bg-muted text-foreground border-border'
 };
 
 const statusColors = {
@@ -238,7 +238,7 @@ export default function Events() {
     });
 
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-0">
+        <div className="min-h-screen bg-background animate-page-enter pb-24 md:pb-0">
             <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
@@ -326,10 +326,11 @@ export default function Events() {
 
                         {sortedEvents.length > 0 ? (
                             <div className="space-y-3">
-                                {sortedEvents.map(event => (
+                                {sortedEvents.map((event, idx) => (
                                     <Card 
                                         key={event.id}
-                                        className={cn("p-5 bg-card border-border transition-colors", canEdit && "hover:bg-accent/5 cursor-pointer")}
+                                        style={{ '--delay': `${idx*50}ms` }}
+                                        className={cn("p-5 bg-card border-border animate-stagger transition-colors", canEdit && "hover:bg-accent/5 cursor-pointer")}
                                         onClick={() => canEdit && openModal(event)}
                                     >
                                         <div className="flex items-start justify-between gap-4">
@@ -384,7 +385,7 @@ export default function Events() {
                                                         e.stopPropagation();
                                                         openModal(event);
                                                     }}
-                                                    className="h-8 w-8 text-slate-400 hover:text-amber-400 hover:bg-amber-500/10"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-amber-400 hover:bg-amber-500/10"
                                                 >
                                                     <Edit className="w-4 h-4" />
                                                 </Button>

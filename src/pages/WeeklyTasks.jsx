@@ -42,7 +42,7 @@ function getWeekNumber(date) {
     return Math.ceil((((d - yearStart) / 86400000) + 1) / 7) % 2 === 1 ? 1 : 2;
 }
 
-function TaskRow({ task, onComplete, onReset }) {
+function TaskRow({ task, onComplete, onReset, todaysAushilfeName }) {
     return (
         <div className={cn(
             "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
@@ -72,8 +72,8 @@ function TaskRow({ task, onComplete, onReset }) {
                         {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
                     </p>
                 )}
-                {!task.is_completed && task.assigned_to_name && (
-                    <p className="text-xs text-muted-foreground mt-0.5">→ {task.assigned_to_name}</p>
+                {!task.is_completed && todaysAushilfeName && (
+                    <p className="text-xs text-muted-foreground mt-0.5">→ {todaysAushilfeName}</p>
                 )}
             </div>
             {task.is_completed && (
@@ -88,7 +88,7 @@ function TaskRow({ task, onComplete, onReset }) {
     );
 }
 
-function DaySection({ label, tasks, isToday, onComplete, onReset }) {
+function DaySection({ label, tasks, isToday, onComplete, onReset, todaysAushilfeName }) {
     const [doneOpen, setDoneOpen] = useState(false);
     const open = tasks.filter(t => !t.is_completed);
     const done = tasks.filter(t => t.is_completed);
@@ -135,7 +135,7 @@ function DaySection({ label, tasks, isToday, onComplete, onReset }) {
                 )}
                 {open.map((task, tIdx) => (
                     <div key={task.id} className="animate-stagger" style={{ '--delay': `${tIdx * 35}ms` }}>
-                        <TaskRow task={task} onComplete={onComplete} onReset={onReset} />
+                        <TaskRow task={task} onComplete={onComplete} onReset={onReset} todaysAushilfeName={isToday ? todaysAushilfeName : null} />
                     </div>
                 ))}
             </div>
@@ -289,8 +289,6 @@ export default function WeeklyTasks() {
             area: 'Wochentagsaufgaben',
             frequency: 'wöchentlich',
             biweekly_pattern: pattern,
-            assigned_to: aushilfe?.id || null,
-            assigned_to_name: aushilfe?.name || null,
             is_active: true,
         });
     };
@@ -349,6 +347,7 @@ export default function WeeklyTasks() {
                             onComplete={handleComplete}
                             onReset={handleReset}
                             animDelay={dayIdx * 60}
+                            todaysAushilfeName={getTodaysAushilfe()?.name || null}
                         />
                     );
                 })}

@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import BarcodeScanner from '../components/restock/BarcodeScanner';
 import KanbanScanModal from '../components/shopping/KanbanScanModal';
 import SmartCombobox from '@/components/ui/SmartCombobox';
 import ArticlePickerSheet from '../components/shopping/ArticlePickerSheet';
@@ -50,7 +49,6 @@ export default function Shopping() {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [activeTab, setActiveTab] = useState('alle');
-    const [scannerOpen, setScannerOpen] = useState(false);
     const [kanbanOpen, setKanbanOpen] = useState(false);
     const [articlePickerOpen, setArticlePickerOpen] = useState(false);
     const [eanInput, setEanInput] = useState('');
@@ -268,11 +266,6 @@ export default function Shopping() {
         setEanInput('');
     };
 
-    const handleBarcodeScan = (barcode) => {
-        setScannerOpen(false);
-        setEanInput(barcode);
-    };
-
     // Low-stock articles not yet on the open shopping list
     const lowStockSuggestions = useMemo(() => {
         return articles.filter(a => {
@@ -331,15 +324,7 @@ export default function Shopping() {
                                     <Camera className="w-4 h-4 mr-2" />
                                     Kanban
                                 </Button>
-                                <Button 
-                                    onClick={() => setScannerOpen(true)}
-                                    variant="outline"
-                                    className="border-border/70 text-foreground/75 hover:bg-card"
-                                >
-                                    <Camera className="w-4 h-4 mr-2" />
-                                    Scannen
-                                </Button>
-                                <Button 
+<Button 
                                     onClick={() => openModal()}
                                     variant="outline"
                                     className="border-border/70 text-foreground/75 hover:bg-card"
@@ -721,13 +706,6 @@ export default function Shopping() {
                         </form>
                     </DialogContent>
                 </Dialog>
-
-                {/* Barcode Scanner */}
-                <BarcodeScanner
-                    open={scannerOpen}
-                    onClose={() => setScannerOpen(false)}
-                    onScan={handleBarcodeScan}
-                />
 
                 {/* Kanban QR Scanner */}
                 <KanbanScanModal

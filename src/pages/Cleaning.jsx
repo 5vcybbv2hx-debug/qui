@@ -289,7 +289,7 @@ export default function Cleaning() {
     };
 
     const completedCount = tasks.filter(t => t.is_completed).length;
-     const progress = tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0;
+     const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
     if (tasksError) {
         return (

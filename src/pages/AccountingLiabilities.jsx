@@ -200,7 +200,7 @@ export default function AccountingLiabilities() {
     const [paymentTarget, setPaymentTarget] = useState(null);
     const [form, setForm] = useState(EMPTY_FORM);
     const [paymentForm, setPaymentForm] = useState(EMPTY_PAYMENT);
-    const [statusFilter, setStatusFilter] = useState('alle');
+    const [statusFilter, setStatusFilter] = useState('aktiv');
     const [priorityFilter, setPriorityFilter] = useState('alle');
     const [view, setView] = useState('liste'); // 'liste' | 'woche' | 'monat'
     const [aiLoading, setAiLoading] = useState(false);
@@ -259,7 +259,8 @@ export default function AccountingLiabilities() {
 
     const filtered = useMemo(() => {
         let res = enriched;
-        if (statusFilter !== 'alle') res = res.filter(l => l.status === statusFilter);
+        if (statusFilter === 'aktiv') res = res.filter(l => l.status !== 'bezahlt');
+        else if (statusFilter !== 'alle') res = res.filter(l => l.status === statusFilter);
         if (priorityFilter !== 'alle') res = res.filter(l => l.priority === priorityFilter);
         return res;
     }, [enriched, statusFilter, priorityFilter]);
@@ -426,13 +427,13 @@ Antworte auf Deutsch, kurz und strukturiert.`,
                 {view === 'liste' && (
                     <>
                         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                            {['alle', 'offen', 'ueberfaellig', 'teilbezahlt', 'ratenzahlung', 'gestundet', 'bezahlt'].map(s => {
+                            {['aktiv', 'alle', 'offen', 'ueberfaellig', 'teilbezahlt', 'ratenzahlung', 'gestundet', 'bezahlt'].map(s => {
                                 const cfg = STATUS_CFG[s];
                                 return (
                                     <button key={s} onClick={() => setStatusFilter(s)}
                                         className={cn('px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all',
                                             statusFilter === s ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground')}>
-                                        {s === 'alle' ? 'Alle' : cfg?.label || s}
+                                        {s === 'aktiv' ? 'Aktiv (offen)' : s === 'alle' ? 'Alle' : cfg?.label || s}
                                     </button>
                                 );
                             })}

@@ -10,6 +10,36 @@ import { Textarea } from '@/components/ui/textarea';
 
 const TARGET_VOLUME = 3.5; // Liter
 
+// Normalize any amount to liters for scaling, then convert back
+function normalizeToLiters(amount, unit) {
+    switch ((unit || 'l').toLowerCase()) {
+        case 'ml':   return amount / 1000;
+        case 'cl':   return amount / 100;
+        case 'dl':   return amount / 10;
+        case 'l':    return amount;
+        case 'g':    return amount / 1000;
+        case 'kg':   return amount;
+        default:     return amount;
+    }
+}
+function litersToUnit(liters, unit) {
+    switch ((unit || 'l').toLowerCase()) {
+        case 'ml':   return liters * 1000;
+        case 'cl':   return liters * 100;
+        case 'dl':   return liters * 10;
+        case 'l':    return liters;
+        case 'g':    return liters * 1000;
+        case 'kg':   return liters;
+        default:     return liters;
+    }
+}
+function smartRound(value) {
+    if (value === 0) return 0;
+    if (value >= 100) return Math.round(value);
+    if (value >= 10)  return Math.round(value * 10) / 10;
+    return Math.round(value * 100) / 100;
+}
+
 const spiritColors = {
     'Vodka': 'bg-blue-500/20 text-blue-300 border-blue-500/30',
     'Rum': 'bg-amber-500/20 text-amber-300 border-amber-500/30',
@@ -123,9 +153,10 @@ export default function SlushyRecipeCard({ recipe, onEdit, onDelete, isManager }
 
     const scaledIngredients = (recipe.ingredients || []).map(ing => {
         if (!ing.amount) return ing;
-        // ingredients stored in liters for slushy
-        const scaledAmount = ing.amount * factor;
-        return { ...ing, scaledAmount: Math.round(scaledAmount * 100) / 100 };
+        const inLiters = normalizeToLiters(ing.amount, ing.unit || 'l');
+        const scaledLiters = inLiters * factor;
+        const scaledAmount = smartRound(litersToUnit(scaledLiters, ing.unit || 'l'));
+        return { ...ing, scaledAmount };
     });
 
     const spirit = recipe.slushy_spirit_base || 'Sonstiges';
@@ -192,8 +223,8 @@ export default function SlushyRecipeCard({ recipe, onEdit, onDelete, isManager }
                                 <span className="text-muted-foreground">{ing.article_name}</span>
                                 <span className="text-cyan-400 font-semibold tabular-nums">
                                     {originalVolume
-                                        ? `${ing.scaledAmount}L`
-                                        : `${ing.amount}${ing.unit || 'L'}`
+                                        ? `${ing.scaledAmount} ${ing.unit || 'L'}`
+                                        : `${ing.amount} ${ing.unit || 'L'}`
                                     }
                                 </span>
                             </div>

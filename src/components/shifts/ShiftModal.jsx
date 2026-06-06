@@ -42,9 +42,13 @@ function ShiftSwapInline({ shift, onClose }) {
 import { haptics } from "@/components/utils/haptics";
 
 export default function ShiftModal({ open, onClose, shift, employees, selectedDate, onSave, onDelete, existingShifts = [] }) {
-    const { data: shiftTypes = [] } = useQuery({
+    const { data: shiftTypesRaw = [] } = useQuery({
         queryKey: ['shift-types'],
         queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order')
+    });
+    const shiftTypes = [...shiftTypesRaw].sort((a, b) => {
+        const toMin = (t) => { if (!t) return 9999; const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+        return toMin(a.start_time) - toMin(b.start_time);
     });
 
     const { data: defaultRules = [] } = useQuery({
@@ -279,7 +283,7 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-semibold">
                         {shift ? 'Schicht bearbeiten' : 'Neue Schicht'}

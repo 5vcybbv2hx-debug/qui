@@ -43,7 +43,7 @@ export default function ArticleEditPage() {
         queryFn: () => base44.entities.Supplier.filter({ is_active: true }, 'order')
     });
 
-    const supplierNames = useMemo(() => allSuppliers.map(s => s.name), [allSuppliers]);
+    const supplierNames = useMemo(() => allSuppliers.filter(s => (s.type || 'Lieferant') === 'Lieferant').map(s => s.name), [allSuppliers]);
     const manufacturerSuggestions = useMemo(() =>
         [...new Set(allArticles.map(a => a.manufacturer).filter(Boolean))].sort()
     , [allArticles]);

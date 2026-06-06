@@ -25,6 +25,7 @@ import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
 import UnifiedCalendarView from '@/components/calendar/UnifiedCalendarView';
 import DayDetailModal from '@/components/calendar/DayDetailModal';
 import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
+import ShiftTypeManager from '@/components/shifts/ShiftTypeManager';
 import ProvisionalAccessManager from '@/components/provisional/ProvisionalAccessManager';
 import ProvisionalReviewPanel from '@/components/provisional/ProvisionalReviewPanel';
 import ProvisionalShiftEntry from '@/components/provisional/ProvisionalShiftEntry';
@@ -289,6 +290,7 @@ export default function CalendarPage() {
                             <ShiftSwapManager />
                             {permissions.isAdmin && <MonthlyStaffingCheck />}
                             {permissions.isAdmin && <DefaultShiftRulesManager />}
+                            {permissions.canEditShifts && <ShiftTypeManager />}
                             {permissions.canEditShifts && <ShiftRequirementsManager />}
                             {permissions.canEditShifts && <OpeningHoursManager />}
                             <Button variant="outline" onClick={handleBackup} title="Backup als JSON">

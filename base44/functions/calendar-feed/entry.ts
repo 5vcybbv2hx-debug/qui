@@ -55,11 +55,12 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
 
-        const [shifts, reservations, employees, vacations] = await Promise.all([
+        const [shifts, reservations, employees, vacations, meetings] = await Promise.all([
             base44.asServiceRole.entities.Shift.list('-date', 500),
             base44.asServiceRole.entities.Reservation.list('-date', 500),
             base44.asServiceRole.entities.Employee.list(),
             base44.asServiceRole.entities.VacationRequest.filter({ status: 'genehmigt' }),
+            base44.asServiceRole.entities.TeamMeetingSchedule.list('-date', 100),
         ]);
 
         const year = new Date().getFullYear();
@@ -138,6 +139,21 @@ Deno.serve(async (req) => {
                 allDay: true,
                 transparent: true,
                 // NOTE: vacation.notes omitted — may contain medical / personal context
+            }));
+        }
+
+        // ── Team Meetings ─────────────────────────────────────────────────────
+        for (const m of meetings) {
+            const d = dateStr(m.date);
+            const time = m.time.replace(':', '') + '00';
+            const endH = (parseInt(m.time.split(':')[0]) + 2).toString().padStart(2, '0');
+            const endT = endH + m.time.split(':')[1] + '00';
+            events.push(buildEvent({
+                uid: `meeting-${m.id}@barmanager.app`,
+                dtstart: `${d}T${time}`,
+                dtend:   `${d}T${endT}`,
+                summary: `📋 Teamsitzung`,
+                description: m.location ? `Ort: ${m.location}` : undefined,
             }));
         }
 

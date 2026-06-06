@@ -350,50 +350,71 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
                                 </div>
                             </div>
 
-                            {selectedEmployees.length > 0 && (
+                            {selectedEmployees.length > 0 && shiftTypes.length > 0 && (
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2">
                                         <Clock className="w-4 h-4" />
                                         Schichttypen zuweisen
                                     </Label>
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                        {selectedEmployees.map(empData => {
-                                             const employee = employees.find(e => e.id === empData.employee_id);
-                                             return (
-                                                 <div key={empData.employee_id} className="p-3 bg-secondary/30 rounded-lg border border-border">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <div 
-                                                            className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                                                            style={{ backgroundColor: employee?.color }}
-                                                        >
-                                                            {employee?.name?.charAt(0)}
-                                                        </div>
-                                                        <span className="text-sm font-medium text-foreground">{employee?.name}</span>
-                                                    </div>
-                                                    <div className="flex gap-1 flex-wrap">
-                                                        {shiftTypes.map(type => {
-                                                            const isSelected = empData.shift_type === type.name;
-                                                            const color = getColorForShiftType(type.name);
-                                                            return (
-                                                                <button
-                                                                    key={type.id}
-                                                                    type="button"
-                                                                    onClick={() => updateEmployeeShiftType(empData.employee_id, type.name)}
-                                                                    className={cn(
-                                                                         "px-2 py-1 rounded text-xs font-medium transition-all",
-                                                                         isSelected 
-                                                                             ? "bg-primary text-primary-foreground" 
-                                                                             : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-                                                                     )}
-                                                                >
-                                                                    {type.name}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                    <div className="overflow-x-auto rounded-lg border border-border">
+                                        <table className="w-full text-sm border-collapse">
+                                            <thead>
+                                                <tr className="bg-secondary/50">
+                                                    <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground min-w-[110px]">Mitarbeiter</th>
+                                                    {shiftTypes.map(type => (
+                                                        <th key={type.id} className="px-2 py-2 text-center">
+                                                            <div className="flex flex-col items-center gap-0.5">
+                                                                <span className="text-xs font-semibold text-foreground whitespace-nowrap">{type.name}</span>
+                                                                {type.start_time && (
+                                                                    <span className="text-[9px] text-muted-foreground whitespace-nowrap">{type.start_time}–{type.end_time}</span>
+                                                                )}
+                                                            </div>
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {selectedEmployees.map((empData, idx) => {
+                                                    const employee = employees.find(e => e.id === empData.employee_id);
+                                                    return (
+                                                        <tr key={empData.employee_id} className={idx % 2 === 0 ? 'bg-card' : 'bg-secondary/20'}>
+                                                            <td className="px-3 py-2">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div
+                                                                        className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                                                                        style={{ backgroundColor: employee?.color }}
+                                                                    >
+                                                                        {employee?.name?.charAt(0)}
+                                                                    </div>
+                                                                    <span className="text-xs font-medium text-foreground truncate max-w-[80px]">{employee?.name}</span>
+                                                                </div>
+                                                            </td>
+                                                            {shiftTypes.map(type => {
+                                                                const isSelected = empData.shift_type === type.name;
+                                                                return (
+                                                                    <td key={type.id} className="px-2 py-2 text-center">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => updateEmployeeShiftType(empData.employee_id, type.name)}
+                                                                            className={cn(
+                                                                                "w-7 h-7 rounded-full border-2 transition-all mx-auto block",
+                                                                                isSelected
+                                                                                    ? "bg-primary border-primary shadow-md scale-110"
+                                                                                    : "bg-transparent border-border hover:border-primary/60 hover:bg-primary/10"
+                                                                            )}
+                                                                        >
+                                                                            {isSelected && (
+                                                                                <span className="text-primary-foreground text-xs font-bold">✓</span>
+                                                                            )}
+                                                                        </button>
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             )}

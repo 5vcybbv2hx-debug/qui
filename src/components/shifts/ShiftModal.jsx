@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { format, addDays, addWeeks, eachDayOfInterval } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Trash2, Plus, Minus, Users, Clock, Repeat, AlertCircle } from 'lucide-react';
@@ -46,10 +46,10 @@ export default function ShiftModal({ open, onClose, shift, employees, selectedDa
         queryKey: ['shift-types'],
         queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order')
     });
-    const shiftTypes = [...shiftTypesRaw].sort((a, b) => {
+    const shiftTypes = useMemo(() => {
         const toMin = (t) => { if (!t) return 9999; const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-        return toMin(a.start_time) - toMin(b.start_time);
-    });
+        return [...shiftTypesRaw].sort((a, b) => toMin(a.start_time) - toMin(b.start_time));
+    }, [shiftTypesRaw]);
 
     const { data: defaultRules = [] } = useQuery({
         queryKey: ['default-shift-rules'],

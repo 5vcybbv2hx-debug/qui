@@ -47,7 +47,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
         queryKey: ['suppliers-list'],
         queryFn: () => base44.entities.Supplier.filter({ is_active: true }, 'order')
     });
-    const supplierNames = allSuppliers.map(s => s.name);
+    const supplierNames = allSuppliers.filter(s => (s.type || 'Lieferant') === 'Lieferant').map(s => s.name);
 
     const [formData, setFormData] = useState({
         barcode: '',

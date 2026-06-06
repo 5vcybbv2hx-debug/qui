@@ -27,6 +27,8 @@ import DayDetailModal from '@/components/calendar/DayDetailModal';
 import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
 import ProvisionalAccessManager from '@/components/provisional/ProvisionalAccessManager';
 import ProvisionalReviewPanel from '@/components/provisional/ProvisionalReviewPanel';
+import ProvisionalShiftEntry from '@/components/provisional/ProvisionalShiftEntry';
+import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
 import { getHolidaysBW } from '@/components/shifts/getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -38,6 +40,35 @@ const VIEWS = [
     { id: 'team', label: 'Team-Übersicht', icon: Users },
     { id: 'selbsteinplanung', label: 'Selbsteinplanung', icon: Users },
 ];
+
+function EmployeeSelbsteinplanung({ currentEmployee, provisionalRequests }) {
+    const { data: accesses = [] } = useQuery({
+        queryKey: ['provisional-accesses', currentEmployee?.id],
+        queryFn: () => base44.entities.ProvisionalShiftAccess.filter({ employee_id: currentEmployee.id, is_active: true }),
+        enabled: !!currentEmployee?.id,
+    });
+
+    if (!currentEmployee) {
+        return <Card className="p-8 text-center text-muted-foreground">Kein Mitarbeiterprofil gefunden.</Card>;
+    }
+
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const activeAccess = accesses.find(a => a.start_date <= today && a.end_date >= today);
+    const futureAccess = accesses.find(a => a.start_date > today);
+    const access = activeAccess || futureAccess || accesses[0];
+
+    if (!access) {
+        return (
+            <Card className="p-8 text-center">
+                <CalendarDays className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-40" />
+                <p className="text-muted-foreground">Keine Selbsteinplanung aktuell freigegeben.</p>
+                <p className="text-xs text-muted-foreground mt-1">Frage deinen Manager, wenn du einen Wunschplan einreichen möchtest.</p>
+            </Card>
+        );
+    }
+
+    return <ProvisionalShiftEntry employee={currentEmployee} access={access} />;
+}
 
 export default function CalendarPage() {
     const queryClient = useQueryClient();
@@ -67,6 +98,7 @@ export default function CalendarPage() {
     const [unavailFormOpen, setUnavailFormOpen] = useState(false);
     const [currentUser, setCurrentUser] = React.useState(null);
     React.useEffect(() => { base44.auth.me().then(setCurrentUser).catch(() => {}); }, []);
+    const { data: currentEmployee } = useCurrentEmployee();
 
     // --- Shared data ---
     const { data: employees = [] } = useQuery({
@@ -418,13 +450,17 @@ export default function CalendarPage() {
                 )}
 
                 {/* ======================== SELBSTEINPLANUNG ======================== */}
-                {view === 'selbsteinplanung' && permissions.isManager && (
-                    <div className="space-y-8">
-                        <ProvisionalReviewPanel />
-                        <div className="border-t border-border/50 pt-6">
-                            <ProvisionalAccessManager employees={employees} />
+                {view === 'selbsteinplanung' && (
+                    permissions.isManager ? (
+                        <div className="space-y-8">
+                            <ProvisionalReviewPanel />
+                            <div className="border-t border-border/50 pt-6">
+                                <ProvisionalAccessManager employees={employees} />
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <EmployeeSelbsteinplanung currentEmployee={currentEmployee} provisionalRequests={provisionalRequests} />
+                    )
                 )}
 
                 {/* ======================== TEAM-ÜBERSICHT ======================== */}

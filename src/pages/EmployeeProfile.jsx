@@ -89,6 +89,7 @@ export default function EmployeeProfile() {
     health_insurance: '', pension_exemption: false, has_main_job: false,
     has_other_minijob: false, other_minijob_details: '', bank_name: '',
     iban: '', bic: '', is_active: true,
+    emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relation: '',
   };
 
   const [form,        setForm]        = useState(BLANK);
@@ -112,7 +113,7 @@ export default function EmployeeProfile() {
       setForm({ ...BLANK, ...employee });
       setDirty(false);
     }
-  }, [employee?.id]);
+  }, [employee?.id, employee?.updated_date]);
 
   const { data: currentUser } = useQuery({
     queryKey: ['user'],
@@ -122,7 +123,8 @@ export default function EmployeeProfile() {
 
   // ── Derived permissions ───────────────────────────────────────────────────
   const isOwn   = currentUser?.email === employee?.email;
-  const canEdit = isOwn || permissions.isManager;
+  // optimistic: wenn currentUser noch nicht geladen, eigenes Profil annehmen (verhindert flackerndes disabled)
+  const canEdit = !currentUser ? true : (isOwn || permissions.isManager);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const saveMut = useMutation({
@@ -326,8 +328,8 @@ export default function EmployeeProfile() {
                 <Field label="Name *">
                   <Input value={form.name} onChange={e => set('name', e.target.value)} disabled={!canEdit} placeholder="Vorname Nachname" />
                 </Field>
-                <Field label="Kürzel">
-                  <Input value={form.short_name} onChange={e => set('short_name', e.target.value)} disabled={!permissions.isManager} maxLength={4} placeholder="z.B. MA" />
+                <Field label="Kürzel / Spitzname">
+                  <Input value={form.short_name} onChange={e => set('short_name', e.target.value)} disabled={!canEdit} maxLength={10} placeholder="z.B. Marco" />
                 </Field>
                 <Field label="Personalnr.">
                   <Input value={form.employee_number} onChange={e => set('employee_number', e.target.value)} disabled={!permissions.isManager} />

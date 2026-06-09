@@ -45,8 +45,8 @@ function calcGroupTable(matches) {
         else                { table[h].u++; table[h].pts++; table[a].u++; table[a].pts++; }
     });
     return Object.values(table)
-        .map((r: any) => ({ ...r, diff: r.tore - r.gegen }))
-        .sort((a: any, b: any) => b.pts - a.pts || b.diff - a.diff || b.tore - a.tore);
+        .map((r) => ({ ...r, diff: r.tore - r.gegen }))
+        .sort((a, b) => b.pts - a.pts || b.diff - a.diff || b.tore - a.tore);
 }
 
 function GroupCard({ groupName, matches }) {
@@ -54,12 +54,12 @@ function GroupCard({ groupName, matches }) {
     const table  = useMemo(() => calcGroupTable(matches), [matches]);
 
     const allTeams = useMemo(() => {
-        const set = new Set<string>();
+        const set = new Set();
         matches.forEach(m => { set.add(m.home_team); set.add(m.away_team); });
         return [...set];
     }, [matches]);
 
-    const tableTeamSet = new Set(table.map((r: any) => r.team));
+    const tableTeamSet = new Set(table.map((r) => r.team));
     const fullTable = [
         ...table,
         ...allTeams
@@ -89,7 +89,7 @@ function GroupCard({ groupName, matches }) {
                     <span className="text-center">TD</span>
                     <span className="text-center font-bold">Pts</span>
                 </div>
-                {fullTable.map((row: any, i) => (
+                {fullTable.map((row, i) => (
                     <div key={row.team}
                          className={cn(
                              "grid items-center px-1 py-0.5 rounded text-xs",
@@ -155,7 +155,7 @@ const VALID_GROUPS = new Set(['Gruppe A','Gruppe B','Gruppe C','Gruppe D','Grupp
 
 export default function GroupStageView({ matches }) {
     const groups = useMemo(() => {
-        const map: Record<string, any[]> = {};
+        const map = {};
         matches
             .filter(m => VALID_GROUPS.has(m.group_name))   // ← nur echte Gruppen!
             .forEach(m => {

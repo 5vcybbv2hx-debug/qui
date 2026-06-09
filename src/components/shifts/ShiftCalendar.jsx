@@ -159,11 +159,11 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
     };
 
     const handleNavigation = (direction) => {
-        if (viewMode === 'week') {
-            setCurrentDate(addWeeks(currentDate, direction));
-        } else {
-            setCurrentDate(addMonths(currentDate, direction));
-        }
+        const next = viewMode === 'week'
+            ? addWeeks(currentDate, direction)
+            : addMonths(currentDate, direction);
+        setCurrentDate(next);
+        if (onNavigate) onNavigate(next);
     };
 
     const handleDragStart = (e, shift) => {

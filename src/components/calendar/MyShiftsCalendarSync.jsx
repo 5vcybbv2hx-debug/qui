@@ -14,19 +14,19 @@ const getFunctionUrl = (functionName) => {
 };
 
 export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
-    const [token, setToken] = useState(existingToken || null);
+    const [calToken, setCalToken] = useState(existingToken || null);
     const [copied, setCopied] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const calendarUrl = token
-        ? `${getFunctionUrl('my-shifts-calendar')}?employee_id=${employeeId}&token=${token}`
+        ? `${getFunctionUrl('my-shifts-calendar')}?employee_id=${employeeId}&token=${calToken}`
         : null;
 
     const generateToken = async () => {
         setLoading(true);
         try {
             const res = await base44.functions.invoke('generateCalendarToken', { employee_id: employeeId });
-            setToken(res.data.token);
+            setCalToken(res.data.token);
             toast.success('Neuer Kalender-Link erstellt!');
         } catch (err) {
             toast.error('Fehler: ' + err.message);

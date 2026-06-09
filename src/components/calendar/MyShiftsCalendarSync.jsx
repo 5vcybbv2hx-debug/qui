@@ -19,7 +19,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
     const [loading, setLoading] = useState(false);
 
     const calendarUrl = calToken
-        ? `${getFunctionUrl('my-shifts-calendar')}?employee_id=${employeeId}&token=${calToken}`
+        ? `${getFunctionUrl('myShiftsCalendar')}?employee_id=${employeeId}&token=${calToken}`
         : null;
 
     const generateToken = async () => {

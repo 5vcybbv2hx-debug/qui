@@ -644,32 +644,32 @@ export default function Events() {
                         </form>
                     </DialogContent>
                 </Dialog>
+
+                {/* Confirm Dialog */}
+                {confirmDialog && (
+                    <Dialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
+                        <DialogContent className="sm:max-w-sm">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {confirmDialog.type === 'delete' ? 'Event löschen' : 'Event absagen'}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <p className="text-sm text-muted-foreground py-2">{confirmDialog.message}</p>
+                            <div className="flex gap-2 pt-2">
+                                <Button variant="outline" onClick={() => setConfirmDialog(null)} className="flex-1 border-border text-muted-foreground hover:bg-accent">
+                                    Abbrechen
+                                </Button>
+                                <Button
+                                    onClick={confirmDialog.onConfirm}
+                                    className={`flex-1 ${confirmDialog.type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'} text-white`}
+                                >
+                                    {confirmDialog.type === 'delete' ? 'Löschen' : 'Absagen'}
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </div>
         </div>
-
-        {/* Confirm Dialog */}
-        {confirmDialog && (
-            <Dialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
-                <DialogContent className="sm:max-w-sm">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {confirmDialog.type === 'delete' ? 'Event löschen' : 'Event absagen'}
-                        </DialogTitle>
-                    </DialogHeader>
-                    <p className="text-sm text-muted-foreground py-2">{confirmDialog.message}</p>
-                    <div className="flex gap-2 pt-2">
-                        <Button variant="outline" onClick={() => setConfirmDialog(null)} className="flex-1 border-border text-muted-foreground hover:bg-accent">
-                            Abbrechen
-                        </Button>
-                        <Button
-                            onClick={confirmDialog.onConfirm}
-                            className={`flex-1 ${confirmDialog.type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'} text-white`}
-                        >
-                            {confirmDialog.type === 'delete' ? 'Löschen' : 'Absagen'}
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        )}
     );
 }

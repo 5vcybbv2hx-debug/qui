@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// ── Mapping: externe Teamnamen → deutsche Namen ───────────────────────────────
 const TEAM_MAP: Record<string, string> = {
     'Germany': 'Deutschland', 'France': 'Frankreich', 'Spain': 'Spanien',
     'Italy': 'Italien', 'England': 'England', 'Netherlands': 'Niederlande',
@@ -34,29 +33,30 @@ const TEAM_MAP: Record<string, string> = {
     'Angola': 'Angola', 'Zambia': 'Sambia', 'Tanzania': 'Tansania',
     'Guinea': 'Guinea', 'Benin': 'Benin', 'Mozambique': 'Mosambik',
     'Congo': 'Kongo', 'Guatemala': 'Guatemala', 'Trinidad and Tobago': 'Trinidad und Tobago',
-    'Colombia': 'Kolumbien', 'Kyrgyzstan': 'Kirgisistan',
+    'Kyrgyzstan': 'Kirgisistan',
 };
 
+// ── Runden-Mapping: API type → Anzeigename ─────────────────────────────────
 const ROUND_MAP: Record<string, string> = {
-    'group': 'Gruppenphase',
-    'round_of_32': 'Achtelfinale',
-    'round_of_16': 'Achtelfinale',
-    'quarter_final': 'Viertelfinale',
-    'semi_final': 'Halbfinale',
-    'third_place': 'Spiel um Platz 3',
-    'final': 'Finale',
+    'group':  'Gruppenphase',
+    'r32':    'Achtelfinale',   // Round of 32
+    'r16':    'Achtelfinale',   // Round of 16 (falls vorhanden)
+    'qf':     'Viertelfinale',
+    'sf':     'Halbfinale',
+    'third':  'Spiel um Platz 3',
+    'final':  'Finale',
 };
+
+// ── Nur echte Buchstaben-Gruppen (A–L) bekommen group_name ────────────────
+const GROUP_LETTERS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L']);
 
 function toGerman(name: string): string {
     return TEAM_MAP[name] || name;
 }
 
 function parseKickoff(localDate: string): string {
-    // Format: "06/11/2026 13:00" (US-Format MM/DD/YYYY HH:MM — Lokalzeit USA/Mexiko)
     const [datePart, timePart] = localDate.split(' ');
     const [mm, dd, yyyy] = datePart.split('/');
-    // Wir speichern als ISO — Zeiten sind Lokalzeit der Stadien (vereinfacht als UTC-5/UTC-6)
-    // Für Anzeigezwecke reicht UTC-Näherung ohne DST-Konvertierung
     return `${yyyy}-${mm}-${dd}T${timePart}:00.000Z`;
 }
 
@@ -65,18 +65,22 @@ function isGermanyGame(home: string, away: string): boolean {
 }
 
 function isTopGame(home: string, away: string, type: string): boolean {
-    const topTeams = ['Germany', 'France', 'Spain', 'Brazil', 'Argentina', 'England', 'Portugal', 'Netherlands'];
-    const bothTop = topTeams.includes(home) && topTeams.includes(away);
-    return bothTop || type !== 'group';
+    const topTeams = ['Germany','France','Spain','Brazil','Argentina','England','Portugal','Netherlands'];
+    return (topTeams.includes(home) && topTeams.includes(away)) || type !== 'group';
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
+// ── KO-Placeholder-Label übersetzen ────────────────────────────────────────
+function translateLabel(label: string): string {
+    if (!label) return '';
+    return label
+        .replace('Winner Group', 'Sieger Gr.')
+        .replace('Runner-up Group', '2. Gr.')
+        .replace('3rd Group', '3. Gr.');
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-
-        // Auth check — nur Manager/Admin dürfen manuell triggern
-        // Bei Automation-Aufruf (POST mit automation key) überspringen
         const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
         const isAutomation = body.automation === true;
 
@@ -87,100 +91,86 @@ Deno.serve(async (req) => {
             }
         }
 
-        // 1. Spiele von externer API laden
         const apiResp = await fetch('https://worldcup26.ir/get/games', {
             headers: { 'Accept': 'application/json' },
             signal: AbortSignal.timeout(10000),
         });
-
-        if (!apiResp.ok) {
-            return Response.json({ error: `API error: ${apiResp.status}` }, { status: 502 });
-        }
+        if (!apiResp.ok) return Response.json({ error: `API error: ${apiResp.status}` }, { status: 502 });
 
         const apiData = await apiResp.json();
         const games: any[] = apiData.games || apiData || [];
+        if (!games.length) return Response.json({ error: 'No games returned' }, { status: 502 });
 
-        if (!games.length) {
-            return Response.json({ error: 'No games returned from API' }, { status: 502 });
-        }
-
-        // 2. Bestehende Matches aus DB laden (für Update vs. Insert)
         const existing = await base44.asServiceRole.entities.WorldCupMatch.list('kickoff_time', 500);
         const byExternalId = new Map<string, any>();
-        existing.forEach((m: any) => {
-            if (m.external_match_id) byExternalId.set(m.external_match_id, m);
-        });
+        existing.forEach((m: any) => { if (m.external_match_id) byExternalId.set(m.external_match_id, m); });
 
         let created = 0, updated = 0, skipped = 0;
         const now = new Date().toISOString();
 
         for (const game of games) {
-            const extId      = String(game.id);
-            const homeEn     = game.home_team_name_en || game.home_team || '';
-            const awayEn     = game.away_team_name_en || game.away_team || '';
-            const homeDE     = toGerman(homeEn);
-            const awayDE     = toGerman(awayEn);
-            const kickoff    = parseKickoff(game.local_date);
-            const homeScore  = game.home_score !== undefined && game.home_score !== null && game.home_score !== '' ? Number(game.home_score) : null;
-            const awayScore  = game.away_score !== undefined && game.away_score !== null && game.away_score !== '' ? Number(game.away_score) : null;
-            const finished   = String(game.finished).toUpperCase() === 'TRUE';
-            const timeElapsed = (game.time_elapsed || '').toLowerCase();
-            const isLive     = timeElapsed !== 'notstarted' && !finished && timeElapsed !== '';
+            const extId       = String(game.id);
+            const apiType     = game.type || 'group';
+            const isGroupGame = apiType === 'group';
 
-            let status: string = 'geplant';
-            if (finished) status = 'beendet';
+            // Teams: Gruppenspiele haben Namen, KO-Spiele haben Labels
+            const homeEn = (isGroupGame ? game.home_team_name_en : null) || '';
+            const awayEn = (isGroupGame ? game.away_team_name_en : null) || '';
+            // KO-Spiele: Placeholder-Labels bis Ergebnisse feststehen
+            const homeDE = homeEn
+                ? toGerman(homeEn)
+                : translateLabel(game.home_team_label || '');
+            const awayDE = awayEn
+                ? toGerman(awayEn)
+                : translateLabel(game.away_team_label || '');
+
+            const kickoff   = parseKickoff(game.local_date);
+            const homeScore = (game.home_score != null && game.home_score !== '') ? Number(game.home_score) : null;
+            const awayScore = (game.away_score != null && game.away_score !== '') ? Number(game.away_score) : null;
+            const finished  = String(game.finished).toUpperCase() === 'TRUE';
+            const elapsed   = (game.time_elapsed || '').toLowerCase();
+            const isLive    = elapsed !== 'notstarted' && elapsed !== '' && !finished;
+
+            let status = 'geplant';
+            if (finished)  status = 'beendet';
             else if (isLive) status = 'live';
 
-            const round      = ROUND_MAP[game.type] || 'Gruppenphase';
-            const groupName  = game.group ? `Gruppe ${game.group}` : '';
-            const germanyGame = isGermanyGame(homeEn, awayEn);
-            const topGame    = isTopGame(homeEn, awayEn, game.type || 'group');
+            const round     = ROUND_MAP[apiType] || 'Gruppenphase';
+            // group_name NUR für echte Buchstaben-Gruppen setzen!
+            const groupLetter = (game.group || '').replace(/^Gruppe\s*/i, '').trim();
+            const groupName = GROUP_LETTERS.has(groupLetter) ? `Gruppe ${groupLetter}` : '';
 
             const matchData: any = {
-                home_team:          homeDE,
-                away_team:          awayDE,
-                kickoff_time:       kickoff,
-                round,
-                group_name:         groupName,
+                home_team: homeDE || '?', away_team: awayDE || '?',
+                kickoff_time: kickoff, round, group_name: groupName,
                 status,
-                is_germany_game:    germanyGame,
-                is_top_game:        topGame,
-                external_match_id:  extId,
-                last_updated:       now,
+                is_germany_game: isGermanyGame(homeEn, awayEn),
+                is_top_game:     isTopGame(homeEn, awayEn, apiType),
+                external_match_id: extId, last_updated: now,
             };
-
-            // Scores nur setzen wenn vorhanden
             if (homeScore !== null && !isNaN(homeScore)) matchData.home_score = homeScore;
             if (awayScore !== null && !isNaN(awayScore)) matchData.away_score = awayScore;
 
-            const existing_match = byExternalId.get(extId);
-
-            if (existing_match) {
-                // Nur updaten wenn sich Status oder Score geändert hat
-                const scoreChanged = existing_match.home_score !== matchData.home_score ||
-                                     existing_match.away_score !== matchData.away_score;
-                const statusChanged = existing_match.status !== status;
-
-                if (scoreChanged || statusChanged) {
-                    await base44.asServiceRole.entities.WorldCupMatch.update(existing_match.id, matchData);
+            const existingMatch = byExternalId.get(extId);
+            if (existingMatch) {
+                const changed = existingMatch.home_score !== matchData.home_score
+                    || existingMatch.away_score !== matchData.away_score
+                    || existingMatch.status !== status
+                    || existingMatch.home_team !== matchData.home_team
+                    || existingMatch.away_team !== matchData.away_team
+                    || existingMatch.group_name !== matchData.group_name;
+                if (changed) {
+                    await base44.asServiceRole.entities.WorldCupMatch.update(existingMatch.id, matchData);
                     updated++;
-                } else {
-                    skipped++;
-                }
+                } else { skipped++; }
             } else {
                 await base44.asServiceRole.entities.WorldCupMatch.create(matchData);
                 created++;
             }
         }
 
-        return Response.json({
-            success: true,
-            total:   games.length,
-            created,
-            updated,
-            skipped,
-            message: `✅ ${created} neu, ${updated} aktualisiert, ${skipped} unverändert`,
-        });
+        return Response.json({ success: true, total: games.length, created, updated, skipped,
+            message: `✅ ${created} neu, ${updated} aktualisiert, ${skipped} unverändert` });
 
     } catch (error: any) {
         console.error('syncWorldCup error:', error);

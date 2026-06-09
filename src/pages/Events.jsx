@@ -202,10 +202,19 @@ export default function Events() {
             return;
         }
         
+        // Zahlenfelder korrekt konvertieren
+        const cleanData = {
+            ...formData,
+            expected_guests: formData.expected_guests !== '' ? Number(formData.expected_guests) : null,
+            entry_fee:        formData.entry_fee        !== '' ? Number(formData.entry_fee)        : null,
+            budget:           formData.budget           !== '' ? Number(formData.budget)           : null,
+            actual_guests:    formData.actual_guests    !== '' ? Number(formData.actual_guests)    : null,
+        };
+
         if (selectedEvent) {
-            updateMutation.mutate({ id: selectedEvent.id, data: formData });
+            updateMutation.mutate({ id: selectedEvent.id, data: cleanData });
         } else {
-            createMutation.mutate(formData);
+            createMutation.mutate(cleanData);
         }
     };
 

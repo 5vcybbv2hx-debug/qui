@@ -1,138 +1,94 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Phone, Mail, MapPin, Globe, Download, Share2, QrCode as QrCodeIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Phone, Mail, MapPin, Globe, Download, Share2, Instagram, Clock } from 'lucide-react';
 import QRCode from 'qrcode';
 
-const DAYS = [
-    { key: 'mo', label: 'Mo' },
-    { key: 'di', label: 'Di' },
-    { key: 'mi', label: 'Mi' },
-    { key: 'do', label: 'Do' },
-    { key: 'fr', label: 'Fr' },
-    { key: 'sa', label: 'Sa' },
-    { key: 'so', label: 'So' },
-];
+const DAY_ORDER = ['mo','di','mi','do','fr','sa','so'];
+const DAY_LABEL = { mo:'Mo', di:'Di', mi:'Mi', do:'Do', fr:'Fr', sa:'Sa', so:'So' };
 
-function formatOpeningHours(value) {
-    if (!value) return null;
-    try {
-        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-        if (typeof parsed === 'object' && parsed !== null && 'mo' in parsed) {
-            return DAYS
-                .filter(d => parsed[d.key]?.open)
-                .map(d => `${d.label}: ${parsed[d.key].from} – ${parsed[d.key].to}`)
-                .join('\n') || null;
-        }
-    } catch (_) {}
-    // Freitext fallback
-    return value || null;
+// Öffnungszeiten aus OpeningHours-Entity aufbereiten
+function formatHours(openingHours) {
+    if (!openingHours?.length) return null;
+    return openingHours
+        .filter(h => h.is_open)
+        .map(h => `${DAY_LABEL[h.day] || h.day}: ${h.open_time} – ${h.close_time}`)
+        .join('\n') || null;
 }
 
-export default function DigitalBusinessCard({ companyInfo }) {
-    const [qrCodeUrl, setQrCodeUrl] = useState('');
-    const canvasRef = useRef(null);
+// Einmalige vCard-Builder-Funktion
+function buildVCard(c) {
+    return [
+        'BEGIN:VCARD',
+        'VERSION:3.0',
+        `FN:${c.company_name || ''}`,
+        `ORG:${c.company_name || ''}`,
+        c.phone    ? `TEL;TYPE=WORK:${c.phone}`     : '',
+        c.email    ? `EMAIL;TYPE=WORK:${c.email}`   : '',
+        (c.street || c.city)
+            ? `ADR:;;${c.street || ''};${c.city || ''};${c.postal_code || ''};${c.country || ''}` : '',
+        c.website  ? `URL:${c.website}`             : '',
+        c.description ? `NOTE:${c.description}`     : '',
+        'END:VCARD',
+    ].filter(Boolean).join('\r\n');
+}
 
-    useEffect(() => {
-        if (companyInfo?.company_name) {
-            generateVCard();
+export default function DigitalBusinessCard({ companyInfo, openingHours = [] }) {
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
+
+    const generateQR = useCallback(async () => {
+        if (!companyInfo?.company_name) return;
+        try {
+            const url = await QRCode.toDataURL(buildVCard(companyInfo), {
+                width: 300,
+                margin: 2,
+                color: { dark: '#1e2d45', light: '#ffffff' },
+            });
+            setQrCodeUrl(url);
+        } catch (e) {
+            console.error('QR-Code Fehler:', e);
         }
     }, [companyInfo]);
 
-    const generateVCard = async () => {
-        // Generiere vCard Format
-        const vCard = `BEGIN:VCARD
-VERSION:3.0
-FN:${companyInfo.company_name || ''}
-ORG:${companyInfo.company_name || ''}
-TEL:${companyInfo.phone || ''}
-EMAIL:${companyInfo.email || ''}
-ADR:;;${companyInfo.street || ''};${companyInfo.city || ''};${companyInfo.postal_code || ''};${companyInfo.country || ''}
-URL:${companyInfo.website || ''}
-NOTE:${companyInfo.description || ''}
-END:VCARD`;
-
-        try {
-            // Generiere QR-Code
-            const qrUrl = await QRCode.toDataURL(vCard, {
-                width: 300,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            });
-            setQrCodeUrl(qrUrl);
-        } catch (error) {
-            console.error('Fehler beim Generieren des QR-Codes:', error);
-        }
-    };
+    useEffect(() => { generateQR(); }, [generateQR]);
 
     const downloadVCard = () => {
-        const vCard = `BEGIN:VCARD
-VERSION:3.0
-FN:${companyInfo.company_name || ''}
-ORG:${companyInfo.company_name || ''}
-TEL:${companyInfo.phone || ''}
-EMAIL:${companyInfo.email || ''}
-ADR:;;${companyInfo.street || ''};${companyInfo.city || ''};${companyInfo.postal_code || ''};${companyInfo.country || ''}
-URL:${companyInfo.website || ''}
-NOTE:${companyInfo.description || ''}
-END:VCARD`;
-
-        const blob = new Blob([vCard], { type: 'text/vcard' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${companyInfo.company_name || 'kontakt'}.vcf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        const blob = new Blob([buildVCard(companyInfo)], { type: 'text/vcard' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `${companyInfo.company_name || 'kontakt'}.vcf`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     const shareCard = async () => {
-        const vCard = `BEGIN:VCARD
-VERSION:3.0
-FN:${companyInfo.company_name || ''}
-ORG:${companyInfo.company_name || ''}
-TEL:${companyInfo.phone || ''}
-EMAIL:${companyInfo.email || ''}
-ADR:;;${companyInfo.street || ''};${companyInfo.city || ''};${companyInfo.postal_code || ''};${companyInfo.country || ''}
-URL:${companyInfo.website || ''}
-NOTE:${companyInfo.description || ''}
-END:VCARD`;
-
+        const vcard = buildVCard(companyInfo);
         if (navigator.share) {
-            const file = new File([vCard], `${companyInfo.company_name || 'kontakt'}.vcf`, { type: 'text/vcard' });
             try {
-                await navigator.share({
-                    files: [file],
-                    title: companyInfo.company_name,
-                    text: `Kontaktdaten von ${companyInfo.company_name}`
-                });
-            } catch (error) {
-                console.error('Fehler beim Teilen:', error);
-            }
-        } else {
-            downloadVCard();
+                const file = new File([vcard], `${companyInfo.company_name || 'kontakt'}.vcf`, { type: 'text/vcard' });
+                await navigator.share({ files: [file], title: companyInfo.company_name, text: `Kontaktdaten von ${companyInfo.company_name}` });
+                return;
+            } catch (_) {}
         }
+        downloadVCard();
     };
 
-    const downloadQRCode = () => {
-        const link = document.createElement('a');
-        link.href = qrCodeUrl;
-        link.download = `${companyInfo.company_name || 'visitenkarte'}-qr.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    const downloadQR = () => {
+        const a    = document.createElement('a');
+        a.href     = qrCodeUrl;
+        a.download = `${companyInfo.company_name || 'visitenkarte'}-qr.png`;
+        a.click();
     };
+
+    const hoursText = formatHours(openingHours);
 
     if (!companyInfo?.company_name) {
         return (
-            <Card className="bg-card/50 border-border">
+            <Card className="bg-card border-border">
                 <CardContent className="py-12 text-center text-muted-foreground">
-                    Bitte zuerst Firmendaten eingeben
+                    Bitte zuerst Firmendaten in den Einstellungen eingeben.
                 </CardContent>
             </Card>
         );
@@ -140,138 +96,159 @@ END:VCARD`;
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Visitenkarten-Vorschau */}
-            <Card className="bg-gradient-to-br from-card to-background border-border">
-                <CardHeader>
-                    <CardTitle className="text-foreground">Visitenkarte</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                        So sieht deine digitale Visitenkarte aus
+
+            {/* ── Visitenkarten-Vorschau ────────────────────────────── */}
+            <Card className="bg-card border-border">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-foreground text-base">Vorschau</CardTitle>
+                    <CardDescription className="text-muted-foreground text-xs">
+                        So sehen Gäste deine digitale Visitenkarte
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="bg-white rounded-xl p-8 shadow-2xl">
-                        {companyInfo.logo_url && (
-                            <div className="mb-6 flex justify-center">
-                                <img
-                                    src={companyInfo.logo_url}
-                                    alt="Logo"
-                                    className="h-16 object-contain"
-                                />
-                            </div>
-                        )}
-                        <div className="text-center mb-6">
-                            <h2 className="text-2xl font-bold text-foreground mb-2">
+                    {/* Karte im Bar-Look */}
+                    <div className="rounded-2xl overflow-hidden shadow-2xl"
+                         style={{ background: 'linear-gradient(135deg, #111827 0%, #1e2d45 100%)' }}>
+
+                        {/* Header */}
+                        <div className="px-6 pt-6 pb-4 border-b border-white/10">
+                            {companyInfo.logo_url ? (
+                                <img src={companyInfo.logo_url} alt="Logo"
+                                     className="h-12 object-contain mb-3" />
+                            ) : (
+                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-3">
+                                    <span className="text-slate-900 font-bold text-lg">
+                                        {(companyInfo.company_name || '?')[0].toUpperCase()}
+                                    </span>
+                                </div>
+                            )}
+                            <h2 className="text-xl font-bold text-white leading-tight">
                                 {companyInfo.company_name}
                             </h2>
                             {companyInfo.description && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-white/60 mt-1 leading-snug">
                                     {companyInfo.description}
                                 </p>
                             )}
                         </div>
-                        <div className="space-y-3 text-sm">
+
+                        {/* Kontaktdaten */}
+                        <div className="px-6 py-4 space-y-3">
                             {companyInfo.phone && (
-                                <div className="flex items-center gap-3 text-foreground">
-                                    <Phone className="w-4 h-4 text-amber-600" />
-                                    <span>{companyInfo.phone}</span>
-                                </div>
+                                <a href={`tel:${companyInfo.phone}`}
+                                   className="flex items-center gap-3 text-white/80 hover:text-amber-400 transition-colors">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                                        <Phone className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <span className="text-sm">{companyInfo.phone}</span>
+                                </a>
                             )}
                             {companyInfo.email && (
-                                <div className="flex items-center gap-3 text-foreground">
-                                    <Mail className="w-4 h-4 text-amber-600" />
-                                    <span>{companyInfo.email}</span>
-                                </div>
+                                <a href={`mailto:${companyInfo.email}`}
+                                   className="flex items-center gap-3 text-white/80 hover:text-amber-400 transition-colors">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                                        <Mail className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <span className="text-sm">{companyInfo.email}</span>
+                                </a>
                             )}
                             {(companyInfo.street || companyInfo.city) && (
-                                <div className="flex items-start gap-3 text-foreground">
-                                    <MapPin className="w-4 h-4 text-amber-600 mt-0.5" />
-                                    <span>
+                                <div className="flex items-start gap-3 text-white/80">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                                        <MapPin className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <span className="text-sm leading-snug">
                                         {companyInfo.street && <>{companyInfo.street}<br /></>}
                                         {companyInfo.postal_code} {companyInfo.city}
                                     </span>
                                 </div>
                             )}
                             {companyInfo.website && (
-                                <div className="flex items-center gap-3 text-foreground">
-                                    <Globe className="w-4 h-4 text-amber-600" />
-                                    <span>{companyInfo.website}</span>
-                                </div>
+                                <a href={companyInfo.website} target="_blank" rel="noopener noreferrer"
+                                   className="flex items-center gap-3 text-white/80 hover:text-amber-400 transition-colors">
+                                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
+                                        <Globe className="w-4 h-4 text-amber-400" />
+                                    </div>
+                                    <span className="text-sm truncate">{companyInfo.website.replace(/^https?:\/\//, '')}</span>
+                                </a>
                             )}
                         </div>
-                        {formatOpeningHours(companyInfo.opening_hours) && (
-                            <div className="mt-4 pt-4 border-t border-slate-200">
-                                <p className="text-xs text-muted-foreground font-medium mb-1">Öffnungszeiten:</p>
-                                <p className="text-xs text-foreground whitespace-pre-line">
-                                    {formatOpeningHours(companyInfo.opening_hours)}
-                                </p>
+
+                        {/* Öffnungszeiten */}
+                        {hoursText && (
+                            <div className="px-6 pb-4">
+                                <div className="rounded-xl bg-white/5 border border-white/10 p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                                        <span className="text-xs font-semibold text-white/70 uppercase tracking-wide">Öffnungszeiten</span>
+                                    </div>
+                                    <p className="text-xs text-white/60 whitespace-pre-line leading-relaxed">{hoursText}</p>
+                                </div>
                             </div>
                         )}
-                    </div>
 
-                    <div className="flex gap-2 mt-6">
-                        <Button
-                            onClick={downloadVCard}
-                            className="flex-1 bg-amber-600 hover:bg-amber-700"
-                        >
-                            <Download className="w-4 h-4 mr-2" />
-                            vCard herunterladen
-                        </Button>
-                        <Button
-                            onClick={shareCard}
-                            variant="outline"
-                            className="flex-1 border-border/70 text-foreground/75 hover:bg-card"
-                        >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            Teilen
-                        </Button>
+                        {/* Footer */}
+                        <div className="px-6 pb-5">
+                            <div className="h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mb-4" />
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={downloadVCard}
+                                    className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 font-semibold min-h-[44px] shadow-lg shadow-amber-500/20"
+                                >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Kontakt speichern
+                                </Button>
+                                <Button
+                                    onClick={shareCard}
+                                    variant="outline"
+                                    className="border-white/20 text-white/70 hover:bg-white/10 min-h-[44px] px-4"
+                                >
+                                    <Share2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* QR-Code */}
-            <Card className="bg-card/50 border-border">
-                <CardHeader>
-                    <CardTitle className="text-foreground">QR-Code</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                        Zum Scannen mit dem Smartphone
+            {/* ── QR-Code ───────────────────────────────────────────── */}
+            <Card className="bg-card border-border">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-foreground text-base">QR-Code</CardTitle>
+                    <CardDescription className="text-muted-foreground text-xs">
+                        Einmal scannen → Kontakt direkt im Adressbuch
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-5">
                     {qrCodeUrl ? (
-                        <div className="space-y-6">
-                            <div className="bg-white rounded-xl p-8 flex items-center justify-center">
-                                <img
-                                    src={qrCodeUrl}
-                                    alt="QR Code"
-                                    className="w-full max-w-[300px]"
-                                />
+                        <>
+                            <div className="rounded-2xl overflow-hidden p-6 flex items-center justify-center"
+                                 style={{ background: 'linear-gradient(135deg, #1e2d45, #111827)' }}>
+                                <div className="bg-white rounded-xl p-4 shadow-xl">
+                                    <img src={qrCodeUrl} alt="QR Code" className="w-full max-w-[220px]" />
+                                </div>
                             </div>
-                            <div className="text-center">
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Scannen, um Kontaktdaten direkt ins Adressbuch zu speichern
-                                </p>
-                                <Button
-                                    onClick={downloadQRCode}
-                                    variant="outline"
-                                    className="w-full border-border/70 text-foreground/75 hover:bg-card"
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    QR-Code herunterladen
-                                </Button>
-                            </div>
-                            <div className="bg-background/50 rounded-lg p-4 border border-border">
-                                <h4 className="text-sm font-medium text-foreground mb-2">💡 Verwendung:</h4>
-                                <ul className="text-xs text-muted-foreground space-y-1">
-                                    <li>• Drucke den QR-Code auf Flyer oder Plakate</li>
-                                    <li>• Zeige ihn auf einem Tablet in der Bar</li>
-                                    <li>• Füge ihn in E-Mail-Signaturen ein</li>
-                                    <li>• Verwende ihn auf Social Media</li>
+                            <Button
+                                onClick={downloadQR}
+                                variant="outline"
+                                className="w-full border-border text-muted-foreground hover:bg-accent min-h-[44px]"
+                            >
+                                <Download className="w-4 h-4 mr-2" />
+                                QR-Code als PNG herunterladen
+                            </Button>
+                            <div className="rounded-xl bg-secondary/50 border border-border p-4">
+                                <p className="text-xs font-semibold text-foreground mb-2">💡 Verwendung</p>
+                                <ul className="text-xs text-muted-foreground space-y-1.5">
+                                    <li>• Auf Flyern, Menükarten oder Plakaten drucken</li>
+                                    <li>• Auf einem Tablet an der Bar anzeigen</li>
+                                    <li>• In E-Mail-Signaturen einbinden</li>
+                                    <li>• Auf Social Media teilen</li>
                                 </ul>
                             </div>
-                        </div>
+                        </>
                     ) : (
-                        <div className="py-12 text-center text-muted-foreground">
-                            QR-Code wird generiert...
+                        <div className="py-12 text-center text-muted-foreground text-sm animate-pulse">
+                            QR-Code wird generiert…
                         </div>
                     )}
                 </CardContent>

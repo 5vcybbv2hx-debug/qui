@@ -51,6 +51,7 @@ export default function Events() {
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('alle');
     const [statusFilter, setStatusFilter] = useState('alle');
+    const [confirmDialog, setConfirmDialog] = useState(null); // { type: 'delete'|'cancel', id, onConfirm }
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -186,9 +187,19 @@ export default function Events() {
         
         // Confirm if changing to "abgesagt"
         if (selectedEvent && selectedEvent.status !== 'abgesagt' && formData.status === 'abgesagt') {
-            if (!confirm('Event wirklich absagen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
-                return;
-            }
+            setConfirmDialog({
+                type: 'cancel',
+                message: 'Event wirklich absagen? Diese Aktion kann nicht rückgängig gemacht werden.',
+                onConfirm: () => {
+                    setConfirmDialog(null);
+                    if (selectedEvent) {
+                        updateMutation.mutate({ id: selectedEvent.id, data: formData });
+                    } else {
+                        createMutation.mutate(formData);
+                    }
+                }
+            });
+            return;
         }
         
         if (selectedEvent) {
@@ -199,9 +210,14 @@ export default function Events() {
     };
 
     const handleDelete = (id) => {
-        if (confirm('Event wirklich löschen?')) {
-            deleteMutation.mutate(id);
-        }
+        setConfirmDialog({
+            type: 'delete',
+            message: 'Event wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+            onConfirm: () => {
+                setConfirmDialog(null);
+                deleteMutation.mutate(id);
+            }
+        });
     };
 
     const handleConvertIdeaToEvent = (idea) => {
@@ -618,8 +634,11 @@ export default function Events() {
                                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1 border-border text-muted-foreground hover:bg-accent">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20">
-                                    {selectedEvent ? 'Speichern' : 'Hinzufügen'}
+                                <Button 
+                                    type="submit" 
+                                    disabled={createMutation.isPending || updateMutation.isPending}
+                                    className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-900 shadow-lg shadow-amber-500/20 disabled:opacity-60">
+                                    {(createMutation.isPending || updateMutation.isPending) ? 'Speichern...' : (selectedEvent ? 'Speichern' : 'Hinzufügen')}
                                 </Button>
                             </div>
                         </form>
@@ -627,5 +646,30 @@ export default function Events() {
                 </Dialog>
             </div>
         </div>
+
+        {/* Confirm Dialog */}
+        {confirmDialog && (
+            <Dialog open={!!confirmDialog} onOpenChange={() => setConfirmDialog(null)}>
+                <DialogContent className="sm:max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {confirmDialog.type === 'delete' ? 'Event löschen' : 'Event absagen'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <p className="text-sm text-muted-foreground py-2">{confirmDialog.message}</p>
+                    <div className="flex gap-2 pt-2">
+                        <Button variant="outline" onClick={() => setConfirmDialog(null)} className="flex-1 border-border text-muted-foreground hover:bg-accent">
+                            Abbrechen
+                        </Button>
+                        <Button
+                            onClick={confirmDialog.onConfirm}
+                            className={`flex-1 ${confirmDialog.type === 'delete' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'} text-white`}
+                        >
+                            {confirmDialog.type === 'delete' ? 'Löschen' : 'Absagen'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        )}
     );
 }

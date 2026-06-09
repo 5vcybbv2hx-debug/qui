@@ -419,6 +419,38 @@ export default function EmployeeProfile() {
               </div>
             </Section>
 
+            <Section title="Notfallkontakt">
+              <div className="space-y-3">
+                <Field label="Name">
+                  <Input
+                    value={form.emergency_contact_name}
+                    onChange={e => set('emergency_contact_name', e.target.value)}
+                    disabled={!canEdit}
+                    placeholder="z.B. Maria Muster"
+                  />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Telefon">
+                    <Input
+                      type="tel"
+                      value={form.emergency_contact_phone}
+                      onChange={e => set('emergency_contact_phone', e.target.value)}
+                      disabled={!canEdit}
+                      placeholder="+49 …"
+                    />
+                  </Field>
+                  <Field label="Beziehung">
+                    <Input
+                      value={form.emergency_contact_relation}
+                      onChange={e => set('emergency_contact_relation', e.target.value)}
+                      disabled={!canEdit}
+                      placeholder="z.B. Ehepartner"
+                    />
+                  </Field>
+                </div>
+              </div>
+            </Section>
+
             {permissions.isManager && (
               <Section title="Kleidung">
                 <div className="grid grid-cols-2 gap-4">

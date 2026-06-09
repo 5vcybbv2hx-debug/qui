@@ -100,10 +100,20 @@ export default function MatchCard({ match, onClick, compact = false }) {
             </div>
 
             {/* Staff recommendation */}
-            {match.staff_recommendation && (
-                <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-2">
-                    <span className="text-sm">👥</span>
-                    <p className="text-xs text-muted-foreground">{match.staff_recommendation}</p>
+            {(match.staff_recommendation || match.tv_channel) && (
+                <div className="mt-3 pt-3 border-t border-border/50 space-y-1">
+                    {match.tv_channel && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm">📺</span>
+                            <p className="text-xs text-muted-foreground font-medium">{match.tv_channel}</p>
+                        </div>
+                    )}
+                    {match.staff_recommendation && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm">👥</span>
+                            <p className="text-xs text-muted-foreground">{match.staff_recommendation}</p>
+                        </div>
+                    )}
                 </div>
             )}
         </button>

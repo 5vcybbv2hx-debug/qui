@@ -18,7 +18,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
     const [copied, setCopied] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const calendarUrl = token
+    const calendarUrl = calToken
         ? `${getFunctionUrl('my-shifts-calendar')}?employee_id=${employeeId}&token=${calToken}`
         : null;
 
@@ -55,7 +55,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                {!token ? (
+                {!calToken ? (
                     <div className="flex flex-col items-center gap-3 py-4 text-center">
                         <AlertCircle className="w-8 h-8 text-muted-foreground opacity-50" />
                         <p className="text-sm text-muted-foreground">

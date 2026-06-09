@@ -3,13 +3,14 @@ import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Trophy, Search, RefreshCw, Plus, Filter, X, Upload } from 'lucide-react';
+import { Trophy, Search, RefreshCw, Plus, Filter, X, Upload, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useWorldCupMatches, getTrafficColor, getTrafficLabel, getTrafficDot } from '@/components/worldcup/useWorldCupMatches';
 import MatchCard from '@/components/worldcup/MatchCard';
 import MatchDetailSheet from '@/components/worldcup/MatchDetailSheet';
+import MatchEditModal from '@/components/worldcup/MatchEditModal';
 import WorldCupImporter from '@/components/worldcup/WorldCupImporter';
 import { usePermissions } from '@/components/auth/usePermissions';
 
@@ -31,6 +32,7 @@ export default function WorldCupSchedule() {
     const [search, setSearch] = useState('');
     const [selectedMatch, setSelectedMatch] = useState(null);
     const [showImporter, setShowImporter] = useState(false);
+    const [editMatch, setEditMatch] = useState(null); // null = closed, {} = new, match = edit
 
     const filtered = useMemo(() => {
         let list = [...matches];
@@ -105,15 +107,26 @@ export default function WorldCupSchedule() {
                     </div>
                     <div className="flex gap-2">
                         {permissions.isManager && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowImporter(true)}
-                                className="text-xs"
-                            >
-                                <Upload className="w-3.5 h-3.5 mr-1" />
-                                Import
-                            </Button>
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setEditMatch({})}
+                                    className="text-xs"
+                                >
+                                    <Plus className="w-3.5 h-3.5 mr-1" />
+                                    Spiel
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowImporter(true)}
+                                    className="text-xs"
+                                >
+                                    <Upload className="w-3.5 h-3.5 mr-1" />
+                                    Import
+                                </Button>
+                            </>
                         )}
                         <Button
                             variant="outline"
@@ -200,11 +213,21 @@ export default function WorldCupSchedule() {
                                 {/* Match cards */}
                                 <div className="space-y-3">
                                     {dayMatches.map(match => (
-                                        <MatchCard
-                                            key={match.id}
-                                            match={match}
-                                            onClick={setSelectedMatch}
-                                        />
+                                        <div key={match.id} className="relative group">
+                                            <MatchCard
+                                                match={match}
+                                                onClick={setSelectedMatch}
+                                            />
+                                            {permissions.isManager && (
+                                                <button
+                                                    onClick={e => { e.stopPropagation(); setEditMatch(match); }}
+                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-secondary border border-border hover:bg-accent transition-all"
+                                                    title="Bearbeiten"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                                                </button>
+                                            )}
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -218,6 +241,13 @@ export default function WorldCupSchedule() {
                 match={selectedMatch}
                 open={!!selectedMatch}
                 onClose={() => setSelectedMatch(null)}
+            />
+
+            {/* Edit / New Match Modal */}
+            <MatchEditModal
+                match={editMatch?.id ? editMatch : null}
+                open={editMatch !== null}
+                onClose={() => setEditMatch(null)}
             />
 
             {/* Import Dialog */}

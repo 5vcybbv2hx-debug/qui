@@ -32,6 +32,10 @@
       "type": "string",
       "description": "Stadion / Spielort"
     },
+    "tv_channel": {
+      "type": "string",
+      "description": "TV-Sender (z.B. ARD, ZDF, MagentaTV, DAZN)"
+    },
     "status": {
       "type": "string",
       "enum": [

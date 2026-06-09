@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Tv } from 'lucide-react';
 import { getTrafficColor, getTrafficLabel, getTrafficDot } from './useWorldCupMatches';
 
 export default function MatchDetailSheet({ match, open, onClose }) {
@@ -70,6 +70,15 @@ export default function MatchDetailSheet({ match, open, onClose }) {
                                     <span className="text-xs">Stadion</span>
                                 </div>
                                 <p className="font-medium text-sm">{match.venue}</p>
+                            </div>
+                        )}
+                        {match.tv_channel && (
+                            <div className="bg-secondary/50 rounded-xl p-3 col-span-2">
+                                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                    <Tv className="w-4 h-4" />
+                                    <span className="text-xs">TV-Sender</span>
+                                </div>
+                                <p className="font-medium text-sm">{match.tv_channel}</p>
                             </div>
                         )}
                     </div>

@@ -1,19 +1,28 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// ─── ICS helper ───────────────────────────────────────────────────────────────
+// ─── ICS helpers ──────────────────────────────────────────────────────────────
 const now8601 = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-const escapeIcs = (str) => (str || '').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+const escapeIcs = (str: string) => (str || '').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
 
-function shiftToEvent(shift) {
-    const d = shift.date.replace(/-/g, '');
-    const [startH] = shift.start_time.split(':').map(Number);
-    const [endH]   = shift.end_time.split(':').map(Number);
+// Minuten-basierter Nachtschicht-Check (robuster als reiner Stunden-Vergleich)
+function timeToMinutes(t: string): number {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + (m || 0);
+}
+
+function shiftToEvent(shift: any): string {
+    const d        = shift.date.replace(/-/g, '');
+    const startMin = timeToMinutes(shift.start_time);
+    const endMin   = timeToMinutes(shift.end_time);
+
+    // Nachtschicht: Endzeit <= Startzeit → Enddatum ist der Folgetag
     let endDate = d;
-    if (endH < startH || (endH === startH && endH === 0)) {
+    if (endMin <= startMin) {
         const next = new Date(shift.date + 'T00:00:00');
         next.setDate(next.getDate() + 1);
         endDate = next.toISOString().split('T')[0].replace(/-/g, '');
     }
+
     const lines = [
         'BEGIN:VEVENT',
         `UID:shift-${shift.id}@barmanager.app`,
@@ -27,10 +36,23 @@ function shiftToEvent(shift) {
     return lines.join('\r\n');
 }
 
-function birthdayToEvent(employee) {
+// Geburtstag: nächsten Jahrestag berechnen, damit RRULE korrekt startet
+function birthdayToEvent(employee: any): string | null {
     if (!employee.birthday) return null;
+
     const [, month, day] = employee.birthday.split('-');
-    const yearlyDate = `${new Date().getFullYear()}${month}${day}`;
+    const today = new Date();
+    const thisYear = today.getFullYear();
+
+    // Prüfe ob der Geburtstag in diesem Jahr noch kommt
+    const thisYearDate = new Date(thisYear, Number(month) - 1, Number(day));
+    // Wenn das Datum schon vorbei ist → nächstes Jahr als Startpunkt
+    const startYear = thisYearDate < today ? thisYear + 1 : thisYear;
+
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    const yearlyDate = `${startYear}${mm}${dd}`;
+
     return [
         'BEGIN:VEVENT',
         `UID:birthday-${employee.id}@barmanager.app`,
@@ -44,9 +66,9 @@ function birthdayToEvent(employee) {
     ].join('\r\n');
 }
 
-function meetingToEvent(meeting) {
+function meetingToEvent(meeting: any): string | null {
     if (!meeting.date) return null;
-    const d = meeting.date.replace(/-/g, '');
+    const d         = meeting.date.replace(/-/g, '');
     const startTime = meeting.start_time || '18:00';
     const endTime   = meeting.end_time   || '19:00';
     const lines = [
@@ -57,7 +79,7 @@ function meetingToEvent(meeting) {
         `DTEND;TZID=Europe/Berlin:${d}T${endTime.replace(':', '')}00`,
         `SUMMARY:📋 Teamsitzung${meeting.title ? ': ' + escapeIcs(meeting.title) : ''}`,
     ];
-    if (meeting.location) lines.push(`LOCATION:${escapeIcs(meeting.location)}`);
+    if (meeting.location)    lines.push(`LOCATION:${escapeIcs(meeting.location)}`);
     if (meeting.description) lines.push(`DESCRIPTION:${escapeIcs(meeting.description)}`);
     lines.push('STATUS:CONFIRMED', 'END:VEVENT');
     return lines.join('\r\n');
@@ -65,7 +87,6 @@ function meetingToEvent(meeting) {
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
-    // Unterstützt GET (iCal-Abo von Apple/Google) und POST (SDK-Aufruf)
     const reqUrl = new URL(req.url);
     let employeeId = reqUrl.searchParams.get('employee_id');
     let token      = reqUrl.searchParams.get('token');
@@ -95,7 +116,7 @@ Deno.serve(async (req) => {
             return new Response('Invalid token', { status: 403 });
         }
 
-        // Fetch all data in parallel
+        // Alle Daten parallel laden
         const [shifts, allEmployees, meetings] = await Promise.all([
             base44.asServiceRole.entities.Shift.filter({ employee_id: employeeId }, '-date', 500),
             base44.asServiceRole.entities.Employee.filter({ is_active: true }, 'name', 200),
@@ -123,7 +144,7 @@ Deno.serve(async (req) => {
         ].join('\r\n');
 
         const birthdayEvents = allEmployees
-            .filter(e => e.birthday && e.id !== employeeId)
+            .filter((e: any) => e.birthday && e.id !== employeeId)
             .map(birthdayToEvent)
             .filter(Boolean);
 

@@ -73,7 +73,8 @@ export default function UnifiedCalendarView({
     onRoleToggle = () => {},
     selectedRoles = [],
     searchQuery = '',
-    onSearchChange = () => {}
+    onSearchChange = () => {},
+    onNavigate = null
 }) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [showFilterModal, setShowFilterModal] = useState(false);
@@ -167,9 +168,9 @@ export default function UnifiedCalendarView({
 
     const activeFilters = selectedEmployees.length + selectedRoles.length;
 
-    const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1));
-    const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
-    const goToToday = () => setCurrentDate(new Date());
+    const prevMonth = () => { const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1); setCurrentDate(d); if (onNavigate) onNavigate(d); };
+    const nextMonth = () => { const d = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1); setCurrentDate(d); if (onNavigate) onNavigate(d); };
+    const goToToday = () => { const d = new Date(); setCurrentDate(d); if (onNavigate) onNavigate(d); };
 
     return (
         <div className="w-full space-y-4">

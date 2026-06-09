@@ -48,14 +48,16 @@ export default function Vacation() {
         staleTime: STALE.SLOW,
     });
 
-    const { data: vacationRequests = [] } = useQuery({
-        queryKey: ['vacation-requests', selectedYear],
-        queryFn: () => base44.entities.VacationRequest.filter(
-            { start_date_gte: `${selectedYear}-01-01`, start_date_lte: `${selectedYear}-12-31` },
-            '-created_date', 500
-        ),
+    const { data: allVacationRequests = [] } = useQuery({
+        queryKey: ['vacation-requests'],
+        queryFn: () => base44.entities.VacationRequest.list('-created_date', 1000),
         staleTime: STALE.MEDIUM,
     });
+
+    // Client-seitiger Jahresfilter
+    const vacationRequests = allVacationRequests.filter(r =>
+        r.start_date >= `${selectedYear}-01-01` && r.start_date <= `${selectedYear}-12-31`
+    );
 
     const { data: allEmployees = [] } = useQuery({
         queryKey: ['employees'],
@@ -339,7 +341,7 @@ export default function Vacation() {
                 <div className="space-y-4">
                     {visibleRequests.length > 0 ? (
                         visibleRequests
-                            .sort((a, b) => b.created_date.localeCompare(a.created_date))
+                            .sort((a, b) => b.start_date.localeCompare(a.start_date))
                             .map(request => {
                                 const StatusIcon = statusConfig[request.status].icon;
                                 return (

@@ -15,31 +15,63 @@
       "type": "string",
       "description": "Startzeit (HH:MM)"
     },
+    "end_time": {
+      "type": "string",
+      "description": "Endzeit (HH:MM)"
+    },
     "event_type": {
       "type": "string",
       "enum": [
         "Party",
         "Livemusik",
-        "Special Event"
+        "DJ-Night",
+        "Special Event",
+        "Private Feier",
+        "Sonstiges"
       ],
       "description": "Art des Events"
-    },
-    "expected_guests": {
-      "type": "number",
-      "description": "Erwartete G\u00e4steanzahl"
-    },
-    "notes": {
-      "type": "string",
-      "description": "Notizen"
     },
     "status": {
       "type": "string",
       "enum": [
         "geplant",
-        "best\u00e4tigt"
+        "bestätigt",
+        "abgesagt"
       ],
       "default": "geplant",
       "description": "Status"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung"
+    },
+    "expected_guests": {
+      "type": "number",
+      "description": "Erwartete Gästeanzahl"
+    },
+    "actual_guests": {
+      "type": "number",
+      "description": "Tatsächliche Gästeanzahl"
+    },
+    "entry_fee": {
+      "type": "number",
+      "description": "Eintritt in Euro"
+    },
+    "budget": {
+      "type": "number",
+      "description": "Budget in Euro"
+    },
+    "artist_name": {
+      "type": "string",
+      "description": "Künstler / DJ"
+    },
+    "responsible_person": {
+      "type": "string",
+      "description": "Verantwortliche Person"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
     }
   },
   "required": [

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Trophy, Search, RefreshCw, Plus, Upload, Layers, GitBranch, List, SyncIcon } from 'lucide-react';
+import { Trophy, Search, RefreshCw, Plus, Upload, Layers, GitBranch, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

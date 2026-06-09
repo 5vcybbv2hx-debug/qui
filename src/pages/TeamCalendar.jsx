@@ -16,7 +16,7 @@ import WorldCupDayBanner from '@/components/worldcup/WorldCupDayBanner';
 import { useWorldCupMatches } from '@/components/worldcup/useWorldCupMatches';
 import { Link } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
-import { isToday } from 'date-fns';
+import { isToday, format, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 
 export default function TeamCalendar() {
     const permissions = usePermissions();
@@ -28,10 +28,14 @@ export default function TeamCalendar() {
     const [shiftSwapData, setShiftSwapData] = useState(null);
     const [selectedDay, setSelectedDay] = useState(null);
     const [showDayDrawer, setShowDayDrawer] = useState(false);
+    const [viewMonth, setViewMonth] = useState(new Date());
+    const shiftFrom = format(subMonths(startOfMonth(viewMonth), 1), 'yyyy-MM-dd');
+    const shiftTo   = format(addMonths(endOfMonth(viewMonth),   1), 'yyyy-MM-dd');
 
     const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => base44.entities.Shift.list('-date', 1000)
+        queryKey: ['shifts', shiftFrom, shiftTo],
+        queryFn: () => base44.entities.Shift.list('date', 3000),
+        select: (data) => data.filter(s => s.date >= shiftFrom && s.date <= shiftTo),
     });
 
     const { data: employees = [] } = useQuery({
@@ -179,6 +183,7 @@ export default function TeamCalendar() {
                         selectedRoles={selectedRoles}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
+                        onNavigate={(date) => setViewMonth(date)}
                     />
                 </div>
             </div>

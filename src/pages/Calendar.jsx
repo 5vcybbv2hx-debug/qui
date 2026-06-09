@@ -109,7 +109,7 @@ export default function CalendarPage() {
     });
 
     const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
+        queryKey: ['shifts', shiftFrom, shiftTo],
         queryFn: () => base44.entities.Shift.list('date', 2000),
         staleTime: STALE.MEDIUM,
         select: (data) => data.filter(s => s.date >= shiftFrom && s.date <= shiftTo),
@@ -366,6 +366,7 @@ export default function CalendarPage() {
                             onShiftMove={handleShiftMove}
                             selectedDate={selectedDate}
                             setSelectedDate={setSelectedDate}
+                            onNavigate={(date) => setViewMonth(date)}
                         />
 
                         {/* Selected Date Details */}

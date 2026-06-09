@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { getHolidaysBW, getHolidayName } from './getHolidays';
 import { usePermissions } from '@/components/auth/usePermissions';
 
-export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], provisionalRequests = [], swapRequests = [], wcMatches = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate }) {
+export default function ShiftCalendar({ shifts, allShifts, employees, requirements = [], vacationRequests = [], unavailabilityRequests = [], provisionalRequests = [], swapRequests = [], wcMatches = [], onAddShift, onSelectShift, onShiftMove, selectedDate, setSelectedDate, onNavigate }) {
     const permissions = usePermissions();
     const queryClient = useQueryClient();
     const [viewMode, setViewMode] = useState('week');
@@ -58,6 +58,11 @@ export default function ShiftCalendar({ shifts, allShifts, employees, requiremen
             setProvisionalPopup(null);
         }
     });
+
+    // Inform parent when navigation changes the visible month
+    useEffect(() => {
+        if (onNavigate) onNavigate(currentDate);
+    }, [currentDate]);
 
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     

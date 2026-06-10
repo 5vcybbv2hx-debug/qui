@@ -1,23 +1,79 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { STALE } from '@/lib/queryUtils';
 import { calculateCompletion, getMissingFields, SECTIONS } from '@/lib/employeeCompleteness';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
     Users, Package, AlertTriangle, CheckCircle2, ChevronRight,
-    TrendingDown, ImageOff, DollarSign, Hash, Tag, RefreshCw
+    TrendingDown, ImageOff, DollarSign, Hash, Tag, RefreshCw,
+    Shield, Wine, Truck
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { usePermissions } from '@/components/auth/usePermissions';
+import PermissionDenied from '@/components/auth/PermissionDenied';
 
-// ── Mitarbeiter-Check ───────────────────────────────────────────────────────
+// ── Artikel-Checks (korrekte Feldnamen laut Schema) ──────────────────────
+
+const ARTICLE_CHECKS = [
+    {
+        key: 'no_price',
+        label: 'Kein Einkaufspreis',
+        icon: DollarSign,
+        // purchase_price ist das korrekte Feld im Article-Schema
+        check: a => !a.purchase_price && a.purchase_price !== 0,
+    },
+    {
+        key: 'no_category',
+        label: 'Keine Kategorie',
+        icon: Tag,
+        check: a => !a.category,
+    },
+    {
+        key: 'no_unit',
+        label: 'Keine Einheit',
+        icon: Hash,
+        // content_unit ist das korrekte Feld, nicht 'unit'
+        check: a => !a.content_unit,
+    },
+    {
+        key: 'no_image',
+        label: 'Kein Bild',
+        icon: ImageOff,
+        check: a => !a.image_url,
+    },
+    {
+        key: 'no_supplier',
+        label: 'Kein Lieferant',
+        icon: Truck,
+        // suppliers ist ein Array im Article-Schema
+        check: a => !a.suppliers?.length && !a.supplier_details,
+    },
+    {
+        key: 'no_min_stock',
+        label: 'Kein Mindestbestand',
+        icon: RefreshCw,
+        check: a => a.min_stock === undefined || a.min_stock === null || a.min_stock === '',
+    },
+];
+
+// ── MenuItem-Checks ───────────────────────────────────────────────────────
+
+const MENU_CHECKS = [
+    { key: 'no_price',    label: 'Kein Preis',      icon: DollarSign, check: m => !m.price && m.price !== 0 },
+    { key: 'no_category', label: 'Keine Kategorie', icon: Tag,        check: m => !m.category },
+    { key: 'no_allergens',label: 'Keine Allergene', icon: AlertTriangle, check: m => !m.allergens_list?.length && !m.allergens },
+];
+
+// ── Mitarbeiter-Check ─────────────────────────────────────────────────────
 
 function EmployeeQualitySection({ employees }) {
     const issues = employees
         .filter(e => e.is_active !== false)
         .map(e => {
-            const missing = getMissingFields(e);
+            const missing    = getMissingFields(e);
             const completion = calculateCompletion(e);
             return { ...e, missing, completion };
         })
@@ -34,7 +90,9 @@ function EmployeeQualitySection({ employees }) {
                 </div>
                 <div className="flex-1">
                     <h2 className="text-sm font-bold text-foreground">Mitarbeiter-Personalbögen</h2>
-                    <p className="text-xs text-muted-foreground">{issues.length} mit fehlenden Angaben · {complete} vollständig</p>
+                    <p className="text-xs text-muted-foreground">
+                        {issues.length} mit fehlenden Angaben · {complete} vollständig
+                    </p>
                 </div>
                 {issues.length === 0 && <CheckCircle2 className="w-5 h-5 text-green-400" />}
             </div>
@@ -50,8 +108,11 @@ function EmployeeQualitySection({ employees }) {
                                     <p className="text-sm font-semibold text-foreground">{emp.name}</p>
                                     <p className="text-xs text-muted-foreground">{emp.role}</p>
                                 </div>
-                                <Link to={`/EmployeeProfile/${emp.id}`} className="text-xs text-primary hover:underline shrink-0 mr-2">
-                                    Öffnen
+                                <Link
+                                    to={`/EmployeeProfile/${emp.id}`}
+                                    className="text-xs text-primary hover:underline shrink-0 mr-2 min-h-[44px] flex items-center"
+                                >
+                                    Öffnen →
                                 </Link>
                                 <span className={cn(
                                     'text-xs font-bold px-2 py-0.5 rounded-full',
@@ -76,51 +137,46 @@ function EmployeeQualitySection({ employees }) {
     );
 }
 
-// ── Artikel-Check ───────────────────────────────────────────────────────────
+// ── Generische Check-Sektion (für Artikel + MenuItem) ─────────────────────
 
-const ARTICLE_CHECKS = [
-    { key: 'no_price',    label: 'Kein Preis',         icon: DollarSign,  check: a => !a.price && a.price !== 0 },
-    { key: 'no_category', label: 'Keine Kategorie',    icon: Tag,         check: a => !a.category },
-    { key: 'no_unit',     label: 'Keine Einheit',      icon: Hash,        check: a => !a.unit },
-    { key: 'no_image',    label: 'Kein Bild',          icon: ImageOff,    check: a => !a.image_url },
-    { key: 'no_supplier', label: 'Kein Lieferant',     icon: TrendingDown,check: a => !a.supplier_id && !a.supplier_name },
-    { key: 'no_min_stock',label: 'Kein Mindestbestand',icon: RefreshCw,   check: a => a.min_stock === undefined || a.min_stock === null },
-];
-
-function ArticleQualitySection({ articles }) {
+function CheckSection({ title, icon: Icon, iconColor, bgColor, items, checks, linkFn, linkLabel }) {
     const [activeFilter, setActiveFilter] = useState(null);
 
-    const stats = ARTICLE_CHECKS.map(c => ({
+    const stats = checks.map(c => ({
         ...c,
-        count: articles.filter(c.check).length,
+        count: items.filter(c.check).length,
     }));
 
     const filtered = activeFilter
-        ? articles.filter(ARTICLE_CHECKS.find(c => c.key === activeFilter)?.check || (() => false))
+        ? items.filter(checks.find(c => c.key === activeFilter)?.check || (() => false))
         : [];
 
-    const totalOk = articles.filter(a => !ARTICLE_CHECKS.some(c => c.check(a))).length;
+    const totalOk = items.filter(a => !checks.some(c => c.check(a))).length;
 
     return (
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center gap-3 p-4 border-b border-border">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                    <Package className="w-5 h-5 text-amber-400" />
+                <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', bgColor)}>
+                    <Icon className={cn('w-5 h-5', iconColor)} />
                 </div>
                 <div className="flex-1">
-                    <h2 className="text-sm font-bold text-foreground">Artikel-Datenqualität</h2>
-                    <p className="text-xs text-muted-foreground">{articles.length} Artikel · {totalOk} ohne Probleme</p>
+                    <h2 className="text-sm font-bold text-foreground">{title}</h2>
+                    <p className="text-xs text-muted-foreground">
+                        {items.length} Einträge · {totalOk} ohne Probleme
+                    </p>
                 </div>
+                {totalOk === items.length && items.length > 0 && (
+                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                )}
             </div>
 
-            {/* Check-Kacheln */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4">
                 {stats.map(stat => (
                     <button
                         key={stat.key}
-                        onClick={() => setActiveFilter(activeFilter === stat.key ? null : stat.key)}
+                        onClick={() => stat.count > 0 && setActiveFilter(activeFilter === stat.key ? null : stat.key)}
                         className={cn(
-                            'flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all',
+                            'flex flex-col gap-1.5 p-3 rounded-xl border text-left transition-all min-h-[44px]',
                             stat.count === 0
                                 ? 'border-green-500/20 bg-green-500/5 opacity-60 cursor-default'
                                 : activeFilter === stat.key
@@ -129,43 +185,43 @@ function ArticleQualitySection({ articles }) {
                         )}
                     >
                         <div className="flex items-center justify-between">
-                            <stat.icon className={cn(
-                                'w-4 h-4',
-                                stat.count === 0 ? 'text-green-400' : 'text-amber-400'
-                            )} />
-                            <span className={cn(
-                                'text-lg font-bold',
-                                stat.count === 0 ? 'text-green-400' : 'text-foreground'
-                            )}>{stat.count}</span>
+                            <stat.icon className={cn('w-4 h-4', stat.count === 0 ? 'text-green-400' : 'text-amber-400')} />
+                            <span className={cn('text-lg font-bold', stat.count === 0 ? 'text-green-400' : 'text-foreground')}>
+                                {stat.count}
+                            </span>
                         </div>
                         <p className="text-[11px] text-muted-foreground leading-tight">{stat.label}</p>
                     </button>
                 ))}
             </div>
 
-            {/* Artikel-Liste für ausgewählten Filter */}
             {activeFilter && filtered.length > 0 && (
                 <div className="border-t border-border">
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide px-4 pt-3 pb-1">
                         {stats.find(s => s.key === activeFilter)?.label} ({filtered.length})
                     </p>
                     <div className="divide-y divide-border max-h-72 overflow-y-auto">
-                        {filtered.map(a => (
-                            <div key={a.id} className="flex items-center gap-3 px-4 py-2.5">
-                                {a.image_url ? (
-                                    <img src={a.image_url} className="w-8 h-8 rounded-lg object-cover shrink-0" />
+                        {filtered.map(item => (
+                            <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+                                {item.image_url ? (
+                                    <img src={item.image_url} className="w-8 h-8 rounded-lg object-cover shrink-0" alt="" />
                                 ) : (
                                     <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                                        <Package className="w-4 h-4 text-muted-foreground" />
+                                        <Icon className="w-4 h-4 text-muted-foreground" />
                                     </div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-foreground truncate">{a.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{a.category || '–'}</p>
+                                    <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
+                                    <p className="text-xs text-muted-foreground truncate">{item.category || '–'}</p>
                                 </div>
-                                <Link to="/Articles" className="text-xs text-primary hover:underline shrink-0">
-                                    Bearbeiten
-                                </Link>
+                                {linkFn && (
+                                    <Link
+                                        to={linkFn(item)}
+                                        className="text-xs text-primary hover:underline shrink-0 min-h-[44px] flex items-center"
+                                    >
+                                        {linkLabel || 'Bearbeiten'}
+                                    </Link>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -175,7 +231,7 @@ function ArticleQualitySection({ articles }) {
     );
 }
 
-// ── Zusammenfassung oben ────────────────────────────────────────────────────
+// ── Summary KPI Card ──────────────────────────────────────────────────────
 
 function SummaryCard({ label, value, icon: Icon, color }) {
     return (
@@ -185,64 +241,110 @@ function SummaryCard({ label, value, icon: Icon, color }) {
             </div>
             <div>
                 <p className="text-2xl font-bold text-foreground">{value}</p>
-                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
             </div>
         </div>
     );
 }
 
-// ── MAIN ───────────────────────────────────────────────────────────────────
+// ── MAIN ──────────────────────────────────────────────────────────────────
 
 export default function DataQuality() {
+    const permissions = usePermissions();
+
+    // Nur Manager/Admin dürfen Datenqualität sehen
+    // (enthält sonst Bankdaten + Steuernummern aller Mitarbeiter)
+    if (!permissions.isManager) {
+        return <PermissionDenied message="Die Datenqualitäts-Übersicht ist nur für Manager zugänglich." />;
+    }
+
     const { data: employees = [], isLoading: loadingEmp } = useQuery({
-        queryKey: ['employees-all'],
-        queryFn: () => base44.entities.Employee.list(),
+        queryKey: ['employees-quality'],
+        queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name', 200),
+        staleTime: STALE.SLOW,
     });
 
     const { data: articles = [], isLoading: loadingArt } = useQuery({
-        queryKey: ['articles-all'],
-        queryFn: () => base44.entities.Article.list(),
+        queryKey: ['articles-quality'],
+        queryFn: () => base44.entities.Article.filter({ is_active: true }, 'name', 500),
+        staleTime: STALE.SLOW,
     });
 
-    const activeEmployees = employees.filter(e => e.is_active !== false);
-    const empWithIssues = activeEmployees.filter(e => Object.keys(getMissingFields(e)).length > 0).length;
-    const artWithIssues = articles.filter(a => ARTICLE_CHECKS.some(c => c.check(a))).length;
+    const { data: menuItems = [], isLoading: loadingMenu } = useQuery({
+        queryKey: ['menu-items-quality'],
+        queryFn: () => base44.entities.MenuItem.list('name', 500),
+        staleTime: STALE.SLOW,
+    });
 
-    const isLoading = loadingEmp || loadingArt;
+    const empWithIssues  = employees.filter(e => Object.keys(getMissingFields(e)).length > 0).length;
+    const artWithIssues  = articles.filter(a => ARTICLE_CHECKS.some(c => c.check(a))).length;
+    const menuWithIssues = menuItems.filter(m => MENU_CHECKS.some(c => c.check(m))).length;
+
+    const isLoading = loadingEmp || loadingArt || loadingMenu;
 
     return (
-        <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
-            <div>
-                <h1 className="text-xl font-bold text-foreground">Datenqualität</h1>
-                <p className="text-sm text-muted-foreground">Übersicht über fehlende oder unvollständige Stammdaten</p>
-            </div>
-
-            {isLoading ? (
-                <div className="flex items-center justify-center py-16">
-                    <div className="w-8 h-8 border-4 border-border border-t-primary rounded-full animate-spin" />
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+                <div>
+                    <h1 className="text-xl font-bold text-foreground">Datenqualität</h1>
+                    <p className="text-sm text-muted-foreground">Übersicht über fehlende oder unvollständige Stammdaten</p>
                 </div>
-            ) : (
-                <>
-                    {/* KPIs */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <SummaryCard
-                            label="Mitarbeiter mit Lücken"
-                            value={empWithIssues}
-                            icon={Users}
-                            color={empWithIssues === 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}
-                        />
-                        <SummaryCard
-                            label="Artikel mit Problemen"
-                            value={artWithIssues}
-                            icon={AlertTriangle}
-                            color={artWithIssues === 0 ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}
-                        />
-                    </div>
 
-                    <EmployeeQualitySection employees={employees} />
-                    <ArticleQualitySection articles={articles} />
-                </>
-            )}
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-16">
+                        <div className="w-8 h-8 border-4 border-border border-t-amber-500 rounded-full animate-spin" />
+                    </div>
+                ) : (
+                    <>
+                        {/* KPIs */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <SummaryCard
+                                label="Mitarbeiter mit Lücken"
+                                value={empWithIssues}
+                                icon={Users}
+                                color={empWithIssues === 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}
+                            />
+                            <SummaryCard
+                                label="Artikel mit Problemen"
+                                value={artWithIssues}
+                                icon={Package}
+                                color={artWithIssues === 0 ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}
+                            />
+                            <SummaryCard
+                                label="Menüpunkte unvollständig"
+                                value={menuWithIssues}
+                                icon={Wine}
+                                color={menuWithIssues === 0 ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}
+                            />
+                        </div>
+
+                        {/* Sektionen */}
+                        <EmployeeQualitySection employees={employees} />
+
+                        <CheckSection
+                            title="Artikel-Datenqualität"
+                            icon={Package}
+                            iconColor="text-amber-400"
+                            bgColor="bg-amber-500/20"
+                            items={articles}
+                            checks={ARTICLE_CHECKS}
+                            linkFn={() => '/Articles'}
+                            linkLabel="Zur Liste"
+                        />
+
+                        <CheckSection
+                            title="Getränkekarte — Menüpunkte"
+                            icon={Wine}
+                            iconColor="text-red-400"
+                            bgColor="bg-red-500/20"
+                            items={menuItems}
+                            checks={MENU_CHECKS}
+                            linkFn={() => '/DrinkMenu'}
+                            linkLabel="Zur Karte"
+                        />
+                    </>
+                )}
+            </div>
         </div>
     );
 }

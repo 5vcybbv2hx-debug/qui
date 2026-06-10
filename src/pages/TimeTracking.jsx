@@ -46,25 +46,24 @@ export default function TimeTracking() {
         queryFn: async () => {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
             const end   = format(endOfMonth(selectedMonth),   'yyyy-MM-dd');
-            // Server-seitig nach Datum filtern — verhindert fehlende Einträge durch client-seitiges Limit
+            // FIX: SDK unterstützt date_gte/date_lte nicht als direkte Filter-Keys.
+            // Server-seitig nach employee_id filtern, dann client-seitig nach Monat.
             if (permissions.isManager) {
-                return base44.entities.TimeEntry.filter(
-                    { date_gte: start, date_lte: end },
-                    '-date',
-                    500
-                );
+                const all = await base44.entities.TimeEntry.list('-date', 500);
+                return all.filter(e => e.date >= start && e.date <= end);
             } else {
-                // Mitarbeiter: nur eigene Einträge + Monat server-seitig filtern
-                return base44.entities.TimeEntry.filter(
-                    { employee_id: currentEmployee.id, date_gte: start, date_lte: end },
+                if (!currentEmployee?.id) return [];
+                const all = await base44.entities.TimeEntry.filter(
+                    { employee_id: currentEmployee.id },
                     '-date',
                     500
                 );
+                return all.filter(e => e.date >= start && e.date <= end);
             }
         },
         enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
-        staleTime: 3 * 60 * 1000,
-        refetchOnWindowFocus: false,
+        staleTime: 2 * 60 * 1000,
+        refetchOnWindowFocus: true,
     });
 
     const { data: allEmployees = [] } = useQuery({
@@ -80,10 +79,13 @@ export default function TimeTracking() {
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             if (permissions.isManager) {
                 // Manager: aktive Einträge (ohne clock_out) + abgeschlossene des gewählten Monats
-                const [active, monthly] = await Promise.all([
+                // FIX 4: aktive = clocked_in + on_break, monatliche mit höherem limit
+                const [activeIn, activePause, monthly] = await Promise.all([
                     base44.entities.ClockEntry.filter({ status: 'clocked_in' }, '-clock_in', 50),
-                    base44.entities.ClockEntry.list('-clock_in', 200),
+                    base44.entities.ClockEntry.filter({ status: 'on_break' }, '-clock_in', 50),
+                    base44.entities.ClockEntry.list('-clock_in', 500),
                 ]);
+                const active = [...activeIn, ...activePause];
                 const monthlyFiltered = monthly.filter(e => {
                     if (!e.clock_in) return false;
                     const d = format(new Date(e.clock_in), 'yyyy-MM-dd');
@@ -95,9 +97,14 @@ export default function TimeTracking() {
                 return [...extras, ...monthlyFiltered];
             }
             // Mitarbeiter: eigene aktive Einträge + abgeschlossene des Monats
-            const [active, monthly] = await Promise.all([
+            // FIX 3: Aktive Einträge = clocked_in ODER on_break (Pause-Status)
+            const [activeIn, activePause, monthly] = await Promise.all([
                 base44.entities.ClockEntry.filter(
                     { employee_id: currentEmployee.id, status: 'clocked_in' },
+                    '-clock_in', 5
+                ),
+                base44.entities.ClockEntry.filter(
+                    { employee_id: currentEmployee.id, status: 'on_break' },
                     '-clock_in', 5
                 ),
                 base44.entities.ClockEntry.filter(
@@ -105,6 +112,7 @@ export default function TimeTracking() {
                     '-clock_in', 300
                 ),
             ]);
+            const active = [...activeIn, ...activePause];
             const monthlyFiltered = monthly.filter(e => {
                 if (!e.clock_in) return false;
                 const d = format(new Date(e.clock_in), 'yyyy-MM-dd');
@@ -317,12 +325,12 @@ export default function TimeTracking() {
                 arbzg_warning: warningText
             });
 
-            // Duplikat-Schutz
-            const duplicate = timeEntries.find(te =>
-                te.employee_id === entry.employee_id &&
-                te.date === entryDate &&
-                te.start_time === entryStartTime
+            // FIX: Duplikat-Check via DB (nicht Cache) — Race-Condition-sicher
+            const existing = await base44.entities.TimeEntry.filter(
+                { employee_id: entry.employee_id, date: entryDate },
+                '-date', 20
             );
+            const duplicate = existing.find(te => te.start_time === entryStartTime);
             if (!duplicate) {
                 await base44.entities.TimeEntry.create({
                     employee_id: entry.employee_id,
@@ -387,13 +395,16 @@ export default function TimeTracking() {
                 arbzg_warning: warningText
             });
 
-            // Duplikat-Schutz: nur erstellen wenn noch kein TimeEntry für diesen Tag/Mitarbeiter/Startzeit existiert
+            // FIX 5: Duplikat-Check direkt per DB-Abfrage (nicht aus Cache)
+            // Verhindert Race-Condition bei Nachtschichten wenn Cache leer ist.
             const entryDate = format(new Date(entry.clock_in), 'yyyy-MM-dd');
             const entryStartTime = format(new Date(entry.clock_in), 'HH:mm');
-            const duplicate = timeEntries.find(te =>
-                te.employee_id === entry.employee_id &&
-                te.date === entryDate &&
-                te.start_time === entryStartTime
+            const existingEntries = await base44.entities.TimeEntry.filter(
+                { employee_id: entry.employee_id, date: entryDate },
+                '-date', 20
+            );
+            const duplicate = existingEntries.find(
+                te => te.start_time === entryStartTime
             );
             if (!duplicate) {
                 await base44.entities.TimeEntry.create({

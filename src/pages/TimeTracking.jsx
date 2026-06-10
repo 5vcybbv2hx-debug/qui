@@ -42,18 +42,25 @@ export default function TimeTracking() {
     const [shiftSummary, setShiftSummary] = useState(null);
 
     const { data: timeEntries = [] } = useQuery({
-        queryKey: ['time-entries', selectedMonth, currentEmployee?.id, permissions.isManager],
+        queryKey: ['time-entries', format(selectedMonth, 'yyyy-MM'), currentEmployee?.id, permissions.isManager],
         queryFn: async () => {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
-            const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
-            let all;
-             if (permissions.isManager) {
-                 all = await base44.entities.TimeEntry.list('-date', 200);
+            const end   = format(endOfMonth(selectedMonth),   'yyyy-MM-dd');
+            // Server-seitig nach Datum filtern — verhindert fehlende Einträge durch client-seitiges Limit
+            if (permissions.isManager) {
+                return base44.entities.TimeEntry.filter(
+                    { date_gte: start, date_lte: end },
+                    '-date',
+                    500
+                );
             } else {
-                // Mitarbeiter: nur eigene Einträge nach employee_id
-                all = await base44.entities.TimeEntry.filter({ employee_id: currentEmployee.id }, '-date', 100);
+                // Mitarbeiter: nur eigene Einträge + Monat server-seitig filtern
+                return base44.entities.TimeEntry.filter(
+                    { employee_id: currentEmployee.id, date_gte: start, date_lte: end },
+                    '-date',
+                    500
+                );
             }
-            return all.filter(entry => entry.date >= start && entry.date <= end);
         },
         enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
         staleTime: 3 * 60 * 1000,
@@ -79,8 +86,19 @@ export default function TimeTracking() {
                     return d >= start && d <= end;
                 });
             }
-            // Mitarbeiter: nur eigene ClockEntries laden
-            return base44.entities.ClockEntry.filter({ employee_id: currentEmployee.id }, '-clock_in', 200);
+            // Mitarbeiter: nur eigene ClockEntries für den gewählten Monat laden
+            const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
+            const end   = format(endOfMonth(selectedMonth),   'yyyy-MM-dd');
+            const all = await base44.entities.ClockEntry.filter(
+                { employee_id: currentEmployee.id },
+                '-clock_in',
+                300
+            );
+            return all.filter(e => {
+                if (!e.clock_in) return false;
+                const d = format(new Date(e.clock_in), 'yyyy-MM-dd');
+                return d >= start && d <= end;
+            });
         },
         enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
         refetchInterval: 60000,

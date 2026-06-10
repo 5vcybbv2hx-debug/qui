@@ -133,9 +133,11 @@ export default function MyShiftsPage() {
         queryKey: ['my-shifts', employee?.id],
         queryFn: async () => {
             if (!employee) return [];
+            // Alle Schichten des Mitarbeiters laden, dann client-seitig filtern
+            const all = await base44.entities.Shift.filter({ employee_id: employee.id }, 'date', 500);
             const from = format(subMonths(new Date(), 1), 'yyyy-MM-dd');
             const to   = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
-            return base44.entities.Shift.filter({ employee_id: employee.id, date_gte: from, date_lte: to }, 'date', 200);
+            return all.filter(s => s.date >= from && s.date <= to);
         },
         enabled: !!employee,
         staleTime: STALE.MEDIUM,

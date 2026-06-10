@@ -87,8 +87,6 @@ export default function TimeTracking() {
                 });
             }
             // Mitarbeiter: nur eigene ClockEntries für den gewählten Monat laden
-            const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
-            const end   = format(endOfMonth(selectedMonth),   'yyyy-MM-dd');
             const all = await base44.entities.ClockEntry.filter(
                 { employee_id: currentEmployee.id },
                 '-clock_in',

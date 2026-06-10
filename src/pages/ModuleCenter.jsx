@@ -324,13 +324,13 @@ function useModuleState(companyInfo) {
 
 // ── ModuleCard ────────────────────────────────────────────────────────────
 
-function ModuleCard({ module, isEnabled, onToggle, allModules, isSaving }) {
+function ModuleCard({ module, isEnabled, onToggle, allModules, isSaving, isEnabledFn }) {
     const Icon = module.icon;
     const requires   = (module.requires   || []).map(id => allModules.find(m => m.id === id)).filter(Boolean);
     const dependents = (module.dependents || []).map(id => allModules.find(m => m.id === id)).filter(Boolean);
 
     // Kann nur deaktiviert werden wenn kein Pflicht-Modul und keine aktiven Dependents
-    const activeDependents = dependents.filter(d => isEnabled(d));
+    const activeDependents = dependents.filter(d => isEnabledFn ? isEnabledFn(d) : false);
     const canDisable = !module.required && activeDependents.length === 0;
 
     return (
@@ -537,6 +537,7 @@ export default function ModuleCenter() {
                                         key={module.id}
                                         module={module}
                                         isEnabled={isEnabled(module)}
+                                        isEnabledFn={isEnabled}
                                         onToggle={(v) => setModule(module.id, v)}
                                         allModules={MODULE_REGISTRY}
                                         isSaving={isSaving}

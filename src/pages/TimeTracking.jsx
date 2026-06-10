@@ -79,24 +79,40 @@ export default function TimeTracking() {
             const start = format(startOfMonth(selectedMonth), 'yyyy-MM-dd');
             const end = format(endOfMonth(selectedMonth), 'yyyy-MM-dd');
             if (permissions.isManager) {
-                const all = await base44.entities.ClockEntry.list('-clock_in', 100);
-                return all.filter(e => {
+                // Manager: aktive Einträge (ohne clock_out) + abgeschlossene des gewählten Monats
+                const [active, monthly] = await Promise.all([
+                    base44.entities.ClockEntry.filter({ status: 'clocked_in' }, '-clock_in', 50),
+                    base44.entities.ClockEntry.list('-clock_in', 200),
+                ]);
+                const monthlyFiltered = monthly.filter(e => {
                     if (!e.clock_in) return false;
                     const d = format(new Date(e.clock_in), 'yyyy-MM-dd');
                     return d >= start && d <= end;
                 });
+                // Deduplizieren
+                const seen = new Set(monthlyFiltered.map(e => e.id));
+                const extras = active.filter(e => !seen.has(e.id));
+                return [...extras, ...monthlyFiltered];
             }
-            // Mitarbeiter: nur eigene ClockEntries für den gewählten Monat laden
-            const all = await base44.entities.ClockEntry.filter(
-                { employee_id: currentEmployee.id },
-                '-clock_in',
-                300
-            );
-            return all.filter(e => {
+            // Mitarbeiter: eigene aktive Einträge + abgeschlossene des Monats
+            const [active, monthly] = await Promise.all([
+                base44.entities.ClockEntry.filter(
+                    { employee_id: currentEmployee.id, status: 'clocked_in' },
+                    '-clock_in', 5
+                ),
+                base44.entities.ClockEntry.filter(
+                    { employee_id: currentEmployee.id },
+                    '-clock_in', 300
+                ),
+            ]);
+            const monthlyFiltered = monthly.filter(e => {
                 if (!e.clock_in) return false;
                 const d = format(new Date(e.clock_in), 'yyyy-MM-dd');
                 return d >= start && d <= end;
             });
+            const seen = new Set(monthlyFiltered.map(e => e.id));
+            const extras = active.filter(e => !seen.has(e.id));
+            return [...extras, ...monthlyFiltered];
         },
         enabled: !isLoadingEmployee && (permissions.isManager || !!currentEmployee?.id),
         refetchInterval: 60000,

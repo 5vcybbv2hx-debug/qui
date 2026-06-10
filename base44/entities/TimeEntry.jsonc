@@ -90,18 +90,7 @@
         }
       ]
     },
-    "read": {
-      "$or": [
-        {
-          "data.employee_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
+    "read": true,
     "update": {
       "$or": [
         {

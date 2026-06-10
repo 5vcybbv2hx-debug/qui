@@ -8,7 +8,7 @@
     },
     "street": {
       "type": "string",
-      "description": "Stra\u00dfe und Hausnummer"
+      "description": "Straße und Hausnummer"
     },
     "postal_code": {
       "type": "string",
@@ -41,7 +41,7 @@
     },
     "opening_hours": {
       "type": "string",
-      "description": "\u00d6ffnungszeiten (JSON)"
+      "description": "Öffnungszeiten (JSON)"
     },
     "logo_url": {
       "type": "string",
@@ -92,7 +92,7 @@
     "datenschutz_version": {
       "type": "string",
       "default": "1.0",
-      "description": "Versionsnummer der Datenschutzerkl\u00e4rung"
+      "description": "Versionsnummer der Datenschutzerklärung"
     },
     "agb_version": {
       "type": "string",
@@ -111,7 +111,7 @@
     },
     "payroll_email": {
       "type": "string",
-      "description": "Email-Adresse f\u00fcr Lohnb\u00fcro-Reports"
+      "description": "Email-Adresse für Lohnbüro-Reports"
     },
     "datev_beraternummer": {
       "type": "string",
@@ -123,12 +123,16 @@
     },
     "whatsapp_group_link": {
       "type": "string",
-      "description": "WhatsApp-Gruppenlink f\u00fcr das Team"
+      "description": "WhatsApp-Gruppenlink für das Team"
     },
     "last_updated": {
       "type": "string",
       "format": "date-time",
       "description": "Letzte Aktualisierung"
+    },
+    "module_states": {
+      "type": "string",
+      "description": "JSON-String mit Aktivierungsstatus der Module (ModuleCenter)"
     }
   },
   "required": [

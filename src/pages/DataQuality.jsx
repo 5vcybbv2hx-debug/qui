@@ -252,12 +252,6 @@ function SummaryCard({ label, value, icon: Icon, color }) {
 export default function DataQuality() {
     const permissions = usePermissions();
 
-    // Nur Manager/Admin dürfen Datenqualität sehen
-    // (enthält sonst Bankdaten + Steuernummern aller Mitarbeiter)
-    if (!permissions.isManager) {
-        return <PermissionDenied message="Die Datenqualitäts-Übersicht ist nur für Manager zugänglich." />;
-    }
-
     const { data: employees = [], isLoading: loadingEmp } = useQuery({
         queryKey: ['employees-quality'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true }, 'name', 200),
@@ -275,6 +269,11 @@ export default function DataQuality() {
         queryFn: () => base44.entities.MenuItem.list('name', 500),
         staleTime: STALE.SLOW,
     });
+
+    // Nur Manager/Admin dürfen Datenqualität sehen
+    if (!permissions.isManager) {
+        return <PermissionDenied message="Die Datenqualitäts-Übersicht ist nur für Manager zugänglich." />;
+    }
 
     const empWithIssues  = employees.filter(e => Object.keys(getMissingFields(e)).length > 0).length;
     const artWithIssues  = articles.filter(a => ARTICLE_CHECKS.some(c => c.check(a))).length;

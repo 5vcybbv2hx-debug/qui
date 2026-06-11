@@ -324,7 +324,9 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
         }
         const cleanData = {
             ...formData,
-            slushy_original_volume_liters: formData.slushy_original_volume_liters === '' ? null : formData.slushy_original_volume_liters,
+            slushy_original_volume_liters: formData.slushy_original_volume_liters === '' || formData.slushy_original_volume_liters === undefined ? null : Number(formData.slushy_original_volume_liters),
+            servings: formData.servings === '' || formData.servings === undefined ? 1 : Number(formData.servings),
+            slushy_rating: formData.slushy_rating === '' || formData.slushy_rating === undefined ? null : Number(formData.slushy_rating),
         };
         if (selectedRecipe) {
             updateMutation.mutate({ id: selectedRecipe.id, data: cleanData });

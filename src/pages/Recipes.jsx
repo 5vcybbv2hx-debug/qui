@@ -903,7 +903,7 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                             </DialogTitle>
                         </DialogHeader>
                         
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                        <form onSubmit={handleSubmit} className="space-y-4 mt-4" id="recipe-form">
                             {/* Recipe Type Toggle */}
                             <div className="flex gap-1 p-1 bg-secondary/50 rounded-lg">
                                 <button type="button"
@@ -1105,9 +1105,10 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                     Abbrechen
                                 </Button>
                                 <Button 
-                                    type="submit" 
+                                    type="button"
                                     disabled={createMutation.isPending || updateMutation.isPending}
                                     className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                                    onClick={() => handleSubmit()}
                                 >
                                     {(createMutation.isPending || updateMutation.isPending) ? 'Wird gespeichert...' : (selectedRecipe ? 'Speichern' : 'Hinzufügen')}
                                 </Button>

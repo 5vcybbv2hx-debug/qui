@@ -322,10 +322,14 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
             alert('Bitte gib einen Rezeptnamen ein.');
             return;
         }
+        const cleanData = {
+            ...formData,
+            slushy_original_volume_liters: formData.slushy_original_volume_liters === '' ? null : formData.slushy_original_volume_liters,
+        };
         if (selectedRecipe) {
-            updateMutation.mutate({ id: selectedRecipe.id, data: formData });
+            updateMutation.mutate({ id: selectedRecipe.id, data: cleanData });
         } else {
-            createMutation.mutate(formData);
+            createMutation.mutate(cleanData);
         }
     };
 

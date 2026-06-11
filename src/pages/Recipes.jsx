@@ -87,6 +87,9 @@ export default function Recipes() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['recipes'] });
             closeModal();
+        },
+        onError: (err) => {
+            alert('Fehler beim Erstellen: ' + (err?.message || JSON.stringify(err)));
         }
     });
 
@@ -95,6 +98,9 @@ export default function Recipes() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['recipes'] });
             closeModal();
+        },
+        onError: (err) => {
+            alert('Fehler beim Speichern: ' + (err?.message || JSON.stringify(err)));
         }
     });
 
@@ -312,7 +318,10 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
 
     const handleSubmit = (e) => {
         if (e && e.preventDefault) e.preventDefault();
-        if (!formData.name?.trim()) return;
+        if (!formData.name?.trim()) {
+            alert('Bitte gib einen Rezeptnamen ein.');
+            return;
+        }
         if (selectedRecipe) {
             updateMutation.mutate({ id: selectedRecipe.id, data: formData });
         } else {

@@ -311,7 +311,8 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
     };
 
     const handleSubmit = (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
+        if (!formData.name?.trim()) return;
         if (selectedRecipe) {
             updateMutation.mutate({ id: selectedRecipe.id, data: formData });
         } else {
@@ -1103,8 +1104,12 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
                                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
-                                    {selectedRecipe ? 'Speichern' : 'Hinzufügen'}
+                                <Button 
+                                    type="submit" 
+                                    disabled={createMutation.isPending || updateMutation.isPending}
+                                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                                >
+                                    {(createMutation.isPending || updateMutation.isPending) ? 'Wird gespeichert...' : (selectedRecipe ? 'Speichern' : 'Hinzufügen')}
                                 </Button>
                             </div>
                         </form>

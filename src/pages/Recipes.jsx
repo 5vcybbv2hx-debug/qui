@@ -895,26 +895,219 @@ Nutze NUR verfügbare Artikel aus der obigen Liste!`,
 
                 {/* Modal */}
                 <Dialog open={modalOpen} onOpenChange={closeModal}>
-                    <DialogContent className="sm:max-w-lg flex flex-col" style={{maxHeight:'90dvh',overflowY:'hidden'}}>
-                        <DialogHeader className="shrink-0">
+                    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
                             <DialogTitle>
                                 {selectedRecipe ? 'Rezept bearbeiten' : 'Neues Rezept'}
                             </DialogTitle>
                         </DialogHeader>
                         
-                        <div className="flex-1 overflow-y-auto overscroll-contain" style={{WebkitOverflowScrolling:'touch'}}>
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4 pb-2">
-...
-                            <div className="flex gap-2 pt-4">
+                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                            {/* Recipe Type Toggle */}
+                            <div className="flex gap-1 p-1 bg-secondary/50 rounded-lg">
+                                <button type="button"
+                                    onClick={() => setFormData({...formData, recipe_type: 'standard'})}
+                                    className={cn('flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
+                                        formData.recipe_type !== 'slushy' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
+                                    )}>
+                                    <Wine className="w-3.5 h-3.5" /> Standard-Cocktail
+                                </button>
+                                <button type="button"
+                                    onClick={() => setFormData({...formData, recipe_type: 'slushy'})}
+                                    className={cn('flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
+                                        formData.recipe_type === 'slushy' ? 'bg-cyan-600 text-white shadow-sm' : 'text-muted-foreground'
+                                    )}>
+                                    <Snowflake className="w-3.5 h-3.5" /> Slushy-Rezept
+                                </button>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Name *</Label>
+                                <Input
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder={formData.recipe_type === 'slushy' ? 'z.B. Frozen Mojito' : 'z.B. Mojito'}
+                                    required
+                                />
+                            </div>
+
+                            {formData.recipe_type === 'slushy' ? (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Basis-Spirituose</Label>
+                                        <Select value={formData.slushy_spirit_base} onValueChange={(v) => setFormData({ ...formData, slushy_spirit_base: v })}>
+                                            <SelectTrigger><SelectValue placeholder="Wählen..." /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Vodka">Vodka</SelectItem>
+                                                <SelectItem value="Rum">Rum</SelectItem>
+                                                <SelectItem value="Gin">Gin</SelectItem>
+                                                <SelectItem value="Whiskey">Whiskey</SelectItem>
+                                                <SelectItem value="Likör">Likör</SelectItem>
+                                                <SelectItem value="Alkoholfrei">Alkoholfrei</SelectItem>
+                                                <SelectItem value="Sonstiges">Sonstiges</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Original-Menge (Liter)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.1"
+                                            value={formData.slushy_original_volume_liters}
+                                            onChange={(e) => setFormData({ ...formData, slushy_original_volume_liters: parseFloat(e.target.value) || '' })}
+                                            placeholder="z.B. 9.5"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground">Wird automatisch auf 3,5L skaliert</p>
+                                    </div>
+                                </div>
+                            ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <Label>Kategorie</Label>
+                                    <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Cocktail">Cocktail</SelectItem>
+                                            <SelectItem value="Shot">Shot</SelectItem>
+                                            <SelectItem value="Longdrink">Longdrink</SelectItem>
+                                            <SelectItem value="Mocktail">Mocktail</SelectItem>
+                                            <SelectItem value="Moonshiner-Cocktails">Moonshiner-Cocktails</SelectItem>
+                                            <SelectItem value="Sonstiges">Sonstiges</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Portionen</Label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={formData.servings}
+                                        onChange={(e) => setFormData({ ...formData, servings: parseInt(e.target.value) || 1 })}
+                                    />
+                                </div>
+                            </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label>Zutaten</Label>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={suggestIngredients}
+                                        disabled={suggestingIngredients || !formData.name}
+                                        className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                                    >
+                                        <Sparkles className="w-3 h-3 mr-1" />
+                                        {suggestingIngredients ? 'Vorschläge...' : 'KI-Vorschläge'}
+                                    </Button>
+                                </div>
+                                <IngredientSelector
+                                    ingredients={formData.ingredients}
+                                    onChange={(newIngredients) => setFormData({ ...formData, ingredients: newIngredients })}
+                                    articles={articles}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Zubereitung</Label>
+                                <Textarea
+                                    value={formData.preparation}
+                                    onChange={(e) => setFormData({ ...formData, preparation: e.target.value })}
+                                    placeholder="Minze mit Zucker muddeln..."
+                                    rows={4}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-2">
+                                    <Label>Glasart</Label>
+                                    <Input
+                                        value={formData.glass_type}
+                                        onChange={(e) => setFormData({ ...formData, glass_type: e.target.value })}
+                                        placeholder="z.B. Highball"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Garnitur</Label>
+                                    <Input
+                                        value={formData.garnish}
+                                        onChange={(e) => setFormData({ ...formData, garnish: e.target.value })}
+                                        placeholder="z.B. Minzzweig"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Notizen</Label>
+                                <Textarea
+                                    value={formData.notes}
+                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                                    placeholder="Zusätzliche Hinweise..."
+                                    rows={2}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Bild</Label>
+                                <div className="space-y-2">
+                                    {formData.image_url && (
+                                        <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-300">
+                                            <img src={formData.image_url} alt="Rezeptbild" className="w-full h-full object-cover" />
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => setFormData({ ...formData, image_url: '' })}
+                                                className="absolute top-2 right-2"
+                                            >
+                                                Entfernen
+                                            </Button>
+                                        </div>
+                                    )}
+                                    <div className="flex gap-2">
+                                       <label className="flex-1">
+                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-slate-600 bg-slate-700 text-slate-100 text-sm cursor-pointer hover:bg-slate-600 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                                               📁 Datei wählen
+                                           </div>
+                                           <Input
+                                               type="file"
+                                               accept="image/*"
+                                               onChange={handleImageUpload}
+                                               disabled={uploadingImage}
+                                               className="hidden"
+                                           />
+                                       </label>
+                                       <label className="flex-1">
+                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-amber-400 bg-amber-50 text-amber-700 text-sm cursor-pointer hover:bg-amber-100 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                                               📷 Foto aufnehmen
+                                           </div>
+                                           <Input
+                                               type="file"
+                                               accept="image/*"
+                                               capture="environment"
+                                               onChange={handleImageUpload}
+                                               disabled={uploadingImage}
+                                               className="hidden"
+                                           />
+                                       </label>
+                                    </div>
+                                    {uploadingImage && <p className="text-xs text-slate-500">Wird hochgeladen...</p>}
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-4 pb-4">
                                 <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
                                     Abbrechen
                                 </Button>
-                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
+                                <Button type="submit" onClick={handleSubmit} className="flex-1 bg-amber-600 hover:bg-amber-700 text-white">
                                     {selectedRecipe ? 'Speichern' : 'Hinzufügen'}
                                 </Button>
                             </div>
                         </form>
-                        </div>
                     </DialogContent>
                 </Dialog>
 

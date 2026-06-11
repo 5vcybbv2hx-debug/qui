@@ -100,7 +100,6 @@ export default function IngredientSelector({ ingredients, onChange, articles }) 
                             onChange={(e) => setSearchTerm(e.target.value)}
                             placeholder="Artikel suchen..."
                             className="pl-9 h-9"
-                            autoFocus
                         />
                     </div>
 

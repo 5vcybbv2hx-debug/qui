@@ -236,7 +236,6 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                                 value={formData.barcode}
                                 onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                                 placeholder="z.B. 4029764001807"
-                                required
                                 className="flex-1"
                             />
                             <Button

@@ -40,6 +40,8 @@ export default function Shifts() {
         shiftType: 'all'
     });
     const [showFilters, setShowFilters] = useState(false);
+    const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
+    const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
     // Mobile: track which week is displayed to load only that week's shifts
     const [mobileWeekStart, setMobileWeekStart] = useState(
         () => startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -354,49 +356,53 @@ export default function Shifts() {
                         )}
                         {/* Admin Tools Dropdown */}
                         {permissions.isAdmin && (
-                            <div className="relative group">
+                            <div className="relative">
                                 <Button
                                     variant="outline"
+                                    onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
                                     className="border-border text-muted-foreground hover:text-foreground"
                                 >
                                     ⚙️ Admin
                                 </Button>
-                                <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                                    <div className="p-2 space-y-1">
-                                        <div className="px-2 py-1"><MonthlyStaffingCheck /></div>
-                                        <div className="px-2 py-1"><ShiftRequirementsManager /></div>
-                                        <div className="px-2 py-1"><DefaultShiftRulesManager /></div>
+                                {adminDropdownOpen && (
+                                    <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                                        <div className="p-2 space-y-1">
+                                            <div onClick={() => setAdminDropdownOpen(false)}><MonthlyStaffingCheck /></div>
+                                            <div onClick={() => setAdminDropdownOpen(false)}><ShiftRequirementsManager /></div>
+                                            <div onClick={() => setAdminDropdownOpen(false)}><DefaultShiftRulesManager /></div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         )}
                         {/* Export Tools Dropdown */}
                         {(permissions.canEditShifts || permissions.isManager || permissions.isAdmin) && (
-                            <div className="relative group">
+                            <div className="relative">
                                 <Button
                                     variant="outline"
+                                    onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
                                     className="border-border text-muted-foreground hover:text-foreground"
                                     title="Export & Backup Optionen"
                                 >
                                     ⬇️
                                 </Button>
-                                <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                                    <div className="p-2 space-y-1">
-                                        <div className="px-2 py-1">
+                                {exportDropdownOpen && (
+                                    <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
+                                        <div className="p-2 space-y-1">
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={handleBackup}
+                                                onClick={() => { handleBackup(); setExportDropdownOpen(false); }}
                                                 className="w-full justify-start text-muted-foreground hover:text-foreground"
                                                 title="Alle Schichten als JSON sichern"
                                             >
                                                 <Download className="w-4 h-4 mr-2" />
                                                 Sicherung
                                             </Button>
+                                            <div onClick={() => setExportDropdownOpen(false)}><CalendarExport shifts={shifts} reservations={reservations} /></div>
                                         </div>
-                                        <div className="px-2 py-1"><CalendarExport shifts={shifts} reservations={reservations} /></div>
                                     </div>
-                                </div>
+                                )}
                             </div>
                         )}
                     </div>

@@ -62,6 +62,7 @@ export const PERMISSION_MATRIX = {
     // ── Schichten & Kalender ──────────────────────────────────────────────────
     canViewShifts:               { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: true  },
     canEditShifts:               { roles: [M.MANAGER],                                       terminal: false },
+    canPlanShifts:               { roles: [M.MANAGER],                                       terminal: false },
     canDeleteShifts:             { roles: [M.MANAGER],                                       terminal: false },
     canExportShifts:             { roles: [M.MANAGER],                                       terminal: false },
     canApproveShiftSwaps:        { roles: [M.MANAGER],                                       terminal: false },

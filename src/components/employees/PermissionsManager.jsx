@@ -33,6 +33,7 @@ const PERMISSION_SECTIONS = [
             { sub: 'Schichten', perms: [
                 { key: 'canViewShifts', label: 'Schichtplan ansehen' },
                 { key: 'canEditShifts', label: 'Schichten bearbeiten' },
+                { key: 'canPlanShifts', label: 'Schnellplanung (Drag & Drop)' },
                 { key: 'canDeleteShifts', label: 'Schichten löschen' },
                 { key: 'canExportShifts', label: 'Schichten exportieren' },
             ]},

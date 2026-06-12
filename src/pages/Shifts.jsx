@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Users, Filter, X, ExternalLink, Download } from 'lucide-react';
+import { Plus, Users, Filter, X, ExternalLink, Download, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { LoadingState, ErrorState } from '@/components/ui/StateDisplay';
@@ -22,6 +22,7 @@ import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManag
 import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
 import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
+import QuickScheduler from '@/components/shifts/QuickScheduler';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -29,6 +30,7 @@ export default function Shifts() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
     const isMobile = useIsMobile();
+    const [activeTab, setActiveTab] = useState('calendar');
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
@@ -84,6 +86,12 @@ export default function Shifts() {
     const { data: requirements = [] } = useQuery({
         queryKey: ['shift-requirements'],
         queryFn: () => base44.entities.ShiftRequirement.list(),
+        staleTime: STALE.SLOW,
+    });
+
+    const { data: shiftTypes = [] } = useQuery({
+        queryKey: ['shift-types'],
+        queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order', 50),
         staleTime: STALE.SLOW,
     });
 
@@ -372,7 +380,27 @@ export default function Shifts() {
                     </Card>
                 )}
 
+                {/* Tab switcher */}
+                <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit">
+                    <button
+                        onClick={() => setActiveTab('calendar')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'calendar' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        Kalender
+                    </button>
+                    {permissions.canPlanShifts && (
+                        <button
+                            onClick={() => setActiveTab('quick')}
+                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'quick' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
+                        >
+                            <Zap className="w-3.5 h-3.5" />
+                            Schnellplanung
+                        </button>
+                    )}
+                </div>
+
                 {/* Calendar */}
+                {activeTab === 'calendar' && (
                 <ShiftCalendar 
                     shifts={filteredShifts}
                     allShifts={shifts}
@@ -386,9 +414,23 @@ export default function Shifts() {
                     selectedDate={selectedDate}
                     setSelectedDate={setSelectedDate}
                 />
+                )}
+
+                {/* Quick Scheduler */}
+                {activeTab === 'quick' && permissions.canPlanShifts && (
+                    <QuickScheduler
+                        employees={employees}
+                        shiftTypes={shiftTypes}
+                        shifts={shifts}
+                        onCreateShift={(data) => createMutation.mutate(data)}
+                        onDeleteShift={(id) => {
+                            if (confirm('Schicht entfernen?')) deleteMutation.mutate(id);
+                        }}
+                    />
+                )}
 
                 {/* Selected Date Details */}
-                {selectedDate && (
+                {activeTab === 'calendar' && selectedDate && (
                     <Card className="mt-6 p-5 bg-card border-border">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bold text-foreground text-lg">

@@ -23,6 +23,7 @@ import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
 import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
 import QuickScheduler from '@/components/shifts/QuickScheduler';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -356,54 +357,35 @@ export default function Shifts() {
                         )}
                         {/* Admin Tools Dropdown */}
                         {permissions.isAdmin && (
-                            <div className="relative">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setAdminDropdownOpen(!adminDropdownOpen)}
-                                    className="border-border text-muted-foreground hover:text-foreground"
-                                >
-                                    ⚙️ Admin
-                                </Button>
-                                {adminDropdownOpen && (
-                                    <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                                        <div className="p-2 space-y-1">
-                                            <div onClick={() => setAdminDropdownOpen(false)}><MonthlyStaffingCheck /></div>
-                                            <div onClick={() => setAdminDropdownOpen(false)}><ShiftRequirementsManager /></div>
-                                            <div onClick={() => setAdminDropdownOpen(false)}><DefaultShiftRulesManager /></div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            <Popover open={adminDropdownOpen} onOpenChange={setAdminDropdownOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground">
+                                        ⚙️ Admin
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-48 p-2 space-y-1">
+                                    <div onClick={() => setAdminDropdownOpen(false)}><MonthlyStaffingCheck /></div>
+                                    <div onClick={() => setAdminDropdownOpen(false)}><ShiftRequirementsManager /></div>
+                                    <div onClick={() => setAdminDropdownOpen(false)}><DefaultShiftRulesManager /></div>
+                                </PopoverContent>
+                            </Popover>
                         )}
                         {/* Export Tools Dropdown */}
                         {(permissions.canEditShifts || permissions.isManager || permissions.isAdmin) && (
-                            <div className="relative">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
-                                    className="border-border text-muted-foreground hover:text-foreground"
-                                    title="Export & Backup Optionen"
-                                >
-                                    ⬇️
-                                </Button>
-                                {exportDropdownOpen && (
-                                    <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg z-10">
-                                        <div className="p-2 space-y-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => { handleBackup(); setExportDropdownOpen(false); }}
-                                                className="w-full justify-start text-muted-foreground hover:text-foreground"
-                                                title="Alle Schichten als JSON sichern"
-                                            >
-                                                <Download className="w-4 h-4 mr-2" />
-                                                Sicherung
-                                            </Button>
-                                            <div onClick={() => setExportDropdownOpen(false)}><CalendarExport shifts={shifts} reservations={reservations} /></div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            <Popover open={exportDropdownOpen} onOpenChange={setExportDropdownOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" title="Export & Backup Optionen" className="border-border text-muted-foreground hover:text-foreground">
+                                        ⬇️
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-48 p-2 space-y-1">
+                                    <Button variant="ghost" size="sm" onClick={() => { handleBackup(); setExportDropdownOpen(false); }} className="w-full justify-start text-muted-foreground hover:text-foreground" title="Alle Schichten als JSON sichern">
+                                        <Download className="w-4 h-4 mr-2" />
+                                        Sicherung
+                                    </Button>
+                                    <div onClick={() => setExportDropdownOpen(false)}><CalendarExport shifts={shifts} reservations={reservations} /></div>
+                                </PopoverContent>
+                            </Popover>
                         )}
                     </div>
                 </div>

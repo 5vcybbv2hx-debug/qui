@@ -145,7 +145,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
             });
             
             const detected = result.allergens === "Keine" ? "" : result.allergens;
-            setFormData({ ...formData, allergens: detected });
+            setFormData(prev => ({ ...prev, allergens: detected }));
             toast.success('Allergene erkannt');
         } catch (error) {
             toast.error('Fehler bei der Allergenerkennung');
@@ -210,7 +210,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
         
         try {
             const { file_url } = await base44.integrations.Core.UploadFile({ file: editedFile });
-            setFormData({ ...formData, image_url: file_url });
+            setFormData(prev => ({ ...prev, image_url: file_url }));
             URL.revokeObjectURL(tempImageUrl);
             setTempImageUrl('');
             toast.success('Bild hochgeladen');
@@ -259,7 +259,7 @@ Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, 
                                 <Sparkles className="w-4 h-4" />
                             </Button>
                         </div>
-                        <p className="text-xs text-foreground0">
+                        <p className="text-xs text-muted-foreground">
                             Tipp: Scanne einen Barcode oder generiere einen eigenen Code für Artikel ohne EAN
                         </p>
                     </div>

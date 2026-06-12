@@ -334,7 +334,7 @@ export default function Shifts() {
                                 Schnellplanung
                             </Button>
                         )}
-                         <Button
+                        <Button
                             variant={showFilters ? "secondary" : "outline"}
                             onClick={() => setShowFilters(!showFilters)}
                             className="border-border text-muted-foreground hover:text-foreground"
@@ -343,21 +343,6 @@ export default function Shifts() {
                             Filter
                         </Button>
                         <ShiftSwapManager />
-                        {permissions.isAdmin && <MonthlyStaffingCheck />}
-                        {permissions.isAdmin && <ShiftRequirementsManager />}
-                        {permissions.isAdmin && <DefaultShiftRulesManager />}
-                        {permissions.canEditShifts && <OpeningHoursManager />}
-                        <Button
-                            variant="outline"
-                            onClick={handleBackup}
-                            className="border-border text-muted-foreground hover:text-foreground"
-                            title="Alle Schichten als JSON sichern"
-                        >
-                            <Download className="w-4 h-4 mr-2" />
-                            Sicherung
-                        </Button>
-                        <LiveSyncInstructions />
-                        <CalendarExport shifts={shifts} reservations={reservations} />
                         {permissions.canEditShifts && (
                             <Button 
                                 onClick={() => handleAddShift(new Date())}
@@ -366,6 +351,53 @@ export default function Shifts() {
                                 <Plus className="w-4 h-4 mr-2" />
                                 Neue Schicht
                             </Button>
+                        )}
+                        {/* Admin Tools Dropdown */}
+                        {permissions.isAdmin && (
+                            <div className="relative group">
+                                <Button
+                                    variant="outline"
+                                    className="border-border text-muted-foreground hover:text-foreground"
+                                >
+                                    ⚙️ Admin
+                                </Button>
+                                <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                                    <div className="p-2 space-y-1">
+                                        <div className="px-2 py-1"><MonthlyStaffingCheck /></div>
+                                        <div className="px-2 py-1"><ShiftRequirementsManager /></div>
+                                        <div className="px-2 py-1"><DefaultShiftRulesManager /></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {/* Export Tools Dropdown */}
+                        {(permissions.canEditShifts || permissions.isManager || permissions.isAdmin) && (
+                            <div className="relative group">
+                                <Button
+                                    variant="outline"
+                                    className="border-border text-muted-foreground hover:text-foreground"
+                                    title="Export & Backup Optionen"
+                                >
+                                    ⬇️
+                                </Button>
+                                <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                                    <div className="p-2 space-y-1">
+                                        <div className="px-2 py-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleBackup}
+                                                className="w-full justify-start text-muted-foreground hover:text-foreground"
+                                                title="Alle Schichten als JSON sichern"
+                                            >
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Sicherung
+                                            </Button>
+                                        </div>
+                                        <div className="px-2 py-1"><CalendarExport shifts={shifts} reservations={reservations} /></div>
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>

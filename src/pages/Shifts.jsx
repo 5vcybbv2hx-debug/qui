@@ -31,6 +31,7 @@ export default function Shifts() {
     const permissions = usePermissions();
     const isMobile = useIsMobile();
     const [activeTab, setActiveTab] = useState('calendar');
+    const [activeMobileTab, setActiveMobileTab] = useState('calendar'); // Mobile: 'calendar' | 'quick'
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
@@ -234,6 +235,17 @@ export default function Shifts() {
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-card">
                     <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
                         <ShiftSwapManager />
+                        {(permissions.canPlanShifts || permissions.isManager || permissions.isAdmin) && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setActiveMobileTab('quick')}
+                                className="border-amber-600/50 text-amber-500 hover:bg-amber-600/10 flex-shrink-0 h-9"
+                            >
+                                <Zap className="w-4 h-4 mr-1" />
+                                Schnellplanung
+                            </Button>
+                        )}
                         {permissions.canEditShifts && (
                             <Button
                                 size="sm"
@@ -247,18 +259,44 @@ export default function Shifts() {
                     </div>
                 </div>
 
-                {/* Mobile week view */}
+                {/* Mobile week view / Quick Scheduler */}
                 <div className="flex-1 overflow-hidden">
-                    <MobileWeekView
-                        shifts={shifts}
-                        employees={employees}
-                        isLoading={shiftsLoading}
-                        onAddShift={handleAddShift}
-                        onSaveShift={handleSave}
-                        onDeleteShift={handleDelete}
-                        weekStart={mobileWeekStart}
-                        onWeekChange={(ws) => setMobileWeekStart(ws)}
-                    />
+                    {activeMobileTab === 'quick' && (permissions.canPlanShifts || permissions.isManager || permissions.isAdmin) ? (
+                        <div className="p-4 overflow-y-auto h-full">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-amber-400" />
+                                    Schnellplanung
+                                </h2>
+                                <button
+                                    onClick={() => setActiveMobileTab('calendar')}
+                                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                                >
+                                    ← Kalender
+                                </button>
+                            </div>
+                            <QuickScheduler
+                                employees={employees}
+                                shiftTypes={shiftTypes}
+                                shifts={shifts}
+                                onCreateShift={(data) => createMutation.mutate(data)}
+                                onDeleteShift={(id) => {
+                                    if (confirm('Schicht entfernen?')) deleteMutation.mutate(id);
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <MobileWeekView
+                            shifts={shifts}
+                            employees={employees}
+                            isLoading={shiftsLoading}
+                            onAddShift={handleAddShift}
+                            onSaveShift={handleSave}
+                            onDeleteShift={handleDelete}
+                            weekStart={mobileWeekStart}
+                            onWeekChange={(ws) => setMobileWeekStart(ws)}
+                        />
+                    )}
                 </div>
 
                 {/* Shift Modal */}
@@ -426,7 +464,7 @@ export default function Shifts() {
                 )}
 
                 {/* Quick Scheduler */}
-                {activeTab === 'quick' && permissions.canPlanShifts && (
+                {activeTab === 'quick' && (permissions.canPlanShifts || permissions.isManager || permissions.isAdmin) && (
                     <QuickScheduler
                         employees={employees}
                         shiftTypes={shiftTypes}

@@ -341,8 +341,7 @@ export default function Shifts() {
                         {(permissions.isManager || permissions.isAdmin || permissions.canPlanShifts) && (
                             <Button
                                 onClick={() => setActiveTab('quick')}
-                                variant={activeTab === 'quick' ? 'secondary' : 'outline'}
-                                className="border-border text-muted-foreground hover:text-foreground"
+                                className="bg-amber-600 hover:bg-amber-700"
                             >
                                 <Zap className="w-4 h-4 mr-2" />
                                 Schnellplanung

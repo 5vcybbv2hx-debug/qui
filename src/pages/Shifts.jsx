@@ -287,7 +287,16 @@ export default function Shifts() {
                         <p className="text-muted-foreground text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2 flex-wrap overflow-x-auto pb-2">
-                        <Button
+                        {permissions.canPlanShifts && (
+                            <Button
+                                onClick={() => setActiveTab('quick')}
+                                className="bg-amber-600 hover:bg-amber-700"
+                            >
+                                <Zap className="w-4 h-4 mr-2" />
+                                Schnellplanung
+                            </Button>
+                        )}
+                         <Button
                             variant={showFilters ? "secondary" : "outline"}
                             onClick={() => setShowFilters(!showFilters)}
                             className="border-border text-muted-foreground hover:text-foreground"

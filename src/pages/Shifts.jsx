@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Users, Filter, X, ExternalLink, Download, Zap } from 'lucide-react';
+import { Plus, Users, Filter, X, ExternalLink, Download, Zap, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { LoadingState, ErrorState } from '@/components/ui/StateDisplay';
@@ -39,7 +39,6 @@ export default function Shifts() {
         shiftType: 'all'
     });
     const [showFilters, setShowFilters] = useState(false);
-    const [adminDropdownOpen, setAdminDropdownOpen] = useState(false);
     const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
     // Mobile: track which week is displayed to load only that week's shifts
     const [mobileWeekStart, setMobileWeekStart] = useState(
@@ -325,63 +324,72 @@ export default function Shifts() {
                         <p className="text-muted-foreground text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2 flex-wrap items-center">
-                         <Button
-                             variant={showFilters ? "secondary" : "outline"}
-                             onClick={() => setShowFilters(!showFilters)}
-                             className="border-border text-muted-foreground hover:text-foreground"
-                         >
-                             <Filter className="w-4 h-4 mr-2" />
-                             Filter
-                         </Button>
-                         {permissions.canEditShifts && (
-                             <Button 
-                                 onClick={() => handleAddShift(new Date())}
-                                 className="bg-amber-600 hover:bg-amber-700"
-                             >
-                                 <Plus className="w-4 h-4 mr-2" />
-                                 Schicht hinzufügen
-                             </Button>
-                         )}
-                         {(permissions.isManager || permissions.isAdmin || permissions.canPlanShifts) && (
-                             <Button
-                                 onClick={() => setActiveTab('quick')}
-                                 className="bg-amber-600 hover:bg-amber-700"
-                             >
-                                 <Zap className="w-4 h-4 mr-2" />
-                                 Schnellplanung
-                             </Button>
-                         )}
-                         {permissions.isAdmin && (
-                             <Popover open={adminDropdownOpen} onOpenChange={setAdminDropdownOpen}>
-                                 <PopoverTrigger asChild>
-                                     <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground" title="Admin-Werkzeuge">
-                                         ⚙️
-                                     </Button>
-                                 </PopoverTrigger>
-                                 <PopoverContent className="w-48 p-2 space-y-1">
-                                     <div onClick={() => setAdminDropdownOpen(false)}><MonthlyStaffingCheck /></div>
-                                     <div onClick={() => setAdminDropdownOpen(false)}><ShiftRequirementsManager /></div>
-                                     <div onClick={() => setAdminDropdownOpen(false)}><DefaultShiftRulesManager /></div>
-                                 </PopoverContent>
-                             </Popover>
-                         )}
-                         {(permissions.canEditShifts || permissions.isManager || permissions.isAdmin) && (
-                             <Popover open={exportDropdownOpen} onOpenChange={setExportDropdownOpen}>
-                                 <PopoverTrigger asChild>
-                                     <Button variant="outline" title="Exportieren" className="border-border text-muted-foreground hover:text-foreground">
-                                         ⬇️
-                                     </Button>
-                                 </PopoverTrigger>
-                                 <PopoverContent className="w-48 p-2 space-y-1">
-                                     <Button variant="ghost" size="sm" onClick={() => { handleBackup(); setExportDropdownOpen(false); }} className="w-full justify-start text-muted-foreground hover:text-foreground" title="Sicherung als JSON">
-                                         <Download className="w-4 h-4 mr-2" />
-                                         JSON Backup
-                                     </Button>
-                                     <div onClick={() => setExportDropdownOpen(false)}><CalendarExport shifts={shifts} reservations={reservations} /></div>
-                                 </PopoverContent>
-                             </Popover>
-                         )}
-                     </div>
+                        {/* ShiftSwapManager */}
+                        <ShiftSwapManager />
+
+                        {/* Filter */}
+                        <Button
+                            variant={showFilters ? "secondary" : "outline"}
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="border-border text-muted-foreground hover:text-foreground"
+                        >
+                            <Filter className="w-4 h-4 mr-2" />
+                            Filter
+                        </Button>
+
+                        {/* Schnellplanung */}
+                        {(permissions.isManager || permissions.isAdmin || permissions.canPlanShifts) && (
+                            <Button
+                                onClick={() => setActiveTab('quick')}
+                                variant={activeTab === 'quick' ? 'secondary' : 'outline'}
+                                className="border-border text-muted-foreground hover:text-foreground"
+                            >
+                                <Zap className="w-4 h-4 mr-2" />
+                                Schnellplanung
+                            </Button>
+                        )}
+
+                        {/* Neue Schicht */}
+                        {permissions.canEditShifts && (
+                            <Button
+                                onClick={() => handleAddShift(new Date())}
+                                className="bg-amber-600 hover:bg-amber-700"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Neue Schicht
+                            </Button>
+                        )}
+
+                        {/* Mehr-Menü: Export + Admin-Tools */}
+                        {(permissions.isManager || permissions.isAdmin) && (
+                            <Popover open={exportDropdownOpen} onOpenChange={setExportDropdownOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground" title="Mehr Optionen">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56 p-2 space-y-1" align="end">
+                                    <p className="text-xs text-muted-foreground px-2 py-1 font-medium uppercase tracking-wide">Export</p>
+                                    <Button variant="ghost" size="sm" onClick={() => { handleBackup(); setExportDropdownOpen(false); }} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                                        <Download className="w-4 h-4 mr-2" />
+                                        JSON Backup
+                                    </Button>
+                                    <div onClick={() => setExportDropdownOpen(false)}>
+                                        <CalendarExport shifts={shifts} reservations={reservations} />
+                                    </div>
+                                    {permissions.isAdmin && (
+                                        <>
+                                            <div className="border-t border-border my-1" />
+                                            <p className="text-xs text-muted-foreground px-2 py-1 font-medium uppercase tracking-wide">Admin</p>
+                                            <div onClick={() => setExportDropdownOpen(false)}><MonthlyStaffingCheck /></div>
+                                            <div onClick={() => setExportDropdownOpen(false)}><ShiftRequirementsManager /></div>
+                                            <div onClick={() => setExportDropdownOpen(false)}><DefaultShiftRulesManager /></div>
+                                        </>
+                                    )}
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    </div>
                 </div>
 
                 {/* Filters Panel */}
@@ -440,25 +448,6 @@ export default function Shifts() {
                         )}
                     </Card>
                 )}
-
-                {/* Tab switcher */}
-                <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6 w-fit">
-                    <button
-                        onClick={() => setActiveTab('calendar')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'calendar' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                        Kalender
-                    </button>
-                    {(permissions.isManager || permissions.isAdmin || permissions.canPlanShifts) && (
-                        <button
-                            onClick={() => setActiveTab('quick')}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'quick' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}
-                        >
-                            <Zap className="w-3.5 h-3.5" />
-                            Schnellplanung
-                        </button>
-                    )}
-                </div>
 
                 {/* Calendar */}
                 {activeTab === 'calendar' && (

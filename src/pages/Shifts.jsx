@@ -287,7 +287,7 @@ export default function Shifts() {
                         <p className="text-muted-foreground text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
                     </div>
                     <div className="flex gap-2 flex-wrap overflow-x-auto pb-2">
-                        {permissions.canPlanShifts && (
+                        {(permissions.isManager || permissions.isAdmin || permissions.canPlanShifts) && (
                             <Button
                                 onClick={() => setActiveTab('quick')}
                                 className="bg-amber-600 hover:bg-amber-700"
@@ -397,7 +397,7 @@ export default function Shifts() {
                     >
                         Kalender
                     </button>
-                    {permissions.canPlanShifts && (
+                    {(permissions.isManager || permissions.isAdmin || permissions.canPlanShifts) && (
                         <button
                             onClick={() => setActiveTab('quick')}
                             className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'quick' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'}`}

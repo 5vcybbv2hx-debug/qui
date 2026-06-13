@@ -466,8 +466,12 @@ export default function Shifts() {
                 )}
 
                 {/* Quick Scheduler */}
-                {activeTab === 'quick' && (permissions.canPlanShifts || permissions.isManager || permissions.isAdmin) && (
-                    <QuickScheduler
+                {activeTab === 'quick' && (
+                    <div>
+                        <button onClick={() => setActiveTab('calendar')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
+                            ← Zurück zum Kalender
+                        </button>
+                        <QuickScheduler
                         employees={employees}
                         shiftTypes={shiftTypes}
                         shifts={shifts}
@@ -476,6 +480,7 @@ export default function Shifts() {
                             if (confirm('Schicht entfernen?')) deleteMutation.mutate(id);
                         }}
                     />
+                    </div>
                 )}
 
                 {/* Selected Date Details */}

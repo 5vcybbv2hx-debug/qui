@@ -313,14 +313,16 @@ export default function Calendar() {
                             Filter
                         </Button>
 
-                        <Button
-                            variant="outline"
-                            onClick={() => setActiveTab('quick')}
-                            className="border-amber-600/60 text-amber-500 hover:bg-amber-600/10"
-                        >
-                            <Zap className="w-4 h-4 mr-2" />
-                            Schnellplanung
-                        </Button>
+                        {permissions.isManager && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setActiveTab('quick')}
+                                className="border-amber-600/60 text-amber-500 hover:bg-amber-600/10"
+                            >
+                                <Zap className="w-4 h-4 mr-2" />
+                                Schnellplanung
+                            </Button>
+                        )}
 
                         {permissions.canEditShifts && (
                             <Button
@@ -430,7 +432,7 @@ export default function Calendar() {
                     />
                 )}
 
-                {activeTab === 'quick' && (
+                {activeTab === 'quick' && permissions.isManager && (
                     <div>
                         <button onClick={() => setActiveTab('calendar')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
                             ← Zurück zum Kalender

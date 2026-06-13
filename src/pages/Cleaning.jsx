@@ -29,6 +29,8 @@ export default function Cleaning() {
     const [reportsModalOpen, setReportsModalOpen] = useState(false);
     const [qrModalOpen, setQrModalOpen] = useState(false);
     const [pinModalOpen, setPinModalOpen] = useState(false);
+    const [endDayDialogOpen, setEndDayDialogOpen] = useState(false);
+    const [endDayLoading, setEndDayLoading] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const WEEKDAYS = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
     const [formData, setFormData] = useState({
@@ -96,7 +98,12 @@ export default function Cleaning() {
         if (t.due_weekdays && t.due_weekdays.length > 0 && !t.due_weekdays.includes(todayName)) return false;
         return true;
     });
-    const deactivatedTasks = [];
+    // Deaktivierte Aufgaben separat laden
+    const { data: deactivatedTasks = [] } = useQuery({
+        queryKey: ['cleaning-deactivated'],
+        queryFn: () => base44.entities.CleaningTask.filter({ is_active: false }, 'area', 200),
+        staleTime: STALE.SLOW,
+    });
 
     const { data: allAreas = [] } = useQuery({
         queryKey: ['cleaning-areas'],
@@ -201,51 +208,56 @@ export default function Cleaning() {
     };
 
     const endDay = async () => {
-        if (!confirm('Tag beenden? Dies erstellt einen Tagesbericht und setzt alle täglichen Aufgaben zurück.')) return;
+        setEndDayLoading(true);
+        try {
+            // Erstelle Tagesbericht
+            const today = new Date();
+            const completedTasks = tasks.filter(t =>
+                t.is_completed &&
+                t.completed_at &&
+                format(new Date(t.completed_at), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
+            );
 
-        // Erstelle Tagesbericht
-        const today = new Date();
-        const completedTasks = tasks.filter(t => 
-            t.is_completed && 
-            t.completed_at && 
-            format(new Date(t.completed_at), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
-        );
+            const reportData = completedTasks.map(task => ({
+                task_title: task.title,
+                area: task.area,
+                frequency: task.frequency,
+                completed_by: task.completed_by,
+                completed_at: task.completed_at
+            }));
 
-        const reportData = completedTasks.map(task => ({
-            task_title: task.title,
-            area: task.area,
-            frequency: task.frequency,
-            completed_by: task.completed_by,
-            completed_at: task.completed_at
-        }));
+            const dailyTasksTotal = tasks.filter(t => t.frequency === 'täglich');
+            const report = {
+                week_start: format(today, 'yyyy-MM-dd'),
+                week_end: format(today, 'yyyy-MM-dd'),
+                report_data: reportData,
+                total_tasks: dailyTasksTotal.length,
+                completed_tasks: completedTasks.length,
+                completion_rate: dailyTasksTotal.length > 0
+                    ? Math.round((completedTasks.length / dailyTasksTotal.length) * 100)
+                    : 0
+            };
 
-        const report = {
-            week_start: format(today, 'yyyy-MM-dd'),
-            week_end: format(today, 'yyyy-MM-dd'),
-            report_data: reportData,
-            total_tasks: tasks.filter(t => t.frequency === 'täglich').length,
-            completed_tasks: completedTasks.length,
-            completion_rate: tasks.filter(t => t.frequency === 'täglich').length > 0 
-                ? Math.round((completedTasks.length / tasks.filter(t => t.frequency === 'täglich').length) * 100) 
-                : 0
-        };
+            await base44.entities.CleaningReport.create(report);
+            queryClient.invalidateQueries({ queryKey: ['cleaning-reports'] });
 
-        await base44.entities.CleaningReport.create(report);
-        queryClient.invalidateQueries({ queryKey: ['cleaning-reports'] });
-
-        // Setze tägliche Aufgaben zurück — sequenziell um Rate Limit zu vermeiden
-        const dailyTasks = tasks.filter(t => t.frequency === 'täglich' && t.is_completed);
-        for (const task of dailyTasks) {
-            await base44.entities.CleaningTask.update(task.id, {
-                is_completed: false,
-                completed_by: null,
-                completed_at: null,
+            // Setze tägliche Aufgaben zurück — sequenziell um Rate Limit zu vermeiden
+            const dailyTasks = tasks.filter(t => t.frequency === 'täglich' && t.is_completed);
+            for (const task of dailyTasks) {
+                await base44.entities.CleaningTask.update(task.id, {
+                    is_completed: false,
+                    completed_by: null,
+                    completed_at: null,
                 last_reset: format(new Date(), 'yyyy-MM-dd')
             });
         }
-        queryClient.invalidateQueries({ queryKey: ['cleaning'] });
-
-        alert('Tagesbericht erstellt und tägliche Aufgaben zurückgesetzt!');
+            queryClient.invalidateQueries({ queryKey: ['cleaning'] });
+        } catch (err) {
+            console.error('endDay Fehler:', err);
+        } finally {
+            setEndDayLoading(false);
+            setEndDayDialogOpen(false);
+        }
     };
 
     const handleSubmit = (e) => {
@@ -254,7 +266,7 @@ export default function Cleaning() {
     };
 
     const generateWeeklyReport = async () => {
-        if (!confirm('Wochenbericht erstellen? Dies archiviert alle erledigten Aufgaben der letzten Woche.')) return;
+        // Wochenbericht direkt erstellen (kein confirm nötig)
 
         const today = new Date();
         const weekStart = new Date(today);
@@ -285,7 +297,7 @@ export default function Cleaning() {
 
         await base44.entities.CleaningReport.create(report);
         queryClient.invalidateQueries({ queryKey: ['cleaning-reports'] });
-        alert('Wochenbericht erstellt!');
+        queryClient.invalidateQueries({ queryKey: ['cleaning-reports'] });
     };
 
     const completedCount = tasks.filter(t => t.is_completed).length;
@@ -640,5 +652,36 @@ export default function Cleaning() {
                 </Dialog>
             </div>
         </div>
+
+        {/* Tag beenden Bestätigungs-Dialog */}
+        <Dialog open={endDayDialogOpen} onOpenChange={setEndDayDialogOpen}>
+            <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <RefreshCw className="w-5 h-5 text-orange-400" />
+                        Tag beenden
+                    </DialogTitle>
+                </DialogHeader>
+                <div className="py-3 text-sm text-muted-foreground">
+                    Dies erstellt einen Tagesbericht und setzt alle täglichen Aufgaben zurück. Fortfahren?
+                </div>
+                <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setEndDayDialogOpen(false)} disabled={endDayLoading}>
+                        Abbrechen
+                    </Button>
+                    <Button
+                        onClick={endDay}
+                        disabled={endDayLoading}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                        {endDayLoading ? (
+                            <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Wird verarbeitet...</>
+                        ) : (
+                            'Tag beenden'
+                        )}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }

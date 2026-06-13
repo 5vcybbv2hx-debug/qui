@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Plus, Users, Filter, X, Download, Zap, MoreHorizontal } from 'lucide-react';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
@@ -44,11 +44,9 @@ export default function Calendar() {
         staleTime: STALE.SLOW,
     });
 
-    const desktopFrom = format(subWeeks(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 1), 'yyyy-MM-dd');
-    const desktopTo = format(addWeeks(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), 1), 'yyyy-MM-dd');
     const { data: allShiftsDesktop = [], isLoading: desktopLoading } = useQuery({
-        queryKey: ['shifts', desktopFrom, desktopTo],
-        queryFn: () => base44.entities.Shift.filter({ date_gte: desktopFrom, date_lte: desktopTo }, '-date', 200),
+        queryKey: ['shifts'],
+        queryFn: () => base44.entities.Shift.list('date', 2000),
         enabled: !isMobile,
         staleTime: 2 * 60 * 1000,
         refetchOnWindowFocus: false,

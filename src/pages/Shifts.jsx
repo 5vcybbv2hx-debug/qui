@@ -338,15 +338,14 @@ export default function Shifts() {
                         </Button>
 
                         {/* Schnellplanung */}
-                        {(permissions.isManager || permissions.isAdmin || permissions.canPlanShifts) && (
-                            <Button
-                                onClick={() => setActiveTab('quick')}
-                                className="bg-amber-600 hover:bg-amber-700"
-                            >
-                                <Zap className="w-4 h-4 mr-2" />
-                                Schnellplanung
-                            </Button>
-                        )}
+                        <Button
+                            variant="outline"
+                            onClick={() => setActiveTab('quick')}
+                            className="border-amber-600/60 text-amber-500 hover:bg-amber-600/10"
+                        >
+                            <Zap className="w-4 h-4 mr-2" />
+                            Schnellplanung
+                        </Button>
 
                         {/* Neue Schicht */}
                         {permissions.canEditShifts && (

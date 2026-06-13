@@ -1,119 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { de } from 'date-fns/locale';
-import {
-    CalendarDays, Users, Plus, Download, Filter, X, CalendarOff
-} from 'lucide-react';
-import UnavailabilityForm from '@/components/availability/UnavailabilityForm';
+import { Plus, Users, Filter, X, Download, Zap, MoreHorizontal } from 'lucide-react';
+import { useErrorHandler } from '@/components/error/ErrorHandler';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ShiftCalendar from '@/components/shifts/ShiftCalendar';
 import ShiftModal from '@/components/shifts/ShiftModal';
+import MobileWeekView from '@/components/shifts/MobileWeekView';
 import CalendarExport from '@/components/shifts/CalendarExport';
-import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
-import OpeningHoursManager from '@/components/shifts/OpeningHoursManager';
 import ShiftRequirementsManager from '@/components/shifts/ShiftRequirementsManager';
-import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
 import MonthlyStaffingCheck from '@/components/shifts/MonthlyStaffingCheck';
-import TeamCalendarExport from '@/components/calendar/TeamCalendarExport';
-import EventDetailsModal from '@/components/calendar/EventDetailsModal';
-import ShiftSwapRequestModal from '@/components/shifts/ShiftSwapRequestModal';
-import UnifiedCalendarView from '@/components/calendar/UnifiedCalendarView';
-import DayDetailModal from '@/components/calendar/DayDetailModal';
 import DefaultShiftRulesManager from '@/components/shifts/DefaultShiftRulesManager';
-import ShiftTypeManager from '@/components/shifts/ShiftTypeManager';
-import ProvisionalAccessManager from '@/components/provisional/ProvisionalAccessManager';
-import ProvisionalReviewPanel from '@/components/provisional/ProvisionalReviewPanel';
-import ProvisionalShiftEntry from '@/components/provisional/ProvisionalShiftEntry';
-import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
-import { getHolidaysBW } from '@/components/shifts/getHolidays';
+import ShiftSwapManager from '@/components/shifts/ShiftSwapManager';
+import QuickScheduler from '@/components/shifts/QuickScheduler';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { usePermissions } from '@/components/auth/usePermissions';
-import PermissionDenied from '@/components/auth/PermissionDenied';
-import WorldCupDayBanner from '@/components/worldcup/WorldCupDayBanner';
-import { useWorldCupMatches } from '@/components/worldcup/useWorldCupMatches';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-const VIEWS = [
-    { id: 'schichtplan', label: 'Schichtplan', icon: CalendarDays },
-    { id: 'team', label: 'Team-Übersicht', icon: Users },
-    { id: 'selbsteinplanung', label: 'Selbsteinplanung', icon: Users },
-];
-
-function EmployeeSelbsteinplanung({ currentEmployee, provisionalRequests }) {
-    const { data: accesses = [] } = useQuery({
-        queryKey: ['provisional-accesses', currentEmployee?.id],
-        queryFn: () => base44.entities.ProvisionalShiftAccess.filter({ employee_id: currentEmployee.id, is_active: true }),
-        enabled: !!currentEmployee?.id,
-    });
-
-    if (!currentEmployee) {
-        return <Card className="p-8 text-center text-muted-foreground">Kein Mitarbeiterprofil gefunden.</Card>;
-    }
-
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const activeAccess = accesses.find(a => a.start_date <= today && a.end_date >= today);
-    const futureAccess = accesses.find(a => a.start_date > today);
-    const access = activeAccess || futureAccess || accesses[0];
-
-    if (!access) {
-        return (
-            <Card className="p-8 text-center">
-                <CalendarDays className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-40" />
-                <p className="text-muted-foreground">Keine Selbsteinplanung aktuell freigegeben.</p>
-                <p className="text-xs text-muted-foreground mt-1">Frage deinen Manager, wenn du einen Wunschplan einreichen möchtest.</p>
-            </Card>
-        );
-    }
-
-    return <ProvisionalShiftEntry employee={currentEmployee} access={access} />;
-}
-
-export default function CalendarPage() {
+export default function Calendar() {
     const queryClient = useQueryClient();
     const permissions = usePermissions();
-
-    const [view, setView] = useState('schichtplan');
-    // viewMonth drives the shift query window — keeps data scoped to ±1 month
-    const [viewMonth, setViewMonth] = useState(new Date());
-    const shiftFrom = format(subMonths(startOfMonth(viewMonth), 1), 'yyyy-MM-dd');
-    const shiftTo   = format(addMonths(endOfMonth(viewMonth), 1), 'yyyy-MM-dd');
-
-    // Schichtplan state
+    const isMobile = useIsMobile();
+    const [activeTab, setActiveTab] = useState('calendar');
+    const [activeMobileTab, setActiveMobileTab] = useState('calendar');
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState(null);
     const [selectedDate, setSelectedDate] = useState(null);
     const [filters, setFilters] = useState({ employee: 'all', shiftType: 'all' });
     const [showFilters, setShowFilters] = useState(false);
+    const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+    const [mobileWeekStart, setMobileWeekStart] = useState(
+        () => startOfWeek(new Date(), { weekStartsOn: 1 })
+    );
 
-    // Team-Ansicht state
-    const [selectedEmployees, setSelectedEmployees] = useState([]);
-    const [selectedRoles, setSelectedRoles] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedEvent, setSelectedEvent] = useState(null);
-    const [showEventModal, setShowEventModal] = useState(false);
-    const [shiftSwapData, setShiftSwapData] = useState(null);
-    const [selectedDayDetail, setSelectedDayDetail] = useState(null);
-    const [unavailFormOpen, setUnavailFormOpen] = useState(false);
-    const [currentUser, setCurrentUser] = React.useState(null);
-    React.useEffect(() => { base44.auth.me().then(setCurrentUser).catch(() => {}); }, []);
-    const { data: currentEmployee } = useCurrentEmployee();
-
-    // --- Shared data ---
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true }),
         staleTime: STALE.SLOW,
     });
 
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts', shiftFrom, shiftTo],
-        queryFn: () => base44.entities.Shift.list('date', 2000),
-        staleTime: STALE.MEDIUM,
-        select: (data) => data.filter(s => s.date >= shiftFrom && s.date <= shiftTo),
+    const desktopFrom = format(subWeeks(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 1), 'yyyy-MM-dd');
+    const desktopTo = format(addWeeks(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0), 1), 'yyyy-MM-dd');
+    const { data: allShiftsDesktop = [], isLoading: desktopLoading } = useQuery({
+        queryKey: ['shifts', desktopFrom, desktopTo],
+        queryFn: () => base44.entities.Shift.filter({ date_gte: desktopFrom, date_lte: desktopTo }, '-date', 200),
+        enabled: !isMobile,
+        staleTime: 2 * 60 * 1000,
+        refetchOnWindowFocus: false,
     });
+
+    const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
+    const mobileFrom = format(subWeeks(mobileWeekStart, 1), 'yyyy-MM-dd');
+    const mobileTo = format(addWeeks(mobileWeekEnd, 1), 'yyyy-MM-dd');
+
+    const { data: mobileShifts = [], isLoading: mobileLoading } = useQuery({
+        queryKey: ['shifts-mobile', format(mobileWeekStart, 'yyyy-MM-dd')],
+        queryFn: () => base44.entities.Shift.filter({ date_gte: mobileFrom, date_lte: mobileTo }, '-date', 200),
+        enabled: isMobile,
+        staleTime: 2 * 60 * 1000,
+    });
+
+    const shifts = isMobile ? mobileShifts : allShiftsDesktop;
+    const shiftsLoading = isMobile ? mobileLoading : desktopLoading;
+    const { handleError } = useErrorHandler();
 
     const { data: reservations = [] } = useQuery({
         queryKey: ['reservations', 'active'],
@@ -127,41 +81,28 @@ export default function CalendarPage() {
         staleTime: STALE.SLOW,
     });
 
+    const { data: shiftTypes = [] } = useQuery({
+        queryKey: ['shift-types'],
+        queryFn: () => base44.entities.ShiftType.filter({ is_active: true }, 'order', 50),
+        staleTime: STALE.SLOW,
+    });
+
     const { data: vacationRequests = [] } = useQuery({
         queryKey: ['vacation-requests'],
-        queryFn: () => base44.entities.VacationRequest.list('-created_date', 200),
-        staleTime: STALE.SLOW,
+        queryFn: () => base44.entities.VacationRequest.filter({ status: 'genehmigt' }, '-start_date', 200),
+        staleTime: 5 * 60 * 1000,
     });
 
-    const { data: events = [] } = useQuery({
-        queryKey: ['events'],
-        queryFn: () => base44.entities.Event.list('-date', 200),
-        staleTime: STALE.SLOW,
-    });
-
-    const { data: unavailabilityRequests = [] } = useQuery({
-        queryKey: ['unavailability-requests-all'],
-        queryFn: () => base44.entities.UnavailabilityRequest.list('-date', 500),
-        staleTime: STALE.SLOW,
-    });
-
-    const { data: provisionalRequests = [] } = useQuery({
-        queryKey: ['provisional-shift-requests'],
-        queryFn: () => base44.entities.ProvisionalShiftRequest.list('-date', 500),
+    const { data: swapRequests = [] } = useQuery({
+        queryKey: ['shift-swap-requests-open'],
+        queryFn: () => base44.entities.ShiftSwapRequest.list('-created_date', 100),
         staleTime: STALE.MEDIUM,
     });
 
-    const { data: wcMatches = [] } = useWorldCupMatches();
-
-    const approvedVacations = vacationRequests.filter(v => v.status === 'genehmigt');
-
-    const currentYear = new Date().getFullYear();
-    const holidays = [...getHolidaysBW(currentYear), ...getHolidaysBW(currentYear + 1)];
-
-    // --- Mutations (Schichtplan) ---
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.Shift.create(data),
-        onSuccess: () => {
+        onSuccess: (newShift) => {
+            queryClient.setQueryData(['shifts'], (old) => [newShift, ...(old || [])]);
             queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
             setSelectedShift(null);
@@ -171,14 +112,16 @@ export default function CalendarPage() {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Shift.update(id, data),
         onMutate: async ({ id, data }) => {
-            await queryClient.cancelQueries({ queryKey: ['shifts'] });
+            await queryClient.cancelQueries(['shifts']);
             const previous = queryClient.getQueryData(['shifts']);
             queryClient.setQueryData(['shifts'], (old) =>
-                (old || []).map(s => s.id === id ? { ...s, ...data } : s)
+                (old || []).map(shift => shift.id === id ? { ...shift, ...data } : shift)
             );
             return { previous };
         },
-        onError: (err, vars, context) => queryClient.setQueryData(['shifts'], context.previous),
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['shifts'], context.previous);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
@@ -189,12 +132,16 @@ export default function CalendarPage() {
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.Shift.delete(id),
         onMutate: async (id) => {
-            await queryClient.cancelQueries({ queryKey: ['shifts'] });
+            await queryClient.cancelQueries(['shifts']);
             const previous = queryClient.getQueryData(['shifts']);
-            queryClient.setQueryData(['shifts'], (old) => (old || []).filter(s => s.id !== id));
+            queryClient.setQueryData(['shifts'], (old) =>
+                (old || []).filter(shift => shift.id !== id)
+            );
             return { previous };
         },
-        onError: (err, vars, context) => queryClient.setQueryData(['shifts'], context.previous),
+        onError: (err, variables, context) => {
+            queryClient.setQueryData(['shifts'], context.previous);
+        },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['shifts'] });
             setModalOpen(false);
@@ -202,31 +149,31 @@ export default function CalendarPage() {
         }
     });
 
-    if (!permissions.canViewShifts) {
-        return <PermissionDenied message="Du hast keine Berechtigung für den Schichtplan." />;
-    }
+    const handleAddShift = (date, shift = null) => {
+        setSelectedShift(shift || null);
+        setSelectedDate(date);
+        setModalOpen(true);
+    };
 
-    // --- Handlers ---
-    const handleAddShift = (date) => { setSelectedShift(null); setSelectedDate(date); setModalOpen(true); };
-    const handleSelectShift = (shift) => { setSelectedShift(shift); setSelectedDate(null); setModalOpen(true); };
-    const handleSave = (data, id) => id ? updateMutation.mutate({ id, data }) : createMutation.mutate(data);
-    const handleDelete = (id) => { if (confirm('Schicht wirklich löschen?')) deleteMutation.mutate(id); };
-    const handleShiftMove = async (shiftId, newDate) => {
-        const shift = shifts.find(s => s.id === shiftId);
-        if (!shift) return;
-        await updateMutation.mutateAsync({ id: shiftId, data: { ...shift, date: format(newDate, 'yyyy-MM-dd') } });
+    const handleSelectShift = (shift) => {
+        setSelectedShift(shift);
+        setSelectedDate(null);
+        setModalOpen(true);
     };
-    const handleBackup = async () => {
-        const { data } = await base44.functions.invoke('backupShifts');
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `schichten-backup-${format(new Date(), 'yyyy-MM-dd-HHmmss')}.json`;
-        document.body.appendChild(a); a.click();
-        window.URL.revokeObjectURL(url); a.remove();
+
+    const handleSave = (data, id) => {
+        if (id) {
+            updateMutation.mutate({ id, data });
+        } else {
+            createMutation.mutate(data);
+        }
     };
-    const handleEventClick = (event) => { setSelectedEvent(event); setShowEventModal(true); };
+
+    const handleDelete = (id) => {
+        if (confirm('Schicht wirklich löschen?')) {
+            deleteMutation.mutate(id);
+        }
+    };
 
     const filteredShifts = shifts.filter(shift => {
         if (filters.employee !== 'all' && shift.employee_id !== filters.employee) return false;
@@ -240,312 +187,342 @@ export default function CalendarPage() {
             .sort((a, b) => a.start_time.localeCompare(b.start_time))
         : [];
 
-    return (
-        <div className="min-h-screen bg-background">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+    const handleShiftMove = async (shiftId, newDate) => {
+        const shift = shifts.find(s => s.id === shiftId);
+        if (!shift) return;
+        await updateMutation.mutateAsync({
+            id: shiftId,
+            data: { ...shift, date: format(newDate, 'yyyy-MM-dd') }
+        });
+    };
 
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Schichtplan</h1>
-                        <p className="text-muted-foreground text-sm mt-0.5">Schichtplan & Team-Übersicht</p>
-                    </div>
+    const handleBackup = async () => {
+        try {
+            const { data } = await base44.functions.invoke('backupShifts');
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `schichten-backup-${format(new Date(), 'yyyy-MM-dd-HHmmss')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (error) {
+            console.error('Backup fehlgeschlagen:', error);
+        }
+    };
 
-                    {/* View Toggle */}
-                    <div className="flex bg-card border border-border rounded-lg p-1 gap-1">
-                        {VIEWS.map(v => (
-                            <button
-                                key={v.id}
-                                onClick={() => setView(v.id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                                    view === v.id
-                                        ? 'bg-amber-600 text-foreground shadow'
-                                        : 'text-muted-foreground hover:text-foreground'
-                                }`}
+    // ─── Mobile layout ───────────────────────────────────────────────────────
+    if (isMobile) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-card">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+                        {permissions.canEditShifts && (
+                            <Button
+                                size="sm"
+                                onClick={() => handleAddShift(new Date())}
+                                className="bg-amber-500 hover:bg-amber-600 text-slate-900 flex-shrink-0 h-9"
                             >
-                                <v.icon className="w-4 h-4" />
-                                {v.label}
-                            </button>
-                        ))}
+                                <Plus className="w-4 h-4 mr-1" />
+                                Schicht
+                            </Button>
+                        )}
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setActiveMobileTab('quick')}
+                            className="border-amber-600/50 text-amber-500 hover:bg-amber-600/10 flex-shrink-0 h-9"
+                        >
+                            <Zap className="w-4 h-4 mr-1" />
+                            Schnellplanung
+                        </Button>
                     </div>
                 </div>
 
-                {/* ======================== SCHICHTPLAN ======================== */}
-                {view === 'schichtplan' && (
-                    <>
-                        {/* Toolbar */}
-                        <div className="flex gap-2 flex-wrap mb-6">
+                <div className="flex-1 overflow-hidden">
+                    {activeMobileTab === 'quick' ? (
+                        <div className="p-4 overflow-y-auto h-full">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-amber-400" />
+                                    Schnellplanung
+                                </h2>
+                                <button
+                                    onClick={() => setActiveMobileTab('calendar')}
+                                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                                >
+                                    ← Kalender
+                                </button>
+                            </div>
+                            <QuickScheduler
+                                employees={employees}
+                                shiftTypes={shiftTypes}
+                                shifts={shifts}
+                                onCreateShift={(data) => createMutation.mutate(data)}
+                                onDeleteShift={(id) => {
+                                    if (confirm('Schicht entfernen?')) deleteMutation.mutate(id);
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <MobileWeekView
+                            shifts={shifts}
+                            employees={employees}
+                            isLoading={shiftsLoading}
+                            onAddShift={handleAddShift}
+                            onSaveShift={handleSave}
+                            onDeleteShift={handleDelete}
+                            weekStart={mobileWeekStart}
+                            onWeekChange={(ws) => setMobileWeekStart(ws)}
+                        />
+                    )}
+                </div>
+
+                <ShiftModal
+                    open={modalOpen}
+                    onClose={() => { setModalOpen(false); setSelectedShift(null); }}
+                    shift={selectedShift}
+                    employees={employees}
+                    selectedDate={selectedDate}
+                    existingShifts={shifts}
+                    onSave={handleSave}
+                    onDelete={handleDelete}
+                />
+            </div>
+        );
+    }
+
+    // ─── Desktop layout ──────────────────────────────────────────────────────
+    return (
+        <div className="min-h-screen bg-background">
+            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+                <div className="flex flex-col gap-3 mb-6 sm:mb-8">
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Schichtplan</h1>
+                        <p className="text-muted-foreground text-sm mt-1">Verwalte die Arbeitszeiten deines Teams</p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap items-center">
+                        <ShiftSwapManager />
+
+                        <Button
+                            variant={showFilters ? "secondary" : "outline"}
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="border-border text-muted-foreground hover:text-foreground"
+                        >
+                            <Filter className="w-4 h-4 mr-2" />
+                            Filter
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            onClick={() => setActiveTab('quick')}
+                            className="border-amber-600/60 text-amber-500 hover:bg-amber-600/10"
+                        >
+                            <Zap className="w-4 h-4 mr-2" />
+                            Schnellplanung
+                        </Button>
+
+                        {permissions.canEditShifts && (
                             <Button
-                                variant={showFilters ? "secondary" : "outline"}
-                                onClick={() => setShowFilters(!showFilters)}
+                                onClick={() => handleAddShift(new Date())}
+                                className="bg-amber-600 hover:bg-amber-700"
                             >
-                                <Filter className="w-4 h-4 mr-2" />
+                                <Plus className="w-4 h-4 mr-2" />
+                                Neue Schicht
+                            </Button>
+                        )}
+
+                        {(permissions.isManager || permissions.isAdmin) && (
+                            <Popover open={exportDropdownOpen} onOpenChange={setExportDropdownOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="border-border text-muted-foreground hover:text-foreground" title="Mehr Optionen">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56 p-2 space-y-1" align="end">
+                                    <p className="text-xs text-muted-foreground px-2 py-1 font-medium uppercase tracking-wide">Export</p>
+                                    <Button variant="ghost" size="sm" onClick={() => { handleBackup(); setExportDropdownOpen(false); }} className="w-full justify-start text-muted-foreground hover:text-foreground">
+                                        <Download className="w-4 h-4 mr-2" />
+                                        JSON Backup
+                                    </Button>
+                                    <div onClick={() => setExportDropdownOpen(false)}>
+                                        <CalendarExport shifts={shifts} reservations={reservations} />
+                                    </div>
+                                    {permissions.isAdmin && (
+                                        <>
+                                            <div className="border-t border-border my-1" />
+                                            <p className="text-xs text-muted-foreground px-2 py-1 font-medium uppercase tracking-wide">Admin</p>
+                                            <div onClick={() => setExportDropdownOpen(false)}><MonthlyStaffingCheck /></div>
+                                            <div onClick={() => setExportDropdownOpen(false)}><ShiftRequirementsManager /></div>
+                                            <div onClick={() => setExportDropdownOpen(false)}><DefaultShiftRulesManager /></div>
+                                        </>
+                                    )}
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    </div>
+                </div>
+
+                {showFilters && (
+                    <Card className="p-4 bg-card border-border mb-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-semibold text-foreground flex items-center gap-2">
+                                <Filter className="w-4 h-4" />
                                 Filter
-                            </Button>
-                            <Button variant="outline" onClick={() => setUnavailFormOpen(true)}
-                                className="text-orange-400 border-orange-400/30 hover:bg-orange-500/10">
-                                <CalendarOff className="w-4 h-4 mr-2" />
-                                Nicht verfügbar
-                            </Button>
-                            <ShiftSwapManager />
-                            {permissions.isAdmin && <MonthlyStaffingCheck />}
-                            {permissions.isAdmin && <DefaultShiftRulesManager />}
-                            {permissions.canEditShifts && <ShiftTypeManager />}
-                            {permissions.canEditShifts && <ShiftRequirementsManager />}
-                            {permissions.canEditShifts && <OpeningHoursManager />}
-                            <Button variant="outline" onClick={handleBackup} title="Backup als JSON">
-                                <Download className="w-4 h-4 mr-2" />
-                                Sicherung
-                            </Button>
-                            <LiveSyncInstructions />
+                            </h3>
+                            {(filters.employee !== 'all' || filters.shiftType !== 'all') && (
+                                <Button variant="ghost" size="sm" onClick={() => setFilters({ employee: 'all', shiftType: 'all' })} className="text-muted-foreground hover:text-foreground">
+                                    <X className="w-4 h-4 mr-1" />
+                                    Zurücksetzen
+                                </Button>
+                            )}
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="text-sm text-muted-foreground mb-2 block">Mitarbeiter</label>
+                                <select
+                                    value={filters.employee}
+                                    onChange={(e) => setFilters({ ...filters, employee: e.target.value })}
+                                    className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-amber-600"
+                                >
+                                    <option value="all">Alle Mitarbeiter</option>
+                                    {employees.map(emp => (
+                                        <option key={emp.id} value={emp.id}>{emp.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-sm text-muted-foreground mb-2 block">Schichttyp</label>
+                                <select
+                                    value={filters.shiftType}
+                                    onChange={(e) => setFilters({ ...filters, shiftType: e.target.value })}
+                                    className="w-full px-3 py-2 bg-muted border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-amber-600"
+                                >
+                                    <option value="all">Alle Schichttypen</option>
+                                    <option value="Aufmachen">Aufmachen</option>
+                                    <option value="Frühschicht">Frühschicht</option>
+                                    <option value="Spätschicht">Spätschicht</option>
+                                    <option value="Sonderschicht">Sonderschicht</option>
+                                </select>
+                            </div>
+                        </div>
+                        {(filters.employee !== 'all' || filters.shiftType !== 'all') && (
+                            <div className="mt-4 text-sm text-muted-foreground">
+                                {filteredShifts.length} Schicht{filteredShifts.length !== 1 ? 'en' : ''} gefunden
+                            </div>
+                        )}
+                    </Card>
+                )}
+
+                {activeTab === 'calendar' && (
+                    <ShiftCalendar
+                        shifts={filteredShifts}
+                        allShifts={shifts}
+                        employees={employees}
+                        requirements={requirements}
+                        vacationRequests={vacationRequests}
+                        swapRequests={swapRequests}
+                        onAddShift={handleAddShift}
+                        onSelectShift={handleSelectShift}
+                        onShiftMove={handleShiftMove}
+                        selectedDate={selectedDate}
+                        setSelectedDate={setSelectedDate}
+                    />
+                )}
+
+                {activeTab === 'quick' && (
+                    <div>
+                        <button onClick={() => setActiveTab('calendar')} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-4">
+                            ← Zurück zum Kalender
+                        </button>
+                        <QuickScheduler
+                            employees={employees}
+                            shiftTypes={shiftTypes}
+                            shifts={shifts}
+                            onCreateShift={(data) => createMutation.mutate(data)}
+                            onDeleteShift={(id) => {
+                                if (confirm('Schicht entfernen?')) deleteMutation.mutate(id);
+                            }}
+                        />
+                    </div>
+                )}
+
+                {activeTab === 'calendar' && selectedDate && (
+                    <Card className="mt-6 p-5 bg-card border-border">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-foreground text-lg">
+                                {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
+                            </h3>
                             {permissions.canEditShifts && (
-                                <Button onClick={() => handleAddShift(new Date())} className="bg-amber-600 hover:bg-amber-700">
+                                <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleAddShift(selectedDate)}>
                                     <Plus className="w-4 h-4 mr-2" />
-                                    Neue Schicht
+                                    Schicht hinzufügen
                                 </Button>
                             )}
                         </div>
 
-                        {/* Filter Panel */}
-                        {showFilters && (
-                            <Card className="p-4 mb-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-semibold flex items-center gap-2">
-                                        <Filter className="w-4 h-4" /> Filter
-                                    </h3>
-                                    {(filters.employee !== 'all' || filters.shiftType !== 'all') && (
-                                        <Button variant="ghost" size="sm" onClick={() => setFilters({ employee: 'all', shiftType: 'all' })}>
-                                            <X className="w-4 h-4 mr-1" /> Zurücksetzen
-                                        </Button>
-                                    )}
-                                </div>
-                                <div className="grid sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm text-muted-foreground mb-2 block">Mitarbeiter</label>
-                                        <select
-                                            value={filters.employee}
-                                            onChange={(e) => setFilters({ ...filters, employee: e.target.value })}
-                                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
+                        {selectedDateShifts.length > 0 ? (
+                            <div className="grid gap-2">
+                                {selectedDateShifts.map(shift => {
+                                    const employee = employees.find(e => e.id === shift.employee_id);
+                                    return (
+                                        <div
+                                            key={shift.id}
+                                            onClick={() => permissions.canEditShifts && handleSelectShift(shift)}
+                                            className={`flex items-center gap-3 p-3 rounded-lg bg-muted transition-colors border border-border ${permissions.canEditShifts ? 'cursor-pointer hover:bg-accent hover:border-amber-600' : 'cursor-default'}`}
                                         >
-                                            <option value="all">Alle Mitarbeiter</option>
-                                            {employees.map(emp => (
-                                                <option key={emp.id} value={emp.id}>{emp.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-sm text-muted-foreground mb-2 block">Schichttyp</label>
-                                        <select
-                                            value={filters.shiftType}
-                                            onChange={(e) => setFilters({ ...filters, shiftType: e.target.value })}
-                                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm"
-                                        >
-                                            <option value="all">Alle Schichttypen</option>
-                                            <option value="Aufmachen">Aufmachen</option>
-                                            <option value="Frühschicht">Frühschicht</option>
-                                            <option value="Spätschicht">Spätschicht</option>
-                                            <option value="Sonderschicht">Sonderschicht</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </Card>
-                        )}
-
-                        {/* Calendar */}
-                        <ShiftCalendar
-                            shifts={filteredShifts}
-                            provisionalRequests={provisionalRequests}
-                            allShifts={shifts}
-                            employees={employees}
-                            requirements={requirements}
-                            vacationRequests={vacationRequests}
-                            unavailabilityRequests={unavailabilityRequests}
-                            wcMatches={wcMatches}
-                            onAddShift={handleAddShift}
-                            onSelectShift={handleSelectShift}
-                            onShiftMove={handleShiftMove}
-                            selectedDate={selectedDate}
-                            setSelectedDate={setSelectedDate}
-                            onNavigate={(date) => setViewMonth(date)}
-                        />
-
-                        {/* Selected Date Details */}
-                        {selectedDate && (
-                            <Card className="mt-6 p-5">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-bold text-lg">
-                                        {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
-                                    </h3>
-                                    {permissions.canEditShifts && (
-                                        <Button size="sm" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleAddShift(selectedDate)}>
-                                            <Plus className="w-4 h-4 mr-2" /> Schicht hinzufügen
-                                        </Button>
-                                    )}
-                                </div>
-
-                                {/* WM-Spiele an diesem Tag */}
-                                <WorldCupDayBanner
-                                    matches={wcMatches}
-                                    dateStr={format(selectedDate, 'yyyy-MM-dd')}
-                                />
-
-                                {selectedDateShifts.length > 0 ? (
-                                    <div className="grid gap-2">
-                                        {selectedDateShifts.map((shift, idx) => {
-                                            const employee = employees.find(e => e.id === shift.employee_id);
-                                            return (
-                                                <div
-                                                    key={shift.id}
-                                                    onClick={() => permissions.canEditShifts && handleSelectShift(shift)}
-                                                    className={`flex items-center gap-3 p-3 rounded-lg bg-secondary border border-border transition-colors animate-stagger ${permissions.canEditShifts ? 'cursor-pointer hover:border-amber-600' : 'cursor-default'}`}
-                                                    style={{ '--delay': `${idx * 40}ms` }}
-                                                >
-                                                    <div
-                                                        className="w-10 h-10 rounded-lg flex items-center justify-center text-foreground font-bold text-sm flex-shrink-0"
-                                                        style={{ backgroundColor: employee?.color || '#64748b' }}
-                                                    >
-                                                        {shift.employee_name?.charAt(0)}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2">
-                                                            <p className="font-semibold truncate">{shift.employee_name}</p>
-                                                            {shift.shift_type && (
-                                                                <Badge className="bg-amber-600/20 text-amber-400 border-amber-600/30 text-[10px]">
-                                                                    {shift.shift_type}
-                                                                </Badge>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-sm text-muted-foreground font-mono">{shift.start_time} - {shift.end_time}</p>
-                                                        {shift.notes && <p className="text-xs text-muted-foreground mt-1 italic truncate">{shift.notes}</p>}
-                                                    </div>
+                                            <div
+                                                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                                                style={{ backgroundColor: employee?.color || '#64748b' }}
+                                            >
+                                                {shift.employee_name?.charAt(0)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-semibold text-foreground truncate">{shift.employee_name}</p>
+                                                    {shift.shift_type && (
+                                                        <Badge className="bg-amber-600/20 text-amber-400 border-amber-600/30 text-[10px]">
+                                                            {shift.shift_type}
+                                                        </Badge>
+                                                    )}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <Users className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                                        <p>Keine Schichten geplant</p>
-                                    </div>
-                                )}
-                            </Card>
-                        )}
-
-                        {/* Unavailability Form */}
-                        <UnavailabilityForm
-                            open={unavailFormOpen}
-                            onClose={() => setUnavailFormOpen(false)}
-                            currentUser={currentUser}
-                        />
-
-                        {/* Shift Modal */}
-                        <ShiftModal
-                            open={modalOpen}
-                            onClose={() => { setModalOpen(false); setSelectedShift(null); }}
-                            shift={selectedShift}
-                            employees={employees}
-                            selectedDate={selectedDate}
-                            existingShifts={shifts}
-                            onSave={handleSave}
-                            onDelete={handleDelete}
-                        />
-                    </>
-                )}
-
-                {/* ======================== SELBSTEINPLANUNG ======================== */}
-                {view === 'selbsteinplanung' && (
-                    permissions.isManager ? (
-                        <div className="space-y-8">
-                            <ProvisionalReviewPanel />
-                            <div className="border-t border-border/50 pt-6">
-                                <ProvisionalAccessManager employees={employees} />
+                                                <p className="text-sm text-muted-foreground font-mono">
+                                                    {shift.start_time} - {shift.end_time}
+                                                </p>
+                                                {shift.notes && (
+                                                    <p className="text-xs text-muted-foreground mt-1 italic truncate">
+                                                        {shift.notes}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        </div>
-                    ) : (
-                        <EmployeeSelbsteinplanung currentEmployee={currentEmployee} provisionalRequests={provisionalRequests} />
-                    )
-                )}
-
-                {/* ======================== TEAM-ÜBERSICHT ======================== */}
-                {view === 'team' && (
-                    <>
-                        {/* Stats + Export */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                            <Card className="p-4">
-                                <div className="text-2xl font-bold">{shifts.length}</div>
-                                <div className="text-sm text-muted-foreground">Schichten</div>
-                            </Card>
-                            <Card className="p-4">
-                                <div className="text-2xl font-bold">{approvedVacations.length}</div>
-                                <div className="text-sm text-muted-foreground">Urlaube</div>
-                            </Card>
-                            <Card className="p-4">
-                                <div className="text-2xl font-bold">{holidays.length}</div>
-                                <div className="text-sm text-muted-foreground">Feiertage</div>
-                            </Card>
-                            <Card className="p-4 flex flex-col justify-between">
-                                <div className="text-2xl font-bold">{employees.length}</div>
-                                <div className="text-sm text-muted-foreground">Mitarbeiter</div>
-                            </Card>
-                        </div>
-
-                        <div className="flex justify-end mb-4">
-                            <TeamCalendarExport
-                                shifts={shifts}
-                                vacations={approvedVacations}
-                                holidays={holidays}
-                                employees={employees}
-                            />
-                        </div>
-
-                        <UnifiedCalendarView
-                            shifts={shifts}
-                            vacations={approvedVacations}
-                            holidays={holidays}
-                            employees={employees}
-                            reservations={reservations}
-                            events={events}
-                            wcMatches={wcMatches}
-                            onEventClick={handleEventClick}
-                            onDayClick={(day) => setSelectedDayDetail(day)}
-                            selectedEmployees={selectedEmployees}
-                            onEmployeeToggle={setSelectedEmployees}
-                            onRoleToggle={setSelectedRoles}
-                            selectedRoles={selectedRoles}
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                        />
-
-                        <DayDetailModal
-                            open={!!selectedDayDetail}
-                            onClose={() => setSelectedDayDetail(null)}
-                            day={selectedDayDetail}
-                            shifts={shifts}
-                            vacations={approvedVacations}
-                            holidays={holidays}
-                            reservations={reservations}
-                            events={events}
-                            employees={employees}
-                            wcMatches={wcMatches}
-                            onShiftSwap={(shift) => { setShiftSwapData(shift); setSelectedDayDetail(null); }}
-                        />
-
-                        <EventDetailsModal
-                            event={selectedEvent}
-                            open={showEventModal}
-                            onClose={() => { setShowEventModal(false); setSelectedEvent(null); }}
-                            onShiftSwap={(shift) => setShiftSwapData(shift)}
-                        />
-
-                        {shiftSwapData && (
-                            <ShiftSwapRequestModal
-                                shift={shiftSwapData}
-                                open={!!shiftSwapData}
-                                onClose={() => setShiftSwapData(null)}
-                            />
+                        ) : (
+                            <div className="text-center py-12 text-muted-foreground">
+                                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                                    <Users className="w-8 h-8 text-muted-foreground" />
+                                </div>
+                                <p className="text-base mb-2 text-foreground">Keine Schichten geplant</p>
+                                <p className="text-sm text-muted-foreground">Klicke oben auf "Schicht hinzufügen"</p>
+                            </div>
                         )}
-                    </>
+                    </Card>
                 )}
+
+                <ShiftModal
+                    open={modalOpen}
+                    onClose={() => { setModalOpen(false); setSelectedShift(null); }}
+                    shift={selectedShift}
+                    employees={employees}
+                    selectedDate={selectedDate}
+                    existingShifts={shifts}
+                    onSave={handleSave}
+                    onDelete={handleDelete}
+                />
             </div>
         </div>
     );

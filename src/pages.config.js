@@ -83,7 +83,6 @@ import SalesAnalysis from './pages/SalesAnalysis';
 import GuestHub from './pages/GuestHub';
 import Settings from './pages/Settings';
 import ShiftSwaps from './pages/ShiftSwaps';
-import Shifts from './pages/Shifts';
 import Shopping from './pages/Shopping';
 import Suppliers from './pages/Suppliers';
 import TeamCalendar from './pages/TeamCalendar';
@@ -156,7 +155,6 @@ const CORE_PAGES = {
     "GuestHub": GuestHub,
     "Settings": Settings,
     "ShiftSwaps": ShiftSwaps,
-    "Shifts": Shifts,
     "Shopping": Shopping,
     "Suppliers": Suppliers,
     "TeamCalendar": TeamCalendar,

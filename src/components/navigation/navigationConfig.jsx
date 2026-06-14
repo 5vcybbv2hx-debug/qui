@@ -73,7 +73,6 @@ export const mainNavigation = [
             { name: 'Kassenbuch',     page: 'AccountingCashbook',       icon: BookOpen,     permission: 'canViewAccountingCashbook' },
             { name: 'Belege',         page: 'AccountingReceipts',       icon: Receipt,      permission: 'canViewAccountingReceipts' },
             { name: 'Kreditoren',     page: 'AccountingCreditors',      icon: TrendingDown, permission: 'canViewAccountingCreditors' },
-            { name: 'Debitoren',      page: 'AccountingDebitors',       icon: TrendingUp,   permission: 'canViewAccountingDebitors' },
             { name: 'Export',         page: 'AccountingExport',         icon: Download,     permission: 'canExportAccounting' },
             { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canCloseAccountingMonth' },
             { name: 'Fixkosten',         page: 'AccountingFixedCosts',    icon: RefreshCw,    permission: 'canViewAccounting' },

@@ -36,12 +36,12 @@ import GuestHubTablesTab from '@/components/seating/GuestHubTablesTab';
 
 const STATUS_FILTERS = [
     { value: 'alle',       label: 'Alle' },
-    { value: 'vorgemerkt', label: '🔵 Vorgemerkt' },
-    { value: 'bestätigt',  label: '🟡 Bestätigt' },
-    { value: 'erschienen', label: '🟢 Erschienen' },
-    { value: 'no-show',    label: '🔴 No-Show' },
-    { value: 'storniert',  label: '⚪ Storniert' },
-    { value: 'archiv',     label: '🗂 Archiv' },
+    { value: 'vorgemerkt', label: 'Vorgemerkt' },
+    { value: 'bestätigt',  label: 'Bestätigt' },
+    { value: 'erschienen', label: 'Erschienen' },
+    { value: 'no-show',    label: 'No-Show' },
+    { value: 'storniert',  label: 'Storniert' },
+    { value: 'archiv',     label: 'Archiv' },
 ];
 
 function suggestTables(tables, reservations, guestCount, date, time) {
@@ -79,6 +79,7 @@ export default function GuestHub() {
     const [showTableModal, setShowTableModal] = useState(null);
     const [showRooms, setShowRooms] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState(null);
+    const [planView, setPlanView] = useState('plan');
     const [guestFilter, setGuestFilter] = useState('');
     const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
     const [filterTime, setFilterTime] = useState(() => {
@@ -120,7 +121,6 @@ export default function GuestHub() {
 
     const handleDelete = (id) => {
         if (!permissions.canDeleteReservations) return;
-        if (!confirm('Reservierung löschen?')) return;
         deleteMutation.mutate(id);
         setResModalOpen(false);
     };
@@ -130,6 +130,13 @@ export default function GuestHub() {
 
     const handleConfirm = (id) =>
         updateMutation.mutate({ id, data: { status: 'bestätigt' } });
+
+    // Tisch-Klick bei freiem Tisch → neue Reservierung mit vorausgewähltem Tisch
+    const handleTableNewReservation = (table) => {
+        setSelectedRes({ table: table.table_number, guests: table.capacity });
+        setResModalOpen(true);
+        setTab('today'); // kurz auf Heute wechseln damit Modal sichtbar
+    };
 
     const handleCancel = (id) =>
         updateMutation.mutate({ id, data: { status: 'storniert' } });

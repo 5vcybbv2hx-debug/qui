@@ -59,10 +59,10 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
 
     const { data: allSuppliers = [] } = useQuery({
         queryKey: ['suppliers-list'],
-        queryFn: () => base44.entities.Supplier.filter({ is_active: true }, 'order'),
+        queryFn: () => base44.entities.Supplier.list('order'),
     });
     const supplierNames = allSuppliers
-        .filter(s => (s.type || 'Lieferant') === 'Lieferant')
+        .filter(s => s.is_active !== false && (s.type || 'Lieferant') === 'Lieferant')
         .map(s => s.name);
 
     const cachedArticles = queryClient.getQueryData(['articles']) ?? [];

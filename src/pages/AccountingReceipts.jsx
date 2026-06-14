@@ -1,6 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { STALE } from '@/lib/queryUtils';;
+/**
+ * Belege — Belegerfassung für DATEV-Vorbereitung
+ *
+ * Radikal simpel:
+ *  1. Foto aufnehmen oder Datei hochladen
+ *  2. KI liest Betrag, Datum, Lieferant, MwSt automatisch aus
+ *  3. Kurz prüfen / korrigieren → Speichern
+ *  4. Am Monatsende → Export-Seite → DATEV-CSV + ZIP
+ *
+ * Kein Status-Flow, kein Prüfmodus, keine Zuordnung.
+ */
+import React, { useState, useRef, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -9,630 +20,522 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { Receipt, Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, Clock, FileText, Search, ExternalLink, Trash2, ShieldCheck, Edit3 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, Receipt,
+    Trash2, ExternalLink, Plus, Search, X, ChevronLeft, ChevronRight
+} from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import MonthNavigator from '@/components/accounting/MonthNavigator';
 
-const fmt = (n) => n?.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00';
-
-const statusConfig = {
-    'neu': { label: 'Neu', color: 'bg-secondary text-muted-foreground', icon: Clock },
-    'ki_erkannt': { label: 'KI erkannt', color: 'bg-blue-500/15 text-blue-400 border-blue-500/20', icon: Sparkles },
-    'pruefung': { label: 'Prüfung nötig', color: 'bg-amber-500/15 text-amber-400 border-amber-500/20', icon: AlertTriangle },
-    'freigegeben': { label: 'Freigegeben', color: 'bg-green-500/15 text-green-400 border-green-500/20', icon: CheckCircle2 },
-    'exportiert': { label: 'Exportiert', color: 'bg-purple-500/15 text-purple-400 border-purple-500/20', icon: CheckCircle2 },
-};
-
+// ── Konstanten ────────────────────────────────────────────────────────────────
 const TAX_RATES = ['0', '7', '19'];
-const RECEIPT_TYPES = ['Eingangsrechnung', 'Ausgangsrechnung', 'Kassenbeleg', 'Einzahlungsquittung', 'Sonstiges'];
-const PAYMENT_METHODS = ['Bar', 'EC', 'Überweisung', 'Kreditkarte', 'Sonstiges'];
-
-// Zuordnungsoptionen inkl. Übertrag
-const ASSIGNMENT_OPTIONS = [
-    { key: 'kreditor',  label: 'Kreditor',  sub: 'Eingangsrechnung' },
-    { key: 'debitor',   label: 'Debitor',   sub: 'Ausgangsrechnung' },
-    { key: 'uebertrag', label: 'Übertrag',  sub: 'Kasse → Bank' },
-    { key: 'both',      label: 'Beides',    sub: 'Kred. & Deb.' },
+const CATEGORIES = [
+    'Getränke', 'Lebensmittel', 'Reinigung', 'Personal',
+    'Miete', 'Energie', 'GEMA', 'Versicherung', 'Software',
+    'Bewirtung', 'Büro', 'Marketing', 'Sonstiges',
 ];
 
-const ASSIGNMENT_LABELS = {
-    kreditor: 'Kreditor',
-    debitor: 'Debitor',
-    uebertrag: 'Übertrag',
-    both: 'Kred. & Deb.',
-};
-const CATEGORIES = ['Getränke', 'Lebensmittel', 'Reinigung', 'Personal', 'Miete', 'Energie', 'GEMA', 'Versicherung', 'Software', 'Marketing', 'Sonstiges'];
+const fmt = n => (n ?? 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// Native select — works perfectly on mobile
-function NativeSelect({ label, value, onChange, options }) {
+// DATEV Sachkonten-Mapping (SKR03) — vereinfacht
+const CATEGORY_ACCOUNT = {
+    'Getränke':      '3400',
+    'Lebensmittel':  '3200',
+    'Reinigung':     '4140',
+    'Personal':      '4100',
+    'Miete':         '4210',
+    'Energie':       '4240',
+    'GEMA':          '4990',
+    'Versicherung':  '4360',
+    'Software':      '4980',
+    'Bewirtung':     '4650',
+    'Büro':          '4930',
+    'Marketing':     '4600',
+    'Sonstiges':     '4990',
+};
+
+// ── Monatsnavigation ──────────────────────────────────────────────────────────
+function MonthNav({ value, onChange }) {
+    const date = new Date(value + '-01');
     return (
-        <div className="space-y-1.5">
-            {label && <Label className="text-xs text-muted-foreground">{label}</Label>}
-            <select
-                value={value || ''}
-                onChange={e => onChange(e.target.value)}
-                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-                {options.map(o => (
-                    <option key={o.value ?? o} value={o.value ?? o}>{o.label ?? o}</option>
-                ))}
-            </select>
+        <div className="flex items-center gap-2">
+            <button onClick={() => onChange(format(subMonths(date, 1), 'yyyy-MM'))}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-semibold text-foreground min-w-[110px] text-center">
+                {format(date, 'MMMM yyyy', { locale: de })}
+            </span>
+            <button onClick={() => onChange(format(addMonths(date, 1), 'yyyy-MM'))}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                <ChevronRight className="w-4 h-4" />
+            </button>
         </div>
     );
 }
 
-// Vollständiges Beleg-Formular (Upload + Detail)
+// ── Beleg-Formular ─────────────────────────────────────────────────────────────
 function ReceiptForm({ data, onChange }) {
     return (
         <div className="space-y-3">
+            <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Lieferant / Absender *</Label>
+                <Input value={data.supplier_name || ''}
+                    onChange={e => onChange({ ...data, supplier_name: e.target.value })}
+                    placeholder="z.B. Metro, Edeka, Stadtwerke…" className="h-10" />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5 col-span-2">
-                    <Label className="text-xs text-muted-foreground">Lieferant / Absender</Label>
-                    <Input value={data.supplier_name || ''} onChange={e => onChange({ ...data, supplier_name: e.target.value })} placeholder="Firmenname..." />
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Datum *</Label>
+                    <Input type="date" value={data.receipt_date || ''}
+                        onChange={e => onChange({ ...data, receipt_date: e.target.value })}
+                        className="h-10" />
                 </div>
                 <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Belegdatum</Label>
-                    <Input type="date" value={data.receipt_date || ''} onChange={e => onChange({ ...data, receipt_date: e.target.value })} />
+                    <Label className="text-xs text-muted-foreground">Brutto (€) *</Label>
+                    <Input type="number" step="0.01" value={data.amount_gross || ''}
+                        onChange={e => onChange({ ...data, amount_gross: parseFloat(e.target.value) || '' })}
+                        placeholder="0,00" className="h-10" />
                 </div>
-                <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Belegnummer</Label>
-                    <Input value={data.receipt_number || ''} onChange={e => onChange({ ...data, receipt_number: e.target.value })} placeholder="RE-2024-001" />
-                </div>
-                <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Brutto (€)</Label>
-                    <Input type="number" step="0.01" value={data.amount_gross || ''} onChange={e => onChange({ ...data, amount_gross: parseFloat(e.target.value) || '' })} placeholder="0,00" />
-                </div>
-                <NativeSelect
-                    label="Steuersatz"
-                    value={String(data.tax_rate ?? 19)}
-                    onChange={v => onChange({ ...data, tax_rate: Number(v) })}
-                    options={TAX_RATES.map(r => ({ value: r, label: r + '%' }))}
-                />
-                <NativeSelect
-                    label="Belegart"
-                    value={data.receipt_type || 'Eingangsrechnung'}
-                    onChange={v => onChange({ ...data, receipt_type: v })}
-                    options={RECEIPT_TYPES}
-                />
-                <NativeSelect
-                    label="Zahlungsart"
-                    value={data.payment_method || 'Bar'}
-                    onChange={v => onChange({ ...data, payment_method: v })}
-                    options={PAYMENT_METHODS}
-                />
-                <NativeSelect
-                    label="Kategorie"
-                    value={data.category || ''}
-                    onChange={v => onChange({ ...data, category: v })}
-                    options={[{ value: '', label: '— wählen —' }, ...CATEGORIES]}
-                />
             </div>
 
-            {/* Zuordnung */}
-            <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Zuordnung</Label>
-                <div className="grid grid-cols-2 gap-2">
-                    {ASSIGNMENT_OPTIONS.map(opt => (
-                        <button
-                            key={opt.key}
-                            type="button"
-                            onClick={() => onChange({ ...data, assignment: opt.key })}
-                            className={cn(
-                                'py-2 px-2 rounded-xl border text-xs font-semibold transition-all text-center',
-                                data.assignment === opt.key
-                                    ? 'bg-blue-500/20 border-blue-500/40 text-blue-400'
-                                    : 'border-border text-muted-foreground hover:border-blue-500/50'
-                            )}
-                        >
-                            {opt.label}
-                            <span className="block text-[10px] font-normal opacity-70">{opt.sub}</span>
-                        </button>
-                    ))}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">MwSt.</Label>
+                    <Select value={String(data.tax_rate ?? 19)}
+                        onValueChange={v => onChange({ ...data, tax_rate: Number(v) })}>
+                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {TAX_RATES.map(r => <SelectItem key={r} value={r}>{r}%</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                 </div>
-                {data.assignment === 'uebertrag' && (
-                    <p className="text-xs text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 leading-relaxed">
-                        💡 Übertrag = Kasse-Ausgabe + Bank-Einnahme (kein Aufwand). Wird im Kassenbuch als Ausgabe &amp; auf dem Bankkonto als Einzahlung gebucht — kein MwSt.-Ansatz.
-                    </p>
-                )}
-            </div>
-
-            <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Notizen</Label>
-                <Textarea value={data.notes || ''} onChange={e => onChange({ ...data, notes: e.target.value })} rows={2} placeholder="Interne Anmerkungen..." />
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Kategorie</Label>
+                    <Select value={data.category || ''}
+                        onValueChange={v => onChange({ ...data, category: v })}>
+                        <SelectTrigger className="h-10"><SelectValue placeholder="Wählen…" /></SelectTrigger>
+                        <SelectContent>
+                            {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
         </div>
     );
 }
 
-export default function AccountingReceipts() {
-    const permissions = usePermissions();
-    const queryClient = useQueryClient();
-    const [uploadOpen, setUploadOpen] = useState(false);
-    const [detailOpen, setDetailOpen] = useState(false);
-    const [selected, setSelected] = useState(null);
-    const [reviewMode, setReviewMode] = useState(false); // true = Prüfmodus, false = Bearbeiten
-    const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('alle');
-    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-    const [uploading, setUploading] = useState(false);
-    const [aiProcessing, setAiProcessing] = useState(false);
-    const [aiResult, setAiResult] = useState(null);
-    const [editData, setEditData] = useState({});
-    const fileRef = useRef();
-    const cameraRef = useRef();
+// ── Beleg-Karte ───────────────────────────────────────────────────────────────
+function ReceiptCard({ receipt, onEdit, onDelete }) {
+    const taxAmt = receipt.amount_gross
+        ? (receipt.amount_gross / (1 + (receipt.tax_rate || 19) / 100)) * ((receipt.tax_rate || 19) / 100)
+        : 0;
 
+    return (
+        <div onClick={onEdit}
+            className="flex items-center gap-3 p-3.5 rounded-xl border border-border/60 bg-card hover:border-border cursor-pointer transition-all group min-h-[64px]">
+
+            {/* Bild-Vorschau */}
+            <div className="w-10 h-10 rounded-lg bg-secondary/60 flex items-center justify-center shrink-0 overflow-hidden border border-border/40">
+                {receipt.file_url
+                    ? <img src={receipt.file_url} alt="" className="w-full h-full object-cover" />
+                    : <Receipt className="w-4 h-4 text-muted-foreground" />
+                }
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">
+                    {receipt.supplier_name || 'Unbekannt'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {receipt.receipt_date ? format(new Date(receipt.receipt_date), 'dd.MM.yyyy') : '—'}
+                    {receipt.category && ` · ${receipt.category}`}
+                </p>
+            </div>
+
+            {/* Betrag */}
+            <div className="text-right shrink-0">
+                <p className="text-sm font-bold text-foreground">{fmt(receipt.amount_gross)} €</p>
+                <p className="text-[10px] text-muted-foreground">
+                    MwSt. {fmt(taxAmt)} €
+                </p>
+            </div>
+
+            {/* Löschen */}
+            <button onClick={e => { e.stopPropagation(); onDelete(); }}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center">
+                <Trash2 className="w-3.5 h-3.5" />
+            </button>
+        </div>
+    );
+}
+
+// ── Hauptseite ────────────────────────────────────────────────────────────────
+export default function AccountingReceipts() {
+    const permissions  = usePermissions();
+    const queryClient  = useQueryClient();
+    const fileRef      = useRef();
+    const cameraRef    = useRef();
+
+    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+    const [search,        setSearch]        = useState('');
+    const [uploadOpen,    setUploadOpen]    = useState(false);
+    const [editOpen,      setEditOpen]      = useState(false);
+    const [deleteTarget,  setDeleteTarget]  = useState(null);
+    const [selected,      setSelected]      = useState(null);
+    const [editData,      setEditData]      = useState({});
+    const [uploading,     setUploading]     = useState(false);
+    const [aiProcessing,  setAiProcessing]  = useState(false);
+    const [previewUrl,    setPreviewUrl]    = useState(null);
+
+    // ── Query ─────────────────────────────────────────────────────────────────
     const { data: receipts = [] } = useQuery({
         queryKey: ['accounting-receipts'],
-        queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
+        queryFn:  () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
         staleTime: STALE.MEDIUM,
     });
 
+    // ── Mutations ─────────────────────────────────────────────────────────────
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.AccountingReceipt.create(data),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] }); setUploadOpen(false); setAiResult(null); setEditData({}); }
+        mutationFn: d => base44.entities.AccountingReceipt.create(d),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] });
+            setUploadOpen(false);
+            setEditData({});
+            setPreviewUrl(null);
+            toast.success('Beleg gespeichert');
+        },
+        onError: () => toast.error('Fehler beim Speichern'),
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.AccountingReceipt.update(id, data),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] }); setDetailOpen(false); }
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] });
+            setEditOpen(false);
+            toast.success('Beleg aktualisiert');
+        },
+        onError: () => toast.error('Fehler beim Aktualisieren'),
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.AccountingReceipt.delete(id),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] }); setDetailOpen(false); }
+        mutationFn: id => base44.entities.AccountingReceipt.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['accounting-receipts'] });
+            setDeleteTarget(null);
+            setEditOpen(false);
+            toast.success('Beleg gelöscht');
+        },
+        onError: () => toast.error('Fehler beim Löschen'),
     });
 
-    const handleFileUpload = async (file) => {
+    // ── Filter ────────────────────────────────────────────────────────────────
+    const filtered = useMemo(() => receipts.filter(r => {
+        if (!r.receipt_date?.startsWith(selectedMonth)) return false;
+        if (search) {
+            const q = search.toLowerCase();
+            if (!r.supplier_name?.toLowerCase().includes(q) &&
+                !r.category?.toLowerCase().includes(q)) return false;
+        }
+        return true;
+    }), [receipts, selectedMonth, search]);
+
+    const totalGross = filtered.reduce((s, r) => s + (r.amount_gross || 0), 0);
+    const totalTax   = filtered.reduce((s, r) => {
+        const rate = (r.tax_rate || 19) / 100;
+        return s + ((r.amount_gross || 0) / (1 + rate) * rate);
+    }, 0);
+
+    // ── Datei-Upload + KI ─────────────────────────────────────────────────────
+    const handleFileUpload = async file => {
         if (!file) return;
         setUploading(true);
-        setAiProcessing(false);
-        setAiResult(null);
+        setUploadOpen(true);
         try {
             const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            setPreviewUrl(file_url);
             setUploading(false);
             setAiProcessing(true);
 
-            const result = await base44.integrations.Core.InvokeLLM({
-                prompt: `Analysiere diesen Beleg/diese Rechnung und extrahiere alle relevanten Buchhaltungsdaten.
-Gib folgende Felder zurück:
-- supplier_name: Name des Lieferanten/Absenders
+            // KI-Analyse
+            const prompt = `Du bist ein Buchhalter. Analysiere diesen Beleg und extrahiere:
+- supplier_name: Firmenname des Ausstellers
 - receipt_date: Datum im Format YYYY-MM-DD
-- receipt_number: Rechnungsnummer falls vorhanden
 - amount_gross: Bruttobetrag als Zahl
-- amount_net: Nettobetrag als Zahl
-- tax_rate: Steuersatz in % (0, 7 oder 19)
-- tax_amount: Steuerbetrag als Zahl
-- category: Kostenkategorie (z.B. Getränke, Lebensmittel, Reinigung, Personal, Miete, Energie, Sonstiges)
-- receipt_type: Art (Eingangsrechnung, Kassenbeleg, Ausgangsrechnung, Sonstiges)
-- is_cash_relevant: true wenn Barzahlung, sonst false
-- payment_method: Bar, EC, Überweisung, Kreditkarte oder Sonstiges
-- confidence: Konfidenz 0-100`,
-                file_urls: [file_url],
+- tax_rate: Steuersatz (0, 7 oder 19)
+- category: Eine aus: ${CATEGORIES.join(', ')}
+Antworte NUR mit validem JSON.`;
+
+            const result = await base44.integrations.Core.InvokeLLM({
+                prompt,
+                image_urls: [file_url],
                 response_json_schema: {
-                    type: "object",
+                    type: 'object',
                     properties: {
-                        supplier_name: { type: "string" },
-                        receipt_date: { type: "string" },
-                        receipt_number: { type: "string" },
-                        amount_gross: { type: "number" },
-                        amount_net: { type: "number" },
-                        tax_rate: { type: "number" },
-                        tax_amount: { type: "number" },
-                        category: { type: "string" },
-                        receipt_type: { type: "string" },
-                        is_cash_relevant: { type: "boolean" },
-                        payment_method: { type: "string" },
-                        confidence: { type: "number" }
+                        supplier_name: { type: 'string' },
+                        receipt_date:  { type: 'string' },
+                        amount_gross:  { type: 'number' },
+                        tax_rate:      { type: 'number' },
+                        category:      { type: 'string' },
                     }
                 }
             });
 
-            // Immer als "pruefung" speichern — manuelle Freigabe erforderlich
-            const detected = { ...result, file_url, status: 'pruefung', ai_extracted: true, ai_confidence: result.confidence, assignment: null };
-            setAiResult(detected);
-            setEditData(detected);
-        } catch (e) {
-            alert('Fehler beim Verarbeiten: ' + e.message);
+            setEditData({
+                ...result,
+                file_url,
+                status: 'freigegeben',
+                datev_account: CATEGORY_ACCOUNT[result.category] || '4990',
+            });
+        } catch {
+            toast.error('KI-Analyse fehlgeschlagen — bitte manuell ausfüllen');
+            setEditData({ file_url: previewUrl, status: 'freigegeben' });
         } finally {
+            setUploading(false);
             setAiProcessing(false);
         }
     };
 
-    const openDetail = (r) => {
-        setSelected(r);
-        setEditData({ ...r });
-        // Belege in Prüfung → direkt in den Prüfmodus
-        setReviewMode(r.status === 'pruefung' || r.status === 'neu');
-        setDetailOpen(true);
+    const openEdit = receipt => {
+        setSelected(receipt);
+        setEditData({ ...receipt });
+        setEditOpen(true);
     };
 
-    const handleFreigabe = () => {
-        if (!editData.assignment) {
-            alert('Bitte Zuordnung wählen (Kreditor / Debitor / Beides).');
+    const handleSaveNew = () => {
+        if (!editData.supplier_name || !editData.receipt_date || !editData.amount_gross) {
+            toast.error('Lieferant, Datum und Betrag sind Pflichtfelder');
             return;
         }
-        updateMutation.mutate({ id: selected.id, data: { ...editData, status: 'freigegeben' } });
+        createMutation.mutate({
+            ...editData,
+            datev_account: CATEGORY_ACCOUNT[editData.category] || '4990',
+            status: 'freigegeben',
+        });
     };
 
-    const filtered = receipts.filter(r => {
-        const matchMonth = r.receipt_date?.startsWith(selectedMonth);
-        const matchSearch = !search || r.supplier_name?.toLowerCase().includes(search.toLowerCase()) || r.receipt_number?.includes(search);
-        const matchStatus = statusFilter === 'alle' || r.status === statusFilter;
-        return matchMonth && matchSearch && matchStatus;
-    });
+    const handleSaveEdit = () => {
+        if (!selected) return;
+        updateMutation.mutate({
+            id: selected.id,
+            data: {
+                ...editData,
+                datev_account: CATEGORY_ACCOUNT[editData.category] || '4990',
+            }
+        });
+    };
 
-    const pendingCount = receipts.filter(r => r.status === 'neu' || r.status === 'pruefung').length;
+    if (!permissions.canViewAccounting) {
+        return <PermissionDenied message="Kein Zugriff auf das Belegarchiv." />;
+    }
 
-    if (!permissions.canViewAccountingReceipts) return <PermissionDenied message="Kein Zugriff auf Belege." />;
-
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-6">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                        <Receipt className="w-5 h-5 text-blue-400" />
-                        <h1 className="text-lg font-bold text-foreground">Belege</h1>
-                        {pendingCount > 0 && (
-                            <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/20 text-xs">{pendingCount}</Badge>
-                        )}
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+
+                {/* ── Header ─────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold text-foreground">Belege</h1>
+                        <p className="text-xs text-muted-foreground mt-0.5">Scan → KI → DATEV-Export</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
-                        <Button size="sm" onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="bg-blue-500 hover:bg-blue-600 text-primary-foreground gap-1">
-                            <Camera className="w-4 h-4" />
+                    {/* Upload-Buttons */}
+                    <div className="flex gap-2">
+                        <label className="cursor-pointer">
+                            <div className="flex items-center gap-1.5 h-9 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-all">
+                                <Camera className="w-4 h-4" />
+                                <span className="hidden sm:inline">Foto</span>
+                            </div>
+                            <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+                                onChange={e => handleFileUpload(e.target.files?.[0])}
+                                className="hidden" />
+                        </label>
+                        <label className="cursor-pointer">
+                            <div className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-border text-foreground text-sm font-semibold hover:bg-accent transition-all">
+                                <Upload className="w-4 h-4" />
+                                <span className="hidden sm:inline">Datei</span>
+                            </div>
+                            <input ref={fileRef} type="file" accept="image/*,application/pdf"
+                                onChange={e => handleFileUpload(e.target.files?.[0])}
+                                className="hidden" />
+                        </label>
+                        <Button variant="outline" size="sm" className="h-9"
+                            onClick={() => { setEditData({ receipt_date: format(new Date(), 'yyyy-MM-dd'), tax_rate: 19, status: 'freigegeben' }); setPreviewUrl(null); setUploadOpen(true); }}>
+                            <Plus className="w-4 h-4" />
                         </Button>
                     </div>
                 </div>
-                <div className="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-hide">
-                    {['alle', 'neu', 'ki_erkannt', 'pruefung', 'freigegeben', 'exportiert'].map(s => (
-                        <button key={s} onClick={() => setStatusFilter(s)}
-                            className={cn('px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all',
-                                statusFilter === s ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground hover:bg-accent'
-                            )}>
-                            {s === 'alle' ? 'Alle' : statusConfig[s]?.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
 
-            <div className="px-4 md:px-6 space-y-3 max-w-2xl mx-auto pt-3">
+                {/* ── Monatsnavigation ────────────────────────────────────── */}
+                <div className="flex items-center justify-between">
+                    <MonthNav value={selectedMonth} onChange={setSelectedMonth} />
+                    <div className="text-right">
+                        <p className="text-sm font-bold text-foreground">{fmt(totalGross)} €</p>
+                        <p className="text-[10px] text-muted-foreground">MwSt. {fmt(totalTax)} €</p>
+                    </div>
+                </div>
+
+                {/* ── Suche ───────────────────────────────────────────────── */}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input placeholder="Lieferant, Belegnummer..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+                    <Input placeholder="Lieferant oder Kategorie…" value={search}
+                        onChange={e => setSearch(e.target.value)} className="pl-9 h-10" />
+                    {search && (
+                        <button onClick={() => setSearch('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
 
+                {/* ── Beleg-Liste ─────────────────────────────────────────── */}
                 {filtered.length === 0 ? (
-                    <Card className="p-12 text-center text-muted-foreground bg-card border-border">
-                        <Receipt className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p className="font-medium">Keine Belege für diesen Monat</p>
-                        <Button onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }} className="mt-4 bg-blue-500 hover:bg-blue-600 text-primary-foreground">
-                            <Camera className="w-4 h-4 mr-2" />Beleg scannen
-                        </Button>
-                    </Card>
+                    <div className="text-center py-16 text-muted-foreground">
+                        <Receipt className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p className="font-semibold text-foreground">Keine Belege</p>
+                        <p className="text-sm mt-1">Foto aufnehmen oder Datei hochladen</p>
+                    </div>
                 ) : (
                     <div className="space-y-2">
-                        {filtered.map(r => {
-                            const sc = statusConfig[r.status] || statusConfig['neu'];
-                            const Icon = sc.icon;
-                            return (
-                                <Card key={r.id} onClick={() => openDetail(r)} className="p-4 bg-card border-border hover:border-border/80 cursor-pointer transition-all active:scale-[0.99]">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            {r.file_url ? (
-                                                <div className="w-12 h-12 rounded-xl bg-secondary overflow-hidden shrink-0">
-                                                    <img src={r.file_url} alt="Beleg" className="w-full h-full object-cover" />
-                                                </div>
-                                            ) : (
-                                                <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                                                    <FileText className="w-6 h-6 text-muted-foreground" />
-                                                </div>
-                                            )}
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-semibold text-foreground truncate">{r.supplier_name || 'Unbekannt'}</p>
-                                                <p className="text-xs text-muted-foreground mt-0.5">{r.receipt_date} {r.category ? `· ${r.category}` : ''}</p>
-                                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                                    <Badge className={cn('text-[10px] border gap-1', sc.color)}>
-                                                        <Icon className="w-3 h-3" />{sc.label}
-                                                    </Badge>
-                                                    {r.assignment && (
-                                                        <Badge variant="outline" className={cn('text-[10px]', r.assignment === 'uebertrag' && 'border-sky-500/40 text-sky-400')}>
-                                                            {ASSIGNMENT_LABELS[r.assignment] || r.assignment}
-                                                        </Badge>
-                                                    )}
-                                                    {r.ai_confidence && <span className="text-[10px] text-muted-foreground">KI {r.ai_confidence}%</span>}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <p className="text-base font-bold text-foreground">{fmt(r.amount_gross)} €</p>
-                                            <p className="text-xs text-muted-foreground">{r.receipt_type}</p>
-                                        </div>
-                                    </div>
-                                </Card>
-                            );
-                        })}
+                        {filtered.map(r => (
+                            <ReceiptCard
+                                key={r.id}
+                                receipt={r}
+                                onEdit={() => openEdit(r)}
+                                onDelete={() => setDeleteTarget(r.id)}
+                            />
+                        ))}
                     </div>
                 )}
             </div>
 
-            {/* FAB */}
-            <button
-                onClick={() => { setAiResult(null); setEditData({}); setUploadOpen(true); }}
-                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-primary-foreground rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
-            >
-                <Camera className="w-6 h-6" />
-            </button>
+            {/* ── Upload / Neu Dialog ─────────────────────────────────────── */}
+            <Dialog open={uploadOpen} onOpenChange={o => { if (!o) { setUploadOpen(false); setPreviewUrl(null); setEditData({}); } }}>
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Neuer Beleg</DialogTitle>
+                    </DialogHeader>
 
-            {/* ── Upload / Scanner Modal ── */}
-            {uploadOpen && (
-                <div className="fixed inset-0 z-50 flex flex-col bg-background">
-                    {/* Scanner Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
-                        <div className="flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-blue-400" />
-                            <span className="font-bold text-foreground">Beleg scannen</span>
-                        </div>
-                        <button onClick={() => { setUploadOpen(false); setAiResult(null); setEditData({}); }}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent">
-                            ✕
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-                        {/* Step 1 — Aufnahme */}
-                        {!uploading && !aiProcessing && !aiResult && (
-                            <>
-                                <p className="text-sm text-muted-foreground text-center">Fotografiere oder lade einen Beleg hoch. Die KI erkennt automatisch alle Daten.</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <label className="cursor-pointer">
-                                        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-dashed border-blue-500/40 bg-blue-500/5 active:bg-blue-500/10 transition-colors text-center">
-                                            <Camera className="w-10 h-10 text-blue-400" />
-                                            <span className="text-sm font-semibold text-foreground">Kamera</span>
-                                            <span className="text-xs text-muted-foreground">Foto aufnehmen</span>
-                                        </div>
-                                        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={e => handleFileUpload(e.target.files?.[0])} />
-                                    </label>
-                                    <label className="cursor-pointer">
-                                        <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border-2 border-dashed border-border bg-secondary/30 active:bg-secondary/60 transition-colors text-center">
-                                            <Upload className="w-10 h-10 text-muted-foreground" />
-                                            <span className="text-sm font-semibold text-foreground">Datei</span>
-                                            <span className="text-xs text-muted-foreground">Bild oder PDF</span>
-                                        </div>
-                                        <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={e => handleFileUpload(e.target.files?.[0])} />
-                                    </label>
-                                </div>
-                            </>
-                        )}
-
-                        {/* Step 2 — Loading */}
-                        {(uploading || aiProcessing) && (
-                            <div className="flex flex-col items-center justify-center py-16 gap-6">
-                                <div className="w-20 h-20 rounded-3xl bg-blue-500/15 flex items-center justify-center">
-                                    <Sparkles className="w-10 h-10 text-blue-400 animate-pulse" />
-                                </div>
-                                <div className="text-center">
-                                    <p className="font-bold text-foreground text-lg">{uploading ? 'Wird hochgeladen…' : 'KI analysiert…'}</p>
-                                    <p className="text-sm text-muted-foreground mt-1">{aiProcessing ? 'Lieferant, Betrag & Steuer werden erkannt' : ''}</p>
-                                </div>
-                                <Progress value={uploading ? 35 : 75} className="h-2 w-48" />
+                    {/* Lade-Zustand */}
+                    {(uploading || aiProcessing) ? (
+                        <div className="flex flex-col items-center justify-center py-12 gap-4">
+                            <div className="w-16 h-16 rounded-2xl bg-blue-500/15 flex items-center justify-center">
+                                <Sparkles className="w-8 h-8 text-blue-400 animate-pulse" />
                             </div>
-                        )}
-
-                        {/* Step 3 — Ergebnis bearbeiten */}
-                        {aiResult && (
-                            <>
-                                <div className={cn('flex items-center gap-2 p-3 rounded-xl text-sm font-medium',
-                                    aiResult.confidence > 80 ? 'bg-green-500/10 text-green-400' : 'bg-amber-500/10 text-amber-400'
-                                )}>
-                                    {aiResult.confidence > 80 ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                                    KI-Konfidenz: {aiResult.confidence}% — {aiResult.confidence > 80 ? 'Hohe Sicherheit' : 'Bitte prüfen'}
-                                </div>
-
-                                {aiResult.file_url && (
-                                    <img src={aiResult.file_url} alt="Beleg" className="w-full rounded-xl border border-border object-contain max-h-40" />
-                                )}
-
-                                <ReceiptForm data={editData} onChange={setEditData} />
-                            </>
-                        )}
-                    </div>
-
-                    {/* Sticky Footer */}
-                    {aiResult && (
-                        <div className="px-4 py-3 border-t border-border bg-card space-y-2">
-                            <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
-                                <AlertTriangle className="w-3 h-3 text-amber-400" />
-                                Beleg wird zur Prüfung gespeichert — Zuordnung & Freigabe danach
-                            </p>
-                            <div className="flex gap-3">
-                                <Button variant="outline" onClick={() => { setAiResult(null); setEditData({}); }} className="flex-1">
-                                    Neu scannen
-                                </Button>
-                                <Button onClick={() => createMutation.mutate({ ...editData, status: 'pruefung', assignment: null })} className="flex-1 bg-blue-500 hover:bg-blue-600 text-primary-foreground" disabled={createMutation.isPending}>
-                                    {createMutation.isPending ? 'Speichern…' : 'Zur Prüfung speichern'}
-                                </Button>
+                            <div className="text-center">
+                                <p className="font-bold text-foreground">
+                                    {uploading ? 'Wird hochgeladen…' : 'KI liest Beleg aus…'}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    {aiProcessing ? 'Lieferant, Betrag & MwSt werden erkannt' : ''}
+                                </p>
                             </div>
                         </div>
-                    )}
-                </div>
-            )}
-
-            {/* ── Detail / Bearbeiten Modal ── */}
-            {detailOpen && selected && (
-                <div className="fixed inset-0 z-50 flex flex-col bg-background">
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card shrink-0">
-                        <div className="flex items-center gap-2">
-                            {reviewMode
-                                ? <><ShieldCheck className="w-5 h-5 text-amber-400" /><span className="font-bold text-foreground">Beleg prüfen</span></>
-                                : <><Edit3 className="w-4 h-4 text-muted-foreground" /><span className="font-bold text-foreground">Beleg bearbeiten</span></>
-                            }
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {/* Toggle zwischen Prüf- und Bearbeiten-Modus */}
-                            <button
-                                onClick={() => setReviewMode(m => !m)}
-                                className="text-xs px-2.5 py-1 rounded-lg border border-border text-muted-foreground hover:bg-accent transition-colors"
-                            >
-                                {reviewMode ? 'Bearbeiten' : 'Prüfmodus'}
-                            </button>
-                            <button onClick={() => setDetailOpen(false)}
-                                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-accent">
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Body — side-by-side on desktop, stacked on mobile */}
-                    <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-
-                        {/* LEFT: Belegbild — groß */}
-                        {selected.file_url && (
-                            <div className="md:w-1/2 bg-card/50 flex items-start justify-center overflow-y-auto p-3 md:p-4 shrink-0 max-h-[45vh] md:max-h-none">
-                                <div className="relative w-full">
-                                    <img
-                                        src={selected.file_url}
-                                        alt="Beleg"
-                                        className="w-full rounded-xl border border-border object-contain"
-                                        style={{ maxHeight: 'calc(100vh - 200px)' }}
-                                    />
-                                    <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
+                    ) : (
+                        <div className="space-y-4 py-1">
+                            {/* Bild-Vorschau */}
+                            {previewUrl && (
+                                <div className="relative">
+                                    <img src={previewUrl} alt="Beleg"
+                                        className="w-full h-40 object-contain rounded-xl border border-border/50 bg-secondary/20" />
+                                    <a href={previewUrl} target="_blank" rel="noopener noreferrer"
                                         className="absolute top-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded-lg text-xs text-blue-400 flex items-center gap-1">
-                                        <ExternalLink className="w-3 h-3" /> Öffnen
+                                        <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>
+                            )}
+
+                            {/* KI-Hinweis */}
+                            {editData.supplier_name && (
+                                <div className="flex items-center gap-2 text-xs bg-green-500/8 border border-green-500/20 rounded-xl px-3 py-2 text-green-400">
+                                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                                    KI hat Daten erkannt — bitte kurz prüfen
+                                </div>
+                            )}
+
+                            <ReceiptForm data={editData} onChange={setEditData} />
+                        </div>
+                    )}
+
+                    {!uploading && !aiProcessing && (
+                        <DialogFooter className="gap-2">
+                            <Button variant="outline" onClick={() => { setUploadOpen(false); setPreviewUrl(null); setEditData({}); }}>
+                                Abbrechen
+                            </Button>
+                            <Button onClick={handleSaveNew}
+                                disabled={createMutation.isPending}
+                                className="bg-amber-600 hover:bg-amber-700 text-white flex-1">
+                                {createMutation.isPending ? 'Speichert…' : 'Beleg speichern'}
+                            </Button>
+                        </DialogFooter>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Edit Dialog ─────────────────────────────────────────────── */}
+            <Dialog open={editOpen} onOpenChange={o => !o && setEditOpen(false)}>
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Beleg bearbeiten</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-1">
+                        {/* Bild */}
+                        {selected?.file_url && (
+                            <div className="relative">
+                                <img src={selected.file_url} alt="Beleg"
+                                    className="w-full h-40 object-contain rounded-xl border border-border/50 bg-secondary/20" />
+                                <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
+                                    className="absolute top-2 right-2 bg-background/80 backdrop-blur px-2 py-1 rounded-lg text-xs text-blue-400 flex items-center gap-1">
+                                    <ExternalLink className="w-3 h-3" />Öffnen
+                                </a>
                             </div>
                         )}
 
-                        {/* RIGHT: Prüfmodus ODER Formular */}
-                        <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 ${!selected.file_url ? 'md:max-w-xl md:mx-auto' : ''}`}>
-
-                            {reviewMode ? (
-                                /* ── PRÜFMODUS: kompakte KI-Felder zum schnellen Bestätigen ── */
-                                <>
-                                    {/* KI-Konfidenz Banner */}
-                                    {editData.ai_confidence && (
-                                        <div className={cn('flex items-center gap-2 p-3 rounded-xl text-sm font-medium',
-                                            editData.ai_confidence > 80 ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                        )}>
-                                            {editData.ai_confidence > 80
-                                                ? <CheckCircle2 className="w-4 h-4 shrink-0" />
-                                                : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                                            KI-Konfidenz: {editData.ai_confidence}% — {editData.ai_confidence > 80 ? 'Hohe Sicherheit' : 'Bitte sorgfältig prüfen'}
-                                        </div>
-                                    )}
-
-                                    {/* Kompakte Prüf-Felder: nur die wichtigsten */}
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">KI-Ergebnis prüfen & ggf. korrigieren</p>
-
-                                        <div className="space-y-1.5">
-                                            <Label className="text-xs text-muted-foreground">Lieferant / Absender</Label>
-                                            <Input value={editData.supplier_name || ''} onChange={e => setEditData({ ...editData, supplier_name: e.target.value })} placeholder="Firmenname..." />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs text-muted-foreground">Belegdatum</Label>
-                                                <Input type="date" value={editData.receipt_date || ''} onChange={e => setEditData({ ...editData, receipt_date: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <Label className="text-xs text-muted-foreground">Brutto (€)</Label>
-                                                <Input type="number" step="0.01" value={editData.amount_gross || ''} onChange={e => setEditData({ ...editData, amount_gross: parseFloat(e.target.value) || '' })} placeholder="0,00" />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <NativeSelect label="Steuersatz" value={String(editData.tax_rate ?? 19)} onChange={v => setEditData({ ...editData, tax_rate: Number(v) })} options={TAX_RATES.map(r => ({ value: r, label: r + '%' }))} />
-                                            <NativeSelect label="Kategorie" value={editData.category || ''} onChange={v => setEditData({ ...editData, category: v })} options={[{ value: '', label: '— wählen —' }, ...CATEGORIES]} />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <NativeSelect label="Belegart" value={editData.receipt_type || 'Eingangsrechnung'} onChange={v => setEditData({ ...editData, receipt_type: v })} options={RECEIPT_TYPES} />
-                                            <NativeSelect label="Zahlungsart" value={editData.payment_method || 'Bar'} onChange={v => setEditData({ ...editData, payment_method: v })} options={PAYMENT_METHODS} />
-                                        </div>
-                                    </div>
-
-                                    {/* Zuordnung — Pflicht für Freigabe */}
-                                    <div className="space-y-2">
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Zuordnung wählen <span className="text-red-400">*</span></p>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {ASSIGNMENT_OPTIONS.map(opt => (
-                                                <button key={opt.key} type="button"
-                                                    onClick={() => setEditData({ ...editData, assignment: opt.key })}
-                                                    className={cn(
-                                                        'py-3 px-2 rounded-xl border text-xs font-semibold transition-all text-center',
-                                                        editData.assignment === opt.key
-                                                            ? 'bg-green-500/20 border-green-500/40 text-green-400'
-                                                            : 'border-border text-muted-foreground hover:border-green-500/50 hover:bg-green-500/5'
-                                                    )}>
-                                                    {opt.label}
-                                                    <span className="block text-[10px] font-normal opacity-70 mt-0.5">{opt.sub}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                        {editData.assignment === 'uebertrag' && (
-                                            <p className="text-xs text-sky-400 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2 leading-relaxed">
-                                                💡 Übertrag = Kasse-Ausgabe + Bank-Einnahme (kein Aufwand, kein MwSt.-Ansatz). Bitte Steuersatz auf 0% setzen.
-                                            </p>
-                                        )}
-                                        {!editData.assignment && (
-                                            <p className="text-xs text-amber-400 flex items-center gap-1">
-                                                <AlertTriangle className="w-3 h-3" /> Zuordnung ist Pflicht für die Freigabe
-                                            </p>
-                                        )}
-                                    </div>
-                                </>
-                            ) : (
-                                /* ── BEARBEITUNGSMODUS: vollständiges Formular ── */
-                                <>
-                                    <NativeSelect
-                                        label="Status"
-                                        value={editData.status || 'neu'}
-                                        onChange={v => setEditData({ ...editData, status: v })}
-                                        options={Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label }))}
-                                    />
-                                    <ReceiptForm data={editData} onChange={setEditData} />
-                                </>
-                            )}
-                        </div>
+                        <ReceiptForm data={editData} onChange={setEditData} />
                     </div>
 
-                    {/* Footer */}
-                    <div className="px-4 py-3 border-t border-border bg-card flex gap-3 shrink-0">
-                        <button
-                            onClick={() => { if (confirm('Beleg wirklich löschen?')) deleteMutation.mutate(selected.id); }}
-                            className="w-10 h-10 flex items-center justify-center rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 shrink-0"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                    <DialogFooter className="gap-2 flex-row">
+                        <Button variant="outline" size="sm"
+                            onClick={() => setDeleteTarget(selected?.id)}
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10 h-9">
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />Löschen
+                        </Button>
+                        <Button onClick={handleSaveEdit}
+                            disabled={updateMutation.isPending}
+                            className="bg-amber-600 hover:bg-amber-700 text-white flex-1 h-9">
+                            {updateMutation.isPending ? 'Speichert…' : 'Speichern'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-                        {reviewMode ? (
-                            <>
-                                <Button variant="outline" onClick={() => setDetailOpen(false)} className="flex-1">Abbrechen</Button>
-                                <Button
-                                    onClick={handleFreigabe}
-                                    className="flex-1 bg-green-500 hover:bg-green-600 text-primary-foreground gap-2"
-                                    disabled={updateMutation.isPending || !editData.assignment}
-                                >
-                                    <ShieldCheck className="w-4 h-4" />
-                                    {updateMutation.isPending ? 'Wird freigegeben…' : 'Freigeben'}
-                                </Button>
-                            </>
-                        ) : (
-                            <>
-                                <Button variant="outline" onClick={() => setDetailOpen(false)} className="flex-1">Abbrechen</Button>
-                                <Button onClick={() => updateMutation.mutate({ id: selected.id, data: editData })}
-                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-primary-foreground"
-                                    disabled={updateMutation.isPending}>
-                                    {updateMutation.isPending ? 'Speichern…' : 'Speichern'}
-                                </Button>
-                            </>
-                        )}
-                    </div>
-                </div>
-            )}
+            {/* ── Delete Confirm ──────────────────────────────────────────── */}
+            <AlertDialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Beleg löschen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Dieser Beleg wird dauerhaft entfernt.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteMutation.mutate(deleteTarget)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Löschen
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

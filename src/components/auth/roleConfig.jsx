@@ -67,7 +67,7 @@ export const PERMISSION_MATRIX = {
     canExportShifts:             { roles: [M.MANAGER],                                       terminal: false },
     canApproveShiftSwaps:        { roles: [M.MANAGER],                                       terminal: false },
     canRequestShiftSwap:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
-    canViewTeamCalendar:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.ORGA],      terminal: false },
+    canViewTeamCalendar:         { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
     canViewTeamMeeting:          { roles: [M.MANAGER, M.VOLLZEIT, M.BARKEEPER, M.AUSHILFE, M.ORGA], terminal: false },
 
     // ── Reservierungen ────────────────────────────────────────────────────────

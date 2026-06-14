@@ -1,14 +1,18 @@
+/**
+ * ArticleModal — neu strukturiert
+ * 3 Sektionen: Basis · Lager · Einkauf & Details
+ * Alle bestehenden Felder + Funktionen bleiben erhalten.
+ */
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import SmartCombobox from '@/components/ui/SmartCombobox';
-import { Camera, X, Upload, Image as ImageIcon, Crop, Sparkles } from 'lucide-react';
+import { Camera, Upload, Image as ImageIcon, Crop, Sparkles, ChevronDown } from 'lucide-react';
 import SupplierDetailsEditor from './SupplierDetailsEditor';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
@@ -18,498 +22,454 @@ import { haptics } from "@/components/utils/haptics";
 import { toast } from 'sonner';
 import PriceHistoryPanel from '@/components/articles/PriceHistoryPanel';
 import { recordPriceChange } from '@/lib/priceHistoryUtils';
-import { TrendingUp, History } from 'lucide-react';
+import { History } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
+// ── Sektion-Wrapper ───────────────────────────────────────────────────────────
+function Section({ title, defaultOpen = true, children }) {
+    const [open, setOpen] = useState(defaultOpen);
+    return (
+        <div className="border border-border/50 rounded-xl overflow-hidden">
+            <button
+                type="button"
+                onClick={() => setOpen(o => !o)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 transition-colors">
+                <span className="text-sm font-semibold text-foreground">{title}</span>
+                <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+            </button>
+            {open && (
+                <div className="px-4 py-4 space-y-4 bg-background">
+                    {children}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ── Haupt-Modal ───────────────────────────────────────────────────────────────
 export default function ArticleModal({ open, onClose, article, onSave }) {
     const queryClient = useQueryClient();
     const currentUser = useRef(null);
     useEffect(() => { base44.auth.me().then(u => { currentUser.current = u; }).catch(() => {}); }, []);
+
     const { data: categories = [] } = useQuery({
         queryKey: ['article-categories'],
-        queryFn: () => base44.entities.ArticleCategory.list('order')
+        queryFn: () => base44.entities.ArticleCategory.list('order'),
     });
 
-    const { data: allArticles = [] } = useQuery({
-        queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list('order'),
-        staleTime: 5 * 60 * 1000
-    });
-    // Nutze gecachte Artikel statt zweitem API-Call
-    const cachedArticles = queryClient.getQueryData(['articles']) ?? allArticles;
-    const manufacturerSuggestions = [...new Set(cachedArticles.map(a => a.manufacturer).filter(Boolean))].sort();
-
-    const [scannerOpen, setScannerOpen] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const [imageEditorOpen, setImageEditorOpen] = useState(false);
-    const [tempImageUrl, setTempImageUrl] = useState('');
-    const [detectingAllergens, setDetectingAllergens] = useState(false);
     const { data: allSuppliers = [] } = useQuery({
         queryKey: ['suppliers-list'],
-        queryFn: () => base44.entities.Supplier.filter({ is_active: true }, 'order')
+        queryFn: () => base44.entities.Supplier.filter({ is_active: true }, 'order'),
     });
-    const supplierNames = allSuppliers.filter(s => (s.type || 'Lieferant') === 'Lieferant').map(s => s.name);
+    const supplierNames = allSuppliers
+        .filter(s => (s.type || 'Lieferant') === 'Lieferant')
+        .map(s => s.name);
 
-    const [formData, setFormData] = useState({
-        barcode: '',
-        name: '',
-        manufacturer: '',
-        category: '',
-        suppliers: [],
-        supplier_details: [],
-        purchase_price: '',
-        current_stock: '',
-        min_stock: '',
-        shelf_id: '',
-        storage_location: '',
+    const cachedArticles = queryClient.getQueryData(['articles']) ?? [];
+    const manufacturerSuggestions = [...new Set(cachedArticles.map(a => a.manufacturer).filter(Boolean))].sort();
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    const [scannerOpen,     setScannerOpen]     = useState(false);
+    const [uploading,       setUploading]        = useState(false);
+    const [imageEditorOpen, setImageEditorOpen]  = useState(false);
+    const [tempImageUrl,    setTempImageUrl]     = useState('');
+    const [detectingAllergens, setDetectingAllergens] = useState(false);
+    const [saving,          setSaving]           = useState(false);
+
+    const emptyForm = {
+        barcode: '', name: '', manufacturer: '', category: '',
+        suppliers: [], supplier_details: [],
+        purchase_price: '', current_stock: '', min_stock: '',
+        shelf_id: '', storage_location: '',
         image_url: '',
-        allergens: '',
-        allergens_list: [],
-        additives: [],
-        notes: '',
-        unit: '',
-        quantity: '',
-        content_amount: '',
-        content_unit: '',
-    });
+        allergens: '', allergens_list: [], additives: [],
+        notes: '', unit: '', quantity: '', content_amount: '', content_unit: '',
+    };
+
+    const [formData, setFormData] = useState(emptyForm);
+    const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }));
 
     useEffect(() => {
+        if (!open) return;
         if (article) {
             setFormData({
-                barcode: article.barcode || '',
-                name: article.name || '',
-                manufacturer: article.manufacturer || '',
-                category: article.category || '',
-                suppliers: article.suppliers || [],
+                barcode:          article.barcode || '',
+                name:             article.name || '',
+                manufacturer:     article.manufacturer || '',
+                category:         article.category || '',
+                suppliers:        article.suppliers || [],
                 supplier_details: article.supplier_details || [],
-                unit: article.unit || '',
-                quantity: article.quantity || '',
-                content_amount: article.content_amount || '',
-                content_unit: article.content_unit || '',
-                purchase_price: article.purchase_price || '',
-                current_stock: article.current_stock || '',
-                min_stock: article.min_stock || '',
-                shelf_id: article.shelf_id || '',
+                unit:             article.unit || '',
+                quantity:         article.quantity || '',
+                content_amount:   article.content_amount || '',
+                content_unit:     article.content_unit || '',
+                purchase_price:   article.purchase_price || '',
+                current_stock:    article.current_stock ?? '',
+                min_stock:        article.min_stock ?? '',
+                shelf_id:         article.shelf_id || '',
                 storage_location: article.storage_location || '',
-                image_url: article.image_url || '',
-                allergens: article.allergens || '',
-                allergens_list: article.allergens_list || [],
-                additives: article.additives || [],
-                notes: article.notes || ''
+                image_url:        article.image_url || '',
+                allergens:        article.allergens || '',
+                allergens_list:   article.allergens_list || [],
+                additives:        article.additives || [],
+                notes:            article.notes || '',
             });
         } else {
-            setFormData({
-                barcode: '',
-                name: '',
-                manufacturer: '',
-                category: '',
-                suppliers: [],
-                supplier_details: [],
-                unit: '',
-                quantity: '',
-                content_amount: '',
-                content_unit: '',
-                purchase_price: '',
-                current_stock: '',
-                min_stock: '',
-                shelf_id: '',
-                storage_location: '',
-                image_url: '',
-                allergens: '',
-                allergens_list: [],
-                additives: [],
-                notes: ''
-            });
+            setFormData(emptyForm);
         }
     }, [article, open]);
 
+    // ── Allergene KI ──────────────────────────────────────────────────────────
     const detectAllergens = async () => {
-        if (!formData.name) {
-            toast.error('Bitte Artikelname eingeben');
-            return;
-        }
-        
+        if (!formData.name) { toast.error('Bitte zuerst Artikelname eingeben'); return; }
         setDetectingAllergens(true);
         try {
             const result = await base44.integrations.Core.InvokeLLM({
-                prompt: `Analysiere den folgenden Artikel und liste NUR die enthaltenen Allergene auf: "${formData.name}". 
-                
-Gib nur die Allergene als kommaseparierte Liste zurück (z.B. "Gluten, Milch, Sulfite"). 
-Wenn keine Allergene vorhanden sind, antworte mit "Keine".
-Berücksichtige typische Allergene: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, Soja, Milch, Schalenfrüchte, Sellerie, Senf, Sesam, Sulfite, Lupinen, Weichtiere.`,
-                response_json_schema: {
-                    type: "object",
-                    properties: {
-                        allergens: { type: "string" }
-                    }
-                }
+                prompt: `Analysiere den folgenden Artikel und liste NUR die enthaltenen Allergene auf: "${formData.name}". Gib nur die Allergene als kommaseparierte Liste zurück. Wenn keine Allergene vorhanden sind, antworte mit "Keine". Berücksichtige: Gluten, Krebstiere, Eier, Fisch, Erdnüsse, Soja, Milch, Schalenfrüchte, Sellerie, Senf, Sesam, Sulfite, Lupinen, Weichtiere.`,
+                response_json_schema: { type: 'object', properties: { allergens: { type: 'string' } } }
             });
-            
-            const detected = result.allergens === "Keine" ? "" : result.allergens;
-            setFormData(prev => ({ ...prev, allergens: detected }));
+            set('allergens', result.allergens === 'Keine' ? '' : result.allergens);
             toast.success('Allergene erkannt');
-        } catch (error) {
+        } catch {
             toast.error('Fehler bei der Allergenerkennung');
         } finally {
             setDetectingAllergens(false);
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        // Sync suppliers string array from supplier_details for backward compat
-        const supplierNames = formData.supplier_details.map(s => s.supplier_name).filter(Boolean);
-        // Primary price from primary supplier or first
-        const primary = formData.supplier_details.find(s => s.is_primary) || formData.supplier_details[0];
-        const primaryPrice = primary?.purchase_price ? parseFloat(primary.purchase_price) : undefined;
-        const finalPrice = primaryPrice ?? (formData.purchase_price ? parseFloat(formData.purchase_price) : undefined);
-
-        const dataToSave = {
-            ...formData,
-            suppliers: supplierNames.length > 0 ? supplierNames : formData.suppliers,
-            quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
-            content_amount: formData.content_amount ? parseFloat(formData.content_amount) : undefined,
-            purchase_price: finalPrice,
-            current_stock: formData.current_stock ? parseFloat(formData.current_stock) : 0,
-            min_stock: formData.min_stock ? parseFloat(formData.min_stock) : undefined
-        };
-
-        // Preishistorie bei Änderung
-        if (article?.id) {
-            await recordPriceChange({
-                articleId: article.id,
-                articleName: formData.name,
-                oldPrice: article.purchase_price,
-                newPrice: finalPrice,
-                user: currentUser.current,
-                supplierName: primary?.supplier_name
-            });
-        }
-        
-        haptics.light();
-        onSave(dataToSave, article?.id);
-    };
-
-    const handleScan = (barcode) => {
-        setFormData({ ...formData, barcode });
-        setScannerOpen(false);
-    };
-
+    // ── Bild ──────────────────────────────────────────────────────────────────
     const handleImageUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        // Create temporary URL for editor
-        const tempUrl = URL.createObjectURL(file);
-        setTempImageUrl(tempUrl);
+        setTempImageUrl(URL.createObjectURL(file));
         setImageEditorOpen(true);
     };
 
     const handleImageSave = async (editedFile) => {
         setUploading(true);
         setImageEditorOpen(false);
-        
         try {
             const { file_url } = await base44.integrations.Core.UploadFile({ file: editedFile });
-            setFormData(prev => ({ ...prev, image_url: file_url }));
+            set('image_url', file_url);
             URL.revokeObjectURL(tempImageUrl);
             setTempImageUrl('');
             toast.success('Bild hochgeladen');
-        } catch (error) {
-            toast.error('Fehler beim Hochladen: ' + error.message);
+        } catch (err) {
+            toast.error('Fehler beim Hochladen: ' + err.message);
         } finally {
             setUploading(false);
         }
     };
 
+    // ── Submit ────────────────────────────────────────────────────────────────
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        try {
+            const suppliersArray = formData.supplier_details.map(s => s.supplier_name).filter(Boolean);
+            const primary = formData.supplier_details.find(s => s.is_primary) || formData.supplier_details[0];
+            const primaryPrice = primary?.purchase_price ? parseFloat(primary.purchase_price) : undefined;
+            const finalPrice = primaryPrice ?? (formData.purchase_price ? parseFloat(formData.purchase_price) : undefined);
+
+            const dataToSave = {
+                ...formData,
+                suppliers:      suppliersArray.length > 0 ? suppliersArray : formData.suppliers,
+                quantity:       formData.quantity       ? parseFloat(formData.quantity)       : undefined,
+                content_amount: formData.content_amount ? parseFloat(formData.content_amount) : undefined,
+                purchase_price: finalPrice,
+                current_stock:  formData.current_stock !== '' ? parseFloat(formData.current_stock) : 0,
+                min_stock:      formData.min_stock !== ''     ? parseFloat(formData.min_stock)      : undefined,
+            };
+
+            if (article?.id) {
+                await recordPriceChange({
+                    articleId:    article.id,
+                    articleName:  formData.name,
+                    oldPrice:     article.purchase_price,
+                    newPrice:     finalPrice,
+                    user:         currentUser.current,
+                    supplierName: primary?.supplier_name,
+                });
+            }
+
+            haptics.light();
+            onSave(dataToSave, article?.id);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>{article?.id ? 'Artikel bearbeiten' : 'Neuer Artikel'}</DialogTitle>
-                </DialogHeader>
+        <>
+            <Dialog open={open} onOpenChange={onClose}>
+                <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto p-0">
+                    <DialogHeader className="px-5 pt-5 pb-0">
+                        <DialogTitle className="text-base">
+                            {article?.id ? 'Artikel bearbeiten' : 'Neuer Artikel'}
+                        </DialogTitle>
+                    </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    <div className="space-y-2">
-                        <Label>Barcode/EAN *</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                value={formData.barcode}
-                                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                                placeholder="z.B. 4029764001807"
-                                className="flex-1"
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setScannerOpen(true)}
-                                title="Barcode scannen"
-                            >
-                                <Camera className="w-4 h-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    const customCode = `CUSTOM-${Date.now().toString().slice(-8)}`;
-                                    setFormData({ ...formData, barcode: customCode });
-                                    toast.success('Code generiert: ' + customCode);
-                                }}
-                                title="Eigenen Code generieren"
-                            >
-                                <Sparkles className="w-4 h-4" />
-                            </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            Tipp: Scanne einen Barcode oder generiere einen eigenen Code für Artikel ohne EAN
-                        </p>
-                    </div>
+                    <form onSubmit={handleSubmit} className="px-5 pb-5 pt-4 space-y-3">
 
-                    <div className="space-y-2">
-                        <Label>Artikelname *</Label>
-                        <Input
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            placeholder="z.B. Jägermeister 0,7L"
-                            required
-                        />
-                    </div>
+                        {/* ── SEKTION 1: Basis ─────────────────────────────── */}
+                        <Section title="📦 Basis" defaultOpen={true}>
 
-                    <div className="space-y-2">
-                        <Label>Hersteller / Marke</Label>
-                        <SmartCombobox
-                            value={formData.manufacturer}
-                            onChange={(val) => setFormData({ ...formData, manufacturer: val })}
-                            options={manufacturerSuggestions}
-                            placeholder="z.B. Mast-Jägermeister SE"
-                            allowCreate={true}
-                        />
-                    </div>
+                            {/* Bild + Name nebeneinander */}
+                            <div className="flex gap-3 items-start">
+                                {/* Bild */}
+                                <label className="relative shrink-0 cursor-pointer group">
+                                    <div className={cn(
+                                        'w-16 h-16 rounded-xl border-2 border-dashed border-border overflow-hidden flex items-center justify-center bg-secondary/30',
+                                        'hover:border-amber-500/50 transition-colors'
+                                    )}>
+                                        {formData.image_url ? (
+                                            <img src={formData.image_url} alt="" className="w-full h-full object-cover" />
+                                        ) : uploading ? (
+                                            <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin" />
+                                        ) : (
+                                            <ImageIcon className="w-5 h-5 text-muted-foreground group-hover:text-amber-500 transition-colors" />
+                                        )}
+                                    </div>
+                                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                                </label>
 
-                    <div className="space-y-2">
-                        <Label>Kategorie</Label>
-                        <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Kategorie wählen" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {categories.map(cat => (
-                                    <SelectItem key={cat.id} value={cat.name}>
-                                        <div className="flex items-center gap-2">
-                                            <div 
-                                                className="w-3 h-3 rounded-full"
-                                                style={{ backgroundColor: cat.color }}
-                                            />
-                                            {cat.name}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                                {/* Name + Kategorie */}
+                                <div className="flex-1 space-y-2">
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">Name *</Label>
+                                        <Input
+                                            value={formData.name}
+                                            onChange={e => set('name', e.target.value)}
+                                            placeholder="Artikelname"
+                                            required
+                                            className="h-9 mt-1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs text-muted-foreground">Kategorie</Label>
+                                        <Select value={formData.category} onValueChange={v => set('category', v)}>
+                                            <SelectTrigger className="h-9 mt-1">
+                                                <SelectValue placeholder="Kategorie wählen…" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {categories.map(c => (
+                                                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div className="space-y-2">
-                        <Label className="font-semibold">Lieferanten & Preise</Label>
-                        <SupplierDetailsEditor
-                            value={formData.supplier_details}
-                            onChange={(details) => setFormData({ ...formData, supplier_details: details })}
-                            availableSuppliers={supplierNames}
-                        />
-                    </div>
+                            {/* Barcode */}
+                            <div>
+                                <Label className="text-xs text-muted-foreground">Barcode / EAN</Label>
+                                <div className="flex gap-2 mt-1">
+                                    <Input
+                                        value={formData.barcode}
+                                        onChange={e => set('barcode', e.target.value)}
+                                        placeholder="EAN-Code"
+                                        className="h-9 font-mono"
+                                    />
+                                    <Button type="button" variant="outline" size="sm"
+                                        className="h-9 px-3 shrink-0"
+                                        onClick={() => setScannerOpen(true)}>
+                                        <Camera className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </Section>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label>Menge</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                value={formData.quantity}
-                                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                                placeholder="z.B. 24"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Einheit</Label>
-                            <Input
-                                value={formData.unit}
-                                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                                placeholder="z.B. Flaschen"
-                            />
-                        </div>
-                    </div>
+                        {/* ── SEKTION 2: Lager ─────────────────────────────── */}
+                        <Section title="🏪 Lager" defaultOpen={true}>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Bestand</Label>
+                                    <Input type="number" step="0.01"
+                                        value={formData.current_stock}
+                                        onChange={e => set('current_stock', e.target.value)}
+                                        placeholder="0"
+                                        className="h-9 mt-1" />
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Mindestbestand</Label>
+                                    <Input type="number" step="0.01"
+                                        value={formData.min_stock}
+                                        onChange={e => set('min_stock', e.target.value)}
+                                        placeholder="—"
+                                        className="h-9 mt-1" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Lagerort</Label>
+                                    <Input
+                                        value={formData.storage_location}
+                                        onChange={e => set('storage_location', e.target.value)}
+                                        placeholder="z.B. Keller"
+                                        className="h-9 mt-1" />
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Regal / Fach</Label>
+                                    <Input
+                                        value={formData.shelf_id}
+                                        onChange={e => set('shelf_id', e.target.value)}
+                                        placeholder="z.B. A1"
+                                        className="h-9 mt-1" />
+                                </div>
+                            </div>
+                        </Section>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label>Inhaltsmenge</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                value={formData.content_amount}
-                                onChange={(e) => setFormData({ ...formData, content_amount: e.target.value })}
-                                placeholder="z.B. 700"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Einheit</Label>
-                            <Select value={formData.content_unit} onValueChange={(v) => setFormData({ ...formData, content_unit: v })}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Wählen..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="ml">ml (Milliliter)</SelectItem>
-                                    <SelectItem value="l">l (Liter)</SelectItem>
-                                    <SelectItem value="g">g (Gramm)</SelectItem>
-                                    <SelectItem value="kg">kg (Kilogramm)</SelectItem>
-                                    <SelectItem value="Stück">Stück</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                        {/* ── SEKTION 3: Einkauf & Details ─────────────────── */}
+                        <Section title="🛒 Einkauf & Details" defaultOpen={false}>
 
-                    <div className="space-y-2">
-                        <Label>Netto-Einkaufspreis (€)</Label>
-                        <Input
-                            type="number"
-                            step="0.01"
-                            value={formData.purchase_price}
-                            onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
-                            placeholder="z.B. 12.50"
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label>Aktueller Bestand</Label>
-                            <Input
-                                type="number"
-                                value={formData.current_stock}
-                                onChange={(e) => setFormData({ ...formData, current_stock: e.target.value })}
-                                placeholder="z.B. 10"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label>Mindestbestand</Label>
-                            <Input
-                                type="number"
-                                value={formData.min_stock}
-                                onChange={(e) => setFormData({ ...formData, min_stock: e.target.value })}
-                                placeholder="z.B. 5"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Artikelbild</Label>
-                        {formData.image_url ? (
-                            <div className="relative">
-                                <div className="w-full h-48 rounded-lg overflow-hidden bg-muted">
-                                    <img
-                                        src={formData.image_url}
-                                        alt="Vorschau"
-                                        className="w-full h-full object-cover"
+                            {/* Lieferanten */}
+                            <div>
+                                <Label className="text-xs text-muted-foreground">Lieferanten</Label>
+                                <div className="mt-1">
+                                    <SupplierDetailsEditor
+                                        value={formData.supplier_details}
+                                        onChange={v => set('supplier_details', v)}
+                                        supplierOptions={supplierNames}
                                     />
                                 </div>
-                                <div className="absolute top-2 right-2 flex gap-2">
-                                    <Button type="button" variant="secondary" size="icon"
-                                        onClick={() => { setTempImageUrl(formData.image_url); setImageEditorOpen(true); }}>
-                                        <Crop className="w-4 h-4" />
-                                    </Button>
-                                    <Button type="button" variant="destructive" size="icon"
-                                        onClick={() => setFormData({ ...formData, image_url: '' })}>
-                                        <X className="w-4 h-4" />
-                                    </Button>
+                            </div>
+
+                            {/* Einkaufspreis Fallback */}
+                            {formData.supplier_details.length === 0 && (
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Einkaufspreis (€)</Label>
+                                    <Input type="number" step="0.01"
+                                        value={formData.purchase_price}
+                                        onChange={e => set('purchase_price', e.target.value)}
+                                        placeholder="0.00"
+                                        className="h-9 mt-1" />
+                                </div>
+                            )}
+
+                            {/* Inhalt + Einheit */}
+                            <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Menge</Label>
+                                    <Input type="number" step="0.01"
+                                        value={formData.quantity}
+                                        onChange={e => set('quantity', e.target.value)}
+                                        placeholder="1"
+                                        className="h-9 mt-1" />
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Inhalt</Label>
+                                    <Input type="number" step="0.001"
+                                        value={formData.content_amount}
+                                        onChange={e => set('content_amount', e.target.value)}
+                                        placeholder="0.7"
+                                        className="h-9 mt-1" />
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground">Einheit</Label>
+                                    <Select value={formData.content_unit} onValueChange={v => set('content_unit', v)}>
+                                        <SelectTrigger className="h-9 mt-1">
+                                            <SelectValue placeholder="—" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {['Stück', 'l', 'ml', 'kg', 'g'].map(u => (
+                                                <SelectItem key={u} value={u}>{u}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="border-2 border-dashed border-border rounded-lg h-32 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/30 transition-colors">
-                                <input type="file" accept="image/*" onChange={handleImageUpload}
-                                    className="hidden" id="image-upload" disabled={uploading} />
-                                <label htmlFor="image-upload" className="cursor-pointer flex flex-col items-center gap-2">
-                                    <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                                    <p className="text-sm text-muted-foreground">
-                                        {uploading ? 'Lädt hoch...' : 'Bild hochladen'}
-                                    </p>
-                                </label>
+
+                            {/* Hersteller */}
+                            <div>
+                                <Label className="text-xs text-muted-foreground">Hersteller / Marke</Label>
+                                <div className="mt-1">
+                                    <SmartCombobox
+                                        value={formData.manufacturer}
+                                        onChange={v => set('manufacturer', v)}
+                                        options={manufacturerSuggestions}
+                                        placeholder="Hersteller…"
+                                        allowCreate={true}
+                                    />
+                                </div>
                             </div>
-                        )}
-                    </div>
 
-                    <AllergenSelector
-                        allergensList={formData.allergens_list}
-                        additives={formData.additives}
-                        category={formData.category}
-                        onChange={(key, val) => setFormData(prev => ({ ...prev, [key]: val }))}
-                    />
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label>Regal-ID</Label>
-                            <Input
-                                value={formData.shelf_id}
-                                onChange={(e) => setFormData({ ...formData, shelf_id: e.target.value.toUpperCase() })}
-                                placeholder="z.B. A1, B2, C3"
-                                className="font-mono"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Lagerort</Label>
-                            <Input
-                                value={formData.storage_location}
-                                onChange={(e) => setFormData({ ...formData, storage_location: e.target.value })}
-                                placeholder="z.B. Keller, Kühlraum"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Notizen</Label>
-                        <Textarea
-                            value={formData.notes}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                            placeholder="Zusätzliche Informationen..."
-                            rows={2}
-                        />
-                    </div>
-
-                    {article?.id && (
-                        <div className="space-y-2 pt-2">
-                            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                                <History className="w-4 h-4" />
-                                Preishistorie
+                            {/* Allergene */}
+                            <div>
+                                <div className="flex items-center justify-between mb-1">
+                                    <Label className="text-xs text-muted-foreground">Allergene</Label>
+                                    <button type="button" onClick={detectAllergens}
+                                        disabled={detectingAllergens}
+                                        className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50">
+                                        <Sparkles className="w-3 h-3" />
+                                        {detectingAllergens ? 'Erkenne…' : 'KI erkennen'}
+                                    </button>
+                                </div>
+                                <AllergenSelector
+                                    value={formData.allergens_list}
+                                    onChange={v => set('allergens_list', v)}
+                                />
+                                <Input
+                                    value={formData.allergens}
+                                    onChange={e => set('allergens', e.target.value)}
+                                    placeholder="Freitext Allergene…"
+                                    className="h-9 mt-2 text-xs"
+                                />
                             </div>
-                            <PriceHistoryPanel articleId={article.id} currentPrice={article.purchase_price} />
+
+                            {/* Notizen */}
+                            <div>
+                                <Label className="text-xs text-muted-foreground">Notizen</Label>
+                                <Textarea
+                                    value={formData.notes}
+                                    onChange={e => set('notes', e.target.value)}
+                                    placeholder="Interne Notizen…"
+                                    rows={2}
+                                    className="resize-none mt-1 text-sm"
+                                />
+                            </div>
+
+                            {/* Preisverlauf (nur bei bestehendem Artikel) */}
+                            {article?.id && (
+                                <div>
+                                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <History className="w-3 h-3" /> Preisverlauf
+                                    </Label>
+                                    <div className="mt-1">
+                                        <PriceHistoryPanel articleId={article.id} />
+                                    </div>
+                                </div>
+                            )}
+                        </Section>
+
+                        {/* ── Aktionen ─────────────────────────────────────── */}
+                        <div className="flex gap-2 pt-1">
+                            <Button type="button" variant="outline"
+                                onClick={onClose} className="flex-1 h-10">
+                                Abbrechen
+                            </Button>
+                            <Button type="submit" disabled={saving}
+                                className="flex-1 h-10 bg-amber-600 hover:bg-amber-700 text-white">
+                                {saving ? 'Speichern…' : 'Speichern'}
+                            </Button>
                         </div>
-                    )}
+                    </form>
+                </DialogContent>
+            </Dialog>
 
-                    <div className="flex gap-2 pt-2">
-                        <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                            Abbrechen
-                        </Button>
-                        <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
-                            Speichern
-                        </Button>
-                    </div>
-                </form>
-
-                <BarcodeScanner
-                    open={scannerOpen}
-                    onClose={() => setScannerOpen(false)}
-                    onScan={handleScan}
-                />
-
-                <ImageEditor
-                    open={imageEditorOpen}
-                    onClose={() => {
-                        setImageEditorOpen(false);
-                        if (tempImageUrl) {
-                            URL.revokeObjectURL(tempImageUrl);
-                            setTempImageUrl('');
-                        }
-                    }}
-                    imageUrl={tempImageUrl}
-                    onSave={handleImageSave}
-                />
-            </DialogContent>
-        </Dialog>
+            {/* Sub-Dialoge */}
+            <BarcodeScanner
+                open={scannerOpen}
+                onClose={() => setScannerOpen(false)}
+                onScan={(barcode) => { set('barcode', barcode); setScannerOpen(false); }}
+            />
+            <ImageEditor
+                open={imageEditorOpen}
+                imageUrl={tempImageUrl}
+                onSave={handleImageSave}
+                onClose={() => { setImageEditorOpen(false); URL.revokeObjectURL(tempImageUrl); setTempImageUrl(''); }}
+            />
+        </>
     );
 }

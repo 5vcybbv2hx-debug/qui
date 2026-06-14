@@ -53,14 +53,16 @@ function ArticleRow({ article, isLowStock, onEdit, onToggleActive, isManager }) 
     const minStock = article.min_stock ?? 0;
 
     return (
-        <div className={cn(
-            'flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all',
-            article.is_active === false
-                ? 'opacity-40 bg-secondary/20 border-border/30'
-                : isLowStock
-                ? 'bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40'
-                : 'bg-card border-border/50 hover:border-border'
-        )}>
+        <div
+            onClick={() => onEdit(article)}
+            className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all cursor-pointer active:scale-[0.99]',
+                article.is_active === false
+                    ? 'opacity-40 bg-secondary/20 border-border/30'
+                    : isLowStock
+                    ? 'bg-orange-500/5 border-orange-500/20 hover:border-orange-500/40'
+                    : 'bg-card border-border/50 hover:border-border hover:bg-accent/20'
+            )}>
             {/* Bild */}
             <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary/50 shrink-0">
                 {article.image_url ? (
@@ -101,21 +103,18 @@ function ArticleRow({ article, isLowStock, onEdit, onToggleActive, isManager }) 
                 </div>
             </div>
 
-            {/* Menü */}
+            {/* Aktivieren/Deaktivieren — nur für Manager, stoppt Bubbling */}
             {isManager && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon"
+                            onClick={e => e.stopPropagation()}
                             className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground">
                             <MoreVertical className="w-4 h-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onClick={() => onEdit(article)}>
-                            Bearbeiten
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onToggleActive(article)}
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleActive(article); }}
                             className={article.is_active === false
                                 ? 'text-green-400 focus:text-green-400'
                                 : 'text-muted-foreground'}>

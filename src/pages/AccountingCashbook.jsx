@@ -1,6 +1,15 @@
+/**
+ * Kassenbuch — schlankes digitales Kassenbuch für den Steuerberater
+ *
+ * Einträge kommen aus zwei Quellen:
+ *  1. Automatisch vom Tagesabschluss (source: 'z_abschlag') — Bar + EC getrennt
+ *  2. Manuell — Ausgaben, Privatentnahmen, Sonstiges
+ *
+ * Ziel: saubere Monatsübersicht → DATEV-Export
+ */
 import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { STALE } from '@/lib/queryUtils';;
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
@@ -10,368 +19,535 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, TrendingUp, TrendingDown, BookOpen, Search, FileText, CheckCircle2, ArrowDownToLine, ExternalLink } from 'lucide-react';
-import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import {
+    Plus, TrendingUp, TrendingDown, BookOpen, FileText,
+    Trash2, ExternalLink, ChevronLeft, ChevronRight, Zap, Pencil
+} from 'lucide-react';
+import { format, subMonths, addMonths } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import MonthNavigator from '@/components/accounting/MonthNavigator';
 
-const fmt = (n) => n?.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00';
+// ── Konstanten ────────────────────────────────────────────────────────────────
+const fmt = n => (n ?? 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const ENTRY_TYPES = ['Einnahme', 'Ausgabe', 'Privatentnahme', 'Privateinlage', 'Trinkgeld', 'Kassensturz', 'Sonstiges'];
-const PAYMENT_METHODS = ['Bar', 'EC', 'Kreditkarte', 'Überweisung', 'Sonstiges'];
+const ENTRY_TYPES  = ['Einnahme', 'Ausgabe', 'Privatentnahme', 'Privateinlage', 'Trinkgeld', 'Kassensturz', 'Sonstiges'];
+const TAX_RATES    = ['0', '7', '19'];
+const PAY_METHODS  = ['Bar', 'EC', 'Kreditkarte', 'Überweisung', 'Sonstiges'];
 
-const typeColors = {
-    'Einnahme': 'bg-green-500/15 text-green-400 border-green-500/20',
-    'Ausgabe': 'bg-red-500/15 text-red-400 border-red-500/20',
-    'Privatentnahme': 'bg-orange-500/15 text-orange-400 border-orange-500/20',
-    'Privateinlage': 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-    'Trinkgeld': 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-    'Kassensturz': 'bg-purple-500/15 text-purple-400 border-purple-500/20',
-    'Sonstiges': 'bg-secondary text-muted-foreground',
+const CATEGORIES = {
+    Einnahme:       ['Umsatz Bar', 'Umsatz EC', 'Trinkgeld', 'Sonstiges'],
+    Ausgabe:        ['Getränke', 'Lebensmittel', 'Reinigung', 'Personal', 'Miete', 'Energie', 'GEMA', 'Büro', 'Marketing', 'Sonstiges'],
+    Privatentnahme: ['Privatentnahme'],
+    Privateinlage:  ['Privateinlage'],
+    Trinkgeld:      ['Trinkgeld'],
+    Kassensturz:    ['Kassensturz'],
+    Sonstiges:      ['Sonstiges'],
 };
 
-const isIncome = (type) => ['Einnahme', 'Privateinlage', 'Trinkgeld'].includes(type);
+const TYPE_STYLE = {
+    Einnahme:      { color: 'text-green-400',  bg: 'bg-green-500/10',  border: 'border-green-500/20',  icon: TrendingUp   },
+    Ausgabe:       { color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/20',    icon: TrendingDown },
+    Privatentnahme:{ color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', icon: TrendingDown },
+    Privateinlage: { color: 'text-blue-400',   bg: 'bg-blue-500/10',   border: 'border-blue-500/20',   icon: TrendingUp   },
+    Trinkgeld:     { color: 'text-amber-400',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20',  icon: TrendingUp   },
+    Kassensturz:   { color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20', icon: BookOpen     },
+    Sonstiges:     { color: 'text-muted-foreground', bg: 'bg-secondary/50', border: 'border-border', icon: BookOpen },
+};
+
+const isIncome = t => ['Einnahme', 'Privateinlage', 'Trinkgeld'].includes(t);
 
 const EMPTY_FORM = {
-    date: format(new Date(), 'yyyy-MM-dd'),
-    time: format(new Date(), 'HH:mm'),
-    entry_type: 'Ausgabe',
-    amount: '',
-    tax_rate: 19,
-    category: '',
-    description: '',
+    date:           format(new Date(), 'yyyy-MM-dd'),
+    entry_type:     'Ausgabe',
+    amount:         '',
+    tax_rate:       19,
+    category:       '',
+    description:    '',
     payment_method: 'Bar',
-    notes: '',
+    notes:          '',
+    source:         'manuell',
 };
 
-export default function AccountingCashbook() {
-    const permissions = usePermissions();
-    const queryClient = useQueryClient();
-    const [modalOpen, setModalOpen] = useState(false);
-    const [search, setSearch] = useState('');
-    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-    const [formData, setFormData] = useState(EMPTY_FORM);
-
-    const { data: entries = [], isLoading } = useQuery({
-        queryKey: ['cashbook-entries'],
-        queryFn: () => base44.entities.CashbookEntry.list('-date', 500),
-        staleTime: STALE.MEDIUM,
-    });
-
-    const { data: dailyRevenues = [] } = useQuery({
-        queryKey: ['daily-revenues'],
-        queryFn: () => base44.entities.DailyRevenue.list('-date', 365)
-    });
-
-    const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.CashbookEntry.create(data),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] }); setModalOpen(false); setFormData(EMPTY_FORM); }
-    });
-
-    const filtered = useMemo(() => {
-        return entries.filter(e => {
-            const monthMatch = e.date?.startsWith(selectedMonth);
-            const searchMatch = !search || e.description?.toLowerCase().includes(search.toLowerCase())
-                || e.category?.toLowerCase().includes(search.toLowerCase());
-            return monthMatch && searchMatch;
-        });
-    }, [entries, selectedMonth, search]);
-
-    // Z-Abschlüsse des gewählten Monats, die noch nicht importiert wurden
-    const importedDates = useMemo(() => new Set(
-        entries.filter(e => e.daily_revenue_id).map(e => e.daily_revenue_id)
-    ), [entries]);
-
-    const pendingRevenues = useMemo(() => {
-        return dailyRevenues.filter(r =>
-            r.date?.startsWith(selectedMonth) &&
-            r.revenue > 0 &&
-            !importedDates.has(r.id)
-        );
-    }, [dailyRevenues, selectedMonth, importedDates]);
-
-    const importRevenue = async (revenue) => {
-        const entries = [];
-        // Gesamtumsatz als Einnahme
-        entries.push({
-            date: revenue.date,
-            time: '23:59',
-            entry_type: 'Einnahme',
-            amount: revenue.revenue,
-            amount_net: revenue.vat ? Math.round((revenue.revenue - revenue.vat) * 100) / 100 : revenue.revenue,
-            tax_amount: revenue.vat || 0,
-            tax_rate: revenue.vat && revenue.revenue ? Math.round((revenue.vat / (revenue.revenue - revenue.vat)) * 100) : 7,
-            category: 'Tagesumsatz',
-            description: `Z-Abschlag ${revenue.date}`,
-            payment_method: 'Bar',
-            status: 'freigegeben',
-            daily_revenue_id: revenue.id,
-        });
-        await base44.entities.CashbookEntry.create(entries[0]);
-        queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] });
-    };
-
-    const importAllPending = async () => {
-        for (const r of pendingRevenues) {
-            await importRevenue(r);
-        }
-    };
-
-    const totals = useMemo(() => {
-        const income = filtered.filter(e => isIncome(e.entry_type)).reduce((s, e) => s + (e.amount || 0), 0);
-        const expense = filtered.filter(e => !isIncome(e.entry_type)).reduce((s, e) => s + (e.amount || 0), 0);
-        return { income, expense, balance: income - expense };
-    }, [filtered]);
-
-    if (!permissions.canViewAccountingCashbook) return <PermissionDenied message="Kein Zugriff auf das Kassenbuch." />;
-
-    const handleSubmit = (ev) => {
-        ev.preventDefault();
-        const gross = parseFloat(formData.amount) || 0;
-        const taxRate = parseFloat(formData.tax_rate) || 0;
-        const net = gross / (1 + taxRate / 100);
-        const tax = gross - net;
-        createMutation.mutate({ ...formData, amount: gross, amount_net: Math.round(net * 100) / 100, tax_amount: Math.round(tax * 100) / 100 });
-    };
-
+// ── Monatsnavigation ──────────────────────────────────────────────────────────
+function MonthNav({ value, onChange }) {
+    const date = new Date(value + '-01');
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-6">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3 md:static md:bg-transparent md:border-0 md:px-6 md:py-6">
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-amber-400" />
-                        <h1 className="text-lg font-bold text-foreground">Kassenbuch</h1>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <MonthNavigator value={selectedMonth} onChange={setSelectedMonth} />
-                        <Button size="sm" onClick={() => setModalOpen(true)} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground h-8 gap-1">
-                            <Plus className="w-4 h-4" />
-                        </Button>
-                    </div>
+        <div className="flex items-center gap-1.5">
+            <button onClick={() => onChange(format(subMonths(date, 1), 'yyyy-MM'))}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-bold text-foreground min-w-[110px] text-center">
+                {format(date, 'MMMM yyyy', { locale: de })}
+            </span>
+            <button onClick={() => onChange(format(addMonths(date, 1), 'yyyy-MM'))}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                <ChevronRight className="w-4 h-4" />
+            </button>
+        </div>
+    );
+}
+
+// ── Buchungs-Formular ─────────────────────────────────────────────────────────
+function EntryForm({ data, onChange }) {
+    const cats = CATEGORIES[data.entry_type] || ['Sonstiges'];
+    return (
+        <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Buchungsart *</Label>
+                    <Select value={data.entry_type}
+                        onValueChange={v => onChange({ ...data, entry_type: v, category: '' })}>
+                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {ENTRY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Betrag (Brutto) *</Label>
+                    <Input type="number" step="0.01" placeholder="0,00"
+                        value={data.amount}
+                        onChange={e => onChange({ ...data, amount: e.target.value })}
+                        className="h-10" />
                 </div>
             </div>
 
-            <div className="px-4 md:px-6 space-y-4 max-w-2xl mx-auto">
-                {/* Summary */}
-                <div className="grid grid-cols-3 gap-2">
-                    <Card className="p-3 bg-green-500/10 border-green-500/20">
-                        <p className="text-xs text-green-400 font-medium">Einnahmen</p>
-                        <p className="text-base font-bold text-green-400">{fmt(totals.income)} €</p>
-                    </Card>
-                    <Card className="p-3 bg-red-500/10 border-red-500/20">
-                        <p className="text-xs text-red-400 font-medium">Ausgaben</p>
-                        <p className="text-base font-bold text-red-400">{fmt(totals.expense)} €</p>
-                    </Card>
-                    <Card className={cn('p-3 border', totals.balance >= 0 ? 'bg-blue-500/10 border-blue-500/20' : 'bg-red-500/10 border-red-500/20')}>
-                        <p className="text-xs text-muted-foreground font-medium">Saldo</p>
-                        <p className={cn('text-base font-bold', totals.balance >= 0 ? 'text-blue-400' : 'text-red-400')}>{fmt(totals.balance)} €</p>
-                    </Card>
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Datum *</Label>
+                    <Input type="date" value={data.date}
+                        onChange={e => onChange({ ...data, date: e.target.value })}
+                        className="h-10" />
                 </div>
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">MwSt.</Label>
+                    <Select value={String(data.tax_rate ?? 19)}
+                        onValueChange={v => onChange({ ...data, tax_rate: Number(v) })}>
+                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {TAX_RATES.map(r => <SelectItem key={r} value={r}>{r}%</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
 
-                {/* Z-Abschluss Import Banner */}
-                {pendingRevenues.length > 0 && (
-                    <Card className="p-3 bg-amber-500/10 border-amber-500/30">
-                        <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-start gap-2">
-                                <FileText className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                                <div>
-                                    <p className="text-sm font-semibold text-amber-400">
-                                        {pendingRevenues.length} Z-Abschluss{pendingRevenues.length > 1 ? 'läge' : ''} nicht importiert
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Tagesabschlüsse automatisch als Kassenbucheinträge übernehmen
-                                    </p>
-                                </div>
-                            </div>
-                            <Button size="sm" onClick={importAllPending}
-                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground h-8 text-xs gap-1 shrink-0">
-                                <ArrowDownToLine className="w-3.5 h-3.5" /> Alle importieren
-                            </Button>
-                        </div>
-                        <div className="mt-2 space-y-1">
-                            {pendingRevenues.slice(0, 3).map(r => (
-                                <div key={r.id} className="flex items-center justify-between text-xs py-1 border-t border-amber-500/20">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground">{r.date}</span>
-                                        {r.pdf_url && (
-                                            <a href={r.pdf_url} target="_blank" rel="noopener noreferrer"
-                                                className="text-blue-400 hover:underline flex items-center gap-0.5">
-                                                PDF <ExternalLink className="w-2.5 h-2.5" />
-                                            </a>
-                                        )}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-semibold text-green-400">{r.revenue?.toFixed(2)} €</span>
-                                        <Button size="sm" variant="ghost" onClick={() => importRevenue(r)}
-                                            className="h-6 text-[10px] px-2 text-amber-400 hover:bg-amber-500/10">
-                                            Import
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))}
-                            {pendingRevenues.length > 3 && (
-                                <p className="text-xs text-muted-foreground pt-1">+ {pendingRevenues.length - 3} weitere...</p>
-                            )}
-                        </div>
-                    </Card>
+            <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Kategorie</Label>
+                    <Select value={data.category || ''}
+                        onValueChange={v => onChange({ ...data, category: v })}>
+                        <SelectTrigger className="h-10"><SelectValue placeholder="Wählen…" /></SelectTrigger>
+                        <SelectContent>
+                            {cats.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Zahlungsart</Label>
+                    <Select value={data.payment_method || 'Bar'}
+                        onValueChange={v => onChange({ ...data, payment_method: v })}>
+                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {PAY_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+
+            <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Beschreibung / Buchungstext</Label>
+                <Input value={data.description || ''}
+                    onChange={e => onChange({ ...data, description: e.target.value })}
+                    placeholder="z.B. Metro Einkauf, Privatentnahme…"
+                    className="h-10" />
+            </div>
+        </div>
+    );
+}
+
+// ── Eintrag-Zeile ─────────────────────────────────────────────────────────────
+function EntryRow({ entry, onEdit, onDelete }) {
+    const style = TYPE_STYLE[entry.entry_type] || TYPE_STYLE.Sonstiges;
+    const Icon  = style.icon;
+    const income = isIncome(entry.entry_type);
+    const isAuto = entry.source === 'z_abschlag';
+
+    return (
+        <div onClick={onEdit}
+            className="flex items-center gap-3 px-3.5 py-3 rounded-xl border border-border/60 bg-card hover:border-border cursor-pointer transition-all group min-h-[58px]">
+
+            {/* Icon */}
+            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', style.bg)}>
+                <Icon className={cn('w-4 h-4', style.color)} />
+            </div>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-sm font-semibold text-foreground truncate">
+                        {entry.description || entry.category || entry.entry_type}
+                    </p>
+                    {isAuto && (
+                        <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/20 rounded px-1 py-0.5">
+                            <Zap className="w-2.5 h-2.5" />Auto
+                        </span>
+                    )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                    {entry.date}
+                    {entry.payment_method && ` · ${entry.payment_method}`}
+                    {entry.category && ` · ${entry.category}`}
+                </p>
+            </div>
+
+            {/* PDF-Link */}
+            {entry.file_url && (
+                <a href={entry.file_url} target="_blank" rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    className="text-blue-400 hover:text-blue-300 p-1 shrink-0">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+            )}
+
+            {/* Betrag */}
+            <div className="text-right shrink-0">
+                <p className={cn('text-sm font-bold', income ? 'text-green-400' : 'text-red-400')}>
+                    {income ? '+' : '−'}{fmt(entry.amount)} €
+                </p>
+                {entry.tax_rate > 0 && (
+                    <p className="text-[10px] text-muted-foreground">
+                        MwSt. {fmt(entry.tax_amount)} €
+                    </p>
                 )}
+            </div>
 
-                {/* Search */}
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input placeholder="Suchen..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+            {/* Löschen — nur bei manuellen Einträgen */}
+            {!isAuto && (
+                <button onClick={e => { e.stopPropagation(); onDelete(); }}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all p-1 min-w-[32px] min-h-[32px] flex items-center justify-center shrink-0">
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            )}
+        </div>
+    );
+}
+
+// ── Hauptseite ────────────────────────────────────────────────────────────────
+export default function AccountingCashbook() {
+    const permissions  = usePermissions();
+    const queryClient  = useQueryClient();
+
+    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+    const [typeFilter,    setTypeFilter]    = useState('alle');
+    const [modalOpen,     setModalOpen]     = useState(false);
+    const [editOpen,      setEditOpen]      = useState(false);
+    const [deleteTarget,  setDeleteTarget]  = useState(null);
+    const [selected,      setSelected]      = useState(null);
+    const [formData,      setFormData]      = useState(EMPTY_FORM);
+    const [editData,      setEditData]      = useState({});
+
+    // ── Queries ───────────────────────────────────────────────────────────────
+    const { data: entries = [], isLoading } = useQuery({
+        queryKey: ['cashbook-entries'],
+        queryFn:  () => base44.entities.CashbookEntry.list('-date', 500),
+        staleTime: STALE.MEDIUM,
+    });
+
+    // ── Mutations ─────────────────────────────────────────────────────────────
+    const createMutation = useMutation({
+        mutationFn: d => base44.entities.CashbookEntry.create(d),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] });
+            setModalOpen(false);
+            setFormData(EMPTY_FORM);
+            toast.success('Buchung gespeichert');
+        },
+        onError: () => toast.error('Fehler beim Speichern'),
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.CashbookEntry.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] });
+            setEditOpen(false);
+            toast.success('Buchung aktualisiert');
+        },
+        onError: () => toast.error('Fehler beim Aktualisieren'),
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: id => base44.entities.CashbookEntry.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] });
+            setDeleteTarget(null);
+            setEditOpen(false);
+            toast.success('Buchung gelöscht');
+        },
+        onError: () => toast.error('Fehler beim Löschen'),
+    });
+
+    // ── Filter + Summen ───────────────────────────────────────────────────────
+    const monthEntries = useMemo(() =>
+        entries.filter(e => e.date?.startsWith(selectedMonth)),
+        [entries, selectedMonth]
+    );
+
+    const filtered = useMemo(() => {
+        if (typeFilter === 'alle') return monthEntries;
+        if (typeFilter === 'einnahmen') return monthEntries.filter(e => isIncome(e.entry_type));
+        if (typeFilter === 'ausgaben')  return monthEntries.filter(e => !isIncome(e.entry_type));
+        if (typeFilter === 'auto')      return monthEntries.filter(e => e.source === 'z_abschlag');
+        return monthEntries;
+    }, [monthEntries, typeFilter]);
+
+    const totals = useMemo(() => {
+        const income  = monthEntries.filter(e => isIncome(e.entry_type)).reduce((s, e) => s + (e.amount || 0), 0);
+        const expense = monthEntries.filter(e => !isIncome(e.entry_type)).reduce((s, e) => s + (e.amount || 0), 0);
+        return { income, expense, balance: income - expense };
+    }, [monthEntries]);
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
+    const handleCreate = () => {
+        const gross   = parseFloat(String(formData.amount).replace(',', '.')) || 0;
+        const taxRate = formData.tax_rate || 0;
+        const net     = gross / (1 + taxRate / 100);
+        const tax     = gross - net;
+        createMutation.mutate({
+            ...formData,
+            amount:     gross,
+            amount_net: Math.round(net * 100) / 100,
+            tax_amount: Math.round(tax * 100) / 100,
+            source:     'manuell',
+        });
+    };
+
+    const handleUpdate = () => {
+        if (!selected) return;
+        const gross   = parseFloat(String(editData.amount).replace(',', '.')) || 0;
+        const taxRate = editData.tax_rate || 0;
+        const net     = gross / (1 + taxRate / 100);
+        const tax     = gross - net;
+        updateMutation.mutate({
+            id: selected.id,
+            data: {
+                ...editData,
+                amount:     gross,
+                amount_net: Math.round(net * 100) / 100,
+                tax_amount: Math.round(tax * 100) / 100,
+            }
+        });
+    };
+
+    const openEdit = entry => {
+        setSelected(entry);
+        setEditData({ ...entry });
+        setEditOpen(true);
+    };
+
+    if (!permissions.canViewAccountingCashbook) {
+        return <PermissionDenied message="Kein Zugriff auf das Kassenbuch." />;
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+    const FILTERS = [
+        { key: 'alle',      label: 'Alle' },
+        { key: 'einnahmen', label: 'Einnahmen' },
+        { key: 'ausgaben',  label: 'Ausgaben'  },
+        { key: 'auto',      label: '⚡ Z-Abschlag' },
+    ];
+
+    return (
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="max-w-2xl mx-auto px-4 py-5 space-y-4">
+
+                {/* ── Header ──────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold text-foreground">Kassenbuch</h1>
+                        <p className="text-xs text-muted-foreground mt-0.5">Einnahmen & Ausgaben · DATEV-Vorbereitung</p>
+                    </div>
+                    <Button onClick={() => { setFormData(EMPTY_FORM); setModalOpen(true); }}
+                        className="h-9 bg-amber-600 hover:bg-amber-700 text-white gap-1.5">
+                        <Plus className="w-4 h-4" /> Buchung
+                    </Button>
                 </div>
 
-                {/* Entries */}
+                {/* ── Monatsnavigation ────────────────────────────────────── */}
+                <MonthNav value={selectedMonth} onChange={setSelectedMonth} />
+
+                {/* ── Summen ──────────────────────────────────────────────── */}
+                <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-center">
+                        <p className="text-[10px] text-green-400 font-semibold uppercase tracking-wide">Einnahmen</p>
+                        <p className="text-base font-bold text-green-400 mt-0.5">{fmt(totals.income)} €</p>
+                    </div>
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-center">
+                        <p className="text-[10px] text-red-400 font-semibold uppercase tracking-wide">Ausgaben</p>
+                        <p className="text-base font-bold text-red-400 mt-0.5">{fmt(totals.expense)} €</p>
+                    </div>
+                    <div className={cn('border rounded-xl p-3 text-center',
+                        totals.balance >= 0
+                            ? 'bg-blue-500/10 border-blue-500/20'
+                            : 'bg-red-500/10 border-red-500/20'
+                    )}>
+                        <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Saldo</p>
+                        <p className={cn('text-base font-bold mt-0.5',
+                            totals.balance >= 0 ? 'text-blue-400' : 'text-red-400'
+                        )}>{fmt(totals.balance)} €</p>
+                    </div>
+                </div>
+
+                {/* ── Filter-Chips ─────────────────────────────────────────── */}
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                    {FILTERS.map(f => (
+                        <button key={f.key} onClick={() => setTypeFilter(f.key)}
+                            className={cn(
+                                'px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all',
+                                typeFilter === f.key
+                                    ? 'bg-amber-600 border-amber-600 text-white'
+                                    : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                            )}>
+                            {f.label}
+                            {f.key !== 'alle' && (
+                                <span className="ml-1.5 opacity-70">
+                                    {f.key === 'einnahmen' && monthEntries.filter(e => isIncome(e.entry_type)).length}
+                                    {f.key === 'ausgaben'  && monthEntries.filter(e => !isIncome(e.entry_type)).length}
+                                    {f.key === 'auto'      && monthEntries.filter(e => e.source === 'z_abschlag').length}
+                                </span>
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                {/* ── Eintragliste ─────────────────────────────────────────── */}
                 {isLoading ? (
-                    <div className="text-center py-12 text-muted-foreground">Lade...</div>
+                    <div className="text-center py-12 text-muted-foreground text-sm">Lade…</div>
                 ) : filtered.length === 0 ? (
-                    <Card className="p-12 text-center text-muted-foreground bg-card border-border">
-                        <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                        <p>Keine Buchungen für diesen Monat</p>
-                        <Button onClick={() => setModalOpen(true)} className="mt-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground">
-                            <Plus className="w-4 h-4 mr-2" />Erste Buchung
-                        </Button>
-                    </Card>
+                    <div className="text-center py-16 text-muted-foreground">
+                        <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p className="font-semibold text-foreground">Keine Buchungen</p>
+                        <p className="text-sm mt-1">
+                            {typeFilter === 'auto'
+                                ? 'Noch keine Z-Abschlüsse übertragen — im Tagesabschluss auf „Ins Kassenbuch" tippen'
+                                : 'Neue Buchung über den Button oben rechts'}
+                        </p>
+                    </div>
                 ) : (
                     <div className="space-y-2">
                         {filtered.map(entry => (
-                            <Card key={entry.id} className="p-4 bg-card border-border hover:border-border/80 transition-all">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                                            isIncome(entry.entry_type) ? 'bg-green-500/15' : 'bg-red-500/15'
-                                        )}>
-                                            {isIncome(entry.entry_type)
-                                                ? <TrendingUp className="w-4 h-4 text-green-400" />
-                                                : <TrendingDown className="w-4 h-4 text-red-400" />}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate">
-                                                {entry.description || entry.entry_type}
-                                            </p>
-                                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                                <p className="text-xs text-muted-foreground">{entry.date} {entry.time}</p>
-                                                <Badge className={cn('text-[10px] border', typeColors[entry.entry_type])}>
-                                                    {entry.entry_type}
-                                                </Badge>
-                                                {entry.category && <Badge variant="outline" className="text-[10px]">{entry.category}</Badge>}
-                                                {entry.daily_revenue_id && (() => {
-                                                    const rev = dailyRevenues.find(r => r.id === entry.daily_revenue_id);
-                                                    return rev?.pdf_url ? (
-                                                        <a href={rev.pdf_url} target="_blank" rel="noopener noreferrer"
-                                                            className="text-[10px] text-blue-400 hover:underline flex items-center gap-0.5"
-                                                            onClick={e => e.stopPropagation()}>
-                                                            <FileText className="w-2.5 h-2.5" /> Z-Abschlag PDF
-                                                        </a>
-                                                    ) : null;
-                                                })()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                        <p className={cn('text-base font-bold',
-                                            isIncome(entry.entry_type) ? 'text-green-400' : 'text-red-400'
-                                        )}>
-                                            {isIncome(entry.entry_type) ? '+' : '-'}{fmt(entry.amount)} €
-                                        </p>
-                                        {entry.payment_method && (
-                                            <p className="text-xs text-muted-foreground">{entry.payment_method}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            </Card>
+                            <EntryRow
+                                key={entry.id}
+                                entry={entry}
+                                onEdit={() => openEdit(entry)}
+                                onDelete={() => setDeleteTarget(entry.id)}
+                            />
                         ))}
                     </div>
                 )}
             </div>
 
-            {/* FAB */}
-            <button
-                onClick={() => setModalOpen(true)}
-                className="fixed bottom-20 right-4 md:bottom-8 md:right-8 w-14 h-14 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground rounded-full shadow-2xl flex items-center justify-center z-40 transition-all hover:scale-110"
-            >
-                <Plus className="w-6 h-6" />
-            </button>
-
-            {/* Modal */}
-            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+            {/* ── Neue Buchung Dialog ──────────────────────────────────────── */}
+            <Dialog open={modalOpen} onOpenChange={o => !o && setModalOpen(false)}>
                 <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Neue Buchung</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label>Buchungsart *</Label>
-                                <Select value={formData.entry_type} onValueChange={v => setFormData({ ...formData, entry_type: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        {ENTRY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label>Betrag (Brutto) *</Label>
-                                <Input type="number" step="0.01" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} placeholder="0,00" required />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label>Datum</Label>
-                                <Input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label>Uhrzeit</Label>
-                                <Input type="time" value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })} />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <Label>Steuersatz (%)</Label>
-                                <Select value={String(formData.tax_rate)} onValueChange={v => setFormData({ ...formData, tax_rate: Number(v) })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="0">0%</SelectItem>
-                                        <SelectItem value="7">7%</SelectItem>
-                                        <SelectItem value="19">19%</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label>Zahlungsart</Label>
-                                <Select value={formData.payment_method} onValueChange={v => setFormData({ ...formData, payment_method: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Kategorie</Label>
-                            <Input value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="z.B. Getränkeeinkauf, Reinigung..." />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Beschreibung</Label>
-                            <Input value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Buchungstext..." />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Notizen</Label>
-                            <Textarea value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} rows={2} />
-                        </div>
-                        <div className="flex gap-2 pt-2">
-                            <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
-                            <Button type="submit" className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground" disabled={createMutation.isPending}>
-                                {createMutation.isPending ? 'Speichern...' : 'Buchen'}
-                            </Button>
-                        </div>
-                    </form>
+                    <div className="py-1">
+                        <EntryForm data={formData} onChange={setFormData} />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setModalOpen(false)}>Abbrechen</Button>
+                        <Button onClick={handleCreate}
+                            disabled={createMutation.isPending || !formData.amount}
+                            className="bg-amber-600 hover:bg-amber-700 text-white flex-1">
+                            {createMutation.isPending ? 'Speichert…' : 'Speichern'}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* ── Bearbeiten Dialog ────────────────────────────────────────── */}
+            <Dialog open={editOpen} onOpenChange={o => !o && setEditOpen(false)}>
+                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {selected?.source === 'z_abschlag' ? 'Buchung ansehen' : 'Buchung bearbeiten'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-1">
+                        {/* Z-Abschlags-Einträge: nur lesen, kein Bearbeiten */}
+                        {selected?.source === 'z_abschlag' ? (
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 text-xs bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2 text-blue-400">
+                                    <Zap className="w-3.5 h-3.5 shrink-0" />
+                                    Automatisch vom Tagesabschluss übertragen — nicht bearbeitbar
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                    {[
+                                        ['Datum',       selected?.date],
+                                        ['Buchungsart', selected?.entry_type],
+                                        ['Betrag',      `${fmt(selected?.amount)} €`],
+                                        ['MwSt.',       `${selected?.tax_rate ?? 19}% (${fmt(selected?.tax_amount)} €)`],
+                                        ['Kategorie',   selected?.category],
+                                        ['Zahlungsart', selected?.payment_method],
+                                        ['Beschreibung',selected?.description],
+                                    ].filter(([, v]) => v).map(([label, val]) => (
+                                        <div key={label} className="flex justify-between py-1.5 border-b border-border/40 last:border-0">
+                                            <span className="text-muted-foreground">{label}</span>
+                                            <span className="font-medium text-foreground">{val}</span>
+                                        </div>
+                                    ))}
+                                    {selected?.file_url && (
+                                        <a href={selected.file_url} target="_blank" rel="noopener noreferrer"
+                                            className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-xs pt-1">
+                                            <FileText className="w-3.5 h-3.5" /> Z-Bon PDF öffnen
+                                        </a>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <EntryForm data={editData} onChange={setEditData} />
+                        )}
+                    </div>
+                    {selected?.source !== 'z_abschlag' && (
+                        <DialogFooter className="gap-2 flex-row">
+                            <Button variant="outline" size="sm"
+                                onClick={() => setDeleteTarget(selected?.id)}
+                                className="text-destructive border-destructive/30 hover:bg-destructive/10 h-9">
+                                <Trash2 className="w-3.5 h-3.5 mr-1.5" />Löschen
+                            </Button>
+                            <Button onClick={handleUpdate}
+                                disabled={updateMutation.isPending}
+                                className="bg-amber-600 hover:bg-amber-700 text-white flex-1 h-9">
+                                {updateMutation.isPending ? 'Speichert…' : 'Speichern'}
+                            </Button>
+                        </DialogFooter>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Delete Confirm ───────────────────────────────────────────── */}
+            <AlertDialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Buchung löschen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Diese Buchung wird dauerhaft entfernt.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteMutation.mutate(deleteTarget)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Löschen
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

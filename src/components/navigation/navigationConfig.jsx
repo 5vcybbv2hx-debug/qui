@@ -77,7 +77,6 @@ export const mainNavigation = [
             { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canCloseAccountingMonth' },
             { name: 'Fixkosten',         page: 'AccountingFixedCosts',    icon: RefreshCw,    permission: 'canViewAccounting' },
             { name: 'Verbindlichkeiten', page: 'AccountingLiabilities',  icon: TrendingDown, permission: 'canViewLiabilities' },
-            { name: 'Bankkonten',        page: 'AccountingBank',          icon: Building2,    permission: 'canViewAccounting' },
         ]
     },
     {

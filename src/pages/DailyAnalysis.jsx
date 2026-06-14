@@ -62,6 +62,12 @@ export default function DailyAnalysis() {
         staleTime: 2 * 60 * 1000,
     });
 
+    const { data: cashbookEntries = [] } = useQuery({
+        queryKey: ['cashbook-entries'],
+        queryFn: () => base44.entities.CashbookEntry.list('-date', 90),
+        staleTime: 2 * 60 * 1000,
+    });
+
     const { data: timeEntries = [] } = useQuery({
         queryKey: ['time-entries'],
         queryFn: () => base44.entities.TimeEntry.list('-date', 500),
@@ -86,6 +92,8 @@ export default function DailyAnalysis() {
     }, [timeEntries, selectedDate]);
 
     const [showTimeImport, setShowTimeImport] = useState(false);
+    const [transferring, setTransferring] = useState(false);
+    const [transferred, setTransferred] = useState(null); // date of last transfer
 
     const approveEntryMutation = useMutation({
         mutationFn: (id) => base44.entities.TimeEntry.update(id, { status: 'genehmigt' }),
@@ -210,6 +218,92 @@ export default function DailyAnalysis() {
             queryClient.invalidateQueries({ queryKey: ['daily-revenues'] });
         }
     };
+
+    // ── Kassenbuch-Transfer ──────────────────────────────────────────────────────
+    // Prüfen ob für dieses Datum bereits ein Z-Abschlag-Eintrag im Kassenbuch existiert
+    const alreadyTransferred = cashbookEntries.some(e =>
+        e.date === selectedDate && e.source === 'z_abschlag'
+    );
+
+    const handleTransferToCashbook = async () => {
+        if (!todayRevenue) return;
+        setTransferring(true);
+        try {
+            const entries = [];
+            const dateStr = selectedDate;
+            const pdfUrl  = todayRevenue.pdf_url || null;
+            const notiz   = `Z-Abschlag ${dateStr}${pdfUrl ? ' (Anhang vorhanden)' : ''}`;
+
+            // Bar-Einnahme
+            if (todayRevenue.revenue_cash > 0) {
+                entries.push({
+                    date:           dateStr,
+                    time:           '23:59',
+                    entry_type:     'Einnahme',
+                    amount:         todayRevenue.revenue_cash,
+                    amount_net:     todayRevenue.revenue_cash / 1.19,
+                    tax_rate:       19,
+                    tax_amount:     todayRevenue.revenue_cash - (todayRevenue.revenue_cash / 1.19),
+                    category:       'Umsatz Bar',
+                    description:    notiz,
+                    payment_method: 'Bar',
+                    file_url:       pdfUrl,
+                    source:         'z_abschlag',
+                    status:         'gebucht',
+                });
+            }
+
+            // EC-Einnahme
+            if (todayRevenue.revenue_ec > 0) {
+                entries.push({
+                    date:           dateStr,
+                    time:           '23:59',
+                    entry_type:     'Einnahme',
+                    amount:         todayRevenue.revenue_ec,
+                    amount_net:     todayRevenue.revenue_ec / 1.19,
+                    tax_rate:       19,
+                    tax_amount:     todayRevenue.revenue_ec - (todayRevenue.revenue_ec / 1.19),
+                    category:       'Umsatz EC',
+                    description:    notiz,
+                    payment_method: 'EC',
+                    file_url:       pdfUrl,
+                    source:         'z_abschlag',
+                    status:         'gebucht',
+                });
+            }
+
+            // Fallback: nur Gesamtumsatz wenn Bar/EC nicht getrennt
+            if (entries.length === 0 && todayRevenue.revenue > 0) {
+                entries.push({
+                    date:           dateStr,
+                    time:           '23:59',
+                    entry_type:     'Einnahme',
+                    amount:         todayRevenue.revenue,
+                    amount_net:     todayRevenue.revenue / 1.19,
+                    tax_rate:       19,
+                    tax_amount:     todayRevenue.revenue - (todayRevenue.revenue / 1.19),
+                    category:       'Umsatz Gesamt',
+                    description:    notiz,
+                    payment_method: 'Bar',
+                    file_url:       pdfUrl,
+                    source:         'z_abschlag',
+                    status:         'gebucht',
+                });
+            }
+
+            for (const entry of entries) {
+                await base44.entities.CashbookEntry.create(entry);
+            }
+
+            queryClient.invalidateQueries({ queryKey: ['cashbook-entries'] });
+            setTransferred(dateStr);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setTransferring(false);
+        }
+    };
+    // ─────────────────────────────────────────────────────────────────────────────
 
     const revenue = todayRevenue?.revenue || 0;
     const barMinusPersonnel = revenue > 0 ? revenue - dailyLaborCost : null;
@@ -393,6 +487,21 @@ export default function DailyAnalysis() {
                     <Button size="sm" variant="outline" className="mt-2 w-full h-8 text-xs" onClick={() => setUploadModalOpen(true)}>
                         <Upload className="w-3 h-3 mr-1" /> Z-Abschlag
                     </Button>
+                    {todayRevenue && (
+                        alreadyTransferred ? (
+                            <div className="mt-1.5 flex items-center justify-center gap-1 text-[10px] text-green-400 font-semibold">
+                                <CheckCircle2 className="w-3 h-3" /> Im Kassenbuch
+                            </div>
+                        ) : (
+                            <Button size="sm"
+                                onClick={handleTransferToCashbook}
+                                disabled={transferring}
+                                className="mt-1.5 w-full h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white">
+                                <ArrowDownToLine className="w-3 h-3 mr-1" />
+                                {transferring ? 'Übertrage…' : 'Ins Kassenbuch'}
+                            </Button>
+                        )
+                    )}
                 </KpiCard>
 
                 {/* Tip */}

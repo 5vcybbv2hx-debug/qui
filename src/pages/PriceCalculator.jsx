@@ -33,6 +33,12 @@ import { cn } from '@/lib/utils';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function fmt(n) { return (n ?? 0).toFixed(2); }
 
+/** Preis auf nächste 0,10 € runden */
+function roundPrice(n) {
+    if (n == null) return null;
+    return Math.round(n * 10) / 10;
+}
+
 function contentToBase(article) {
     if (!article?.content_amount) return null;
     const u = (article.content_unit || 'ml').toLowerCase();
@@ -133,7 +139,7 @@ function SingleMode({ articles, onResult }) {
 
     // Vorwärts: Kosten → Preis
     const sellNet         = costPerPortion != null ? (costPerPortion / fcPct) * 100 : null;
-    const sellGross       = sellNet != null ? sellNet * (1 + vat / 100) : null;
+    const sellGross       = sellNet != null ? roundPrice(sellNet * (1 + vat / 100)) : null;
     const profit          = sellNet != null && costPerPortion != null ? sellNet - costPerPortion : null;
     const actualFoodCost  = (costPerPortion != null && sellNet != null && sellNet > 0)
         ? (costPerPortion / sellNet) * 100 : null;
@@ -145,7 +151,7 @@ function SingleMode({ articles, onResult }) {
         ? (costPerPortion / targetNet) * 100 : null;
     const reverseProfit   = costPerPortion != null ? targetNet - costPerPortion : null;
 
-    const displayGross    = reverseMode ? (targetNum || null) : sellGross;
+    const displayGross    = reverseMode ? (targetNum ? roundPrice(targetNum) : null) : sellGross;
     const displayCost     = costPerPortion;
     const displayFoodCost = reverseMode ? reverseFoodCost : actualFoodCost;
 
@@ -478,7 +484,7 @@ function CocktailMode({ articles, recipes, onResult }) {
     const vat         = parseFloat(vatRate) || 0;
     const m           = parseFloat(margin) || 1;
     const netPrice    = totalCost * m;
-    const grossPrice  = netPrice * (1 + vat / 100);
+    const grossPrice  = roundPrice(netPrice * (1 + vat / 100));
     const profit      = netPrice - totalCost;
     const foodCostPct = netPrice > 0 ? (totalCost / netPrice) * 100 : 0;
 
@@ -488,7 +494,7 @@ function CocktailMode({ articles, recipes, onResult }) {
     const reverseFoodCost = targetNet > 0 ? (totalCost / targetNet) * 100 : null;
     const reverseProfit   = targetNet - totalCost;
 
-    const displayGross    = reverseMode ? (targetNum || null) : (ingredients.length > 0 ? grossPrice : null);
+    const displayGross    = reverseMode ? (targetNum ? roundPrice(targetNum) : null) : (ingredients.length > 0 ? grossPrice : null);
     const displayFoodCost = reverseMode ? reverseFoodCost : (ingredients.length > 0 ? foodCostPct : null);
 
     useEffect(() => {
@@ -695,7 +701,7 @@ function CocktailMode({ articles, recipes, onResult }) {
                         <div className="grid grid-cols-3 gap-2">
                             {SCENARIOS.map(s => {
                                 const mv = 100 / s.foodCostPct;
-                                const gp = totalCost * mv * (1 + vat / 100);
+                                const gp = roundPrice(totalCost * mv * (1 + vat / 100));
                                 const active = Math.abs(parseFloat(margin) - mv) < 0.05;
                                 return (
                                     <button key={s.label}

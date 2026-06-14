@@ -2,7 +2,7 @@ import { createPageUrl } from '@/utils';
 
 /**
  * Öffentlicher Gäste-Link zur Getränkekarte.
- * Zeigt auf die React-Seite /PublicDrinkMenu (kein Login nötig).
+ * Zeigt auf die React-Seite /PublicDrinkMenu — kein Login nötig.
  */
 export function getGuestMenuLink() {
     return `${window.location.origin}/PublicDrinkMenu`;
@@ -16,13 +16,12 @@ export function getGuestReservationLink() {
 }
 
 /**
- * Link in Zwischenablage kopieren.
+ * Link in Zwischenablage kopieren (mit Fallback für ältere Browser).
  */
 export async function copyToClipboard(text) {
     try {
         await navigator.clipboard.writeText(text);
     } catch {
-        // Fallback für ältere Browser
         const el = document.createElement('textarea');
         el.value = text;
         document.body.appendChild(el);
@@ -33,7 +32,7 @@ export async function copyToClipboard(text) {
 }
 
 /**
- * Native Share-API (falls verfügbar), sonst Fallback auf Clipboard.
+ * Native Share-API, Fallback auf Clipboard.
  */
 export async function shareLink(url, title = 'Getränkekarte') {
     if (navigator.share) {

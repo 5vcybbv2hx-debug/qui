@@ -2,7 +2,7 @@ import {
     Home, Utensils, Package, Wine, Users,
     Calendar, Clock, Shield, BookOpen, TrendingUp,
     CheckSquare, MapPin, ShoppingCart, RefreshCw,
-    Settings, FileText, BarChart2, Trash2, ClipboardList,
+    Settings, FileText, BarChart2, Trash2,
     ArrowLeftRight, Star, Brush, FolderOpen, Wrench,
     Palmtree, ListChecks, Video, QrCode, Layers, Zap,
     Receipt, TrendingDown, Download, Euro, Building2, AlertTriangle, Trophy
@@ -49,7 +49,6 @@ export const mainNavigation = [
         icon: Package,
         pages: [
             { name: 'Bestand',      page: 'Warehouse', icon: Package,       permission: 'canViewWarehouse' },
-            { name: 'Inventur',     page: 'Inventory', icon: ClipboardList, permission: 'canViewInventory' },
             { name: 'Schwund',      page: 'Wastage',   icon: Trash2,        permission: 'canViewWastage'   },
             { name: 'Lieferanten',  page: 'Suppliers', icon: Package,       permission: 'canViewSuppliers' },
             { name: 'Lagerplätze',  page: 'Storage',   icon: Package,       permission: 'canViewWarehouse' },

@@ -331,7 +331,7 @@ export default function ArticleModal({ open, onClose, article, onSave }) {
                                     <SupplierDetailsEditor
                                         value={formData.supplier_details}
                                         onChange={v => set('supplier_details', v)}
-                                        supplierOptions={supplierNames}
+                                        availableSuppliers={supplierNames}
                                     />
                                 </div>
                             </div>

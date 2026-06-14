@@ -1,0 +1,49 @@
+{
+  "name": "ManagerAppointment",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Titel des Termins"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Startzeit (HH:MM)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Endzeit (HH:MM)"
+    },
+    "duration": {
+      "type": "number",
+      "description": "Dauer in Minuten",
+      "default": 60
+    },
+    "color": {
+      "type": "string",
+      "description": "Farbe (amber/blue/green/purple/red)",
+      "default": "blue"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notizen"
+    },
+    "is_recurring": {
+      "type": "boolean",
+      "default": false
+    },
+    "created_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "date",
+    "start_time"
+  ]
+}

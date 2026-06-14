@@ -67,6 +67,7 @@ export default function WeeklyTasks() {
     const permissions  = usePermissions();
     const queryClient  = useQueryClient();
     const [draggedTodo, setDraggedTodo] = useState(null);
+    const [draggedItem, setDraggedItem] = useState(null); // { type: 'todo'|'appointment', item }
     const [dragOverSlot, setDragOverSlot] = useState(null); // { dateStr, hour }
 
     // ── Woche ─────────────────────────────────────────────────────────────────
@@ -149,16 +150,29 @@ export default function WeeklyTasks() {
     // ── Drag & Drop Handler ───────────────────────────────────────────────────
     const handleDragStart = (e, todo) => {
         setDraggedTodo(todo);
+        setDraggedItem({ type: 'todo', item: todo });
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragStartAppointment = (e, appt) => {
+        setDraggedItem({ type: 'appointment', item: appt });
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragStartPlannedTodo = (e, todo) => {
+        setDraggedItem({ type: 'planned-todo', item: todo });
         e.dataTransfer.effectAllowed = 'move';
     };
 
     const handleDragEnd = () => {
         setDraggedTodo(null);
+        setDraggedItem(null);
         setDragOverSlot(null);
     };
 
     const handleSlotDragOver = (e, dateStr, hour) => {
-        if (!draggedTodo) return;
+        if (!draggedItem && !draggedTodo) return;
+        // prevent default to allow drop
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
         setDragOverSlot({ dateStr, hour });
@@ -166,16 +180,40 @@ export default function WeeklyTasks() {
 
     const handleSlotDrop = (e, date, hour) => {
         e.preventDefault();
-        if (!draggedTodo) return;
-        updateTodo.mutate({
-            id: draggedTodo.id,
-            data: {
-                planned_date:     format(date, 'yyyy-MM-dd'),
-                planned_time:     minutesToTime(hour * 60),
-                planned_duration: 60,
-            },
-        });
+        const newDate = format(date, 'yyyy-MM-dd');
+        const newTime = minutesToTime(hour * 60);
+
+        if (draggedItem?.type === 'appointment') {
+            updateAppointment.mutate({
+                id: draggedItem.item.id,
+                data: {
+                    date:       newDate,
+                    start_time: newTime,
+                    end_time:   minutesToTime(hour * 60 + (draggedItem.item.duration || 60)),
+                },
+            });
+        } else if (draggedItem?.type === 'planned-todo') {
+            updateTodo.mutate({
+                id: draggedItem.item.id,
+                data: {
+                    planned_date: newDate,
+                    planned_time: newTime,
+                },
+            });
+        } else if (draggedTodo) {
+            // Backlog todo → calendar
+            updateTodo.mutate({
+                id: draggedTodo.id,
+                data: {
+                    planned_date:     newDate,
+                    planned_time:     newTime,
+                    planned_duration: 60,
+                },
+            });
+        }
+
         setDraggedTodo(null);
+        setDraggedItem(null);
         setDragOverSlot(null);
     };
 
@@ -413,7 +451,7 @@ export default function WeeklyTasks() {
                                    <div key={h}
                                        className={cn(
                                            'absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group',
-                                           isDropTarget && draggedTodo && 'bg-amber-500/20 border-amber-500/50'
+                                           isDropTarget && (draggedTodo || draggedItem) && 'bg-amber-500/20 border-amber-500/50'
                                        )}
                                        style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
                                        onClick={() => handleSlotClick(activeDay, h)}
@@ -422,20 +460,22 @@ export default function WeeklyTasks() {
                                        onDrop={e => handleSlotDrop(e, activeDay, h)}>
                                        <div className="absolute left-0 right-0 border-t border-border/20"
                                            style={{ top: `${SLOT_H / 2}px` }} />
-                                       {isDropTarget && draggedTodo ? (
+                                       {isDropTarget && (draggedTodo || draggedItem) ? (
                                            <div className="absolute inset-0 flex items-center justify-center">
-                                               <span className="text-[10px] text-amber-400 font-semibold truncate px-1">{draggedTodo.title}</span>
+                                               <span className="text-[10px] text-amber-400 font-semibold truncate px-1">
+                                                   {draggedTodo?.title || draggedItem?.item?.title}
+                                               </span>
                                            </div>
                                        ) : (
                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                <Plus className="w-4 h-4 text-muted-foreground/50" />
                                            </div>
                                        )}
-                                   </div>
-                                   );
-                                })}
+                                       </div>
+                                       );
+                                       })}
 
-                                {/* Jetzt-Linie */}
+                                       {/* Jetzt-Linie */}
                                 {isToday(activeDay) && (() => {
                                     const now = new Date();
                                     const nowPx = minutesToPx(now.getHours() * 60 + now.getMinutes(), hourStart);
@@ -462,9 +502,13 @@ export default function WeeklyTasks() {
                                         const top = minutesToPx(startMin, hourStart);
                                         const h   = Math.max(durationToPx(dur), 24);
                                         const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                                        const isDraggingThis = draggedItem?.type === 'planned-todo' && draggedItem.item.id === todo.id;
                                         return (
                                             <div key={todo.id}
-                                                className="absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-pointer hover:bg-blue-500/25 transition-colors flex"
+                                                draggable
+                                                onDragStart={e => { e.stopPropagation(); handleDragStartPlannedTodo(e, todo); }}
+                                                onDragEnd={handleDragEnd}
+                                                className={cn('absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-blue-500/25 transition-colors flex', isDraggingThis && 'opacity-40')}
                                                 style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
                                                 onClick={e => { e.stopPropagation(); setEditItem({ type: 'todo', item: todo }); }}>
                                                 <div className={cn('w-1 shrink-0', pCfg)} />
@@ -487,11 +531,15 @@ export default function WeeklyTasks() {
                                         const top = minutesToPx(startMin, hourStart);
                                         const h   = Math.max(durationToPx(dur), 24);
                                         const col = APPOINTMENT_COLORS[appt.color] || APPOINTMENT_COLORS.blue;
+                                        const isDraggingThis = draggedItem?.type === 'appointment' && draggedItem.item.id === appt.id;
                                         return (
                                             <div key={appt.id}
+                                                draggable
+                                                onDragStart={e => { e.stopPropagation(); handleDragStartAppointment(e, appt); }}
+                                                onDragEnd={handleDragEnd}
                                                 className={cn(
-                                                    'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-pointer transition-colors',
-                                                    col.bg, col.border
+                                                    'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-grab active:cursor-grabbing transition-colors',
+                                                    col.bg, col.border, isDraggingThis && 'opacity-40'
                                                 )}
                                                 style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
                                                 onClick={e => { e.stopPropagation(); setEditItem({ type: 'appointment', item: appt }); }}>
@@ -623,7 +671,7 @@ export default function WeeklyTasks() {
                                             <div key={h}
                                                 className={cn(
                                                     'absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group',
-                                                    isDropTarget && draggedTodo && 'bg-amber-500/20 border-amber-500/50'
+                                                    isDropTarget && (draggedTodo || draggedItem) && 'bg-amber-500/20 border-amber-500/50'
                                                 )}
                                                 style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
                                                 onClick={() => handleSlotClick(day, h)}
@@ -632,9 +680,11 @@ export default function WeeklyTasks() {
                                                 onDrop={e => handleSlotDrop(e, day, h)}>
                                                 <div className="absolute left-0 right-0 border-t border-border/20"
                                                     style={{ top: `${SLOT_H / 2}px` }} />
-                                                {isDropTarget && draggedTodo ? (
+                                                {isDropTarget && (draggedTodo || draggedItem) ? (
                                                     <div className="absolute inset-0 flex items-center justify-center">
-                                                        <span className="text-[10px] text-amber-400 font-semibold truncate px-1">{draggedTodo.title}</span>
+                                                        <span className="text-[10px] text-amber-400 font-semibold truncate px-1">
+                                                            {draggedTodo?.title || draggedItem?.item?.title}
+                                                        </span>
                                                     </div>
                                                 ) : (
                                                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -663,9 +713,13 @@ export default function WeeklyTasks() {
                                             const top  = minutesToPx(startMin, hourStart);
                                             const h    = Math.max(durationToPx(dur), 24);
                                             const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                                            const isDraggingThis = draggedItem?.type === 'planned-todo' && draggedItem.item.id === todo.id;
                                             return (
                                                 <div key={todo.id}
-                                                    className="absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-pointer hover:bg-blue-500/25 transition-colors flex"
+                                                    draggable
+                                                    onDragStart={e => { e.stopPropagation(); handleDragStartPlannedTodo(e, todo); }}
+                                                    onDragEnd={handleDragEnd}
+                                                    className={cn('absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-blue-500/25 transition-colors flex', isDraggingThis && 'opacity-40')}
                                                     style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
                                                     onClick={e => { e.stopPropagation(); setEditItem({ type: 'todo', item: todo }); }}>
                                                     <div className={cn('w-1 shrink-0', pCfg)} />
@@ -688,11 +742,15 @@ export default function WeeklyTasks() {
                                             const top = minutesToPx(startMin, hourStart);
                                             const h   = Math.max(durationToPx(dur), 24);
                                             const col = APPOINTMENT_COLORS[appt.color] || APPOINTMENT_COLORS.blue;
+                                            const isDraggingThis = draggedItem?.type === 'appointment' && draggedItem.item.id === appt.id;
                                             return (
                                                 <div key={appt.id}
+                                                    draggable
+                                                    onDragStart={e => { e.stopPropagation(); handleDragStartAppointment(e, appt); }}
+                                                    onDragEnd={handleDragEnd}
                                                     className={cn(
-                                                        'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-pointer transition-colors',
-                                                        col.bg, col.border
+                                                        'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-grab active:cursor-grabbing transition-colors',
+                                                        col.bg, col.border, isDraggingThis && 'opacity-40'
                                                     )}
                                                     style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
                                                     onClick={e => { e.stopPropagation(); setEditItem({ type: 'appointment', item: appt }); }}>

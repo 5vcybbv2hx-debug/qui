@@ -5,7 +5,6 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import TeamNotes from '@/components/dashboard/TeamNotes';
 import ManagerDashboard from '@/components/dashboard/ManagerDashboard';
-import ShiftSwapMarketplaceCard from '@/components/shifts/ShiftSwapMarketplaceCard';
 import ActiveStaffPanel from '@/components/dashboard/ActiveStaffPanel';
 import UpcomingBirthdaysWidget from '@/components/dashboard/UpcomingBirthdaysWidget';
 import TimeApprovalPanel from '@/components/dashboard/TimeApprovalPanel';
@@ -78,7 +77,7 @@ function QuickLink({ page, icon: Icon, label, sub, color }) {
 
 // ─── Tab: HEUTE ─────────────────────────────────────────────────────────────
 
-function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employees, teamNotes, currentUser, isManager, currentEmployee, permissions }) {
+function TodayTab({ currentUser, currentEmployee, permissions }) {
     return (
         <div className="space-y-5">
             {/* Unterschrift erforderlich - nur für eigene Person */}
@@ -105,102 +104,9 @@ function TodayTab({ todayShifts, todayEvents, todayReservations, myTodos, employ
 
             {/* Personalisierte Schnellzugriffe */}
             <PersonalizedQuickLinks userEmail={currentUser?.email} permissions={permissions} />
-            {/* Schichten heute */}
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
-                        <Clock className="w-4 h-4 text-blue-400" />Schichten heute
-                    </h3>
-                    <Link to={createPageUrl('Calendar')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                        Alle <ArrowRight className="w-3 h-3" />
-                    </Link>
-                </div>
-                {todayShifts.length === 0 ? (
-                    <Card className="p-4 text-center bg-card border-border">
-                        <p className="text-sm text-muted-foreground">Keine Schichten eingetragen</p>
-                    </Card>
-                ) : (
-                    <div className="space-y-2">
-                        {todayShifts.map(s => {
-                            const emp = employees.find(e => e.id === s.employee_id);
-                            return (
-                                <Card key={s.id} className="bg-card border-border">
-                                    <CardContent className="p-3 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                            style={{ backgroundColor: s.color || emp?.color || '#64748b' }}>
-                                            {s.employee_name?.charAt(0)}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate">{s.employee_name}</p>
-                                            <p className="text-xs text-muted-foreground">{s.start_time}–{s.end_time}</p>
-                                        </div>
-                                        {s.shift_type && <Badge className="text-[10px] bg-blue-500/20 text-blue-300 border-blue-500/30">{s.shift_type}</Badge>}
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                )}
-            </section>
-
-            {/* Schichttausch */}
-            {currentEmployee && (
-                <section>
-                    <ShiftSwapMarketplaceCard currentEmployee={currentEmployee} />
-                </section>
-            )}
 
             {/* Geburtstage */}
             <UpcomingBirthdaysWidget employees={employees} />
-
-            {/* Team-Notizen (kompakt) */}
-            <section>
-                <TeamNotes isManager={isManager} currentUser={currentUser} compact />
-            </section>
-
-            {/* Aufgaben */}
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
-                        <CheckSquare className="w-4 h-4 text-orange-400" />Aufgaben
-                    </h3>
-                    <Link to={createPageUrl('Todos')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                        Alle <ArrowRight className="w-3 h-3" />
-                    </Link>
-                </div>
-                {myTodos.length === 0 ? (
-                    <Card className="p-4 text-center bg-card border-border">
-                        <p className="text-sm text-muted-foreground">Keine offenen Aufgaben</p>
-                    </Card>
-                ) : (
-                    <div className="space-y-2">
-                        {myTodos.slice(0, 4).map((t, tIdx) => (
-                            <Link key={t.id} to={createPageUrl('Todos')}>
-                                <Card className={cn('border transition-colors hover:bg-accent/30',
-                                    t.priority === 'dringend' ? 'border-red-500/30 bg-red-500/5' : 'border-border bg-card'
-                                )}>
-                                    <CardContent className="p-3 flex items-center gap-3">
-                                        {t.priority === 'dringend'
-                                            ? <Zap className="w-4 h-4 text-red-400 shrink-0" />
-                                            : <Circle className="w-4 h-4 text-muted-foreground shrink-0" />}
-                                        <p className="text-sm text-foreground truncate flex-1">{t.title}</p>
-                                        <Badge className={cn('text-[10px] border shrink-0',
-                                            t.priority === 'dringend' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                            t.priority === 'hoch' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
-                                            'bg-secondary text-muted-foreground border-border'
-                                        )}>{t.priority}</Badge>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
-                        {myTodos.length > 4 && (
-                            <Link to={createPageUrl('Todos')} className="block text-center text-xs text-muted-foreground hover:text-foreground py-2">
-                                +{myTodos.length - 4} weitere →
-                            </Link>
-                        )}
-                    </div>
-                )}
-            </section>
 
             {/* Events heute */}
             {todayEvents.length > 0 && (
@@ -293,110 +199,6 @@ function TeamTab({ employees, todayShifts, currentUser, isManager }) {
                     </div>
                 )}
             </section>
-        </div>
-    );
-}
-
-// ─── Tab: PLANUNG ────────────────────────────────────────────────────────────
-
-function PlanningTab({ upcomingEvents, upcomingShifts }) {
-    return (
-        <div className="space-y-5">
-            {/* Schnelllinks */}
-            <div className="grid grid-cols-3 gap-3">
-                <QuickLink page="Calendar" icon={Calendar} label="Schichtplan" color="bg-blue-600" />
-                <QuickLink page="Events" icon={Sparkles} label="Events" color="bg-purple-600" />
-                <QuickLink page="Reservations" icon={CalendarCheck} label="Reservierungen" color="bg-green-600" />
-            </div>
-
-            {/* Nächste Events */}
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
-                        <Sparkles className="w-4 h-4 text-purple-400" />Kommende Events
-                    </h3>
-                    <Link to={createPageUrl('Events')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                        Alle <ArrowRight className="w-3 h-3" />
-                    </Link>
-                </div>
-                {upcomingEvents.length === 0 ? (
-                    <Card className="p-4 text-center bg-card border-border">
-                        <p className="text-sm text-muted-foreground">Keine kommenden Events</p>
-                    </Card>
-                ) : (
-                    <div className="space-y-2">
-                        {upcomingEvents.slice(0, 5).map(e => (
-                            <Link key={e.id} to={createPageUrl('Events')}>
-                                <Card className="bg-card border-border hover:bg-accent/30 transition-colors">
-                                    <CardContent className="p-3 flex items-center gap-3">
-                                        <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-foreground truncate">{e.title}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {format(parseISO(e.date), 'EEE, dd.MM.yyyy', { locale: de })}
-                                                {e.start_time && ` · ${e.start_time}`}
-                                            </p>
-                                        </div>
-                                        <Badge className="text-[10px] bg-purple-500/20 text-purple-300 border-purple-500/30 shrink-0">{e.event_type}</Badge>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            {/* Nächste Schichten */}
-            <section>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
-                        <Calendar className="w-4 h-4 text-blue-400" />Nächste Schichten
-                    </h3>
-                    <Link to={createPageUrl('Calendar')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
-                        Alle <ArrowRight className="w-3 h-3" />
-                    </Link>
-                </div>
-                {upcomingShifts.length === 0 ? (
-                    <Card className="p-4 text-center bg-card border-border">
-                        <p className="text-sm text-muted-foreground">Keine geplanten Schichten</p>
-                    </Card>
-                ) : (
-                    <div className="space-y-2">
-                        {upcomingShifts.slice(0, 5).map((s, sIdx) => (
-                            <Card key={s.id} className="bg-card border-border animate-stagger" style={{ '--delay': `${sIdx * 45}ms` }}>
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <div className="text-center w-10 shrink-0">
-                                        <p className="text-lg font-bold text-foreground leading-none">{format(parseISO(s.date), 'dd')}</p>
-                                        <p className="text-[10px] text-muted-foreground uppercase">{format(parseISO(s.date), 'MMM', { locale: de })}</p>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-foreground">{format(parseISO(s.date), 'EEEE', { locale: de })}</p>
-                                        <p className="text-xs text-muted-foreground">{s.employee_name} · {s.start_time}–{s.end_time}</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            {/* Eventideen */}
-            <div>
-                <Link to={createPageUrl('Events') + '?tab=ideas'}>
-                    <Card className="bg-card border-border hover:bg-accent/30 transition-colors">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center">
-                                <Lightbulb className="w-5 h-5 text-blue-400" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold text-foreground">Eventideen</p>
-                                <p className="text-xs text-muted-foreground">Ideen sammeln und planen</p>
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-muted-foreground ml-auto" />
-                        </CardContent>
-                    </Card>
-                </Link>
-            </div>
         </div>
     );
 }
@@ -748,7 +550,6 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
     const tabs = [
         { id: 'heute', label: 'Heute' },
         { id: 'team', label: 'Team' },
-        { id: 'planung', label: 'Planung' },
         ...(isManager ? [{ id: 'manager', label: 'Manager' }] : [])
     ];
 
@@ -840,13 +641,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                 <div>
                     {activeTab === 'heute' && (
                         <TodayTab
-                            todayShifts={todayShifts}
-                            todayEvents={todayEvents}
-                            todayReservations={todayReservations}
-                            myTodos={myTodos}
-                            employees={employees}
                             currentUser={currentUser}
-                            isManager={isManager}
                             currentEmployee={currentEmployee}
                             permissions={permissions}
                         />

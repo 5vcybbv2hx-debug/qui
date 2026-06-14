@@ -61,7 +61,6 @@ import DrinkMenu from './pages/DrinkMenu';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
 import Home from './pages/Home';
-import Inventory from './pages/Inventory';
 import LazyReports from './pages/LazyReports';
 import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import Maintenance from './pages/Maintenance';
@@ -133,7 +132,6 @@ const CORE_PAGES = {
     "Employees": Employees,
     "Events": Events,
     "Home": Home,
-    "Inventory": Inventory,
     "LazyReports": LazyReports,
     "LazySalesAnalysis": LazySalesAnalysis,
     "Maintenance": Maintenance,

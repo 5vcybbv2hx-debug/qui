@@ -350,7 +350,7 @@ export default function WeeklyTasks() {
                     </div>
 
                     {/* Zeitachse für aktiven Tag */}
-                    <div ref={gridRef} className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-y-auto">
                         <div className="flex" style={{ height: `${totalPx}px` }}>
                             {/* Zeitachse links */}
                             <div className="w-12 shrink-0 relative">
@@ -502,37 +502,39 @@ export default function WeeklyTasks() {
             {/* ── Desktop: volle Wochenansicht ─────────────────────────────── */}
             <div className="hidden md:flex flex-1 overflow-hidden">
 
-                {/* Kalender-Hauptbereich */}
-                <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Kalender-Hauptbereich — ein Scroll-Container für horizontal + vertikal */}
+                <div className="flex-1 overflow-auto" ref={gridRef}>
+                    {/* Mindestbreite: Zeitachse + 7 Tage à 120px */}
+                    <div style={{ minWidth: '910px' }}>
 
-                    {/* Tages-Header */}
-                    <div className="flex border-b border-border bg-card sticky top-[53px] z-20">
-                        <div className="w-14 shrink-0" />
-                        {weekDays.map((day, i) => {
-                            const isNow = isToday(day);
-                            return (
-                                <div key={i}
-                                    className={cn(
-                                        'flex-1 text-center py-2 border-l border-border',
-                                        isNow && 'bg-amber-500/8'
-                                    )}>
-                                    <p className={cn('text-[11px] font-semibold uppercase tracking-wider',
-                                        isNow ? 'text-amber-500' : 'text-muted-foreground')}>
-                                        {format(day, 'EEE', { locale: de })}
-                                    </p>
-                                    <p className={cn('text-lg font-bold leading-tight',
-                                        isNow ? 'text-amber-500' : 'text-foreground')}>
-                                        {format(day, 'd')}
-                                    </p>
-                                </div>
-                            );
-                        })}
-                    </div>
+                        {/* Tages-Header — sticky top, scrollt horizontal mit dem Grid */}
+                        <div className="flex border-b border-border bg-card sticky top-0 z-20">
+                            <div className="w-14 shrink-0 sticky left-0 z-30 bg-card border-r border-border" />
+                            {weekDays.map((day, i) => {
+                                const isNow = isToday(day);
+                                return (
+                                    <div key={i}
+                                        className={cn(
+                                            'flex-1 text-center py-2 border-l border-border min-w-[120px]',
+                                            isNow && 'bg-amber-500/8'
+                                        )}>
+                                        <p className={cn('text-[11px] font-semibold uppercase tracking-wider',
+                                            isNow ? 'text-amber-500' : 'text-muted-foreground')}>
+                                            {format(day, 'EEE', { locale: de })}
+                                        </p>
+                                        <p className={cn('text-lg font-bold leading-tight',
+                                            isNow ? 'text-amber-500' : 'text-foreground')}>
+                                            {format(day, 'd')}
+                                        </p>
+                                    </div>
+                                );
+                            })}
+                        </div>
 
-                    {/* Zeitachse + Grid */}
-                    <div ref={gridRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-                        <div className="flex" style={{ height: `${totalPx}px`, minHeight: '100%' }}>
-                            <div className="w-14 shrink-0 relative">
+                        {/* Grid-Body */}
+                        <div className="flex" style={{ height: `${totalPx}px` }}>
+                            {/* Zeitachse — sticky links */}
+                            <div className="w-14 shrink-0 relative sticky left-0 z-10 bg-background border-r border-border">
                                 {hours.map(h => (
                                     <div key={h}
                                         className="absolute left-0 right-0 flex items-start justify-end pr-2"
@@ -558,7 +560,7 @@ export default function WeeklyTasks() {
                                 return (
                                     <div key={di}
                                         className={cn(
-                                            'flex-1 border-l border-border relative',
+                                            'flex-1 border-l border-border relative min-w-[120px]',
                                             isNow && 'bg-amber-500/4'
                                         )}>
                                         {hours.map(h => (

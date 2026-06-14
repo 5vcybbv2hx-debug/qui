@@ -2,9 +2,13 @@
   "name": "RestockItem",
   "type": "object",
   "properties": {
+    "article_id": {
+      "type": "string",
+      "description": "ID des verkn\u00fcpften Artikels (prim\u00e4re Verkn\u00fcpfung)"
+    },
     "barcode": {
       "type": "string",
-      "description": "Barcode des Artikels"
+      "description": "Barcode des Artikels (optional, f\u00fcr R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
     },
     "article_name": {
       "type": "string",
@@ -38,7 +42,7 @@
     }
   },
   "required": [
-    "barcode",
+    "article_name",
     "quantity"
   ]
 }

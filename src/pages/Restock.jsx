@@ -168,19 +168,24 @@ export default function Restock() {
     });
 
     // ── Scan logic ───────────────────────────────────────────────────────────
+    // Artikel direkt (per ID) hinzufügen — auch ohne Barcode
+    const handleArticleDirect = (article) => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const existingItem = restockItems.find(
+            item => item.article_id === article.id && item.date === today && !item.is_completed
+        );
+        setPendingArticle({ article, existingItem: existingItem || null });
+        setQtyModalOpen(true);
+        setBarcode('');
+    };
+
     const handleScan = (scannedBarcode) => {
         const article = articles.find(a => a.barcode === scannedBarcode);
         if (!article) {
             showToast(`Artikel nicht gefunden: ${scannedBarcode}`, 'error');
             return;
         }
-        const today = format(new Date(), 'yyyy-MM-dd');
-        const existingItem = restockItems.find(
-            item => item.barcode === scannedBarcode && item.date === today && !item.is_completed
-        );
-        setPendingArticle({ article, existingItem: existingItem || null });
-        setQtyModalOpen(true);
-        setBarcode('');
+        handleArticleDirect(article);
     };
 
     const handleQtyConfirm = async (qty) => {
@@ -194,7 +199,8 @@ export default function Restock() {
         } else {
             const user = await base44.auth.me();
             createMutation.mutate({
-                barcode: article.barcode,
+                article_id: article.id,         // ID-Verknüpfung (primär)
+                barcode: article.barcode || '', // Barcode optional
                 article_name: article.name,
                 article_image_url: article.image_url || null,
                 quantity: qty,
@@ -211,11 +217,11 @@ export default function Restock() {
         e.preventDefault();
         if (selectedArticle) {
             const article = articles.find(a => a.id === selectedArticle);
-            if (article) { await handleScan(article.barcode); setSelectedArticle(''); }
+            if (article) { handleArticleDirect(article); setSelectedArticle(''); }
             return;
         }
         if (!barcode.trim()) return;
-        handleScan(barcode);
+        handleScan(barcode.trim());
     };
 
     const handleCameraScan = (decodedText) => {
@@ -254,7 +260,7 @@ export default function Restock() {
     };
 
     const handleQuantityEdit = (item) => {
-        const article = articles.find(a => a.barcode === item.barcode) || { name: item.article_name, barcode: item.barcode };
+        const article = articles.find(a => a.id === item.article_id || a.barcode === item.barcode) || { name: item.article_name, barcode: item.barcode };
         setPendingArticle({ article, existingItem: item });
         setQtyModalOpen(true);
     };
@@ -272,8 +278,8 @@ export default function Restock() {
                     if (bRecent === -1) return -1;
                     return bRecent - aRecent;
                 }
-                const catA = articles.find(art => art.barcode === a.barcode)?.category || 'Sonstiges';
-                const catB = articles.find(art => art.barcode === b.barcode)?.category || 'Sonstiges';
+                const catA = articles.find(art => art.id === a.article_id || art.barcode === a.barcode)?.category || 'Sonstiges';
+                const catB = articles.find(art => art.id === b.article_id || art.barcode === b.barcode)?.category || 'Sonstiges';
                 return catA.localeCompare(catB);
             });
     }, [restockItems, recentIds, articles]);
@@ -299,7 +305,7 @@ export default function Restock() {
 
     // ── Grouped items ─────────────────────────────────────────────────────────
     const groupedItems = todayItems.reduce((groups, item) => {
-        const cat = articles.find(art => art.barcode === item.barcode)?.category || 'Sonstiges';
+        const cat = articles.find(art => art.id === item.article_id || art.barcode === item.barcode)?.category || 'Sonstiges';
         if (!groups[cat]) groups[cat] = [];
         groups[cat].push(item);
         return groups;
@@ -375,9 +381,8 @@ export default function Restock() {
                                             key={article.id}
                                             type="button"
                                             onClick={() => {
-                                                setSelectedArticle(article.id);
                                                 setBarcode('');
-                                                handleScan(article.barcode);
+                                                handleArticleDirect(article);
                                             }}
                                             className="w-full px-4 py-3 text-left hover:bg-secondary border-b border-border/40 last:border-0 transition-colors active:scale-[0.98]"
                                         >

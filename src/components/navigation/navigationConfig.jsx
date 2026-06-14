@@ -85,7 +85,6 @@ export const mainNavigation = [
         pages: [
             { name: 'Mitarbeiter',   page: 'Employees',      icon: Users,          permission: 'canViewEmployees'      },
             { name: 'Schichtplan',   page: 'Calendar',       icon: Calendar,       permission: 'canViewShifts'         },
-            { name: 'Schichtanalyse', page: 'ShiftAnalytics', icon: BarChart2,      permission: 'canViewAnalytics'      },
             { name: 'Teamkalender',  page: 'TeamCalendar',   icon: Calendar,       permission: 'canViewTeamCalendar'   },
             { name: 'Zeiterfassung', page: 'TimeManagement', icon: Clock,          permission: 'canViewOwnTimeEntries' },
             { name: 'Urlaub',        page: 'Vacation',       icon: Palmtree,       permission: 'canViewVacation' },

@@ -30,11 +30,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-const HOUR_START = 7;
-const HOUR_END   = 23;
-const HOURS      = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
-const SLOT_H     = 56; // px pro Stunde
-const MIN_DURATION = 30; // Minuten
+// HOUR_START / HOUR_END werden als State verwaltet (konfigurierbar)
+// Stunden 0–27 erlaubt (>23 = nächster Tag, z.B. 25 = 01:00)
+const SLOT_H       = 56; // px pro Stunde
+const MIN_DURATION = 30;
+
+function displayHour(h) {
+    // 24 → "00", 25 → "01", etc.
+    return String(h % 24).padStart(2, '0') + ':00';
+}
 
 const PRIORITY_STRIPE = {
     dringend: 'bg-red-500',
@@ -61,8 +65,8 @@ function minutesToTime(m) {
     const min = m % 60;
     return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
-function minutesToPx(minutes) {
-    return ((minutes - HOUR_START * 60) / 60) * SLOT_H;
+function minutesToPx(minutes, hourStart) {
+    return ((minutes - hourStart * 60) / 60) * SLOT_H;
 }
 function durationToPx(minutes) {
     return (minutes / 60) * SLOT_H;
@@ -82,6 +86,16 @@ export default function WeeklyTasks() {
     const [weekStart, setWeekStart] = useState(() =>
         startOfWeek(new Date(), { weekStartsOn: 1 })
     );
+
+    // ── Zeitachse (konfigurierbar) ────────────────────────────────────────────
+    // Default: 10:00–26:00 (= bis 02:00 nächsten Tag)
+    const [hourStart, setHourStart] = useState(10);
+    const [hourEnd,   setHourEnd]   = useState(26);
+    const hours = Array.from(
+        { length: hourEnd - hourStart },
+        (_, i) => hourStart + i
+    );
+    const totalPx = (hourEnd - hourStart) * SLOT_H;
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
     const weekLabel = `${format(weekStart, 'd. MMM')} – ${format(addDays(weekStart, 6), 'd. MMM yyyy', { locale: de })}`;
 
@@ -207,7 +221,7 @@ export default function WeeklyTasks() {
     useEffect(() => {
         if (!gridRef.current) return;
         const now = new Date();
-        const px = minutesToPx(now.getHours() * 60 + now.getMinutes());
+        const px = minutesToPx(now.getHours(, hourStart) * 60 + now.getMinutes());
         gridRef.current.scrollTop = Math.max(0, px - 120);
     }, []);
 
@@ -252,6 +266,33 @@ export default function WeeklyTasks() {
                             </span>
                         )}
                     </Button>
+
+                    {/* Zeitachse konfigurieren */}
+                    <div className="flex items-center gap-1 border border-border rounded-lg px-2 h-8 bg-card">
+                        <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
+                        <select
+                            value={hourStart}
+                            onChange={e => setHourStart(Number(e.target.value))}
+                            className="h-full bg-transparent text-xs text-foreground border-none outline-none cursor-pointer pr-1"
+                            title="Startzeit">
+                            {Array.from({ length: 24 }, (_, i) => i).map(h => (
+                                <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>
+                            ))}
+                        </select>
+                        <span className="text-muted-foreground text-xs">–</span>
+                        <select
+                            value={hourEnd}
+                            onChange={e => setHourEnd(Number(e.target.value))}
+                            className="h-full bg-transparent text-xs text-foreground border-none outline-none cursor-pointer pr-1"
+                            title="Endzeit">
+                            {Array.from({ length: 18 }, (_, i) => i + 16).map(h => (
+                                <option key={h} value={h}>
+                                    {h < 24 ? String(h).padStart(2,'0') : String(h-24).padStart(2,'0')}:00
+                                    {h >= 24 ? ' (+1)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -287,16 +328,16 @@ export default function WeeklyTasks() {
 
                     {/* Zeitachse + Grid (scrollbar) */}
                     <div ref={gridRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-                        <div className="flex" style={{ height: `${HOURS.length * SLOT_H}px`, minHeight: '100%' }}>
+                        <div className="flex" style={{ height: `${totalPx}px`, minHeight: '100%' }}>
 
                             {/* Zeitachse links */}
                             <div className="w-14 shrink-0 relative">
-                                {HOURS.map(h => (
+                                {hours.map(h => (
                                     <div key={h}
                                         className="absolute left-0 right-0 flex items-start justify-end pr-2"
-                                        style={{ top: `${(h - HOUR_START) * SLOT_H}px`, height: `${SLOT_H}px` }}>
+                                        style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}>
                                         <span className="text-[10px] text-muted-foreground font-mono -mt-2">
-                                            {String(h).padStart(2, '0')}:00
+                                            {displayHour(h)}
                                         </span>
                                     </div>
                                 ))}
@@ -308,7 +349,7 @@ export default function WeeklyTasks() {
                                 const isNow = isToday(day);
                                 const now = new Date();
                                 const nowPx = isNow
-                                    ? minutesToPx(now.getHours() * 60 + now.getMinutes())
+                                    ? minutesToPx(now.getHours(, hourStart) * 60 + now.getMinutes())
                                     : null;
 
                                 // Einträge für diesen Tag
@@ -323,10 +364,10 @@ export default function WeeklyTasks() {
                                         )}>
 
                                         {/* Stunden-Linien + klickbare Slots */}
-                                        {HOURS.map(h => (
+                                        {hours.map(h => (
                                             <div key={h}
                                                 className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group"
-                                                style={{ top: `${(h - HOUR_START) * SLOT_H}px`, height: `${SLOT_H}px` }}
+                                                style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
                                                 onClick={() => handleSlotClick(day, h)}>
                                                 {/* Halbe-Stunden-Linie */}
                                                 <div className="absolute left-0 right-0 border-t border-border/20"
@@ -353,9 +394,9 @@ export default function WeeklyTasks() {
                                         {dayTodos.map(todo => {
                                             if (!todo.planned_time) return null;
                                             const startMin = timeToMinutes(todo.planned_time);
-                                            if (startMin < HOUR_START * 60 || startMin >= HOUR_END * 60) return null;
+                                            if (startMin < hourStart * 60 || startMin >= hourEnd * 60) return null;
                                             const dur  = todo.planned_duration || 60;
-                                            const top  = minutesToPx(startMin);
+                                            const top  = minutesToPx(startMin, hourStart);
                                             const h    = Math.max(durationToPx(dur), 24);
                                             const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
 
@@ -380,9 +421,9 @@ export default function WeeklyTasks() {
                                         {/* ── Termine ── */}
                                         {dayAppts.map(appt => {
                                             const startMin = timeToMinutes(appt.start_time);
-                                            if (startMin < HOUR_START * 60 || startMin >= HOUR_END * 60) return null;
+                                            if (startMin < hourStart * 60 || startMin >= hourEnd * 60) return null;
                                             const dur  = appt.duration || 60;
-                                            const top  = minutesToPx(startMin);
+                                            const top  = minutesToPx(startMin, hourStart);
                                             const h    = Math.max(durationToPx(dur), 24);
                                             const col  = APPOINTMENT_COLORS[appt.color] || APPOINTMENT_COLORS.blue;
 

@@ -221,7 +221,7 @@ export default function WeeklyTasks() {
     useEffect(() => {
         if (!gridRef.current) return;
         const now = new Date();
-        const px = minutesToPx(now.getHours(, hourStart) * 60 + now.getMinutes());
+        const px = minutesToPx(now.getHours() * 60 + now.getMinutes() - hourStart * 60);
         gridRef.current.scrollTop = Math.max(0, px - 120);
     }, []);
 
@@ -349,7 +349,7 @@ export default function WeeklyTasks() {
                                 const isNow = isToday(day);
                                 const now = new Date();
                                 const nowPx = isNow
-                                    ? minutesToPx(now.getHours(, hourStart) * 60 + now.getMinutes())
+                                    ? minutesToPx(now.getHours() * 60 + now.getMinutes() - hourStart * 60)
                                     : null;
 
                                 // Einträge für diesen Tag

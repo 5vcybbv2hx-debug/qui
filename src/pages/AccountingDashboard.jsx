@@ -97,14 +97,6 @@ export default function AccountingDashboard() {
         staleTime: STALE.MEDIUM
     });
 
-    const { data: debitorInvoices = [] } = useQuery({
-        queryKey: ['debitor-invoices'],
-        queryFn: () => {
-            const from = format(subMonths(new Date(), 12), 'yyyy-MM-dd');
-            return base44.entities.DebitorInvoice.filter({ invoice_date_gte: from }, '-invoice_date', 300);
-        },
-        staleTime: STALE.MEDIUM
-    });
 
     const { data: dailyRevenues = [] } = useQuery({
         queryKey: ['daily-revenues'],
@@ -159,15 +151,11 @@ export default function AccountingDashboard() {
         const openReceipts = receipts.filter(r => r.status === 'neu' || r.status === 'pruefung').length;
         const openCreditors = creditorInvoices.filter(i => i.payment_status === 'offen' || i.payment_status === 'überfällig').length;
         const overdueCreditors = creditorInvoices.filter(i => i.payment_status === 'überfällig').length;
-        const openDebitors = debitorInvoices.filter(i => i.payment_status === 'offen' || i.payment_status === 'überfällig').length;
 
         const openCreditorAmount = creditorInvoices
             .filter(i => i.payment_status !== 'bezahlt')
             .reduce((s, i) => s + ((i.amount_gross || 0) - (i.paid_amount || 0)), 0);
 
-        const openDebitorAmount = debitorInvoices
-            .filter(i => i.payment_status !== 'bezahlt')
-            .reduce((s, i) => s + ((i.amount_gross || 0) - (i.paid_amount || 0)), 0);
 
         const currentClosing = closings.find(c => c.year === now.getFullYear() && c.month === now.getMonth() + 1);
 
@@ -187,12 +175,12 @@ export default function AccountingDashboard() {
 
         return {
             totalRevenue, totalExpenses, openReceipts, openCreditors,
-            overdueCreditors, openDebitors, openCreditorAmount, openDebitorAmount,
+            overdueCreditors, openCreditorAmount,
             currentClosing, thisMonthRevenues,
             totalFixedCosts, missingFixedCostReceipts, activeExpenses,
             openLiabilities: openLiabilities.length, overdueLiabilities: overdueLiabilities.length, totalLiabilities
         };
-    }, [cashbookEntries, receipts, creditorInvoices, debitorInvoices, dailyRevenues, closings, recurringExpenses, recurringOccurrences, liabilities]);
+    }, [cashbookEntries, receipts, creditorInvoices, dailyRevenues, closings, recurringExpenses, recurringOccurrences, liabilities]);
 
     const recentReceipts = receipts.slice(0, 5);
 
@@ -305,7 +293,6 @@ export default function AccountingDashboard() {
                             { label: 'Kassenbuch', icon: BookOpen, href: '/AccountingCashbook', color: 'text-amber-400', bg: 'bg-amber-500/10' },
                             { label: 'Belege', icon: Receipt, href: '/AccountingReceipts', color: 'text-blue-400', bg: 'bg-blue-500/10' },
                             { label: 'Kreditoren', icon: TrendingDown, href: '/AccountingCreditors', color: 'text-red-400', bg: 'bg-red-500/10' },
-                            { label: 'Debitoren', icon: TrendingUp, href: '/AccountingDebitors', color: 'text-green-400', bg: 'bg-green-500/10' },
                             { label: 'Fixkosten', icon: RefreshCw, href: '/AccountingFixedCosts', color: 'text-orange-400', bg: 'bg-orange-500/10' },
                             { label: 'Verbindlichkeiten', icon: TrendingDown, href: '/AccountingLiabilities', color: 'text-rose-400', bg: 'bg-rose-500/10' },
                             { label: 'Bankkonten', icon: Building2, href: '/AccountingBank', color: 'text-sky-400', bg: 'bg-sky-500/10' },

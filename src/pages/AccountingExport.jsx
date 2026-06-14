@@ -1,11 +1,12 @@
 /**
  * DATEV-Export — Monatsexport für den Steuerberater
  *
- * Erzeugt zwei Dateien:
- *  1. EXTF_Buchungsstapel_YYYY-MM.csv  — DATEV-konformes Buchungsstapel-Format
- *  2. Belege_YYYY-MM.zip               — alle Belegbilder des Monats (via JSZip)
- *
- * Der Steuerberater importiert beides direkt in DATEV Unternehmen Online.
+ * v2 Verbesserungen:
+ *  - Kassenbuch-Einträge (CashbookEntry) werden mit exportiert
+ *  - Vollständigkeitsprüfung vor Export (fehlende Beträge, fehlende Bilder)
+ *  - DATEV-Nummern aufklappbar (nicht mehr prominent)
+ *  - Klarere, weniger technische Beschreibung
+ *  - Kein redundanter "Neuer Export"-Button
  */
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -13,12 +14,11 @@ import { STALE } from '@/lib/queryUtils';
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
-    Download, FileText, Archive, CheckCircle2, Receipt,
-    ChevronLeft, ChevronRight, Info, Package
+    Download, FileText, Archive, CheckCircle2,
+    ChevronLeft, ChevronRight, AlertTriangle,
+    ChevronDown, BookOpen, Receipt, Package
 } from 'lucide-react';
 import { format, subMonths, addMonths } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -50,175 +50,75 @@ function MonthNav({ value, onChange }) {
 }
 
 // ── DATEV EXTF Buchungsstapel ─────────────────────────────────────────────────
-function buildDATEVCsv(receipts, month, beraterNr, mandantenNr) {
-    const now  = new Date();
-    const ts   = format(now, 'yyyyMMddHHmmssSSS');
+function buildDATEVCsv(receipts, cashbookEntries, month, beraterNr, mandantenNr) {
+    const now = new Date();
+    const ts  = format(now, 'yyyyMMddHHmmssSSS');
     const [y, m] = month.split('-');
-    const wjBeginn = `${y}0101`;     // Wirtschaftsjahresbeginn 1.1.
-    const sachkonto = '1200';         // Gegenkonto: Bank (SKR03) — Steuerberater passt ggf. an
+    const wjBeginn   = `${y}0101`;
+    const lastDay    = new Date(Number(y), Number(m), 0).getDate();
+    const sachkonto  = '1200'; // Bank/Kasse SKR03
 
-    // DATEV EXTF Header (Zeile 1) — exaktes Format laut DATEV-Spec
     const header = [
-        '"EXTF"',        // Kennzeichen
-        '700',           // Versionsnummer
-        '21',            // Datenkategorie: 21 = Buchungsstapel
-        '"Buchungsstapel"',
-        '13',            // Formatversion
-        ts,              // Erstellt am
-        '',              // Importiert
-        '"RE"',          // Herkunft
-        '',              // Exportiert von
-        '',              // Importiert von
-        beraterNr || '0',
-        mandantenNr || '0',
-        wjBeginn,        // WJ-Beginn
-        '4',             // Sachkontenlänge
-        `${y}${m}01`,   // Datum von
-        `${y}${m}${new Date(Number(y), Number(m), 0).getDate()}`, // Datum bis
-        '"BarShift Pro"', // Bezeichnung
-        '',              // Diktatkürzel
-        '1',             // Buchungstyp: 1=Fibu-Buchung
-        '0',             // Rechnungslegungszweck
-        '0',             // Festschreibung
-        'EUR',           // WKZ
-        '',              // Derivatskennzeichen
-        '',              // SKR
-        '',              // Branchenlösung
-        '',              // Anwendungsinformation
-        '',              // Länge Buchungstext
-        '',              // ÖPNV
+        '"EXTF"', '700', '21', '"Buchungsstapel"', '13', ts, '', '"RE"', '', '',
+        beraterNr || '0', mandantenNr || '0',
+        wjBeginn, '4',
+        `${y}${m}01`, `${y}${m}${lastDay}`,
+        '"BarShift Pro"', '', '1', '0', '0', 'EUR', '', '', '', '', '', '',
     ].join(';');
 
-    // Spalten-Header (Zeile 2)
     const cols = [
-        'Umsatz (ohne Soll/Haben-Kz)',
-        'Soll/Haben-Kennzeichen',
-        'WKZ Umsatz',
-        'Kurs',
-        'Basis-Umsatz',
-        'WKZ Basis-Umsatz',
-        'Konto',
-        'Gegenkonto (ohne BU-Schlüssel)',
-        'BU-Schlüssel',
-        'Belegdatum',
-        'Belegfeld 1',
-        'Belegfeld 2',
-        'Skonto',
-        'Buchungstext',
-        'Postensperre',
-        'Diverse Adressnummer',
-        'Geschäftspartnerbank',
-        'Sachverhalt',
-        'Zinssperre',
-        'Beleglink',
-        'Beleginfo - Art 1',
-        'Beleginfo - Inhalt 1',
-        'Beleginfo - Art 2',
-        'Beleginfo - Inhalt 2',
-        'Beleginfo - Art 3',
-        'Beleginfo - Inhalt 3',
-        'Beleginfo - Art 4',
-        'Beleginfo - Inhalt 4',
-        'Beleginfo - Art 5',
-        'Beleginfo - Inhalt 5',
-        'Beleginfo - Art 6',
-        'Beleginfo - Inhalt 6',
-        'Beleginfo - Art 7',
-        'Beleginfo - Inhalt 7',
-        'Beleginfo - Art 8',
-        'Beleginfo - Inhalt 8',
-        'KOST1 - Kostenstelle',
-        'KOST2 - Kostenstelle',
-        'Kost-Menge',
-        'EU-Land u. UStID',
-        'EU-Steuersatz',
-        'Abw. Versteuerungsart',
-        'Sachverhalt L+L',
-        'Funktionsergänzung L+L',
-        'BU 49 Hauptfunktionstyp',
-        'BU 49 Hauptfunktionsnummer',
-        'BU 49 Funktionsergänzung',
-        'Zusatzinformation - Art 1',
-        'Zusatzinformation - Inhalt 1',
-        'Zusatzinformation - Art 2',
-        'Zusatzinformation - Inhalt 2',
-        'Stück',
-        'Gewicht',
-        'Zahlweise',
-        'Forderungsart',
-        'Veranlagungsjahr',
-        'Zugeordnete Fälligkeit',
-        'Skontotyp',
-        'Auftragsnummer',
-        'Buchungstyp',
-        'USt-Schlüssel (Anzahlungen)',
-        'EU-Mitgliedstaat (Anzahlungen)',
-        'Sachverhalt§13b UStG (Anzahlungen)',
-        'Erlöskonto (Anzahlungen)',
-        'Herkunft-Kz',
-        'Buchungs GUID',
-        'KOST-Datum',
-        'SEPA-Mandatsreferenz',
-        'Skontosperre',
-        'Gesellschaftername',
-        'Beteiligtennummer',
-        'Identifikationsnummer',
-        'Zeichnernummer',
-        'Postensperre bis',
-        'Bezeichnung SoBil-Sachverhalt',
-        'Kennzeichen SoBil-Buchung',
-        'Festschreibung',
-        'Leistungsdatum',
-        'Datum Zuord. Steuerperiode',
-        'Fälligkeit',
-        'Generalumkehr (GU)',
-        'Steuersatz',
-        'Land',
-        'Abrechnungsreferenz',
-        'BVV-Position',
-        'EU-Steuersatz Land',
-        'EU-Steuersatz',
+        'Umsatz (ohne Soll/Haben-Kz)', 'Soll/Haben-Kennzeichen', 'WKZ Umsatz',
+        'Kurs', 'Basis-Umsatz', 'WKZ Basis-Umsatz', 'Konto',
+        'Gegenkonto (ohne BU-Schlüssel)', 'BU-Schlüssel', 'Belegdatum',
+        'Belegfeld 1', 'Belegfeld 2', 'Skonto', 'Buchungstext',
     ].join(';');
 
-    // BU-Schlüssel aus Steuersatz
-    const buKey = rate => {
-        if (rate === 19) return '9';
-        if (rate === 7)  return '8';
-        return '';  // 0% — kein BU-Schlüssel
-    };
+    const buKey = rate => rate === 19 ? '9' : rate === 7 ? '8' : '';
 
-    // Datenzeilen
-    const rows = receipts.map(r => {
-        const betrag    = (r.amount_gross || 0).toFixed(2).replace('.', ',');
-        const datum     = r.receipt_date ? format(new Date(r.receipt_date), 'ddMM') : '';
-        const konto     = r.datev_account || '4990';
-        const bu        = buKey(r.tax_rate ?? 19);
-        const belegfeld = r.receipt_number || r.id?.slice(0, 12) || '';
-        const text      = [r.supplier_name, r.category].filter(Boolean).join(' / ');
-        const beleglink = r.file_url ? r.id : '';
-
-        // 86 Felder — nicht benötigte bleiben leer
-        const fields = Array(86).fill('');
-        fields[0]  = betrag;           // Umsatz
-        fields[1]  = 'S';              // Soll (Ausgabe)
-        fields[2]  = 'EUR';            // WKZ
-        fields[3]  = '';               // Kurs
-        fields[4]  = '';               // Basis-Umsatz
-        fields[5]  = '';               // WKZ Basis
-        fields[6]  = konto;            // Konto (Aufwandskonto)
-        fields[7]  = sachkonto;        // Gegenkonto (Bank/Kasse)
-        fields[8]  = bu;               // BU-Schlüssel
-        fields[9]  = datum;            // Belegdatum (TTMM)
-        fields[10] = belegfeld;        // Belegfeld 1 (Rechnungsnr.)
-        fields[11] = '';               // Belegfeld 2
-        fields[12] = '';               // Skonto
-        fields[13] = `"${text}"`;      // Buchungstext
-        fields[19] = beleglink;        // Beleglink
-
+    // Belege → Ausgaben (Soll-Buchungen auf Aufwandskonto)
+    const receiptRows = receipts.map(r => {
+        const betrag = (r.amount_gross || 0).toFixed(2).replace('.', ',');
+        const datum  = r.receipt_date ? format(new Date(r.receipt_date), 'ddMM') : '';
+        const konto  = r.datev_account || '4990';
+        const bu     = buKey(r.tax_rate ?? 19);
+        const text   = `"${[r.supplier_name, r.category].filter(Boolean).join(' / ')}"`;
+        const fields = Array(14).fill('');
+        fields[0]  = betrag;
+        fields[1]  = 'S';
+        fields[2]  = 'EUR';
+        fields[6]  = konto;
+        fields[7]  = sachkonto;
+        fields[8]  = bu;
+        fields[9]  = datum;
+        fields[10] = r.receipt_number || r.id?.slice(0, 12) || '';
+        fields[13] = text;
         return fields.join(';');
     });
 
-    return [header, cols, ...rows].join('\r\n');
+    // Kassenbuch-Einträge → Einnahmen (Haben) und Ausgaben (Soll)
+    const cashRows = cashbookEntries.map(e => {
+        const isIncome = ['Einnahme', 'Privateinlage', 'Trinkgeld'].includes(e.entry_type);
+        const betrag   = (e.amount || 0).toFixed(2).replace('.', ',');
+        const datum    = e.date ? format(new Date(e.date), 'ddMM') : '';
+        const bu       = buKey(e.tax_rate ?? 0);
+        // Einnahmen → Erlöskonto 8000, Ausgaben → 4990 fallback
+        const konto    = isIncome ? '8000' : (e.category === 'Personal' ? '4100' : '4990');
+        const shKz     = isIncome ? 'H' : 'S';
+        const text     = `"${[e.description, e.category, e.entry_type].filter(Boolean).join(' / ')}"`;
+        const fields   = Array(14).fill('');
+        fields[0]  = betrag;
+        fields[1]  = shKz;
+        fields[2]  = 'EUR';
+        fields[6]  = konto;
+        fields[7]  = sachkonto;
+        fields[8]  = bu;
+        fields[9]  = datum;
+        fields[10] = e.id?.slice(0, 12) || '';
+        fields[13] = text;
+        return fields.join(';');
+    });
+
+    return [header, cols, ...receiptRows, ...cashRows].join('\r\n');
 }
 
 function downloadFile(content, filename, mime) {
@@ -233,81 +133,99 @@ function downloadFile(content, filename, mime) {
 // ── Hauptseite ────────────────────────────────────────────────────────────────
 export default function AccountingExport() {
     const permissions = usePermissions();
-    const [selectedMonth, setSelectedMonth] = useState(format(subMonths(new Date(), 0), 'yyyy-MM'));
+    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
     const [exporting,     setExporting]     = useState(false);
-    const [done,          setDone]          = useState(false);
+    const [showAdvanced,  setShowAdvanced]  = useState(false);
+    const [beraterNr,     setBeraterNr]     = useState('');
+    const [mandantenNr,   setMandantenNr]   = useState('');
 
-    // DATEV-Nummern (optional — nur für korrekte Header)
-    const [beraterNr,    setBeraterNr]    = useState('');
-    const [mandantenNr,  setMandantenNr]  = useState('');
-
+    // ── Queries ───────────────────────────────────────────────────────────────
     const { data: receipts = [] } = useQuery({
         queryKey: ['accounting-receipts'],
         queryFn:  () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
         staleTime: STALE.MEDIUM,
     });
 
+    const { data: cashbookEntries = [] } = useQuery({
+        queryKey: ['cashbook-entries'],
+        queryFn:  () => base44.entities.CashbookEntry.list('-date', 500),
+        staleTime: STALE.MEDIUM,
+    });
+
+    // ── Filter auf gewählten Monat ────────────────────────────────────────────
     const monthReceipts = useMemo(() =>
         receipts.filter(r => r.receipt_date?.startsWith(selectedMonth)),
         [receipts, selectedMonth]
     );
 
-    const totalGross = monthReceipts.reduce((s, r) => s + (r.amount_gross || 0), 0);
-    const totalTax   = monthReceipts.reduce((s, r) => {
-        const rate = (r.tax_rate || 19) / 100;
-        return s + ((r.amount_gross || 0) / (1 + rate) * rate);
-    }, 0);
-    const withImage  = monthReceipts.filter(r => r.file_url).length;
+    const monthCashbook = useMemo(() =>
+        cashbookEntries.filter(e => e.date?.startsWith(selectedMonth)),
+        [cashbookEntries, selectedMonth]
+    );
 
+    // ── Vollständigkeitsprüfung ───────────────────────────────────────────────
+    const checks = useMemo(() => {
+        const missingAmount  = monthReceipts.filter(r => !r.amount_gross || r.amount_gross === 0);
+        const missingImage   = monthReceipts.filter(r => !r.file_url);
+        const missingCat     = monthReceipts.filter(r => !r.category);
+        return { missingAmount, missingImage, missingCat };
+    }, [monthReceipts]);
+
+    const hasErrors   = checks.missingAmount.length > 0;
+    const hasWarnings = checks.missingImage.length > 0 || checks.missingCat.length > 0;
+
+    // ── Summen ────────────────────────────────────────────────────────────────
+    const totalReceipts  = monthReceipts.reduce((s, r) => s + (r.amount_gross || 0), 0);
+    const totalCashbook  = monthCashbook.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalEntries   = monthReceipts.length + monthCashbook.length;
+    const withImage      = monthReceipts.filter(r => r.file_url).length;
+
+    const [y, m]     = selectedMonth.split('-');
+    const monthLabel = format(new Date(Number(y), Number(m) - 1, 1), 'MMMM yyyy', { locale: de });
+
+    // ── Export ────────────────────────────────────────────────────────────────
     const handleExport = async () => {
-        if (monthReceipts.length === 0) {
-            toast.error('Keine Belege in diesem Monat');
+        if (totalEntries === 0) {
+            toast.error('Keine Buchungen im gewählten Monat');
             return;
         }
         setExporting(true);
-        setDone(false);
         try {
-            // 1. DATEV CSV
-            const csv      = buildDATEVCsv(monthReceipts, selectedMonth, beraterNr, mandantenNr);
-            const csvName  = `EXTF_Buchungsstapel_${selectedMonth}.csv`;
-            downloadFile(csv, csvName, 'text/csv;charset=utf-8;');
+            // 1. DATEV CSV (Belege + Kassenbuch)
+            const csv = buildDATEVCsv(monthReceipts, monthCashbook, selectedMonth, beraterNr, mandantenNr);
+            downloadFile(csv, `EXTF_Buchungsstapel_${selectedMonth}.csv`, 'text/csv;charset=utf-8');
 
-            // 2. ZIP mit Belegen (wenn vorhanden)
+            // 2. Belege als ZIP (nur wenn Bilder vorhanden)
             if (withImage > 0) {
-                // JSZip dynamisch laden
-                const JSZip = (await import('jszip')).default;
-                const zip   = new JSZip();
-                const folder = zip.folder(`Belege_${selectedMonth}`);
+                try {
+                    const JSZip = (await import('jszip')).default;
+                    const zip   = new JSZip();
+                    const folder = zip.folder(`Belege_${selectedMonth}`);
+                    const withFiles = monthReceipts.filter(r => r.file_url);
 
-                await Promise.all(
-                    monthReceipts
-                        .filter(r => r.file_url)
-                        .map(async (r, i) => {
-                            try {
-                                const resp = await fetch(r.file_url);
-                                const blob = await resp.blob();
-                                const ext  = r.file_url.split('.').pop().split('?')[0] || 'jpg';
-                                const name = `${String(i + 1).padStart(3, '0')}_${(r.supplier_name || 'Beleg').replace(/[^a-zA-Z0-9]/g, '_')}.${ext}`;
-                                folder.file(name, blob);
-                            } catch {
-                                // Bild nicht erreichbar — überspringen
-                            }
-                        })
-                );
+                    await Promise.all(withFiles.map(async r => {
+                        try {
+                            const resp = await fetch(r.file_url);
+                            const blob = await resp.blob();
+                            const ext  = r.file_url.split('.').pop()?.split('?')[0] || 'jpg';
+                            const name = `${r.receipt_date || 'unbekannt'}_${r.supplier_name || r.id}_${r.id.slice(-4)}.${ext}`;
+                            folder.file(name.replace(/[/\\?%*:|"<>]/g, '-'), blob);
+                        } catch { /* einzelne Datei überspringen */ }
+                    }));
 
-                const zipBlob = await zip.generateAsync({ type: 'blob' });
-                const zipUrl  = URL.createObjectURL(zipBlob);
-                const a       = document.createElement('a');
-                a.href = zipUrl;
-                a.download = `Belege_${selectedMonth}.zip`;
-                a.click();
-                URL.revokeObjectURL(zipUrl);
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    const url = URL.createObjectURL(zipBlob);
+                    const a   = document.createElement('a');
+                    a.href = url; a.download = `Belege_${selectedMonth}.zip`; a.click();
+                    URL.revokeObjectURL(url);
+                } catch {
+                    toast.error('ZIP-Export fehlgeschlagen — CSV wurde trotzdem erstellt');
+                }
             }
 
-            setDone(true);
-            toast.success(`Export fertig — ${monthReceipts.length} Buchungssätze + ${withImage} Belege`);
-        } catch (e) {
-            toast.error('Export fehlgeschlagen: ' + e.message);
+            toast.success(`${monthLabel} erfolgreich exportiert`);
+        } catch (err) {
+            toast.error('Export fehlgeschlagen: ' + err.message);
         } finally {
             setExporting(false);
         }
@@ -317,14 +235,12 @@ export default function AccountingExport() {
         return <PermissionDenied message="Kein Zugriff auf den Export." />;
     }
 
-    const [y, m] = selectedMonth.split('-');
-    const monthLabel = format(new Date(Number(y), Number(m) - 1, 1), 'MMMM yyyy', { locale: de });
-
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-8">
             <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
 
-                {/* Header */}
+                {/* ── Header ──────────────────────────────────────────────── */}
                 <div>
                     <h1 className="text-xl font-bold text-foreground">DATEV-Export</h1>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -332,133 +248,159 @@ export default function AccountingExport() {
                     </p>
                 </div>
 
-                {/* Monatsauswahl */}
-                <Card className="p-4 bg-card border-border space-y-3">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Monat wählen</p>
-                    <MonthNav value={selectedMonth} onChange={v => { setSelectedMonth(v); setDone(false); }} />
+                {/* ── Monatsauswahl ────────────────────────────────────────── */}
+                <MonthNav value={selectedMonth} onChange={setSelectedMonth} />
 
-                    {/* Monats-Übersicht */}
-                    <div className="grid grid-cols-3 gap-2 pt-1">
-                        <div className="bg-secondary/40 rounded-xl p-3 text-center">
-                            <p className="text-lg font-bold text-foreground">{monthReceipts.length}</p>
-                            <p className="text-[10px] text-muted-foreground">Belege</p>
-                        </div>
-                        <div className="bg-secondary/40 rounded-xl p-3 text-center">
-                            <p className="text-lg font-bold text-foreground">{fmt(totalGross)} €</p>
-                            <p className="text-[10px] text-muted-foreground">Gesamt brutto</p>
-                        </div>
-                        <div className="bg-secondary/40 rounded-xl p-3 text-center">
-                            <p className="text-lg font-bold text-foreground">{fmt(totalTax)} €</p>
-                            <p className="text-[10px] text-muted-foreground">MwSt. gesamt</p>
-                        </div>
+                {/* ── Monats-Übersicht ─────────────────────────────────────── */}
+                <div className="grid grid-cols-3 gap-2">
+                    <div className="bg-secondary/40 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-foreground">{monthReceipts.length}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Belege</p>
                     </div>
-                </Card>
+                    <div className="bg-secondary/40 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-foreground">{monthCashbook.length}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Kassenbuch</p>
+                    </div>
+                    <div className="bg-secondary/40 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-foreground">{fmt(totalReceipts + totalCashbook)} €</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Gesamt</p>
+                    </div>
+                </div>
 
-                {/* DATEV-Nummern (optional) */}
-                <Card className="p-4 bg-card border-border space-y-3">
-                    <div className="flex items-center gap-2">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex-1">
-                            DATEV-Nummern
-                        </p>
-                        <Badge variant="outline" className="text-[10px]">optional</Badge>
+                {/* ── Vollständigkeitsprüfung ──────────────────────────────── */}
+                {(hasErrors || hasWarnings) && (
+                    <div className="space-y-2">
+                        {checks.missingAmount.length > 0 && (
+                            <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-red-500/8 border border-red-500/25 text-red-400">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <p className="text-xs font-semibold">
+                                    {checks.missingAmount.length} Beleg{checks.missingAmount.length > 1 ? 'e' : ''} ohne Betrag — bitte vor dem Export ergänzen
+                                </p>
+                            </div>
+                        )}
+                        {checks.missingImage.length > 0 && (
+                            <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-500/8 border border-amber-500/25 text-amber-400">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <p className="text-xs font-semibold">
+                                    {checks.missingImage.length} Beleg{checks.missingImage.length > 1 ? 'e' : ''} ohne Bild — wird trotzdem exportiert, aber kein ZIP-Anhang
+                                </p>
+                            </div>
+                        )}
+                        {checks.missingCat.length > 0 && (
+                            <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-500/8 border border-amber-500/25 text-amber-400">
+                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                                <p className="text-xs font-semibold">
+                                    {checks.missingCat.length} Beleg{checks.missingCat.length > 1 ? 'e' : ''} ohne Kategorie — Sachkonto wird als 4990 (Sonstiges) exportiert
+                                </p>
+                            </div>
+                        )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                        Vom Steuerberater mitgeteilt. Ohne Angabe wird 0 verwendet — der Steuerberater kann das beim Import korrigieren.
+                )}
+
+                {/* ── Was wird exportiert ──────────────────────────────────── */}
+                <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-0.5">
+                        Dein Steuerberater bekommt
                     </p>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <label className="text-xs text-muted-foreground">Beraternummer</label>
-                            <input value={beraterNr} onChange={e => setBeraterNr(e.target.value)}
-                                placeholder="z.B. 12345"
-                                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs text-muted-foreground">Mandantennummer</label>
-                            <input value={mandantenNr} onChange={e => setMandantenNr(e.target.value)}
-                                placeholder="z.B. 1001"
-                                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
-                        </div>
-                    </div>
-                </Card>
 
-                {/* Was wird exportiert */}
-                <Card className="p-4 bg-card border-border space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">
-                        Export-Inhalt
-                    </p>
-                    <div className="flex items-center gap-3 py-2 border-b border-border/40">
-                        <FileText className="w-4 h-4 text-blue-400 shrink-0" />
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-foreground">EXTF_Buchungsstapel_{selectedMonth}.csv</p>
-                            <p className="text-xs text-muted-foreground">DATEV-konformes Buchungsstapel-Format · {monthReceipts.length} Buchungssätze</p>
+                    <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl border border-border/50 bg-card">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4 text-blue-400" />
                         </div>
-                        <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-                    </div>
-                    <div className="flex items-center gap-3 py-2">
-                        <Archive className="w-4 h-4 text-amber-400 shrink-0" />
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold text-foreground">Belege_{selectedMonth}.zip</p>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">Buchungsstapel (CSV)</p>
                             <p className="text-xs text-muted-foreground">
-                                {withImage} Belegbilder verknüpft
-                                {monthReceipts.length - withImage > 0 && ` · ${monthReceipts.length - withImage} ohne Bild`}
+                                {totalEntries} Buchungssätze · DATEV-Format · direkt importierbar
+                            </p>
+                        </div>
+                        {totalEntries > 0
+                            ? <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                            : <span className="text-xs text-muted-foreground shrink-0">leer</span>
+                        }
+                    </div>
+
+                    <div className="flex items-center gap-3 px-3.5 py-3 rounded-xl border border-border/50 bg-card">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                            <Archive className="w-4 h-4 text-amber-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">Belegbilder (ZIP)</p>
+                            <p className="text-xs text-muted-foreground">
+                                {withImage > 0
+                                    ? `${withImage} Belegbilder · via DATEV Belegtransfer hochladen`
+                                    : 'Keine Bilder vorhanden'
+                                }
                             </p>
                         </div>
                         {withImage > 0
                             ? <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
-                            : <Receipt className="w-4 h-4 text-muted-foreground shrink-0" />
+                            : <Receipt className="w-4 h-4 text-muted-foreground/40 shrink-0" />
                         }
                     </div>
-                </Card>
-
-                {/* Hinweis */}
-                <div className="flex items-start gap-2.5 text-xs text-muted-foreground bg-secondary/30 rounded-xl p-3.5">
-                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
-                    <p className="leading-relaxed">
-                        Die CSV-Datei kann direkt in <strong className="text-foreground">DATEV Unternehmen Online</strong> importiert werden.
-                        Die ZIP-Datei enthält alle Belegbilder — dein Steuerberater lädt beide über <strong className="text-foreground">DATEV Belegtransfer</strong> hoch.
-                        Gegenkonto ist standardmäßig <strong className="text-foreground">1200 (Bank)</strong> — bei Barzahlungen bitte mit dem Steuerberater abstimmen.
-                    </p>
                 </div>
 
-                {/* Export-Button */}
-                {done ? (
-                    <div className="flex flex-col items-center gap-3 py-4">
-                        <div className="w-14 h-14 rounded-2xl bg-green-500/15 flex items-center justify-center">
-                            <CheckCircle2 className="w-7 h-7 text-green-400" />
+                {/* ── Erweitert (DATEV-Nummern) ────────────────────────────── */}
+                <div className="border border-border/50 rounded-xl overflow-hidden">
+                    <button onClick={() => setShowAdvanced(s => !s)}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-card hover:bg-accent/20 transition-all">
+                        <span className="text-sm font-semibold text-foreground">Erweitert — DATEV-Nummern</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">optional</span>
+                            <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', showAdvanced && 'rotate-180')} />
                         </div>
-                        <p className="font-bold text-foreground">Export fertig!</p>
-                        <p className="text-xs text-muted-foreground text-center">
-                            CSV + ZIP wurden heruntergeladen.<br />
-                            Weiterleiten an den Steuerberater.
-                        </p>
-                        <Button variant="outline" size="sm" onClick={() => setDone(false)}>
-                            Neuer Export
-                        </Button>
-                    </div>
-                ) : (
-                    <Button
-                        onClick={handleExport}
-                        disabled={exporting || monthReceipts.length === 0}
-                        className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-bold text-base gap-2">
-                        {exporting ? (
-                            <>
-                                <Package className="w-5 h-5 animate-pulse" />
-                                Wird exportiert…
-                            </>
-                        ) : (
-                            <>
-                                <Download className="w-5 h-5" />
-                                {monthLabel} exportieren
-                            </>
-                        )}
-                    </Button>
-                )}
+                    </button>
+                    {showAdvanced && (
+                        <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border/40 bg-card">
+                            <p className="text-xs text-muted-foreground">
+                                Vom Steuerberater mitgeteilt. Ohne Angabe wird 0 verwendet — kann beim Import korrigiert werden.
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs text-muted-foreground">Beraternummer</label>
+                                    <input value={beraterNr} onChange={e => setBeraterNr(e.target.value)}
+                                        placeholder="z.B. 12345"
+                                        className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs text-muted-foreground">Mandantennummer</label>
+                                    <input value={mandantenNr} onChange={e => setMandantenNr(e.target.value)}
+                                        placeholder="z.B. 1001"
+                                        className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
-                {monthReceipts.length === 0 && (
-                    <p className="text-center text-xs text-muted-foreground">
-                        Keine Belege im gewählten Monat
+                {/* ── Export-Button ────────────────────────────────────────── */}
+                <Button
+                    onClick={handleExport}
+                    disabled={exporting || totalEntries === 0 || hasErrors}
+                    className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-bold text-base gap-2 disabled:opacity-50">
+                    {exporting ? (
+                        <>
+                            <Package className="w-5 h-5 animate-pulse" />
+                            Wird exportiert…
+                        </>
+                    ) : (
+                        <>
+                            <Download className="w-5 h-5" />
+                            {monthLabel} exportieren
+                        </>
+                    )}
+                </Button>
+
+                {hasErrors && (
+                    <p className="text-center text-xs text-red-400">
+                        Bitte erst Belege ohne Betrag korrigieren
                     </p>
                 )}
+                {totalEntries === 0 && !hasErrors && (
+                    <p className="text-center text-xs text-muted-foreground">
+                        Keine Buchungen im gewählten Monat
+                    </p>
+                )}
+
             </div>
         </div>
     );

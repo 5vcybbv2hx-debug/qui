@@ -77,7 +77,7 @@ function QuickLink({ page, icon: Icon, label, sub, color }) {
 
 // ─── Tab: HEUTE ─────────────────────────────────────────────────────────────
 
-function TodayTab({ currentUser, currentEmployee, permissions }) {
+function TodayTab({ currentUser, currentEmployee, permissions, employees, todayEvents, todayReservations }) {
     return (
         <div className="space-y-5">
             {/* Unterschrift erforderlich - nur für eigene Person */}
@@ -644,6 +644,9 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             currentUser={currentUser}
                             currentEmployee={currentEmployee}
                             permissions={permissions}
+                            employees={employees}
+                            todayEvents={todayEvents}
+                            todayReservations={todayReservations}
                         />
                     )}
                     {activeTab === 'team' && (
@@ -654,12 +657,7 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             isManager={isManager}
                         />
                     )}
-                    {activeTab === 'planung' && (
-                        <PlanningTab
-                            upcomingEvents={upcomingEvents}
-                            upcomingShifts={upcomingShifts}
-                        />
-                    )}
+
                     {activeTab === 'manager' && isManager && (
                         <ManagerDashboard
                             onSwitchToEmployee={() => {}}

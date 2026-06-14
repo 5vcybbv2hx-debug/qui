@@ -24,7 +24,6 @@ export const PAGE_PERMISSIONS = {
     Articles:                'canViewWarehouse',
     ArticleEdit:             'canViewWarehouse',
     Warehouse:               'canViewWarehouse',
-    Inventory:               'canViewInventory',
     Wastage:                 'canViewWastage',
     Suppliers:               'canViewSuppliers',
     Storage:                 'canViewWarehouse',

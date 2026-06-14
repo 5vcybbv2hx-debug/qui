@@ -74,7 +74,6 @@ export const mainNavigation = [
             { name: 'Belege',         page: 'AccountingReceipts',       icon: Receipt,      permission: 'canViewAccountingReceipts' },
             { name: 'Kreditoren',     page: 'AccountingCreditors',      icon: TrendingDown, permission: 'canViewAccountingCreditors' },
             { name: 'Export',         page: 'AccountingExport',         icon: Download,     permission: 'canExportAccounting' },
-            { name: 'Monatsabschluss',page: 'AccountingMonthlyClosing', icon: Calendar,     permission: 'canCloseAccountingMonth' },
             { name: 'Fixkosten',         page: 'AccountingFixedCosts',    icon: RefreshCw,    permission: 'canViewAccounting' },
             { name: 'Verbindlichkeiten', page: 'AccountingLiabilities',  icon: TrendingDown, permission: 'canViewLiabilities' },
         ]

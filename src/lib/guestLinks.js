@@ -1,11 +1,11 @@
 import { createPageUrl } from '@/utils';
 
 /**
- * Zentrale Funktion für den öffentlichen Gäste-Link zur Getränkekarte.
- * Wird auf der QR-Code-Seite, der Getränkekarte-Seite und überall sonst verwendet.
+ * Öffentlicher Gäste-Link zur Getränkekarte.
+ * Zeigt auf die React-Seite /PublicDrinkMenu (kein Login nötig).
  */
 export function getGuestMenuLink() {
-    return 'https://base44.app/api/apps/695532713e60f5ccfc3522b9/functions/publicDrinkMenu';
+    return `${window.location.origin}/PublicDrinkMenu`;
 }
 
 /**
@@ -16,15 +16,24 @@ export function getGuestReservationLink() {
 }
 
 /**
- * Hilfsfunktion: Link in Zwischenablage kopieren.
- * Gibt true zurück bei Erfolg.
+ * Link in Zwischenablage kopieren.
  */
 export async function copyToClipboard(text) {
-    await navigator.clipboard.writeText(text);
+    try {
+        await navigator.clipboard.writeText(text);
+    } catch {
+        // Fallback für ältere Browser
+        const el = document.createElement('textarea');
+        el.value = text;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+    }
 }
 
 /**
- * Hilfsfunktion: Native Share-API (falls verfügbar), sonst Fallback auf Clipboard.
+ * Native Share-API (falls verfügbar), sonst Fallback auf Clipboard.
  */
 export async function shareLink(url, title = 'Getränkekarte') {
     if (navigator.share) {

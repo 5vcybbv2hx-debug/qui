@@ -691,19 +691,54 @@ Antworte mit JSON: {"name":"...","category":"Cocktail","servings":1,"ingredients
                         ))}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                        {filteredRecipes.map(recipe => (
-                            <RecipeCard
-                                key={recipe.id}
-                                recipe={recipe}
-                                articles={articles}
-                                permissions={permissions}
-                                isSelected={selectedRecipes.has(recipe.id)}
-                                onSelect={toggleSelect}
-                                onClick={() => setDetailRecipe(recipe)}
-                            />
-                        ))}
-                    </div>
+                    /* Gruppiert nach Kategorie */
+                    (() => {
+                        const cats = activeCategories.filter(cat =>
+                            filteredRecipes.some(r => r.category === cat)
+                        );
+                        // Rezepte ohne bekannte Kategorie ans Ende
+                        const uncategorized = filteredRecipes.filter(
+                            r => !activeCategories.includes(r.category)
+                        );
+                        const groups = [
+                            ...cats.map(cat => ({
+                                label: cat,
+                                items: filteredRecipes.filter(r => r.category === cat),
+                            })),
+                            ...(uncategorized.length ? [{ label: 'Sonstiges', items: uncategorized }] : []),
+                        ];
+                        return (
+                            <div className="space-y-6">
+                                {groups.map(({ label, items }) => (
+                                    <div key={label}>
+                                        {/* Kategorie-Header mit Trennlinie */}
+                                        <div className="flex items-center gap-3 mb-3">
+                                            <h2 className="text-sm font-bold text-foreground uppercase tracking-wide shrink-0">
+                                                {label}
+                                            </h2>
+                                            <div className="flex-1 h-px bg-border/50" />
+                                            <span className="text-[10px] text-muted-foreground shrink-0">
+                                                {items.length}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                            {items.map(recipe => (
+                                                <RecipeCard
+                                                    key={recipe.id}
+                                                    recipe={recipe}
+                                                    articles={articles}
+                                                    permissions={permissions}
+                                                    isSelected={selectedRecipes.has(recipe.id)}
+                                                    onSelect={toggleSelect}
+                                                    onClick={() => setDetailRecipe(recipe)}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })()
                 )}
             </div>
 

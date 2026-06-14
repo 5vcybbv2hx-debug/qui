@@ -388,15 +388,15 @@ export default function Restock() {
                                         >
                                             <div className="font-medium text-foreground text-sm">{article.name}</div>
                                             <div className="text-xs text-muted-foreground mt-0.5">
-                                                {article.category || 'Sonstiges'} · {article.barcode}
+                                                {article.category || 'Sonstiges'}{article.barcode ? ` · ${article.barcode}` : ''}
                                             </div>
                                         </button>
                                     ))}
                                 </div>
                             )}
-                            {barcode.trim() && searchMatches.length === 0 && (
+                            {barcode.trim().length >= 2 && searchMatches.length === 0 && (
                                 <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/70 rounded-xl shadow-xl z-20 px-4 py-3 text-sm text-muted-foreground text-center">
-                                    Kein Artikel gefunden — Barcode nicht in Datenbank
+                                    Kein Artikel gefunden
                                 </div>
                             )}
                         </div>

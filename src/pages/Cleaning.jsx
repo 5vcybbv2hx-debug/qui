@@ -571,6 +571,37 @@ export default function Cleaning() {
                     title="Aufgabe bestätigen"
                 />
 
+                {/* Tag beenden Bestätigungs-Dialog */}
+                <Dialog open={endDayDialogOpen} onOpenChange={setEndDayDialogOpen}>
+                    <DialogContent className="sm:max-w-sm">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <RefreshCw className="w-5 h-5 text-orange-400" />
+                                Tag beenden
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="py-3 text-sm text-muted-foreground">
+                            Dies erstellt einen Tagesbericht und setzt alle täglichen Aufgaben zurück. Fortfahren?
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                            <Button variant="outline" onClick={() => setEndDayDialogOpen(false)} disabled={endDayLoading}>
+                                Abbrechen
+                            </Button>
+                            <Button
+                                onClick={endDay}
+                                disabled={endDayLoading}
+                                className="bg-orange-500 hover:bg-orange-600 text-white"
+                            >
+                                {endDayLoading ? (
+                                    <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Wird verarbeitet...</>
+                                ) : (
+                                    'Tag beenden'
+                                )}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
                 {/* Reports Modal */}
                 <Dialog open={reportsModalOpen} onOpenChange={setReportsModalOpen}>
                     <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -652,36 +683,5 @@ export default function Cleaning() {
                 </Dialog>
             </div>
         </div>
-
-        {/* Tag beenden Bestätigungs-Dialog */}
-        <Dialog open={endDayDialogOpen} onOpenChange={setEndDayDialogOpen}>
-            <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <RefreshCw className="w-5 h-5 text-orange-400" />
-                        Tag beenden
-                    </DialogTitle>
-                </DialogHeader>
-                <div className="py-3 text-sm text-muted-foreground">
-                    Dies erstellt einen Tagesbericht und setzt alle täglichen Aufgaben zurück. Fortfahren?
-                </div>
-                <div className="flex gap-2 justify-end">
-                    <Button variant="outline" onClick={() => setEndDayDialogOpen(false)} disabled={endDayLoading}>
-                        Abbrechen
-                    </Button>
-                    <Button
-                        onClick={endDay}
-                        disabled={endDayLoading}
-                        className="bg-orange-500 hover:bg-orange-600 text-white"
-                    >
-                        {endDayLoading ? (
-                            <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Wird verarbeitet...</>
-                        ) : (
-                            'Tag beenden'
-                        )}
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
     );
 }

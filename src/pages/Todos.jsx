@@ -4,9 +4,11 @@ import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import { LoadingState, EmptyState } from '@/components/ui/StateDisplay';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
-import { Plus, CheckSquare, Tag, Search, X, ListChecks, Trash2, Archive, CheckCheck, Square, FolderInput } from 'lucide-react';
+import {
+    Plus, CheckSquare, Tag, Search, X, ListChecks,
+    Trash2, Archive, CheckCheck, Square, FolderInput, ChevronDown
+} from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { toast } from 'sonner';
 import TodoCategoryManager from '@/components/todos/TodoCategoryManager';
@@ -14,7 +16,11 @@ import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import TodoCard from '@/components/todos/TodoCard';
 import TodoModal from '@/components/todos/TodoModal';
 import { cn } from '@/lib/utils';
@@ -22,31 +28,55 @@ import { getUserDisplayName } from '@/lib/userDisplayName';
 
 const PRIORITY_ORDER = { dringend: 0, hoch: 1, mittel: 2, niedrig: 3 };
 
-export default function Todos() {
-    const permissions = usePermissions();
-    const queryClient = useQueryClient();
+const STATUS_TABS = [
+    { value: 'offen',          label: 'Offen' },
+    { value: 'in_bearbeitung', label: 'Aktiv' },
+    { value: 'erledigt',       label: 'Erledigt' },
+    { value: 'alle',           label: 'Alle' },
+];
 
+const PRIORITY_FILTERS = [
+    { value: 'alle',     label: 'Alle',     dot: null },
+    { value: 'dringend', label: 'Dringend', dot: 'bg-red-500' },
+    { value: 'hoch',     label: 'Hoch',     dot: 'bg-orange-500' },
+    { value: 'mittel',   label: 'Mittel',   dot: 'bg-blue-500' },
+    { value: 'niedrig',  label: 'Niedrig',  dot: 'bg-slate-400' },
+];
+
+export default function Todos() {
+    const permissions  = usePermissions();
+    const queryClient  = useQueryClient();
+    const { handleError } = useErrorHandler();
+
+    // Offline sync
     useEffect(() => {
-        const handleOnline = () => syncMutations(base44).catch((e) => toast.error('Offline-Sync fehlgeschlagen: ' + e.message));
+        const handleOnline = () =>
+            syncMutations(base44).catch(e => toast.error('Offline-Sync fehlgeschlagen: ' + e.message));
         window.addEventListener('online', handleOnline);
         return () => window.removeEventListener('online', handleOnline);
     }, []);
 
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedTodo, setSelectedTodo] = useState(null);
-    const [statusFilter, setStatusFilter] = useState('offen');
-    const [categoryFilter, setCategoryFilter] = useState('alle');
-    const [priorityFilter, setPriorityFilter] = useState('alle');
-    const [personFilter, setPersonFilter] = useState('alle');
-    const [showArchived, setShowArchived] = useState(false);
-    const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [sortBy, setSortBy] = useState('priority');
-    const [filtersOpen, setFiltersOpen] = useState(false);
-    const [selectedIds, setSelectedIds] = useState(new Set());
-    const [selectMode, setSelectMode] = useState(false);
-    const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+    // ── UI State ──────────────────────────────────────────────────────────────
+    const [modalOpen,          setModalOpen]          = useState(false);
+    const [selectedTodo,       setSelectedTodo]       = useState(null);
+    const [statusFilter,       setStatusFilter]       = useState('offen');
+    const [categoryFilter,     setCategoryFilter]     = useState('alle');
+    const [priorityFilter,     setPriorityFilter]     = useState('alle');
+    const [personFilter,       setPersonFilter]       = useState('alle');
+    const [showArchived,       setShowArchived]       = useState(false);
+    const [categoryManagerOpen,setCategoryManagerOpen]= useState(false);
+    const [searchQuery,        setSearchQuery]        = useState('');
+    const [sortBy,             setSortBy]             = useState('priority');
+    const [selectedIds,        setSelectedIds]        = useState(new Set());
+    const [selectMode,         setSelectMode]         = useState(false);
+    const [bulkCategoryOpen,   setBulkCategoryOpen]   = useState(false);
+    const [showFilters,        setShowFilters]        = useState(false);
 
+    // Confirm dialogs
+    const [archiveConfirm, setArchiveConfirm] = useState(null); // todo id
+    const [deleteConfirm,  setDeleteConfirm]  = useState(null); // todo id
+
+    // ── Data ──────────────────────────────────────────────────────────────────
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn: () => base44.entities.Employee.filter({ is_active: true }),
@@ -65,45 +95,51 @@ export default function Todos() {
         staleTime: STALE.SLOW,
     });
     const DEFAULT_CATEGORIES = ['Einkauf', 'Reparatur', 'Event', 'Bar', 'Lager', 'Küche', 'Sonstiges'];
-    const allAvailableCategories = Array.from(new Set([...DEFAULT_CATEGORIES, ...dbCategories.map(c => c.name)]));
+    const allAvailableCategories = Array.from(new Set([
+        ...DEFAULT_CATEGORIES,
+        ...dbCategories.map(c => c.name)
+    ]));
 
     const { data: todos = [], isLoading, isError: todosError, error: todosErrorObj } = useQuery({
         queryKey: ['todos'],
         queryFn: () => base44.entities.TodoItem.filter({ is_archived: false }, '-created_date', 300),
-        staleTime: 60 * 1000
+        staleTime: 60 * 1000,
     });
 
     const { data: dbArchivedTodos = [] } = useQuery({
         queryKey: ['todos-archived'],
         queryFn: () => base44.entities.TodoItem.filter({ is_archived: true }, '-created_date', 100),
         enabled: showArchived,
-        staleTime: 5 * 60 * 1000
+        staleTime: 5 * 60 * 1000,
     });
-    const { handleError } = useErrorHandler();
 
+    // ── Mutations ─────────────────────────────────────────────────────────────
     const createMutation = useMutation({
         mutationFn: (data) => base44.entities.TodoItem.create(data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] })
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.TodoItem.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] })
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
     });
 
     const deleteMutation = useMutation({
         mutationFn: (id) => base44.entities.TodoItem.delete(id),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] })
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
+            queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
+        },
     });
 
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleSave = (data, id) => {
         if (id) updateMutation.mutate({ id, data });
-        else createMutation.mutate(data);
+        else    createMutation.mutate(data);
     };
 
-    const handleQuickUpdate = (todo, changes) => {
+    const handleQuickUpdate = (todo, changes) =>
         updateMutation.mutate({ id: todo.id, data: changes });
-    };
 
     const handleStatusChange = (todo, newStatus) => {
         const updates = { status: newStatus };
@@ -114,32 +150,85 @@ export default function Todos() {
         updateMutation.mutate({ id: todo.id, data: updates });
     };
 
-    const handleArchive = (id) => {
-        if (confirm('Aufgabe archivieren?')) {
-            updateMutation.mutate({ id, data: { is_archived: true } });
-        }
+    const handleArchiveConfirmed = () => {
+        if (!archiveConfirm) return;
+        updateMutation.mutate({ id: archiveConfirm, data: { is_archived: true } });
+        setArchiveConfirm(null);
     };
 
-    const handleEdit = (todo) => {
-        setSelectedTodo(todo);
-        setModalOpen(true);
+    const handleDeleteConfirmed = () => {
+        if (!deleteConfirm) return;
+        deleteMutation.mutate(deleteConfirm);
+        setDeleteConfirm(null);
     };
 
-    const handleDelete = (id) => {
-        if (confirm('Aufgabe löschen?')) {
-            deleteMutation.mutate(id);
-        }
-    };
+    const handleEdit = (todo) => { setSelectedTodo(todo); setModalOpen(true); };
 
+    // ── Bulk ──────────────────────────────────────────────────────────────────
     const currentUserName = getUserDisplayName({ employeeName: permissions.employeeName, user });
     const isAdmin = permissions.isAdmin || permissions.isManager;
 
+    const toggleSelect = (id) => setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.has(id) ? next.delete(id) : next.add(id);
+        return next;
+    });
+    const selectAll = () => setSelectedIds(new Set(filteredTodos.map(t => t.id)));
+    const clearSelection = () => { setSelectedIds(new Set()); setSelectMode(false); };
+
+    const handleBulkArchive = async () => {
+        await Promise.all([...selectedIds].map(id =>
+            base44.entities.TodoItem.update(id, { is_archived: true })
+        ));
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
+        clearSelection();
+    };
+
+    const handleBulkDelete = async () => {
+        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.delete(id)));
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
+        clearSelection();
+    };
+
+    const handleBulkMoveCategory = async (cat) => {
+        await Promise.all([...selectedIds].map(id =>
+            base44.entities.TodoItem.update(id, { category: cat })
+        ));
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
+        setBulkCategoryOpen(false);
+        clearSelection();
+    };
+
+    const handleBulkDone = async () => {
+        await Promise.all([...selectedIds].map(id =>
+            base44.entities.TodoItem.update(id, {
+                status: 'erledigt',
+                completed_by: getUserDisplayName({ employeeName: permissions.employeeName, user }),
+                completed_at: new Date().toISOString(),
+            })
+        ));
+        queryClient.invalidateQueries({ queryKey: ['todos'] });
+        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
+        clearSelection();
+    };
+
+    const resetFilters = () => {
+        setSearchQuery('');
+        setCategoryFilter('alle');
+        setPriorityFilter('alle');
+        setPersonFilter('alle');
+        setStatusFilter('offen');
+    };
+
+    // ── Derived data ──────────────────────────────────────────────────────────
     const visibleTodos = useMemo(() => todos.filter(todo => {
         const assignees = todo.assigned_to_names?.length > 0
             ? todo.assigned_to_names
             : todo.assigned_to ? [todo.assigned_to] : [];
-        if (assignees.length === 0) return true;
-        if (isAdmin) return true;
+        if (assignees.length === 0 || isAdmin) return true;
         return assignees.includes(currentUserName);
     }), [todos, currentUserName, isAdmin]);
 
@@ -147,42 +236,36 @@ export default function Todos() {
         const assignees = todo.assigned_to_names?.length > 0
             ? todo.assigned_to_names
             : todo.assigned_to ? [todo.assigned_to] : [];
-        if (assignees.length === 0) return true;
-        if (isAdmin) return true;
+        if (assignees.length === 0 || isAdmin) return true;
         return assignees.includes(currentUserName);
     }), [dbArchivedTodos, currentUserName, isAdmin]);
 
-    const activeTodos = visibleTodos;
-    const archivedTodos = visibleArchivedTodos;
+    const displayTodos = showArchived ? visibleArchivedTodos : visibleTodos;
 
-    const allCategories = Array.from(new Set(
-        todos.map(t => t.category).filter(Boolean)
-    )).sort();
-
-    const allAssignees = Array.from(new Set(
+    const allCategories = Array.from(new Set(todos.map(t => t.category).filter(Boolean))).sort();
+    const allAssignees  = Array.from(new Set(
         todos.flatMap(t => t.assigned_to_names?.length > 0 ? t.assigned_to_names : t.assigned_to ? [t.assigned_to] : [])
     )).sort();
 
-    const displayTodos = showArchived ? archivedTodos : activeTodos;
-
     const filteredTodos = useMemo(() => {
         let result = displayTodos.filter(todo => {
-            const statusMatch = statusFilter === 'alle' ||
-                (statusFilter === 'offen' && todo.status !== 'erledigt') ||
+            const statusMatch =
+                statusFilter === 'alle' ||
+                (statusFilter === 'offen' && todo.status === 'offen') ||
                 todo.status === statusFilter;
             const categoryMatch = categoryFilter === 'alle' || todo.category === categoryFilter;
             const priorityMatch = priorityFilter === 'alle' || todo.priority === priorityFilter;
-            const personMatch = personFilter === 'alle' || (() => {
-                const assignees = todo.assigned_to_names?.length > 0 ? todo.assigned_to_names : todo.assigned_to ? [todo.assigned_to] : [];
-                return assignees.includes(personFilter);
+            const personMatch   = personFilter === 'alle' || (() => {
+                const a = todo.assigned_to_names?.length > 0 ? todo.assigned_to_names : todo.assigned_to ? [todo.assigned_to] : [];
+                return a.includes(personFilter);
             })();
             const searchMatch = !searchQuery.trim() || (() => {
                 const q = searchQuery.toLowerCase();
-                const assignees = todo.assigned_to_names?.join(' ') || todo.assigned_to || '';
+                const a = todo.assigned_to_names?.join(' ') || todo.assigned_to || '';
                 return (
                     todo.title?.toLowerCase().includes(q) ||
                     todo.description?.toLowerCase().includes(q) ||
-                    assignees.toLowerCase().includes(q)
+                    a.toLowerCase().includes(q)
                 );
             })();
             return statusMatch && categoryMatch && priorityMatch && personMatch && searchMatch;
@@ -212,218 +295,190 @@ export default function Todos() {
         return result;
     }, [displayTodos, statusFilter, categoryFilter, priorityFilter, personFilter, searchQuery, sortBy]);
 
-    const openCount = activeTodos.filter(t => t.status === 'offen').length;
-    const inProgressCount = activeTodos.filter(t => t.status === 'in_bearbeitung').length;
-    const doneCount = activeTodos.filter(t => t.status === 'erledigt').length;
+    const openCount       = visibleTodos.filter(t => t.status === 'offen').length;
+    const inProgressCount = visibleTodos.filter(t => t.status === 'in_bearbeitung').length;
+    const doneCount       = visibleTodos.filter(t => t.status === 'erledigt').length;
 
-    const hasActiveFilters = searchQuery || categoryFilter !== 'alle' || priorityFilter !== 'alle' || personFilter !== 'alle' || statusFilter !== 'offen';
+    const hasActiveFilters = searchQuery || categoryFilter !== 'alle' || priorityFilter !== 'alle' || personFilter !== 'alle';
 
-    const toggleSelect = (id) => {
-        setSelectedIds(prev => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
-    };
-
-    const selectAll = () => setSelectedIds(new Set(filteredTodos.map(t => t.id)));
-    const clearSelection = () => { setSelectedIds(new Set()); setSelectMode(false); };
-
-    const handleBulkDelete = async () => {
-        if (!confirm(`${selectedIds.size} Aufgabe(n) löschen?`)) return;
-        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.delete(id)));
-        queryClient.invalidateQueries({ queryKey: ['todos'] });
-        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
-        clearSelection();
-    };
-
-    const handleBulkArchive = async () => {
-        if (!confirm(`${selectedIds.size} Aufgabe(n) archivieren?`)) return;
-        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.update(id, { is_archived: true })));
-        queryClient.invalidateQueries({ queryKey: ['todos'] });
-        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
-        clearSelection();
-    };
-
-    const handleBulkMoveCategory = async (category) => {
-        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.update(id, { category })));
-        queryClient.invalidateQueries({ queryKey: ['todos'] });
-        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
-        setBulkCategoryOpen(false);
-        clearSelection();
-    };
-
-    const handleBulkDone = async () => {
-        await Promise.all([...selectedIds].map(id => base44.entities.TodoItem.update(id, {
-            status: 'erledigt',
-            completed_by: getUserDisplayName({ employeeName: permissions.employeeName, user }),
-            completed_at: new Date().toISOString()
-        })));
-        queryClient.invalidateQueries({ queryKey: ['todos'] });
-        queryClient.invalidateQueries({ queryKey: ['todos-archived'] });
-        clearSelection();
-    };
-
-    const resetFilters = () => {
-        setSearchQuery('');
-        setCategoryFilter('alle');
-        setPriorityFilter('alle');
-        setPersonFilter('alle');
-        setStatusFilter('offen');
-    };
-
-    if (!permissions.canViewTodos) {
-        return <PermissionDenied message="Du hast keine Berechtigung, Aufgaben zu sehen." />;
-    }
-
-    // Error state
-    if (todosError) {
-        return (
-            <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-                {handleError({ error: todosErrorObj, title: 'Aufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries({ queryKey: ['todos'] }) })}
-            </div>
-        );
-    }
+    // ── Guards ────────────────────────────────────────────────────────────────
+    if (!permissions.canViewTodos) return <PermissionDenied message="Du hast keine Berechtigung, Aufgaben zu sehen." />;
+    if (todosError) return (
+        <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+            {handleError({ error: todosErrorObj, title: 'Aufgaben konnten nicht geladen werden', onRetry: () => queryClient.invalidateQueries({ queryKey: ['todos'] }) })}
+        </div>
+    );
 
     return (
-         <div className="min-h-screen bg-background pb-24 md:pb-0">
-             <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-6">
+        <div className="min-h-screen bg-background pb-28 md:pb-8">
+            <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
 
-                {/* Aufgabenbereiche Banner */}
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                            <CheckSquare className="w-4 h-4 text-amber-400" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-bold text-amber-400">Aufgaben</p>
-                            <p className="text-[10px] text-muted-foreground">{openCount} offen</p>
-                        </div>
-                    </div>
-                    <Link to={createPageUrl('WeeklyTasks')} className="flex items-center gap-2.5 p-3 rounded-xl bg-secondary/50 border border-border hover:bg-accent/50 active:scale-[0.98] transition-all">
-                        <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center shrink-0">
-                            <ListChecks className="w-4 h-4 text-blue-400" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-semibold text-foreground">Wochenaufgaben</p>
-                            <p className="text-[10px] text-muted-foreground">Planung →</p>
-                        </div>
-                    </Link>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 mb-4">
+                {/* ── Header ─────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Aufgaben</h1>
-                        <p className="text-muted-foreground text-xs mt-0.5">
+                        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+                            <CheckSquare className="w-5 h-5 text-amber-500" />
+                            Aufgaben
+                        </h1>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                             {openCount} offen · {inProgressCount} aktiv · {doneCount} erledigt
                         </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
                         {permissions.canEditTodos && (
                             <>
-                                <Button size="sm" variant="outline" onClick={() => setCategoryManagerOpen(true)}
-                                    className="h-9 border-border/50 text-muted-foreground">
+                                <Button size="sm" variant="outline"
+                                    onClick={() => setCategoryManagerOpen(true)}
+                                    className="h-9 px-2.5 border-border text-muted-foreground hover:text-foreground"
+                                    title="Kategorien verwalten">
                                     <Tag className="w-4 h-4" />
                                 </Button>
                                 <Button size="sm" variant="outline"
                                     onClick={() => { setSelectMode(s => !s); setSelectedIds(new Set()); }}
-                                    className={cn('h-9', selectMode ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border/50 text-muted-foreground')}>
-                                    <CheckCheck className="w-4 h-4" />
+                                    className={cn('h-9 px-2.5',
+                                        selectMode
+                                            ? 'bg-amber-500 text-primary-foreground border-amber-500'
+                                            : 'border-border text-muted-foreground hover:text-foreground'
+                                    )}
+                                    title="Auswählen">
+                                    {selectMode ? <X className="w-4 h-4" /> : <CheckCheck className="w-4 h-4" />}
                                 </Button>
                             </>
                         )}
-                        <Button size="sm" onClick={() => { setSelectedTodo(null); setModalOpen(true); }}
-                            className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-primary-foreground shadow-lg shadow-amber-500/20 h-9">
-                            <Plus className="w-4 h-4 mr-1" />
+                        <Button
+                            size="sm"
+                            onClick={() => { setSelectedTodo(null); setModalOpen(true); }}
+                            className="h-9 bg-amber-600 hover:bg-amber-700 text-white gap-1.5">
+                            <Plus className="w-4 h-4" />
                             <span className="hidden sm:inline">Neue Aufgabe</span>
                             <span className="sm:hidden">Neu</span>
                         </Button>
                     </div>
                 </div>
 
-                <div className="relative mb-3">
+                {/* ── Suche ──────────────────────────────────────────────── */}
+                <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Suche..."
-                        className="pl-9 pr-9 h-12 text-base"
+                        placeholder="Aufgabe suchen…"
+                        className="pl-9 pr-9 h-11"
                     />
                     {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1">
+                        <button onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                             <X className="w-4 h-4" />
                         </button>
                     )}
                 </div>
 
-                <div className="flex flex-col gap-2 mb-5">
-                    <div className="flex gap-2 items-center">
-                        <Tabs value={showArchived ? 'archiv' : 'aktiv'} onValueChange={(v) => setShowArchived(v === 'archiv')} className="flex-1">
-                            <TabsList className="bg-card border border-border w-full grid grid-cols-2 h-11">
-                                <TabsTrigger value="aktiv" className="text-sm">Aktiv ({activeTodos.length})</TabsTrigger>
-                                <TabsTrigger value="archiv" className="text-sm">Archiv ({archivedTodos.length})</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        <button
-                            onClick={() => setFiltersOpen(f => !f)}
+                {/* ── Aktiv / Archiv ─────────────────────────────────────── */}
+                <div className="flex gap-1 p-1 bg-card border border-border rounded-xl">
+                    {[
+                        { key: false, label: `Aktiv (${visibleTodos.length})` },
+                        { key: true,  label: `Archiv (${visibleArchivedTodos.length})` },
+                    ].map(({ key, label }) => (
+                        <button key={String(key)}
+                            onClick={() => { setShowArchived(key); setStatusFilter('offen'); }}
                             className={cn(
-                                'h-11 px-3 rounded-lg border text-sm font-medium transition-all flex items-center gap-1.5 shrink-0',
-                                (filtersOpen || hasActiveFilters) ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border text-muted-foreground hover:text-foreground bg-card'
-                            )}
-                        >
-                            <span>Filter</span>
-                            {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-current" />}
+                                'flex-1 py-2 rounded-lg text-sm font-semibold transition-all',
+                                showArchived === key
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            )}>
+                            {label}
                         </button>
-                        <select
-                            value={sortBy}
-                            onChange={e => setSortBy(e.target.value)}
-                            className="h-11 text-sm px-2 rounded-lg border border-border bg-card text-foreground shrink-0"
-                        >
+                    ))}
+                </div>
+
+                {/* ── Status-Tabs (nur Aktiv) ─────────────────────────────── */}
+                {!showArchived && (
+                    <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+                        {STATUS_TABS.map(({ value, label }) => {
+                            const count = value === 'offen' ? openCount
+                                : value === 'in_bearbeitung' ? inProgressCount
+                                : value === 'erledigt' ? doneCount
+                                : visibleTodos.length;
+                            return (
+                                <button key={value}
+                                    onClick={() => setStatusFilter(value)}
+                                    className={cn(
+                                        'shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-all',
+                                        statusFilter === value
+                                            ? 'bg-amber-500 border-amber-500 text-white'
+                                            : 'border-border text-muted-foreground hover:text-foreground bg-card'
+                                    )}>
+                                    {label}
+                                    <span className={cn(
+                                        'text-xs px-1.5 py-0.5 rounded-full font-bold',
+                                        statusFilter === value ? 'bg-white/20 text-white' : 'bg-muted text-muted-foreground'
+                                    )}>
+                                        {count}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* ── Priorität + Sort + erweiterte Filter ───────────────── */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        {/* Priorität-Chips */}
+                        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide flex-1">
+                            {PRIORITY_FILTERS.map(({ value, label, dot }) => (
+                                <button key={value}
+                                    onClick={() => setPriorityFilter(value)}
+                                    className={cn(
+                                        'shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                                        priorityFilter === value
+                                            ? 'bg-foreground text-background border-foreground'
+                                            : 'border-border text-muted-foreground hover:text-foreground bg-card'
+                                    )}>
+                                    {dot && <span className={cn('w-2 h-2 rounded-full shrink-0', dot)} />}
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Weitere Filter + Sort */}
+                        <button
+                            onClick={() => setShowFilters(f => !f)}
+                            className={cn(
+                                'shrink-0 flex items-center gap-1 h-8 px-2.5 rounded-lg border text-xs font-medium transition-all',
+                                (showFilters || hasActiveFilters)
+                                    ? 'bg-amber-500 border-amber-500 text-white'
+                                    : 'border-border text-muted-foreground hover:text-foreground bg-card'
+                            )}>
+                            Filter
+                            {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                            <ChevronDown className={cn('w-3 h-3 transition-transform', showFilters && 'rotate-180')} />
+                        </button>
+
+                        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                            className="shrink-0 h-8 text-xs px-2 rounded-lg border border-border bg-card text-foreground">
                             <option value="priority">Priorität</option>
                             <option value="date">Datum</option>
                             <option value="manual">Manuell</option>
                         </select>
                     </div>
 
-                    {filtersOpen && !showArchived && (
-                        <div className="rounded-xl border border-border bg-card p-3 space-y-3">
-                            <div>
-                                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Status</p>
-                                <div className="flex gap-2 flex-wrap">
-                                    {['offen', 'in_bearbeitung', 'erledigt', 'alle'].map(s => (
-                                        <button key={s}
-                                            onClick={() => setStatusFilter(s)}
-                                            className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
-                                                statusFilter === s ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border text-muted-foreground'
-                                            )}>
-                                            {s === 'offen' ? 'Offen' : s === 'in_bearbeitung' ? 'Aktiv' : s === 'erledigt' ? 'Erledigt' : 'Alle'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Priorität</p>
-                                <div className="flex gap-2 flex-wrap">
-                                    {[['alle', '', 'Alle'], ['dringend', '🔴', 'Dringend'], ['hoch', '🟠', 'Hoch'], ['mittel', '🔵', 'Mittel'], ['niedrig', '⚪', 'Niedrig']].map(([p, icon, label]) => (
-                                        <button key={p}
-                                            onClick={() => setPriorityFilter(p)}
-                                            className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
-                                                priorityFilter === p ? 'bg-amber-500 text-primary-foreground border-amber-500' : 'border-border text-muted-foreground'
-                                            )}>
-                                            {icon} {label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                    {/* Erweiterte Filter */}
+                    {showFilters && (
+                        <div className="rounded-xl border border-border bg-card p-3 space-y-3 animate-fadeIn">
                             {allCategories.length > 0 && (
                                 <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Kategorie</p>
-                                    <div className="flex gap-2 flex-wrap">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Kategorie</p>
+                                    <div className="flex gap-1.5 flex-wrap">
                                         {['alle', ...allCategories].map(cat => (
                                             <button key={cat}
                                                 onClick={() => setCategoryFilter(cat)}
-                                                className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
-                                                    categoryFilter === cat ? 'bg-blue-500 text-white border-blue-500' : 'border-border text-muted-foreground'
+                                                className={cn(
+                                                    'px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                                                    categoryFilter === cat
+                                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                                        : 'border-border text-muted-foreground hover:text-foreground'
                                                 )}>
                                                 {cat === 'alle' ? 'Alle' : cat}
                                             </button>
@@ -433,61 +488,109 @@ export default function Todos() {
                             )}
                             {allAssignees.length > 0 && (
                                 <div>
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase mb-2">Person</p>
-                                    <div className="flex gap-2 flex-wrap">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Person</p>
+                                    <div className="flex gap-1.5 flex-wrap">
+                                        <button onClick={() => setPersonFilter('alle')}
+                                            className={cn('px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                                                personFilter === 'alle' ? 'bg-purple-500 border-purple-500 text-white' : 'border-border text-muted-foreground hover:text-foreground')}>
+                                            Alle
+                                        </button>
                                         {allAssignees.map(p => (
                                             <button key={p}
                                                 onClick={() => setPersonFilter(personFilter === p ? 'alle' : p)}
-                                                className={cn('px-3 py-2 rounded-lg text-sm font-medium border transition-all',
-                                                    personFilter === p ? 'bg-purple-500 text-white border-purple-500' : 'border-border text-muted-foreground'
+                                                className={cn(
+                                                    'px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                                                    personFilter === p
+                                                        ? 'bg-purple-500 border-purple-500 text-white'
+                                                        : 'border-border text-muted-foreground hover:text-foreground'
                                                 )}>
-                                                👤 {p.split(' ')[0]}
+                                                {p.split(' ')[0]}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             )}
                             {hasActiveFilters && (
-                                <button onClick={resetFilters} className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1 pt-1">
-                                    <X className="w-3.5 h-3.5" /> Alle Filter zurücksetzen
+                                <button onClick={resetFilters}
+                                    className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                                    <X className="w-3.5 h-3.5" />Alle Filter zurücksetzen
                                 </button>
                             )}
                         </div>
                     )}
                 </div>
 
+                {/* Auswahl-Modus: Alle auswählen */}
+                {selectMode && !showArchived && (
+                    <button onClick={selectAll}
+                        className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1.5">
+                        <CheckCheck className="w-3.5 h-3.5" />
+                        Alle auswählen ({filteredTodos.length})
+                    </button>
+                )}
+
+                {/* ── Liste ──────────────────────────────────────────────── */}
                 {isLoading ? (
-                    <LoadingState text="Lade Aufgaben…" />
+                    <div className="space-y-2">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
+                        ))}
+                    </div>
                 ) : filteredTodos.length === 0 ? (
-                    <EmptyState text="Keine Aufgaben" />
-                ) : !showArchived ? (
-                     <div className="space-y-6">
-                        {/* Auswahlmodus: Alle auswählen */}
-                        {selectMode && (
-                            <button onClick={selectAll} className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1">
-                                <CheckCheck className="w-3.5 h-3.5" /> Alle auswählen ({filteredTodos.length})
+                    <div className="text-center py-14 text-muted-foreground">
+                        <CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p className="font-semibold text-foreground">Keine Aufgaben</p>
+                        <p className="text-sm mt-1">
+                            {hasActiveFilters ? 'Keine Einträge entsprechen den Filtern.' : 'Alles erledigt — gut gemacht!'}
+                        </p>
+                        {hasActiveFilters && (
+                            <button onClick={resetFilters} className="mt-3 text-xs text-amber-400 hover:text-amber-300 underline">
+                                Filter zurücksetzen
                             </button>
                         )}
+                    </div>
+                ) : !showArchived ? (
+                    /* Aktive Todos — gruppiert nach Status */
+                    <div className="space-y-6">
                         {['offen', 'in_bearbeitung', 'erledigt'].map(status => {
-                            const statusTodos = filteredTodos.filter(t => t.status === status);
+                            const statusTodos = statusFilter === 'alle'
+                                ? filteredTodos.filter(t => t.status === status)
+                                : filteredTodos;
+                            if (statusFilter !== 'alle' && status !== statusFilter) return null;
                             if (statusTodos.length === 0) return null;
-                            const statusLabels = {
-                                'offen': '📋 Offen',
-                                'in_bearbeitung': '⚡ In Bearbeitung',
-                                'erledigt': '✅ Erledigt'
-                            };
+
+                            const sectionLabel = {
+                                offen: 'Offen',
+                                in_bearbeitung: 'In Bearbeitung',
+                                erledigt: 'Erledigt',
+                            }[status];
+
+                            const sectionDot = {
+                                offen: 'bg-slate-400',
+                                in_bearbeitung: 'bg-blue-400',
+                                erledigt: 'bg-green-400',
+                            }[status];
+
                             return (
                                 <div key={status}>
-                                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">
-                                        {statusLabels[status]} ({statusTodos.length})
-                                    </h3>
+                                    {statusFilter === 'alle' && (
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <span className={cn('w-2 h-2 rounded-full', sectionDot)} />
+                                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                                {sectionLabel} ({statusTodos.length})
+                                            </h3>
+                                        </div>
+                                    )}
                                     <div className="space-y-2">
                                         {statusTodos.map((todo, idx) => (
-                                            <div key={todo.id} className="flex items-center gap-2 animate-stagger" style={{ '--delay': `${idx * 35}ms` }}>
+                                            <div key={todo.id}
+                                                className="flex items-center gap-2 animate-stagger"
+                                                style={{ '--delay': `${idx * 30}ms` }}>
                                                 {selectMode && (
-                                                    <button onClick={() => toggleSelect(todo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center text-amber-400">
+                                                    <button onClick={() => toggleSelect(todo.id)}
+                                                        className="shrink-0 w-6 h-6 flex items-center justify-center">
                                                         {selectedIds.has(todo.id)
-                                                            ? <CheckSquare className="w-5 h-5" />
+                                                            ? <CheckSquare className="w-5 h-5 text-amber-400" />
                                                             : <Square className="w-5 h-5 text-muted-foreground" />}
                                                     </button>
                                                 )}
@@ -497,12 +600,12 @@ export default function Todos() {
                                                         employees={employees}
                                                         onStatusChange={selectMode ? null : handleStatusChange}
                                                         onEdit={selectMode ? null : handleEdit}
-                                                        onDelete={selectMode ? null : handleDelete}
-                                                        onArchive={selectMode ? null : handleArchive}
+                                                        onDelete={selectMode ? null : (id) => setDeleteConfirm(id)}
+                                                        onArchive={selectMode ? null : (id) => setArchiveConfirm(id)}
                                                         onQuickUpdate={selectMode ? null : handleQuickUpdate}
                                                         showArchiveButton={!selectMode && todo.status === 'erledigt'}
                                                         sortBy={sortBy}
-                                                        allTodos={filteredTodos.filter(t => t.status === status)}
+                                                        allTodos={statusTodos}
                                                         idx={idx}
                                                     />
                                                 </div>
@@ -514,13 +617,15 @@ export default function Todos() {
                         })}
                     </div>
                 ) : (
+                    /* Archiv */
                     <div className="space-y-2">
                         {filteredTodos.map((todo, idx) => (
-                            <div key={todo.id} className="flex items-center gap-2 animate-stagger" style={{ '--delay': `${idx * 35}ms` }}>
+                            <div key={todo.id} className="flex items-center gap-2 animate-stagger" style={{ '--delay': `${idx * 30}ms` }}>
                                 {selectMode && (
-                                    <button onClick={() => toggleSelect(todo.id)} className="shrink-0 w-6 h-6 flex items-center justify-center text-amber-400">
+                                    <button onClick={() => toggleSelect(todo.id)}
+                                        className="shrink-0 w-6 h-6 flex items-center justify-center">
                                         {selectedIds.has(todo.id)
-                                            ? <CheckSquare className="w-5 h-5" />
+                                            ? <CheckSquare className="w-5 h-5 text-amber-400" />
                                             : <Square className="w-5 h-5 text-muted-foreground" />}
                                     </button>
                                 )}
@@ -528,11 +633,11 @@ export default function Todos() {
                                     <TodoCard
                                         todo={todo}
                                         employees={employees}
-                                        onStatusChange={selectMode ? null : handleStatusChange}
+                                        onStatusChange={null}
                                         onEdit={selectMode ? null : handleEdit}
-                                        onDelete={selectMode ? null : handleDelete}
-                                        onArchive={selectMode ? null : handleArchive}
-                                        onQuickUpdate={selectMode ? null : handleQuickUpdate}
+                                        onDelete={selectMode ? null : (id) => setDeleteConfirm(id)}
+                                        onArchive={null}
+                                        onQuickUpdate={null}
                                         showArchiveButton={false}
                                     />
                                 </div>
@@ -541,58 +646,80 @@ export default function Todos() {
                     </div>
                 )}
 
-                {filteredTodos.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground">
-                        <CheckSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p className="text-lg font-medium">Keine Aufgaben</p>
-                        <p className="text-sm mt-1">
-                            {hasActiveFilters ? 'Keine Aufgaben entsprechen den Filtern' : 'Alle Aufgaben erledigt!'}
-                        </p>
+                {/* ── Bulk-Aktionsleiste ──────────────────────────────────── */}
+                {selectMode && selectedIds.size > 0 && (
+                    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 px-4 w-full max-w-sm">
+                        {bulkCategoryOpen && (
+                            <div className="bg-card border border-border rounded-xl shadow-2xl p-2 flex flex-wrap gap-1.5 w-full">
+                                {allAvailableCategories.map(cat => (
+                                    <button key={cat}
+                                        onClick={() => handleBulkMoveCategory(cat)}
+                                        className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary hover:bg-accent text-foreground transition-all">
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 bg-card border border-border rounded-2xl shadow-2xl px-4 py-3 w-full">
+                            <span className="text-sm font-semibold text-foreground mr-1">{selectedIds.size}×</span>
+                            <Button size="sm" variant="outline" onClick={handleBulkDone}
+                                className="gap-1 h-8 text-xs text-green-400 border-green-500/30 hover:bg-green-500/10">
+                                <CheckSquare className="w-3.5 h-3.5" />Erledigt
+                            </Button>
+                            <Button size="sm" variant="outline"
+                                onClick={() => setBulkCategoryOpen(o => !o)}
+                                className={cn('gap-1 h-8 text-xs', bulkCategoryOpen ? 'bg-blue-500/20 text-blue-400 border-blue-500/40' : 'text-blue-400 border-blue-500/30 hover:bg-blue-500/10')}>
+                                <FolderInput className="w-3.5 h-3.5" />Kategorie
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={handleBulkArchive}
+                                className="gap-1 h-8 text-xs text-muted-foreground">
+                                <Archive className="w-3.5 h-3.5" />Archiv
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={handleBulkDelete}
+                                className="gap-1 h-8 text-xs text-red-400 border-red-500/30 hover:bg-red-500/10">
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <button onClick={clearSelection} className="ml-auto text-muted-foreground hover:text-foreground">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 )}
 
-                {/* Bulk-Aktionsleiste */}
-                {selectMode && selectedIds.size > 0 && (
-                   <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
-                       {/* Kategorie-Picker */}
-                       {bulkCategoryOpen && (
-                           <div className="bg-card border border-border rounded-xl shadow-2xl p-2 flex flex-wrap gap-1.5 max-w-xs">
-                               {allAvailableCategories.map(cat => (
-                                   <button
-                                       key={cat}
-                                       onClick={() => handleBulkMoveCategory(cat)}
-                                       className="px-3 py-1.5 rounded-lg text-xs font-medium bg-secondary hover:bg-accent text-foreground transition-all"
-                                   >
-                                       {cat}
-                                   </button>
-                               ))}
-                           </div>
-                       )}
-                       <div className="flex items-center gap-2 bg-card border border-border rounded-2xl shadow-2xl px-4 py-3">
-                           <span className="text-sm font-medium text-foreground mr-2">{selectedIds.size} ausgewählt</span>
-                           <Button size="sm" variant="outline" onClick={handleBulkDone}
-                               className="gap-1.5 h-9 text-green-400 border-green-500/30 hover:bg-green-500/10">
-                               <CheckSquare className="w-4 h-4" /> Erledigt
-                           </Button>
-                           <Button size="sm" variant="outline"
-                               onClick={() => setBulkCategoryOpen(o => !o)}
-                               className={cn("gap-1.5 h-9", bulkCategoryOpen ? "bg-blue-500/20 text-blue-400 border-blue-500/40" : "text-blue-400 border-blue-500/30 hover:bg-blue-500/10")}>
-                               <FolderInput className="w-4 h-4" /> Kategorie
-                           </Button>
-                           <Button size="sm" variant="outline" onClick={handleBulkArchive}
-                               className="gap-1.5 h-9 text-muted-foreground">
-                               <Archive className="w-4 h-4" /> Archivieren
-                           </Button>
-                           <Button size="sm" variant="outline" onClick={handleBulkDelete}
-                               className="gap-1.5 h-9 text-red-400 border-red-500/30 hover:bg-red-500/10">
-                               <Trash2 className="w-4 h-4" /> Löschen
-                           </Button>
-                           <button onClick={clearSelection} className="ml-1 text-muted-foreground hover:text-foreground">
-                               <X className="w-4 h-4" />
-                           </button>
-                       </div>
-                   </div>
-                )}
+                {/* ── Dialogs ────────────────────────────────────────────── */}
+                <AlertDialog open={!!archiveConfirm} onOpenChange={o => !o && setArchiveConfirm(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Aufgabe archivieren?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Die Aufgabe wird ins Archiv verschoben und kann dort wiederhergestellt werden.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleArchiveConfirmed}>Archivieren</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog open={!!deleteConfirm} onOpenChange={o => !o && setDeleteConfirm(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Aufgabe löschen?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Diese Aktion kann nicht rückgängig gemacht werden.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleDeleteConfirmed}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Löschen
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
 
                 <TodoCategoryManager
                     open={categoryManagerOpen}

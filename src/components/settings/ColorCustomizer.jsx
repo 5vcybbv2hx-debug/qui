@@ -10,6 +10,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // ─── Theme Presets ────────────────────────────────────────────────────────────
 export const THEME_PRESETS = [
     {
+        key: 'teal',
+        name: 'Teal Modern',
+        emoji: '🌊',
+        desc: 'Modern & frisch',
+        from: '#22d3ee', via: '#06b6d4', fg: '#0a1a1f',
+        vars: {
+            '--primary':             '187 92% 50%',
+            '--ring':                '187 92% 50%',
+            '--background':          '200 15% 6%',
+            '--card':                '200 12% 9%',
+            '--popover':             '200 12% 9%',
+            '--secondary':           '190 10% 13%',
+            '--muted':               '190 10% 13%',
+            '--accent':              '190 10% 16%',
+            '--border':              '190 8% 16%',
+            '--input':               '190 8% 14%',
+        }
+    },
+    {
         key: 'amber',
         name: 'Warm Amber',
         emoji: '🔥',
@@ -167,20 +186,13 @@ export const THEME_PRESETS = [
 export function applyThemePreset(preset) {
     const root = document.documentElement;
 
-    // Core CSS vars used by Tailwind tokens
-    root.style.setProperty('--primary', preset.primary);
-    root.style.setProperty('--ring', preset.primary);
-    root.style.setProperty('--primary-foreground', '210 40% 98%');
-
-    // Background tokens
-    root.style.setProperty('--background', preset.bg);
-    root.style.setProperty('--card', preset.card);
-    root.style.setProperty('--popover', preset.bg);
-    root.style.setProperty('--secondary', preset.card);
-    root.style.setProperty('--muted', preset.card);
-    root.style.setProperty('--accent', preset.card);
-    root.style.setProperty('--border', preset.card);
-    root.style.setProperty('--input', preset.card);
+    // Apply all vars from the preset.vars map
+    if (preset.vars) {
+        Object.entries(preset.vars).forEach(([key, val]) => {
+            root.style.setProperty(key, val);
+        });
+    }
+    root.style.setProperty('--primary-foreground', '190 30% 8%');
 
     // Brand gradient vars (used by Layout and all inline style brand refs)
     root.style.setProperty('--brand-from', preset.from);
@@ -337,45 +349,46 @@ export async function loadSavedColors() {
         const companies = await base44.entities.CompanyInfo.list();
         const raw = companies[0];
         const info = raw?.data ? raw.data : raw;
-        if (info?.theme_preset_key) {
-            const preset = THEME_PRESETS.find(p => p.key === info.theme_preset_key);
-            if (preset) applyThemePreset(preset);
-        }
-    } catch (_) {}
+        const key = info?.theme_preset_key || 'teal';
+        const preset = THEME_PRESETS.find(p => p.key === key) || THEME_PRESETS[0];
+        applyThemePreset(preset);
+    } catch (_) {
+        // fallback: apply teal
+        const teal = THEME_PRESETS.find(p => p.key === 'teal');
+        if (teal) applyThemePreset(teal);
+    }
 }
 
 // ─── Mini preview component ───────────────────────────────────────────────────
 function ThemePreview({ preset }) {
+    const bg = preset.vars?.['--background'] || '200 15% 6%';
+    const card = preset.vars?.['--card'] || '200 12% 9%';
     return (
-        <div className="rounded-xl overflow-hidden border border-border/50" style={{ background: `hsl(${preset.bg})` }}>
-            {/* Simulated sidebar strip */}
-            <div className="flex gap-2 p-3 items-center" style={{ background: `hsl(${preset.card})` }}>
+        <div className="rounded-xl overflow-hidden border border-border/50" style={{ background: `hsl(${bg})` }}>
+            <div className="flex gap-2 p-3 items-center" style={{ background: `hsl(${card})` }}>
                 <div className="w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
                     style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.via})`, color: preset.fg }}>
                     B
                 </div>
                 <div className="flex gap-1.5">
-                    {/* Active nav item */}
                     <div className="px-2.5 py-1 rounded-lg text-[10px] font-bold"
                         style={{ background: `linear-gradient(to right, ${preset.from}, ${preset.via})`, color: preset.fg }}>
                         Dashboard
                     </div>
-                    {/* Inactive */}
                     <div className="px-2.5 py-1 rounded-lg text-[10px] text-white/50"
-                        style={{ background: `hsl(${preset.card})` }}>
+                        style={{ background: `hsl(${card})` }}>
                         Kalender
                     </div>
                 </div>
             </div>
-            {/* Content area */}
-            <div className="p-3 space-y-2">
+            <div className="p-3 space-y-2" style={{ background: `hsl(${bg})` }}>
                 <div className="flex gap-2">
                     <button className="px-3 py-1.5 rounded-lg text-[10px] font-semibold"
                         style={{ background: `linear-gradient(135deg, ${preset.from}, ${preset.via})`, color: preset.fg }}>
                         Speichern
                     </button>
                     <button className="px-3 py-1.5 rounded-lg text-[10px] font-semibold border border-white/20 text-white/70"
-                        style={{ background: `hsl(${preset.card})` }}>
+                        style={{ background: `hsl(${card})` }}>
                         Abbrechen
                     </button>
                 </div>
@@ -385,11 +398,11 @@ function ThemePreview({ preset }) {
                         Badge
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[9px] text-white/60 border border-white/15"
-                        style={{ background: `hsl(${preset.card})` }}>
+                        style={{ background: `hsl(${card})` }}>
                         Inaktiv
                     </span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `hsl(${preset.card})` }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: `hsl(${card})` }}>
                     <div className="h-full w-2/3 rounded-full"
                         style={{ background: `linear-gradient(to right, ${preset.from}, ${preset.via})` }} />
                 </div>
@@ -401,8 +414,8 @@ function ThemePreview({ preset }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function ColorCustomizer() {
     const queryClient = useQueryClient();
-    const [selected, setSelected] = useState('amber');
-    const [previewKey, setPreviewKey] = useState('amber');
+    const [selected, setSelected] = useState('teal');
+    const [previewKey, setPreviewKey] = useState('teal');
 
     const { data: companyList } = useQuery({
         queryKey: ['company-info'],
@@ -441,7 +454,7 @@ export default function ColorCustomizer() {
     };
 
     const handleReset = () => {
-        const def = THEME_PRESETS[0];
+        const def = THEME_PRESETS.find(p => p.key === 'teal') || THEME_PRESETS[0];
         setSelected(def.key);
         setPreviewKey(def.key);
         applyThemePreset(def);

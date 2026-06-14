@@ -252,8 +252,9 @@ export default function Layout({ children, currentPageName }) {
                     <div className="flex flex-col flex-grow bg-card border-r border-border/50 pt-8 overflow-y-auto backdrop-blur-xl">
                         {/* Logo */}
                         <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-8 group">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-all">
-                                <span className="text-slate-900 font-bold text-xl">B</span>
+                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all"
+                                style={{ background: 'linear-gradient(135deg, var(--brand-from), var(--brand-via))', boxShadow: '0 4px 20px color-mix(in srgb, var(--brand-from) 30%, transparent)' }}>
+                                <span className="font-bold text-xl" style={{ color: 'var(--brand-fg)' }}>B</span>
                             </div>
                             <span className="text-xl font-bold text-foreground tracking-tight">BarManager</span>
                         </Link>

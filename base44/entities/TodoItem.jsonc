@@ -33,9 +33,23 @@
       "type": "string",
       "format": "date"
     },
+    "planned_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Eingeplant für Datum"
+    },
+    "planned_time": {
+      "type": "string",
+      "description": "Eingeplant für Uhrzeit (HH:MM)"
+    },
+    "planned_duration": {
+      "type": "number",
+      "description": "Geplante Dauer in Minuten",
+      "default": 60
+    },
     "assigned_to": {
       "type": "string",
-      "description": "Zugewiesen an (erster Name, R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
+      "description": "Zugewiesen an (Rückwärtskompatibilität)"
     },
     "assigned_to_names": {
       "type": "array",
@@ -52,57 +66,46 @@
         "Event",
         "Bar",
         "Lager",
-        "K\u00fcche",
+        "Küche",
         "Sonstiges"
       ],
       "default": "Sonstiges"
     },
     "linked_area": {
-      "type": "string",
-      "description": "Verkn\u00fcpfter Bereich (z.B. Bar, Lager, K\u00fcche)"
+      "type": "string"
     },
     "linked_event_id": {
-      "type": "string",
-      "description": "Verkn\u00fcpfte Event-ID"
+      "type": "string"
     },
     "linked_employee_id": {
-      "type": "string",
-      "description": "Verkn\u00fcpfter Mitarbeiter (ID)"
+      "type": "string"
     },
     "linked_article_id": {
-      "type": "string",
-      "description": "Verkn\u00fcpfter Artikel (ID)"
+      "type": "string"
     },
     "is_archived": {
       "type": "boolean",
-      "default": false,
-      "description": "Archiviert"
+      "default": false
     },
     "completed_by": {
-      "type": "string",
-      "description": "Erledigt von"
+      "type": "string"
     },
     "completed_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Erledigt am"
+      "format": "date-time"
     },
     "created_by": {
-      "type": "string",
-      "description": "Ersteller (Name oder Email)"
+      "type": "string"
     },
     "created_at_time": {
       "type": "string",
-      "format": "time",
-      "description": "Erstellungsuhrzeit (HH:MM)"
+      "format": "time"
     },
     "sort_order": {
-      "type": "number",
-      "description": "Manuelle Reihenfolge"
+      "type": "number"
     },
     "subtasks": {
       "type": "array",
-      "description": "Unteraufgaben",
       "items": {
         "type": "object",
         "properties": {
@@ -120,7 +123,6 @@
     },
     "attachments": {
       "type": "array",
-      "description": "Anh\u00e4nge (Fotos, Skizzen)",
       "items": {
         "type": "object",
         "properties": {

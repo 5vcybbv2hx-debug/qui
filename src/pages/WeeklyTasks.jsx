@@ -1,405 +1,696 @@
-import React, { useState, useMemo } from 'react';
+/**
+ * WeeklyTasks — Manager Wochenplaner
+ * Zeitachse immer sichtbar (07:00–23:00), 7 Tage als Spalten.
+ * Klick auf Slot → Todo einplanen ODER neuen Termin anlegen.
+ * Backlog-Panel: alle offenen, noch nicht eingeplanten Todos.
+ */
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import { format, getDay } from 'date-fns';
+import {
+    format, addDays, startOfWeek, isSameDay, parseISO, isToday
+} from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Plus, Check, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import {
+    ChevronLeft, ChevronRight, Plus, X, Clock, CalendarDays,
+    CheckSquare, Trash2, GripVertical, Circle, Check
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import { getUserDisplayName } from '@/lib/userDisplayName';
-import { PageShell, PageHeader, ProgressBar } from '@/components/ui/design-system';
+import {
+    Popover, PopoverContent, PopoverTrigger
+} from '@/components/ui/popover';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
-// Weekday config: js getDay() index → label + short pattern prefix
-const WEEKDAYS = [
-    { label: 'Sonntag',    short: 'so', jsDay: 0 },
-    { label: 'Montag',     short: 'mo', jsDay: 1 },
-    { label: 'Dienstag',   short: 'di', jsDay: 2 },
-    { label: 'Mittwoch',   short: 'mi', jsDay: 3 },
-    { label: 'Donnerstag', short: 'do', jsDay: 4 },
-    { label: 'Freitag',    short: 'fr', jsDay: 5 },
-    { label: 'Samstag',    short: 'sa', jsDay: 6 },
-];
+// ── Konstanten ────────────────────────────────────────────────────────────────
+const HOUR_START = 7;
+const HOUR_END   = 23;
+const HOURS      = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
+const SLOT_H     = 56; // px pro Stunde
+const MIN_DURATION = 30; // Minuten
 
-// Detect weekday from biweekly_pattern (mi_1, do_2, mo, etc.) or default to Mittwoch for legacy null
-function getTaskDay(task) {
-    if (!task.biweekly_pattern) return 3; // legacy: Mittwoch
-    const prefix = task.biweekly_pattern.split('_')[0];
-    return WEEKDAYS.find(d => d.short === prefix)?.jsDay ?? 3;
+const PRIORITY_STRIPE = {
+    dringend: 'bg-red-500',
+    hoch:     'bg-orange-500',
+    mittel:   'bg-blue-500',
+    niedrig:  'bg-slate-400',
+};
+
+const APPOINTMENT_COLORS = {
+    amber:  { bg: 'bg-amber-500/20',  border: 'border-amber-500/50',  text: 'text-amber-300',  dot: 'bg-amber-500' },
+    blue:   { bg: 'bg-blue-500/20',   border: 'border-blue-500/50',   text: 'text-blue-300',   dot: 'bg-blue-500'  },
+    green:  { bg: 'bg-green-500/20',  border: 'border-green-500/50',  text: 'text-green-300',  dot: 'bg-green-500' },
+    purple: { bg: 'bg-purple-500/20', border: 'border-purple-500/50', text: 'text-purple-300', dot: 'bg-purple-500'},
+    red:    { bg: 'bg-red-500/20',    border: 'border-red-500/50',    text: 'text-red-300',    dot: 'bg-red-500'   },
+};
+
+function timeToMinutes(t) {
+    if (!t) return 0;
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+}
+function minutesToTime(m) {
+    const h = Math.floor(m / 60);
+    const min = m % 60;
+    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+function minutesToPx(minutes) {
+    return ((minutes - HOUR_START * 60) / 60) * SLOT_H;
+}
+function durationToPx(minutes) {
+    return (minutes / 60) * SLOT_H;
 }
 
-function getWeekNumber(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7) % 2 === 1 ? 1 : 2;
-}
+// ── Haupt-Komponente ──────────────────────────────────────────────────────────
+export default function WeeklyTasks() {
+    const permissions  = usePermissions();
+    const queryClient  = useQueryClient();
 
-function TaskRow({ task, onComplete, onReset, todaysAushilfeName }) {
-    return (
-        <div className={cn(
-            "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
-            task.is_completed ? "opacity-50" : "bg-card border border-border"
-        )}>
-            <button
-                onClick={() => onComplete(task)}
-                className={cn(
-                    "w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
-                    task.is_completed
-                        ? "border-emerald-500 bg-emerald-500"
-                        : "border-border hover:border-emerald-500 active:scale-95"
-                )}
-            >
-                {task.is_completed && <Check className="w-4 h-4 text-white" />}
-            </button>
-            <div className="flex-1 min-w-0">
-                <p className={cn(
-                    "text-sm font-medium",
-                    task.is_completed ? "line-through text-muted-foreground" : "text-foreground"
-                )}>
-                    {task.title}
-                </p>
-                {task.is_completed && task.completed_by && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                        ✓ {task.completed_by}
-                        {task.completed_at && ` · ${format(new Date(task.completed_at), 'HH:mm')}`}
-                    </p>
-                )}
-                {!task.is_completed && todaysAushilfeName && (
-                    <p className="text-xs text-muted-foreground mt-0.5">→ {todaysAushilfeName}</p>
-                )}
-            </div>
-            {task.is_completed && (
-                <button
-                    onClick={() => onReset(task)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent"
-                >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-            )}
-        </div>
+    // Nur Manager/Admin darf diese Seite sehen
+    if (!permissions.isManager && !permissions.isAdmin) {
+        return <PermissionDenied message="Diese Ansicht ist nur für Manager verfügbar." />;
+    }
+
+    // ── Woche ─────────────────────────────────────────────────────────────────
+    const [weekStart, setWeekStart] = useState(() =>
+        startOfWeek(new Date(), { weekStartsOn: 1 })
     );
-}
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const weekLabel = `${format(weekStart, 'd. MMM')} – ${format(addDays(weekStart, 6), 'd. MMM yyyy', { locale: de })}`;
 
-function DaySection({ label, tasks, isToday, onComplete, onReset, todaysAushilfeName }) {
-    const [doneOpen, setDoneOpen] = useState(false);
-    const open = tasks.filter(t => !t.is_completed);
-    const done = tasks.filter(t => t.is_completed);
+    // ── UI State ──────────────────────────────────────────────────────────────
+    const [slotPopover,    setSlotPopover]    = useState(null); // { date, hour }
+    const [editItem,       setEditItem]       = useState(null); // { type: 'todo'|'appointment', item }
+    const [backlogOpen,    setBacklogOpen]    = useState(true);
+    const [newTitle,       setNewTitle]       = useState('');
+    const [newTime,        setNewTime]        = useState('');
+    const [newDuration,    setNewDuration]    = useState(60);
+    const [newColor,       setNewColor]       = useState('blue');
+    const [newMode,        setNewMode]        = useState('appointment'); // 'appointment' | 'todo-pick'
+    const gridRef = useRef(null);
 
+    // ── Queries ───────────────────────────────────────────────────────────────
+    const { data: todos = [] } = useQuery({
+        queryKey: ['todos'],
+        queryFn: () => base44.entities.TodoItem.filter({ is_archived: false }, '-created_date', 300),
+        staleTime: 60_000,
+    });
+
+    const weekStr = format(weekStart, 'yyyy-MM-dd');
+    const weekEndStr = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+
+    const { data: appointments = [] } = useQuery({
+        queryKey: ['manager-appointments', weekStr],
+        queryFn: () => base44.entities.ManagerAppointment.filter({}),
+        staleTime: 30_000,
+    });
+
+    // ── Mutations ─────────────────────────────────────────────────────────────
+    const updateTodo = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.TodoItem.update(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
+    });
+
+    const createAppointment = useMutation({
+        mutationFn: (data) => base44.entities.ManagerAppointment.create(data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['manager-appointments'] }),
+    });
+
+    const updateAppointment = useMutation({
+        mutationFn: ({ id, data }) => base44.entities.ManagerAppointment.update(id, data),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['manager-appointments'] }),
+    });
+
+    const deleteAppointment = useMutation({
+        mutationFn: (id) => base44.entities.ManagerAppointment.delete(id),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['manager-appointments'] }),
+    });
+
+    const deleteTodoPlanning = (todo) => {
+        updateTodo.mutate({ id: todo.id, data: { planned_date: null, planned_time: null } });
+    };
+
+    // ── Derived ───────────────────────────────────────────────────────────────
+    // Todos die in dieser Woche eingeplant sind
+    const plannedTodos = useMemo(() =>
+        todos.filter(t =>
+            t.planned_date &&
+            t.planned_date >= weekStr &&
+            t.planned_date <= weekEndStr
+        ), [todos, weekStr, weekEndStr]
+    );
+
+    // Backlog: offen, nicht erledigt, nicht diese Woche eingeplant
+    const backlogTodos = useMemo(() =>
+        todos.filter(t =>
+            t.status !== 'erledigt' &&
+            !t.is_archived &&
+            (!t.planned_date || t.planned_date < weekStr || t.planned_date > weekEndStr)
+        ).sort((a, b) => {
+            const po = { dringend: 0, hoch: 1, mittel: 2, niedrig: 3 };
+            return (po[a.priority] ?? 2) - (po[b.priority] ?? 2);
+        }), [todos, weekStr, weekEndStr]
+    );
+
+    // Woche-Appointments
+    const weekAppointments = useMemo(() =>
+        appointments.filter(a =>
+            a.date >= weekStr && a.date <= weekEndStr
+        ), [appointments, weekStr, weekEndStr]
+    );
+
+    // ── Slot-Klick Handler ────────────────────────────────────────────────────
+    const handleSlotClick = (date, hour) => {
+        setNewTitle('');
+        setNewTime(minutesToTime(hour * 60));
+        setNewDuration(60);
+        setNewColor('blue');
+        setNewMode('appointment');
+        setSlotPopover({ date, hour });
+    };
+
+    const handleCreateAppointment = () => {
+        if (!newTitle.trim() || !slotPopover) return;
+        const startMin = timeToMinutes(newTime);
+        const endMin   = startMin + newDuration;
+        createAppointment.mutate({
+            title:      newTitle.trim(),
+            date:       format(slotPopover.date, 'yyyy-MM-dd'),
+            start_time: newTime,
+            end_time:   minutesToTime(endMin),
+            duration:   newDuration,
+            color:      newColor,
+        });
+        setSlotPopover(null);
+    };
+
+    const handlePlanTodo = (todo, date, time) => {
+        updateTodo.mutate({
+            id: todo.id,
+            data: {
+                planned_date: format(date, 'yyyy-MM-dd'),
+                planned_time: time,
+                planned_duration: newDuration,
+            },
+        });
+        setSlotPopover(null);
+    };
+
+    // Scroll zu aktueller Zeit
+    useEffect(() => {
+        if (!gridRef.current) return;
+        const now = new Date();
+        const px = minutesToPx(now.getHours() * 60 + now.getMinutes());
+        gridRef.current.scrollTop = Math.max(0, px - 120);
+    }, []);
+
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className={cn(
-            "rounded-2xl border overflow-hidden",
-            isToday
-                ? "border-amber-500 shadow-md shadow-amber-500/10"
-                : "border-border"
-        )}>
-            {/* Day header */}
-            <div className={cn(
-                "flex items-center justify-between px-4 py-3",
-                isToday ? "bg-amber-500/10" : "bg-card"
-            )}>
-                <div className="flex items-center gap-2">
-                    {isToday && (
-                        <span className="text-xs font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                            Heute
-                        </span>
-                    )}
-                    <span className={cn("font-semibold", isToday ? "text-amber-500" : "text-foreground")}>
-                        {label}
-                    </span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                    {done.length}/{tasks.length} erledigt
-                </span>
-            </div>
+        <div className="min-h-screen bg-background flex flex-col">
 
-            {/* Progress bar */}
-            <div className="h-1 bg-border">
-                <div
-                    className={cn("h-full transition-all", isToday ? "bg-amber-500" : "bg-emerald-500")}
-                    style={{ width: tasks.length ? `${(done.length / tasks.length) * 100}%` : '0%' }}
-                />
-            </div>
-
-            {/* Open tasks */}
-            <div className="px-3 py-2 space-y-2 bg-background">
-                {open.length === 0 && done.length > 0 && (
-                    <p className="text-center text-sm text-emerald-500 py-3 font-medium">✓ Alle Aufgaben erledigt!</p>
-                )}
-                {open.map((task, tIdx) => (
-                    <div key={task.id} className="animate-stagger" style={{ '--delay': `${tIdx * 35}ms` }}>
-                        <TaskRow task={task} onComplete={onComplete} onReset={onReset} todaysAushilfeName={isToday ? todaysAushilfeName : null} />
+            {/* ── Top-Bar ─────────────────────────────────────────────────── */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-30">
+                <div className="flex items-center gap-3">
+                    <CalendarDays className="w-5 h-5 text-amber-500" />
+                    <div>
+                        <h1 className="text-base font-bold text-foreground leading-none">Wochenplaner</h1>
+                        <p className="text-xs text-muted-foreground mt-0.5">{weekLabel}</p>
                     </div>
-                ))}
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline"
+                        onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+                        className="h-8 px-2.5 text-xs">
+                        Heute
+                    </Button>
+                    <div className="flex border border-border rounded-lg overflow-hidden">
+                        <button onClick={() => setWeekStart(d => addDays(d, -7))}
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent">
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setWeekStart(d => addDays(d, 7))}
+                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border-l border-border">
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                    <Button size="sm" variant="outline"
+                        onClick={() => setBacklogOpen(o => !o)}
+                        className={cn('h-8 px-2.5 text-xs gap-1.5',
+                            backlogOpen ? 'bg-amber-500/10 border-amber-500/40 text-amber-400' : '')}>
+                        <CheckSquare className="w-3.5 h-3.5" />
+                        Backlog
+                        {backlogTodos.length > 0 && (
+                            <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                {backlogTodos.length}
+                            </span>
+                        )}
+                    </Button>
+                </div>
             </div>
 
-            {/* Done tasks (collapsible) */}
-            {done.length > 0 && (
-                <div className="border-t border-border">
-                    <button
-                        onClick={() => setDoneOpen(v => !v)}
-                        className="w-full flex items-center justify-between px-4 py-2 text-xs text-muted-foreground hover:bg-accent/50 transition-colors"
-                    >
-                        <span>{done.length} erledigt</span>
-                        {doneOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
-                    {doneOpen && (
-                        <div className="px-3 pb-2 space-y-1.5 bg-background">
-                            {done.map(task => (
-                                <TaskRow key={task.id} task={task} onComplete={onComplete} onReset={onReset} />
+            <div className="flex flex-1 overflow-hidden">
+
+                {/* ── Kalender-Hauptbereich ─────────────────────────────── */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+
+                    {/* Tages-Header (sticky) */}
+                    <div className="flex border-b border-border bg-card sticky top-[57px] z-20">
+                        {/* Zeitachsen-Label-Spalte */}
+                        <div className="w-14 shrink-0" />
+                        {weekDays.map((day, i) => {
+                            const isNow = isToday(day);
+                            return (
+                                <div key={i}
+                                    className={cn(
+                                        'flex-1 text-center py-2 border-l border-border',
+                                        isNow && 'bg-amber-500/8'
+                                    )}>
+                                    <p className={cn('text-[11px] font-semibold uppercase tracking-wider',
+                                        isNow ? 'text-amber-500' : 'text-muted-foreground')}>
+                                        {format(day, 'EEE', { locale: de })}
+                                    </p>
+                                    <p className={cn('text-lg font-bold leading-tight',
+                                        isNow ? 'text-amber-500' : 'text-foreground')}>
+                                        {format(day, 'd')}
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Zeitachse + Grid (scrollbar) */}
+                    <div ref={gridRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+                        <div className="flex" style={{ height: `${HOURS.length * SLOT_H}px`, minHeight: '100%' }}>
+
+                            {/* Zeitachse links */}
+                            <div className="w-14 shrink-0 relative">
+                                {HOURS.map(h => (
+                                    <div key={h}
+                                        className="absolute left-0 right-0 flex items-start justify-end pr-2"
+                                        style={{ top: `${(h - HOUR_START) * SLOT_H}px`, height: `${SLOT_H}px` }}>
+                                        <span className="text-[10px] text-muted-foreground font-mono -mt-2">
+                                            {String(h).padStart(2, '0')}:00
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* 7 Tages-Spalten */}
+                            {weekDays.map((day, di) => {
+                                const dateStr = format(day, 'yyyy-MM-dd');
+                                const isNow = isToday(day);
+                                const now = new Date();
+                                const nowPx = isNow
+                                    ? minutesToPx(now.getHours() * 60 + now.getMinutes())
+                                    : null;
+
+                                // Einträge für diesen Tag
+                                const dayTodos = plannedTodos.filter(t => t.planned_date === dateStr);
+                                const dayAppts = weekAppointments.filter(a => a.date === dateStr);
+
+                                return (
+                                    <div key={di}
+                                        className={cn(
+                                            'flex-1 border-l border-border relative',
+                                            isNow && 'bg-amber-500/4'
+                                        )}>
+
+                                        {/* Stunden-Linien + klickbare Slots */}
+                                        {HOURS.map(h => (
+                                            <div key={h}
+                                                className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group"
+                                                style={{ top: `${(h - HOUR_START) * SLOT_H}px`, height: `${SLOT_H}px` }}
+                                                onClick={() => handleSlotClick(day, h)}>
+                                                {/* Halbe-Stunden-Linie */}
+                                                <div className="absolute left-0 right-0 border-t border-border/20"
+                                                    style={{ top: `${SLOT_H / 2}px` }} />
+                                                {/* Hover-Hint */}
+                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Plus className="w-4 h-4 text-muted-foreground/50" />
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* Jetzt-Linie */}
+                                        {nowPx !== null && (
+                                            <div className="absolute left-0 right-0 z-10 pointer-events-none"
+                                                style={{ top: `${nowPx}px` }}>
+                                                <div className="flex items-center">
+                                                    <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 -ml-1" />
+                                                    <div className="flex-1 border-t-2 border-red-500" />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* ── Eingeplante Todos ── */}
+                                        {dayTodos.map(todo => {
+                                            if (!todo.planned_time) return null;
+                                            const startMin = timeToMinutes(todo.planned_time);
+                                            if (startMin < HOUR_START * 60 || startMin >= HOUR_END * 60) return null;
+                                            const dur  = todo.planned_duration || 60;
+                                            const top  = minutesToPx(startMin);
+                                            const h    = Math.max(durationToPx(dur), 24);
+                                            const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+
+                                            return (
+                                                <div key={todo.id}
+                                                    className="absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-pointer hover:bg-blue-500/25 transition-colors flex"
+                                                    style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
+                                                    onClick={e => { e.stopPropagation(); setEditItem({ type: 'todo', item: todo }); }}>
+                                                    <div className={cn('w-1 shrink-0', pCfg)} />
+                                                    <div className="flex-1 px-1.5 py-1 min-w-0">
+                                                        <p className="text-[11px] font-semibold text-blue-200 truncate leading-tight">
+                                                            {todo.planned_time} {todo.title}
+                                                        </p>
+                                                        {h > 36 && todo.category && (
+                                                            <p className="text-[10px] text-blue-300/70 truncate">{todo.category}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {/* ── Termine ── */}
+                                        {dayAppts.map(appt => {
+                                            const startMin = timeToMinutes(appt.start_time);
+                                            if (startMin < HOUR_START * 60 || startMin >= HOUR_END * 60) return null;
+                                            const dur  = appt.duration || 60;
+                                            const top  = minutesToPx(startMin);
+                                            const h    = Math.max(durationToPx(dur), 24);
+                                            const col  = APPOINTMENT_COLORS[appt.color] || APPOINTMENT_COLORS.blue;
+
+                                            return (
+                                                <div key={appt.id}
+                                                    className={cn(
+                                                        'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-pointer transition-colors',
+                                                        col.bg, col.border,
+                                                        `hover:brightness-110`
+                                                    )}
+                                                    style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
+                                                    onClick={e => { e.stopPropagation(); setEditItem({ type: 'appointment', item: appt }); }}>
+                                                    <div className="flex-1 px-1.5 py-1 min-w-0">
+                                                        <p className={cn('text-[11px] font-semibold truncate leading-tight', col.text)}>
+                                                            {appt.start_time} {appt.title}
+                                                        </p>
+                                                        {h > 36 && appt.notes && (
+                                                            <p className={cn('text-[10px] truncate', col.text, 'opacity-70')}>
+                                                                {appt.notes}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── Backlog-Panel (rechts) ────────────────────────────── */}
+                {backlogOpen && (
+                    <div className="w-64 shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
+                        <div className="px-3 py-3 border-b border-border">
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                Backlog · {backlogTodos.length} offen
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                Klick auf Slot → Todo einplanen
+                            </p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+                            {backlogTodos.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Check className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                                    <p className="text-xs">Alles eingeplant!</p>
+                                </div>
+                            ) : backlogTodos.map(todo => {
+                                const stripe = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                                return (
+                                    <div key={todo.id}
+                                        className="flex gap-2 p-2 rounded-xl border border-border bg-background hover:bg-accent/30 transition-colors cursor-default group">
+                                        <div className={cn('w-1 rounded-full shrink-0', stripe)} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-semibold text-foreground truncate">{todo.title}</p>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                {todo.category && (
+                                                    <span className="text-[10px] text-muted-foreground">{todo.category}</span>
+                                                )}
+                                                {todo.due_date && (
+                                                    <span className="text-[10px] text-amber-400">{todo.due_date}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Slot-Popover: Neuer Eintrag ──────────────────────────────── */}
+            {slotPopover && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+                    onClick={() => setSlotPopover(null)}>
+                    <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-sm p-4 space-y-4"
+                        onClick={e => e.stopPropagation()}>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="font-semibold text-foreground text-sm">
+                                    {format(slotPopover.date, 'EEEE, d. MMMM', { locale: de })}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{newTime} Uhr</p>
+                            </div>
+                            <button onClick={() => setSlotPopover(null)}
+                                className="text-muted-foreground hover:text-foreground">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Modus-Toggle */}
+                        <div className="flex gap-1 p-1 bg-secondary/50 rounded-xl border border-border">
+                            {[
+                                { key: 'appointment', label: '📅 Neuer Termin' },
+                                { key: 'todo-pick',   label: '✅ Todo einplanen' },
+                            ].map(({ key, label }) => (
+                                <button key={key} onClick={() => setNewMode(key)}
+                                    className={cn(
+                                        'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                                        newMode === key
+                                            ? 'bg-card text-foreground shadow-sm'
+                                            : 'text-muted-foreground hover:text-foreground'
+                                    )}>
+                                    {label}
+                                </button>
                             ))}
                         </div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-}
 
-export default function WeeklyTasks() {
-    const queryClient = useQueryClient();
-    const permissions = usePermissions();
-    const [modalOpen, setModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ title: '', weekday: 'mi', biweekly: 'every' });
-
-    const todayJsDay = getDay(new Date());
-    const currentWeek = getWeekNumber(new Date());
-
-    const { data: user } = useQuery({
-        queryKey: ['user'],
-        queryFn: () => base44.auth.me(),
-        staleTime: 10 * 60 * 1000,
-    });
-
-    const { data: allTasks = [] } = useQuery({
-        queryKey: ['weekly-cleaning-tasks'],
-        queryFn: () => base44.entities.CleaningTask.filter({ area: 'Wochentagsaufgaben', is_active: true }),
-        staleTime: STALE.SLOW,
-    });
-
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts'],
-        queryFn: () => {
-            const today = format(new Date(), 'yyyy-MM-dd');
-            return base44.entities.Shift.filter({ date: today }, 'start_time', 50);
-        },
-        staleTime: 5 * 60 * 1000,
-    });
-    const { data: employees = [] } = useQuery({
-        queryKey: ['employees'],
-        queryFn: () => base44.entities.Employee.filter({ is_active: true }),
-        staleTime: STALE.SLOW,
-    });
-
-    // Filter tasks relevant for this week (biweekly logic)
-    const relevantTasks = useMemo(() => {
-        return allTasks.filter(task => {
-            if (!task.biweekly_pattern) return true; // legacy = every week
-            const parts = task.biweekly_pattern.split('_');
-            if (parts.length === 1) return true; // prefix only = every week
-            const weekNum = parseInt(parts[parts.length - 1]);
-            return !weekNum || weekNum === currentWeek;
-        });
-    }, [allTasks, currentWeek]);
-
-    // Group by weekday, only show days that have tasks
-    const tasksByDay = useMemo(() => {
-        const map = {};
-        relevantTasks.forEach(task => {
-            const jsDay = getTaskDay(task);
-            if (!map[jsDay]) map[jsDay] = [];
-            map[jsDay].push(task);
-        });
-        return map;
-    }, [relevantTasks]);
-
-    // Sort: today first, then rest of week in order
-    const sortedDays = useMemo(() => {
-        const days = Object.keys(tasksByDay).map(Number);
-        days.sort((a, b) => {
-            if (a === todayJsDay) return -1;
-            if (b === todayJsDay) return 1;
-            // future days before past days
-            const aFuture = a > todayJsDay;
-            const bFuture = b > todayJsDay;
-            if (aFuture && !bFuture) return -1;
-            if (!aFuture && bFuture) return 1;
-            return a - b;
-        });
-        return days;
-    }, [tasksByDay, todayJsDay]);
-
-    const totalTasks = relevantTasks.length;
-    const doneTasks = relevantTasks.filter(t => t.is_completed).length;
-
-    const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CleaningTask.update(id, data),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['weekly-cleaning-tasks'] })
-    });
-
-    const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.CleaningTask.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['weekly-cleaning-tasks'] });
-            setModalOpen(false);
-            setFormData({ title: '', weekday: 'mi', biweekly: 'every' });
-        }
-    });
-
-    const handleComplete = (task) => {
-        const displayName = getUserDisplayName({ employeeName: permissions.employeeName, user });
-        updateMutation.mutate({
-            id: task.id,
-            data: {
-                is_completed: !task.is_completed,
-                completed_by: task.is_completed ? null : displayName,
-                completed_at: task.is_completed ? null : new Date().toISOString()
-            }
-        });
-    };
-
-    const handleReset = (task) => {
-        updateMutation.mutate({ id: task.id, data: { is_completed: false, completed_by: null, completed_at: null } });
-    };
-
-    const getTodaysAushilfe = () => {
-        const todayDate = format(new Date(), 'yyyy-MM-dd');
-        const todayShifts = shifts.filter(s => s.date === todayDate);
-        return todayShifts.map(s => employees.find(e => e.id === s.employee_id)).find(e => e?.role === 'Aushilfe');
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const aushilfe = getTodaysAushilfe();
-        let pattern = null;
-        if (formData.biweekly === 'every') {
-            pattern = formData.weekday; // e.g. 'mi', 'do', 'mo'
-        } else {
-            pattern = `${formData.weekday}_${formData.biweekly}`; // e.g. 'mi_1', 'do_2'
-        }
-        createMutation.mutate({
-            title: formData.title,
-            area: 'Wochentagsaufgaben',
-            frequency: 'wöchentlich',
-            biweekly_pattern: pattern,
-            is_active: true,
-        });
-    };
-
-    if (permissions.isLoading) return null;
-    if (!permissions.canViewCleaning) return <PermissionDenied />;
-
-    return (
-        <PageShell>
-            <div className="space-y-5">
-
-                {/* Header */}
-                <PageHeader
-                    title="Wochenaufgaben"
-                    subtitle={`${format(new Date(), 'EEEE, d. MMMM', { locale: de })} · KW ${getWeekNumber(new Date()) === 1 ? 'ungerade' : 'gerade'}`}
-                    action={permissions.canEditCleaning && (
-                        <Button onClick={() => setModalOpen(true)} className="bg-amber-500 hover:bg-amber-600 text-background gap-2">
-                            <Plus className="w-4 h-4" />
-                            Aufgabe
-                        </Button>
-                    )}
-                />
-
-                {/* Overall progress */}
-                {totalTasks > 0 && (
-                    <div className="bg-card border border-border rounded-2xl px-4 py-3 space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span className="font-medium text-foreground">Fortschritt diese Woche</span>
-                            <span className="text-muted-foreground">{doneTasks} / {totalTasks}</span>
-                        </div>
-                        <ProgressBar value={doneTasks} max={totalTasks} />
-                        {doneTasks === totalTasks && totalTasks > 0 && (
-                            <p className="text-xs text-emerald-500 font-medium text-center">🎉 Alle Aufgaben diese Woche erledigt!</p>
-                        )}
-                    </div>
-                )}
-
-                {/* No tasks */}
-                {totalTasks === 0 && (
-                    <div className="text-center py-16 text-muted-foreground">
-                        <p className="text-lg font-medium">Keine Aufgaben diese Woche</p>
-                        <p className="text-sm mt-1">Füge wiederkehrende Aufgaben hinzu.</p>
-                    </div>
-                )}
-
-                {/* Day sections */}
-                {sortedDays.map((jsDay, dayIdx) => {
-                    const wd = WEEKDAYS.find(d => d.jsDay === jsDay);
-                    const tasks = tasksByDay[jsDay] || [];
-                    return (
-                        <DaySection
-                            key={jsDay}
-                            label={wd?.label ?? 'Unbekannt'}
-                            tasks={tasks}
-                            isToday={jsDay === todayJsDay}
-                            onComplete={handleComplete}
-                            onReset={handleReset}
-                            animDelay={dayIdx * 60}
-                            todaysAushilfeName={getTodaysAushilfe()?.name || null}
-                        />
-                    );
-                })}
-
-                {/* Add Modal */}
-                <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Neue Wochenaufgabe</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-                            <div className="space-y-2">
-                                <Label>Aufgabe *</Label>
+                        {/* Neuer Termin */}
+                        {newMode === 'appointment' && (
+                            <div className="space-y-3">
                                 <Input
-                                    value={formData.title}
-                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    placeholder="z.B. Kühlschrank putzen"
-                                    required
+                                    autoFocus
+                                    placeholder="Titel des Termins…"
+                                    value={newTitle}
+                                    onChange={e => setNewTitle(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleCreateAppointment()}
+                                    className="h-10"
                                 />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Wochentag</Label>
-                                <Select value={formData.weekday} onValueChange={v => setFormData({ ...formData, weekday: v, biweekly: 'every' })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        {WEEKDAYS.map(d => (
-                                            <SelectItem key={d.short} value={d.short}>{d.label}</SelectItem>
+                                <div className="flex gap-2">
+                                    <div className="flex-1">
+                                        <p className="text-[10px] text-muted-foreground mb-1">Startzeit</p>
+                                        <input type="time" value={newTime}
+                                            onChange={e => setNewTime(e.target.value)}
+                                            className="w-full h-9 px-2 rounded-lg border border-border bg-background text-sm text-foreground" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-[10px] text-muted-foreground mb-1">Dauer</p>
+                                        <select value={newDuration} onChange={e => setNewDuration(Number(e.target.value))}
+                                            className="w-full h-9 px-2 rounded-lg border border-border bg-background text-sm text-foreground">
+                                            {[15, 30, 45, 60, 90, 120].map(m => (
+                                                <option key={m} value={m}>{m < 60 ? `${m} Min` : `${m / 60} Std`}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                {/* Farbe */}
+                                <div>
+                                    <p className="text-[10px] text-muted-foreground mb-1.5">Farbe</p>
+                                    <div className="flex gap-2">
+                                        {Object.entries(APPOINTMENT_COLORS).map(([key, col]) => (
+                                            <button key={key} onClick={() => setNewColor(key)}
+                                                className={cn(
+                                                    'w-7 h-7 rounded-full transition-all',
+                                                    col.dot,
+                                                    newColor === key ? 'ring-2 ring-offset-2 ring-offset-card ring-white scale-110' : 'opacity-60 hover:opacity-100'
+                                                )} />
                                         ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Turnus</Label>
-                                <Select value={formData.biweekly} onValueChange={v => setFormData({ ...formData, biweekly: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="every">Jede Woche</SelectItem>
-                                        <SelectItem value="1">Nur Woche 1 (ungerade KW)</SelectItem>
-                                        <SelectItem value="2">Nur Woche 2 (gerade KW)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex gap-2 pt-2">
-                                <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
-                                <Button type="submit" disabled={createMutation.isPending} className="flex-1 bg-amber-500 hover:bg-amber-600 text-background">
-                                    Hinzufügen
+                                    </div>
+                                </div>
+                                <Button onClick={handleCreateAppointment}
+                                    disabled={!newTitle.trim()}
+                                    className="w-full h-9 bg-amber-600 hover:bg-amber-700 text-white">
+                                    Termin anlegen
                                 </Button>
                             </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
-        </PageShell>
+                        )}
+
+                        {/* Todo einplanen */}
+                        {newMode === 'todo-pick' && (
+                            <div className="space-y-2 max-h-72 overflow-y-auto">
+                                {backlogTodos.length === 0 ? (
+                                    <p className="text-xs text-muted-foreground text-center py-4">
+                                        Keine offenen Todos im Backlog
+                                    </p>
+                                ) : backlogTodos.map(todo => {
+                                    const stripe = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                                    return (
+                                        <button key={todo.id}
+                                            onClick={() => handlePlanTodo(todo, slotPopover.date, newTime)}
+                                            className="w-full flex gap-2 p-2.5 rounded-xl border border-border bg-background hover:bg-accent/50 transition-colors text-left">
+                                            <div className={cn('w-1.5 rounded-full shrink-0', stripe)} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-foreground truncate">{todo.title}</p>
+                                                {todo.category && (
+                                                    <p className="text-xs text-muted-foreground">{todo.category}</p>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                                {/* Dauer-Wahl */}
+                                <div className="pt-2 border-t border-border">
+                                    <p className="text-[10px] text-muted-foreground mb-1.5">Dauer</p>
+                                    <div className="flex gap-1.5 flex-wrap">
+                                        {[30, 60, 90, 120].map(m => (
+                                            <button key={m} onClick={() => setNewDuration(m)}
+                                                className={cn(
+                                                    'px-2.5 py-1 rounded-lg text-xs font-medium border transition-all',
+                                                    newDuration === m
+                                                        ? 'bg-amber-500 border-amber-500 text-white'
+                                                        : 'border-border text-muted-foreground'
+                                                )}>
+                                                {m < 60 ? `${m}'` : `${m / 60}h`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Edit-Dialog: Termin / Todo-Planung ───────────────────────── */}
+            <Dialog open={!!editItem} onOpenChange={o => !o && setEditItem(null)}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="text-base">
+                            {editItem?.type === 'appointment' ? '📅 Termin' : '✅ Eingeplantes Todo'}
+                        </DialogTitle>
+                    </DialogHeader>
+                    {editItem?.type === 'appointment' && (
+                        <div className="space-y-3">
+                            <Input
+                                value={editItem.item.title}
+                                onChange={e => setEditItem(prev => ({
+                                    ...prev,
+                                    item: { ...prev.item, title: e.target.value }
+                                }))}
+                                className="h-10"
+                            />
+                            <div className="flex gap-2">
+                                <div className="flex-1">
+                                    <p className="text-[10px] text-muted-foreground mb-1">Startzeit</p>
+                                    <input type="time" value={editItem.item.start_time}
+                                        onChange={e => setEditItem(prev => ({
+                                            ...prev,
+                                            item: { ...prev.item, start_time: e.target.value }
+                                        }))}
+                                        className="w-full h-9 px-2 rounded-lg border border-border bg-background text-sm text-foreground" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-[10px] text-muted-foreground mb-1">Dauer (Min)</p>
+                                    <select value={editItem.item.duration}
+                                        onChange={e => setEditItem(prev => ({
+                                            ...prev,
+                                            item: { ...prev.item, duration: Number(e.target.value) }
+                                        }))}
+                                        className="w-full h-9 px-2 rounded-lg border border-border bg-background text-sm text-foreground">
+                                        {[15, 30, 45, 60, 90, 120].map(m => (
+                                            <option key={m} value={m}>{m < 60 ? `${m} Min` : `${m / 60} Std`}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={() => {
+                                        updateAppointment.mutate({
+                                            id: editItem.item.id,
+                                            data: {
+                                                title:      editItem.item.title,
+                                                start_time: editItem.item.start_time,
+                                                duration:   editItem.item.duration,
+                                                end_time:   minutesToTime(timeToMinutes(editItem.item.start_time) + editItem.item.duration),
+                                            }
+                                        });
+                                        setEditItem(null);
+                                    }}
+                                    className="flex-1 h-9 bg-amber-600 hover:bg-amber-700 text-white text-sm">
+                                    Speichern
+                                </Button>
+                                <Button variant="outline" size="sm"
+                                    onClick={() => {
+                                        deleteAppointment.mutate(editItem.item.id);
+                                        setEditItem(null);
+                                    }}
+                                    className="h-9 text-red-400 border-red-500/30 hover:bg-red-500/10">
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                    {editItem?.type === 'todo' && (
+                        <div className="space-y-3">
+                            <div className="p-3 rounded-xl bg-secondary/50 border border-border">
+                                <p className="font-semibold text-foreground text-sm">{editItem.item.title}</p>
+                                {editItem.item.description && (
+                                    <p className="text-xs text-muted-foreground mt-1">{editItem.item.description}</p>
+                                )}
+                                <div className="flex gap-2 mt-2 text-xs text-muted-foreground">
+                                    {editItem.item.planned_time && (
+                                        <span className="flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />{editItem.item.planned_time} Uhr
+                                        </span>
+                                    )}
+                                    {editItem.item.category && (
+                                        <Badge variant="outline" className="text-[10px] h-4">{editItem.item.category}</Badge>
+                                    )}
+                                </div>
+                            </div>
+                            <Button variant="outline"
+                                onClick={() => {
+                                    deleteTodoPlanning(editItem.item);
+                                    setEditItem(null);
+                                }}
+                                className="w-full h-9 text-sm text-muted-foreground hover:text-foreground">
+                                Aus Wochenplan entfernen
+                            </Button>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 }

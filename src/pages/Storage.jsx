@@ -2,19 +2,20 @@ import { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Package, Search, Layers } from 'lucide-react';
-import StorageSearchTab  from '@/components/storage/SearchTab';
-import StorageSlotsTab   from '@/components/storage/SlotsTab';
+import StorageSearchTab    from '@/components/storage/SearchTab';
+import StorageSlotsTab     from '@/components/storage/SlotsTab';
 import StorageStructureTab from '@/components/storage/StructureTab';
 
 const TABS = [
   { id: 'search',    label: 'Suche',    icon: Search  },
   { id: 'slots',     label: 'Fächer',   icon: Package },
-  { id: 'structure', label: 'Struktur', icon: Layers  },
+  { id: 'structure', label: 'Bereiche', icon: Layers  },
 ];
 
 export default function Storage() {
   const permissions = usePermissions();
-  const [activeTab, setActiveTab] = useState('slots');
+  // Suche als Default-Tab
+  const [activeTab, setActiveTab] = useState('search');
 
   if (permissions.isLoading) return (
     <div className="max-w-3xl mx-auto px-3 py-8 flex flex-col items-center justify-center gap-4 min-h-[40vh]">
@@ -29,29 +30,24 @@ export default function Storage() {
     <div className="max-w-3xl mx-auto px-3 py-4 pb-32 md:pb-8">
       {/* Header */}
       <div className="mb-5">
-        <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-          <Package className="w-5 h-5 text-amber-500" />
-          Lagerplätze
-        </h1>
-        <p className="text-muted-foreground text-xs mt-0.5">
-          Bereich → Möbel → Fach → Artikel
-        </p>
+        <h1 className="text-xl font-bold text-foreground">Lagerplätze</h1>
+        <p className="text-muted-foreground text-xs mt-0.5">Bereich → Möbel → Fach → Artikel</p>
       </div>
 
-      {/* Tab Bar */}
-      <div className="flex gap-1 mb-6 bg-secondary/50 rounded-xl p-1">
+      {/* Tab Bar — konsistent mit dem Rest der App */}
+      <div className="flex gap-1.5 mb-5 overflow-x-auto pb-0.5 scrollbar-hide">
         {TABS.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={[
-              'flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-lg text-xs font-medium transition-all min-h-[52px] touch-manipulation',
+              'flex items-center gap-1.5 shrink-0 px-4 py-2 rounded-full text-xs font-semibold border transition-all',
               activeTab === tab.id
-                ? 'bg-amber-600 text-white shadow'
-                : 'text-muted-foreground hover:text-foreground',
+                ? 'bg-amber-500 border-amber-500 text-white'
+                : 'border-border text-muted-foreground hover:text-foreground bg-card',
             ].join(' ')}
           >
-            <tab.icon className="w-4 h-4" />
+            <tab.icon className="w-3.5 h-3.5" />
             {tab.label}
           </button>
         ))}

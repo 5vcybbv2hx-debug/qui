@@ -1,83 +1,96 @@
+/**
+ * MyShifts — Meine Schichten
+ * 3 Tabs: Diese Woche · Monat · Team
+ * Kalender-Sync im ··· Menü (kein eigener Tab)
+ */
 import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { ErrorState } from '@/components/ui/StateDisplay';
 import { useQuery } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import ProvisionalShiftEntry from '@/components/provisional/ProvisionalShiftEntry';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Users, ChevronLeft, ChevronRight, CalendarDays, List, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+    Clock, ChevronLeft, ChevronRight, Users, CalendarDays,
+    MoreVertical, Calendar
+} from 'lucide-react';
 import {
     format, startOfWeek, endOfWeek, addDays, startOfMonth, endOfMonth,
-    isSameDay, parseISO, isAfter, isBefore, differenceInMinutes,
-    subMonths, addMonths, addWeeks, subWeeks, isEqual
+    isSameDay, parseISO, isAfter, isBefore, addMonths, subMonths
 } from 'date-fns';
 import { useCurrentEmployee } from '@/hooks/useCurrentEmployee';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import MyShiftsCalendarSync from '@/components/calendar/MyShiftsCalendarSync';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
-// ── Hilfsfunktion: Nachtschicht-sichere Dauer ────────────────────────────────
+// ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 function shiftDurationMinutes(start_time, end_time) {
     const [sh, sm] = start_time.split(':').map(Number);
     const [eh, em] = end_time.split(':').map(Number);
     let startMin = sh * 60 + sm;
     let endMin   = eh * 60 + em;
-    if (endMin <= startMin) endMin += 24 * 60; // Nachtschicht über Mitternacht
+    if (endMin <= startMin) endMin += 24 * 60;
     return endMin - startMin;
 }
-
 function shiftDurationHours(start_time, end_time) {
     return (shiftDurationMinutes(start_time, end_time) / 60).toFixed(1);
 }
 
-// ── Nächste Schicht Hero ─────────────────────────────────────────────────────
+// ── Nächste Schicht Hero ──────────────────────────────────────────────────────
 function NextShiftHero({ shifts }) {
-    const today = new Date();
+    const today    = new Date();
     const todayStr = format(today, 'yyyy-MM-dd');
 
-    const next = useMemo(() => {
-        return [...shifts]
+    const next = useMemo(() =>
+        [...shifts]
             .filter(s => s.date >= todayStr)
-            .sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time))[0] || null;
-    }, [shifts, todayStr]);
+            .sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time))[0] || null
+    , [shifts, todayStr]);
 
-    if (!next) return null;
+    if (!next) return (
+        <div className="rounded-2xl p-5 border border-border bg-card text-center">
+            <p className="text-sm text-muted-foreground">Keine kommenden Schichten</p>
+        </div>
+    );
 
     const shiftDate  = parseISO(next.date);
     const isToday    = isSameDay(shiftDate, today);
     const isTomorrow = isSameDay(shiftDate, addDays(today, 1));
     const hours      = shiftDurationHours(next.start_time, next.end_time);
-
-    const label = isToday ? 'Heute' : isTomorrow ? 'Morgen' : format(shiftDate, 'EEEE, dd. MMM', { locale: de });
+    const label      = isToday ? 'Heute' : isTomorrow ? 'Morgen' : format(shiftDate, 'EEEE, dd. MMM', { locale: de });
 
     return (
         <div className={cn(
-            "rounded-2xl p-5 border",
-            isToday
-                ? "bg-amber-500/10 border-amber-500/40"
-                : "bg-card border-border"
+            'rounded-2xl p-5 border',
+            isToday ? 'bg-amber-500/10 border-amber-500/40' : 'bg-card border-border'
         )}>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
                 {isToday ? '⚡ Nächste Schicht — Heute' : 'Nächste Schicht'}
             </p>
             <div className="flex items-center justify-between gap-4">
                 <div>
-                    <p className={cn("text-xl font-bold", isToday ? "text-amber-400" : "text-foreground")}>{label}</p>
+                    <p className={cn('text-2xl font-bold', isToday ? 'text-amber-400' : 'text-foreground')}>
+                        {label}
+                    </p>
                     <p className="text-sm text-muted-foreground mt-0.5">
                         {next.start_time} – {next.end_time}
-                        <span className="ml-2 text-xs">({hours} Std.)</span>
+                        <span className="ml-2 text-xs opacity-60">({hours} Std.)</span>
                     </p>
                     {next.shift_type && (
                         <Badge variant="outline" className="mt-2 text-xs">{next.shift_type}</Badge>
                     )}
                 </div>
                 <div className={cn(
-                    "w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0",
-                    isToday ? "bg-amber-500 text-slate-900" : "bg-secondary text-foreground"
+                    'w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0',
+                    isToday ? 'bg-amber-500 text-slate-900' : 'bg-secondary text-foreground'
                 )}>
-                    <span className="text-xs font-semibold">{format(shiftDate, 'MMM', { locale: de })}</span>
+                    <span className="text-[10px] font-semibold">{format(shiftDate, 'MMM', { locale: de })}</span>
                     <span className="text-2xl font-bold leading-none">{format(shiftDate, 'd')}</span>
                 </div>
             </div>
@@ -85,106 +98,148 @@ function NextShiftHero({ shifts }) {
     );
 }
 
-// ── Schicht-Karte ─────────────────────────────────────────────────────────────
-function ShiftCard({ shift, highlight = false }) {
+// ── Schicht-Zeile ─────────────────────────────────────────────────────────────
+function ShiftRow({ shift, highlight = false }) {
     const hours = shiftDurationHours(shift.start_time, shift.end_time);
     return (
         <div className={cn(
-            "flex items-center gap-3 p-3 rounded-xl border transition-all",
-            highlight ? "border-amber-500/40 bg-amber-500/8" : "border-border bg-card"
+            'flex items-center gap-3 px-3 py-2.5 rounded-xl border',
+            highlight ? 'border-amber-500/30 bg-amber-500/8' : 'border-border bg-card'
         )}>
             <div className={cn(
-                "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                highlight ? "bg-amber-500 text-slate-900" : "bg-secondary text-muted-foreground"
+                'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                highlight ? 'bg-amber-500 text-slate-900' : 'bg-secondary text-muted-foreground'
             )}>
-                <Clock className="w-4 h-4" />
+                <Clock className="w-3.5 h-3.5" />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground text-sm">
+                <p className="text-sm font-semibold text-foreground">
                     {shift.start_time} – {shift.end_time}
                 </p>
                 <p className="text-xs text-muted-foreground">
                     {hours} Std.{shift.shift_type ? ` · ${shift.shift_type}` : ''}
+                    {shift.notes ? ` · ${shift.notes}` : ''}
                 </p>
-                {shift.notes && <p className="text-xs text-muted-foreground mt-0.5 truncate">{shift.notes}</p>}
             </div>
         </div>
     );
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
-export default function MyShiftsPage() {
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const [weekStart, setWeekStart]       = useState(() => startOfWeek(new Date(), { locale: de }));
-    const { data: employee }              = useCurrentEmployee();
+// ── Tab: Diese Woche ──────────────────────────────────────────────────────────
+function WeekTab({ shifts }) {
+    const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+    const today = new Date();
 
-    const { data: provisionalAccess } = useQuery({
-        queryKey: ['my-provisional-access', employee?.id],
-        queryFn: async () => {
-            if (!employee) return null;
-            const all = await base44.entities.ProvisionalShiftAccess.filter({ employee_id: employee.id, is_active: true });
-            return all[0] || null;
-        },
-        enabled: !!employee,
-        staleTime: STALE.SLOW,
-    });
-
-    const { data: shifts = [], isLoading: shiftsLoading } = useQuery({
-        queryKey: ['my-shifts', employee?.id],
-        queryFn: async () => {
-            if (!employee) return [];
-            // Alle Schichten des Mitarbeiters laden, dann client-seitig filtern
-            const all = await base44.entities.Shift.filter({ employee_id: employee.id }, 'date', 500);
-            const from = format(subMonths(new Date(), 1), 'yyyy-MM-dd');
-            const to   = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
-            return all.filter(s => s.date >= from && s.date <= to);
-        },
-        enabled: !!employee,
-        staleTime: STALE.MEDIUM,
-    });
-
-    const { data: weekTeam = [] } = useQuery({
-        queryKey: ['team-week'],
-        queryFn: () => {
-            const today   = format(new Date(), 'yyyy-MM-dd');
-            const in7days = format(addDays(new Date(), 6), 'yyyy-MM-dd');
-            return base44.entities.Shift.filter({ date_gte: today, date_lte: in7days }, 'date', 100);
-        },
-        staleTime: STALE.MEDIUM,
-    });
-
-    // ── Wochenansicht: 7 Tage ab weekStart ────────────────────────────────────
-    const weekDays = useMemo(() => {
-        return Array.from({ length: 7 }, (_, i) => {
+    const weekDays = useMemo(() =>
+        Array.from({ length: 7 }, (_, i) => {
             const date      = addDays(weekStart, i);
             const dayShifts = shifts.filter(s => isSameDay(parseISO(s.date), date));
             return { date, shifts: dayShifts };
-        });
-    }, [weekStart, shifts]);
+        }), [weekStart, shifts]
+    );
 
-    // ── Monatsstatistiken ──────────────────────────────────────────────────────
+    const weekHours = weekDays.reduce((sum, { shifts: ds }) =>
+        sum + ds.reduce((s, sh) => s + shiftDurationMinutes(sh.start_time, sh.end_time), 0), 0
+    );
+
+    return (
+        <div className="space-y-3">
+            {/* Wochennavigation */}
+            <div className="flex items-center justify-between">
+                <button onClick={() => setWeekStart(d => addDays(d, -7))}
+                    className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="text-center">
+                    <p className="text-sm font-bold text-foreground">
+                        {format(weekStart, 'dd. MMM', { locale: de })} – {format(addDays(weekStart, 6), 'dd. MMM', { locale: de })}
+                    </p>
+                    {weekHours > 0 && (
+                        <p className="text-xs text-muted-foreground">{(weekHours / 60).toFixed(1)} Std. diese Woche</p>
+                    )}
+                </div>
+                <button onClick={() => setWeekStart(d => addDays(d, 7))}
+                    className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Tage */}
+            <div className="space-y-1.5">
+                {weekDays.map(({ date, shifts: dayShifts }) => {
+                    const isToday = isSameDay(date, today);
+                    const isFree  = dayShifts.length === 0;
+
+                    return (
+                        <div key={date.toISOString()}
+                            className={cn(
+                                'rounded-xl border overflow-hidden',
+                                isToday ? 'border-amber-500/40' : 'border-border/50',
+                                isFree && !isToday && 'opacity-40'
+                            )}>
+                            {/* Tag-Header */}
+                            <div className={cn(
+                                'flex items-center justify-between px-3 py-2',
+                                isToday ? 'bg-amber-500/10' : 'bg-secondary/30'
+                            )}>
+                                <div className="flex items-center gap-2">
+                                    <span className={cn(
+                                        'text-sm font-bold',
+                                        isToday ? 'text-amber-400' : 'text-foreground'
+                                    )}>
+                                        {format(date, 'EEE', { locale: de })}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {format(date, 'dd.MM.')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {isToday && <Badge className="bg-amber-500 text-slate-900 text-[10px] px-1.5 py-0 h-4">Heute</Badge>}
+                                    {isFree && <span className="text-[10px] text-muted-foreground/50">Frei</span>}
+                                    {dayShifts.length > 0 && (
+                                        <span className="text-[10px] text-muted-foreground">
+                                            {dayShifts.reduce((s, sh) => s + shiftDurationMinutes(sh.start_time, sh.end_time), 0) / 60 | 0}h
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            {/* Schichten */}
+                            {dayShifts.length > 0 && (
+                                <div className="p-2 space-y-1.5 bg-background">
+                                    {dayShifts.map(shift => (
+                                        <ShiftRow key={shift.id} shift={shift} highlight={isToday} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+// ── Tab: Monat ────────────────────────────────────────────────────────────────
+function MonthTab({ shifts }) {
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const today = new Date();
+
     const monthStats = useMemo(() => {
         const start = startOfMonth(selectedDate);
         const end   = endOfMonth(selectedDate);
         const monthShifts = shifts.filter(s => {
             const d = parseISO(s.date);
-            return (isAfter(d, start) || isSameDay(d, start)) &&
-                   (isBefore(d, end)  || isSameDay(d, end));
+            return (isAfter(d, start) || isSameDay(d, start)) && (isBefore(d, end) || isSameDay(d, end));
         });
         const totalMinutes = monthShifts.reduce((acc, s) => acc + shiftDurationMinutes(s.start_time, s.end_time), 0);
-        return {
-            totalShifts: monthShifts.length,
-            totalHours:  (totalMinutes / 60).toFixed(1),
-            shifts:      monthShifts,
-        };
+        return { count: monthShifts.length, hours: (totalMinutes / 60).toFixed(1), shifts: monthShifts };
     }, [shifts, selectedDate]);
 
-    // ── Monatskalender ─────────────────────────────────────────────────────────
     const monthCalendar = useMemo(() => {
         const start     = startOfMonth(selectedDate);
         const end       = endOfMonth(selectedDate);
-        const startWeek = startOfWeek(start, { locale: de });
-        const endWeek   = endOfWeek(end, { locale: de });
+        const startWeek = startOfWeek(start, { weekStartsOn: 1 });
+        const endWeek   = endOfWeek(end, { weekStartsOn: 1 });
         const days      = [];
         let cur         = startWeek;
         while (cur <= endWeek) {
@@ -198,237 +253,210 @@ export default function MyShiftsPage() {
         return days;
     }, [shifts, selectedDate]);
 
-    // ── Kommende Schichten (Liste) ─────────────────────────────────────────────
-    const upcomingShifts = useMemo(() => {
-        const todayStr = format(new Date(), 'yyyy-MM-dd');
-        return shifts.filter(s => s.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date));
-    }, [shifts]);
-
-    // ── Team-Schichten ─────────────────────────────────────────────────────────
-    const teamDays = useMemo(() => {
-        return Array.from({ length: 7 }, (_, i) => {
-            const date    = addDays(new Date(), i);
-            const dateStr = format(date, 'yyyy-MM-dd');
-            return { date, dateStr, shifts: weekTeam.filter(s => s.date === dateStr) };
-        });
-    }, [weekTeam]);
-
-    if (!employee) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="flex items-center gap-3 text-muted-foreground">
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>Lade Profil…</span>
+    return (
+        <div className="space-y-4">
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                    <p className="text-3xl font-bold text-foreground">{monthStats.count}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Schichten</p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                    <p className="text-3xl font-bold text-foreground">{monthStats.hours}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Stunden</p>
                 </div>
             </div>
-        );
-    }
 
-    // ── Tab-Konfiguration ──────────────────────────────────────────────────────
-    const tabCols = provisionalAccess ? 6 : 5;
+            {/* Monatsnavigation */}
+            <div className="flex items-center justify-between">
+                <button onClick={() => setSelectedDate(d => subMonths(d, 1))}
+                    className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <h2 className="text-base font-bold text-foreground">
+                    {format(selectedDate, 'MMMM yyyy', { locale: de })}
+                </h2>
+                <button onClick={() => setSelectedDate(d => addMonths(d, 1))}
+                    className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Kalender-Grid */}
+            <div className="bg-card border border-border rounded-2xl p-3">
+                <div className="grid grid-cols-7 mb-1">
+                    {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
+                        <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-1.5">{d}</div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                    {monthCalendar.map(({ date, shifts: ds, isCurrentMonth }) => {
+                        const isToday   = isSameDay(date, today);
+                        const hasShifts = ds.length > 0;
+                        return (
+                            <div key={date.toISOString()}
+                                className={cn(
+                                    'aspect-square rounded-lg flex flex-col items-center justify-center relative',
+                                    !isCurrentMonth && 'opacity-20',
+                                    isToday && 'bg-amber-500',
+                                    !isToday && hasShifts && 'bg-amber-500/15 border border-amber-500/30',
+                                    !isToday && !hasShifts && 'bg-transparent'
+                                )}>
+                                <span className={cn(
+                                    'text-xs font-semibold',
+                                    isToday ? 'text-slate-900' : 'text-foreground'
+                                )}>
+                                    {format(date, 'd')}
+                                </span>
+                                {hasShifts && !isToday && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-0.5" />
+                                )}
+                                {hasShifts && isToday && (
+                                    <span className="text-[9px] font-bold text-slate-900/70">{ds.length}×</span>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Schicht-Liste des Monats */}
+            {monthStats.shifts.length > 0 && (
+                <div className="space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-0.5">
+                        Schichten im {format(selectedDate, 'MMMM', { locale: de })}
+                    </p>
+                    {monthStats.shifts
+                        .sort((a, b) => a.date.localeCompare(b.date))
+                        .map(shift => {
+                            const d       = parseISO(shift.date);
+                            const isToday = isSameDay(d, today);
+                            return (
+                                <div key={shift.id}
+                                    className={cn(
+                                        'flex items-center gap-3 p-3 rounded-xl border',
+                                        isToday ? 'border-amber-500/30 bg-amber-500/8' : 'border-border bg-card'
+                                    )}>
+                                    <div className={cn(
+                                        'w-10 h-10 rounded-xl flex flex-col items-center justify-center shrink-0',
+                                        isToday ? 'bg-amber-500' : 'bg-secondary'
+                                    )}>
+                                        <span className={cn('text-[10px] font-semibold', isToday ? 'text-slate-900' : 'text-muted-foreground')}>
+                                            {format(d, 'EEE', { locale: de })}
+                                        </span>
+                                        <span className={cn('text-sm font-bold', isToday ? 'text-slate-900' : 'text-foreground')}>
+                                            {format(d, 'd')}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-foreground">
+                                            {shift.start_time} – {shift.end_time}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {shiftDurationHours(shift.start_time, shift.end_time)} Std.
+                                            {shift.shift_type && ` · ${shift.shift_type}`}
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ── Tab: Team ─────────────────────────────────────────────────────────────────
+function TeamTab({ myEmployeeId }) {
+    const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+    const today = new Date();
+
+    const from = format(weekStart, 'yyyy-MM-dd');
+    const to   = format(addDays(weekStart, 6), 'yyyy-MM-dd');
+
+    const { data: weekTeam = [] } = useQuery({
+        queryKey: ['team-week', from, to],
+        queryFn: () => base44.entities.Shift.filter({}, 'date', 200).then(
+            all => all.filter(s => s.date >= from && s.date <= to)
+        ),
+        staleTime: 2 * 60 * 1000,
+    });
+
+    const teamDays = useMemo(() =>
+        Array.from({ length: 7 }, (_, i) => {
+            const date    = addDays(weekStart, i);
+            const dateStr = format(date, 'yyyy-MM-dd');
+            return { date, dateStr, shifts: weekTeam.filter(s => s.date === dateStr) };
+        }), [weekStart, weekTeam]
+    );
 
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-0">
-            <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+        <div className="space-y-3">
+            {/* Wochennavigation */}
+            <div className="flex items-center justify-between">
+                <button onClick={() => setWeekStart(d => addDays(d, -7))}
+                    className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <p className="text-sm font-bold text-foreground">
+                    {format(weekStart, 'dd. MMM', { locale: de })} – {format(addDays(weekStart, 6), 'dd. MMM', { locale: de })}
+                </p>
+                <button onClick={() => setWeekStart(d => addDays(d, 7))}
+                    className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all active:scale-90">
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
 
-                {/* Header */}
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">Meine Schichten</h1>
-                    <p className="text-muted-foreground text-sm mt-1">Deine persönliche Schichtübersicht</p>
-                </div>
-
-                {/* Nächste Schicht Hero */}
-                {!shiftsLoading && <NextShiftHero shifts={shifts} />}
-
-                {/* Tabs */}
-                <Tabs defaultValue="week" className="space-y-5">
-                    <TabsList className={cn("grid w-full", `grid-cols-${tabCols}`)}>
-                        {provisionalAccess && (
-                            <TabsTrigger value="wunsch" className="text-amber-400 text-xs px-1">Wunsch</TabsTrigger>
-                        )}
-                        <TabsTrigger value="week"  className="text-xs px-1">Woche</TabsTrigger>
-                        <TabsTrigger value="month" className="text-xs px-1">Monat</TabsTrigger>
-                        <TabsTrigger value="list"  className="text-xs px-1">Liste</TabsTrigger>
-                        <TabsTrigger value="team"  className="text-xs px-1">Team</TabsTrigger>
-                        <TabsTrigger value="sync"  className="text-xs px-1">Sync</TabsTrigger>
-                    </TabsList>
-
-                    {/* ── Wunschschichten ── */}
-                    {provisionalAccess && (
-                        <TabsContent value="wunsch">
-                            <ProvisionalShiftEntry employee={employee} access={provisionalAccess} />
-                        </TabsContent>
-                    )}
-
-                    {/* ── Wochenansicht ── */}
-                    <TabsContent value="week" className="space-y-3">
-                        {/* Navigation */}
-                        <div className="flex items-center justify-between">
-                            <button
-                                onClick={() => setWeekStart(w => subWeeks(w, 1))}
-                                className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <p className="text-sm font-semibold text-foreground">
-                                {format(weekStart, 'dd.MM.', { locale: de })} – {format(addDays(weekStart, 6), 'dd.MM.yyyy', { locale: de })}
-                            </p>
-                            <button
-                                onClick={() => setWeekStart(w => addWeeks(w, 1))}
-                                className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
+            {teamDays.map(({ date, dateStr, shifts: dayShifts }) => {
+                const isToday = isSameDay(date, today);
+                return (
+                    <div key={dateStr}
+                        className={cn(
+                            'rounded-xl border overflow-hidden',
+                            isToday ? 'border-amber-500/40' : 'border-border/50',
+                            dayShifts.length === 0 && 'opacity-40'
+                        )}>
+                        {/* Header */}
+                        <div className={cn(
+                            'flex items-center justify-between px-3 py-2',
+                            isToday ? 'bg-amber-500/10' : 'bg-secondary/30'
+                        )}>
+                            <div className="flex items-center gap-2">
+                                <span className={cn('text-sm font-bold', isToday ? 'text-amber-400' : 'text-foreground')}>
+                                    {format(date, 'EEE', { locale: de })}
+                                </span>
+                                <span className="text-xs text-muted-foreground">{format(date, 'dd.MM.')}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {isToday && <Badge className="bg-amber-500 text-slate-900 text-[10px] px-1.5 py-0 h-4">Heute</Badge>}
+                                <span className="text-[10px] text-muted-foreground">
+                                    {dayShifts.length > 0 ? `${dayShifts.length} Schichten` : 'Niemand'}
+                                </span>
+                            </div>
                         </div>
 
-                        {/* 7 Tage */}
-                        <div className="space-y-2">
-                            {weekDays.map(({ date, shifts: dayShifts }) => {
-                                const isToday   = isSameDay(date, new Date());
-                                const isPast    = date < new Date() && !isToday;
-                                return (
-                                    <div
-                                        key={date.toISOString()}
-                                        className={cn(
-                                            "rounded-xl border overflow-hidden",
-                                            isToday   ? "border-amber-500/40" : "border-border",
-                                            isPast    && "opacity-50"
-                                        )}
-                                    >
-                                        {/* Tag-Header */}
-                                        <div className={cn(
-                                            "flex items-center justify-between px-4 py-2.5",
-                                            isToday ? "bg-amber-500/10" : "bg-card"
-                                        )}>
-                                            <div className="flex items-center gap-2">
-                                                <span className={cn(
-                                                    "text-sm font-semibold",
-                                                    isToday ? "text-amber-400" : "text-foreground"
-                                                )}>
-                                                    {format(date, 'EEE', { locale: de })}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {format(date, 'dd.MM.')}
-                                                </span>
-                                            </div>
-                                            {isToday && (
-                                                <Badge className="bg-amber-500 text-slate-900 text-xs font-semibold">Heute</Badge>
-                                            )}
-                                            {dayShifts.length === 0 && (
-                                                <span className="text-xs text-muted-foreground/50">Frei</span>
-                                            )}
-                                        </div>
-
-                                        {/* Schichten */}
-                                        {dayShifts.length > 0 && (
-                                            <div className="px-3 pb-3 pt-1 space-y-1.5 bg-background">
-                                                {dayShifts.map(shift => (
-                                                    <ShiftCard key={shift.id} shift={shift} highlight={isToday} />
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </TabsContent>
-
-                    {/* ── Monatsansicht ── */}
-                    <TabsContent value="month" className="space-y-4">
-                        {/* Stats */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <Card className="border-border">
-                                <CardContent className="pt-4 pb-4">
-                                    <p className="text-xs text-muted-foreground mb-1">Schichten</p>
-                                    <p className="text-3xl font-bold text-foreground">{monthStats.totalShifts}</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="border-border">
-                                <CardContent className="pt-4 pb-4">
-                                    <p className="text-xs text-muted-foreground mb-1">Stunden</p>
-                                    <p className="text-3xl font-bold text-foreground">{monthStats.totalHours}</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Monatsnavigation */}
-                        <div className="flex items-center justify-between">
-                            <button
-                                onClick={() => setSelectedDate(d => subMonths(d, 1))}
-                                className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all"
-                            >
-                                <ChevronLeft className="w-4 h-4" />
-                            </button>
-                            <h2 className="text-base font-bold text-foreground">
-                                {format(selectedDate, 'MMMM yyyy', { locale: de })}
-                            </h2>
-                            <button
-                                onClick={() => setSelectedDate(d => addMonths(d, 1))}
-                                className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground active:scale-90 transition-all"
-                            >
-                                <ChevronRight className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {/* Kalender */}
-                        <Card className="border-border">
-                            <CardContent className="p-3">
-                                {/* Wochentage Header */}
-                                <div className="grid grid-cols-7 mb-1">
-                                    {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
-                                        <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-2">{d}</div>
-                                    ))}
-                                </div>
-                                {/* Tage */}
-                                <div className="grid grid-cols-7 gap-1">
-                                    {monthCalendar.map(({ date, shifts: dayShifts, isCurrentMonth }) => {
-                                        const isToday = isSameDay(date, new Date());
-                                        return (
-                                            <div
-                                                key={date.toISOString()}
-                                                className={cn(
-                                                    "aspect-square rounded-lg flex flex-col items-center justify-center relative",
-                                                    !isCurrentMonth && "opacity-20",
-                                                    isToday && "bg-amber-500 text-slate-900",
-                                                    !isToday && dayShifts.length > 0 && "bg-amber-500/15 border border-amber-500/30",
-                                                    !isToday && dayShifts.length === 0 && "bg-card"
-                                                )}
-                                            >
-                                                <span className={cn(
-                                                    "text-xs font-semibold",
-                                                    isToday ? "text-slate-900" : "text-foreground"
-                                                )}>
-                                                    {format(date, 'd')}
-                                                </span>
-                                                {dayShifts.length > 0 && !isToday && (
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-0.5" />
-                                                )}
-                                                {dayShifts.length > 0 && isToday && (
-                                                    <span className="text-[10px] font-bold text-slate-900/70">{dayShifts.length}×</span>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Schicht-Liste des Monats */}
-                        {monthStats.shifts.length > 0 && (
-                            <div className="space-y-2">
-                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Schichten im {format(selectedDate, 'MMMM', { locale: de })}</p>
-                                {monthStats.shifts.map(shift => {
-                                    const d = parseISO(shift.date);
+                        {/* Team-Einträge */}
+                        {dayShifts.length > 0 && (
+                            <div className="p-2 space-y-1.5 bg-background">
+                                {dayShifts.map(shift => {
+                                    const isMe = shift.employee_id === myEmployeeId;
                                     return (
-                                        <div key={shift.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-                                            <div className="w-10 h-10 rounded-xl bg-secondary flex flex-col items-center justify-center shrink-0">
-                                                <span className="text-[10px] text-muted-foreground font-semibold">{format(d, 'EEE', { locale: de })}</span>
-                                                <span className="text-sm font-bold text-foreground">{format(d, 'd')}</span>
+                                        <div key={shift.id}
+                                            className={cn(
+                                                'flex items-center gap-2.5 px-2.5 py-2 rounded-lg',
+                                                isMe ? 'bg-amber-500/10 border border-amber-500/25' : 'bg-secondary/40'
+                                            )}>
+                                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
+                                                <span className="text-slate-900 font-bold text-[10px]">
+                                                    {shift.employee_name?.charAt(0)?.toUpperCase() || '?'}
+                                                </span>
                                             </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-semibold text-foreground">{shift.start_time} – {shift.end_time}</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {shiftDurationHours(shift.start_time, shift.end_time)} Std.
+                                            <div className="flex-1 min-w-0">
+                                                <p className={cn('text-xs font-semibold truncate', isMe ? 'text-amber-400' : 'text-foreground')}>
+                                                    {shift.employee_name}{isMe && ' (Du)'}
+                                                </p>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    {shift.start_time} – {shift.end_time}
                                                     {shift.shift_type && ` · ${shift.shift_type}`}
                                                 </p>
                                             </div>
@@ -437,123 +465,118 @@ export default function MyShiftsPage() {
                                 })}
                             </div>
                         )}
-                    </TabsContent>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
-                    {/* ── Liste ── */}
-                    <TabsContent value="list" className="space-y-3">
-                        <p className="text-sm text-muted-foreground">
-                            {upcomingShifts.length} kommende Schichten
-                        </p>
-                        {upcomingShifts.length === 0 ? (
-                            <Card className="p-10 text-center border-border/40">
-                                <CalendarDays className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
-                                <p className="text-muted-foreground">Keine kommenden Schichten</p>
-                            </Card>
-                        ) : (
-                            <div className="space-y-2">
-                                {upcomingShifts.map(shift => {
-                                    const d       = parseISO(shift.date);
-                                    const isToday = isSameDay(d, new Date());
-                                    const hours   = shiftDurationHours(shift.start_time, shift.end_time);
-                                    return (
-                                        <div key={shift.id} className={cn(
-                                            "flex items-start gap-3 p-4 rounded-xl border transition-all",
-                                            isToday ? "border-amber-500/40 bg-amber-500/8" : "border-border bg-card"
-                                        )}>
-                                            <div className={cn(
-                                                "w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0",
-                                                isToday ? "bg-amber-500 text-slate-900" : "bg-secondary text-foreground"
-                                            )}>
-                                                <span className="text-[10px] font-semibold">{format(d, 'MMM', { locale: de })}</span>
-                                                <span className="text-lg font-bold leading-none">{format(d, 'd')}</span>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <p className="font-semibold text-foreground text-sm">
-                                                        {format(d, 'EEEE, dd.MM.yyyy', { locale: de })}
-                                                    </p>
-                                                    {isToday && (
-                                                        <Badge className="bg-amber-500 text-slate-900 text-xs font-semibold">Heute</Badge>
-                                                    )}
-                                                </div>
-                                                <p className="text-sm text-muted-foreground mt-0.5">
-                                                    {shift.start_time} – {shift.end_time}
-                                                    <span className="ml-1 text-xs">({hours} Std.)</span>
-                                                </p>
-                                                {shift.shift_type && (
-                                                    <Badge variant="outline" className="mt-1.5 text-xs">{shift.shift_type}</Badge>
-                                                )}
-                                                {shift.notes && (
-                                                    <p className="text-xs text-muted-foreground mt-1">{shift.notes}</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </TabsContent>
+// ── Haupt-Komponente ──────────────────────────────────────────────────────────
+export default function MyShiftsPage() {
+    const { data: employee } = useCurrentEmployee();
+    const [syncOpen, setSyncOpen] = useState(false);
 
-                    {/* ── Team ── */}
-                    <TabsContent value="team" className="space-y-3">
-                        {teamDays.map(({ date, dateStr, shifts: dayShifts }) => {
-                            const isToday = isSameDay(date, new Date());
-                            return (
-                                <Card key={dateStr} className={cn("border-border", isToday && "border-amber-500/40")}>
-                                    <CardHeader className="pb-2 pt-3 px-4">
-                                        <CardTitle className="flex items-center gap-2 text-sm">
-                                            <Users className="w-4 h-4 text-muted-foreground" />
-                                            <span className={isToday ? "text-amber-400" : "text-foreground"}>
-                                                {format(date, 'EEEE, dd.MM.', { locale: de })}
-                                            </span>
-                                            {isToday && <Badge className="bg-amber-500 text-slate-900 text-xs">Heute</Badge>}
-                                            <span className="ml-auto text-xs font-normal text-muted-foreground">{dayShifts.length} Schichten</span>
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="px-4 pb-3">
-                                        {dayShifts.length > 0 ? (
-                                            <div className="space-y-1.5">
-                                                {dayShifts.map(shift => {
-                                                    const isMe = shift.employee_id === employee.id;
-                                                    return (
-                                                        <div key={shift.id} className={cn(
-                                                            "flex items-center gap-3 p-2.5 rounded-xl",
-                                                            isMe ? "bg-amber-500/10 border border-amber-500/30" : "bg-secondary/50"
-                                                        )}>
-                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
-                                                                <span className="text-slate-900 font-bold text-xs">
-                                                                    {shift.employee_name?.charAt(0)?.toUpperCase() || '?'}
-                                                                </span>
-                                                            </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className={cn("font-semibold text-sm truncate", isMe ? "text-amber-400" : "text-foreground")}>
-                                                                    {shift.employee_name}
-                                                                    {isMe && <span className="ml-1 text-xs font-normal">(Du)</span>}
-                                                                </p>
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    {shift.start_time} – {shift.end_time}
-                                                                    {shift.shift_type && ` · ${shift.shift_type}`}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <p className="text-center text-muted-foreground/50 text-xs py-3">Keine Schichten</p>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                    </TabsContent>
+    const { data: shifts = [], isLoading } = useQuery({
+        queryKey: ['my-shifts', employee?.id],
+        queryFn: async () => {
+            if (!employee) return [];
+            const all  = await base44.entities.Shift.filter({ employee_id: employee.id }, 'date', 500);
+            const from = format(subMonths(new Date(), 2), 'yyyy-MM-dd');
+            const to   = format(addMonths(new Date(), 4), 'yyyy-MM-dd');
+            return all.filter(s => s.date >= from && s.date <= to);
+        },
+        enabled: !!employee,
+        staleTime: STALE.MEDIUM,
+    });
 
-                    {/* ── Kalender-Sync ── */}
-                    <TabsContent value="sync">
-                        <MyShiftsCalendarSync employeeId={employee.id} existingToken={employee.calendar_token} />
-                    </TabsContent>
+    if (!employee) return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="text-center text-muted-foreground space-y-2">
+                <CalendarDays className="w-10 h-10 mx-auto opacity-30" />
+                <p className="text-sm">Kein Mitarbeiterprofil verknüpft</p>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="max-w-xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+
+                {/* ── Header ────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-bold text-foreground">Meine Schichten</h1>
+                        <p className="text-xs text-muted-foreground mt-0.5">{employee.name}</p>
+                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-9 w-9">
+                                <MoreVertical className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem onClick={() => setSyncOpen(true)}>
+                                <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                                Kalender-Sync
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+
+                {/* ── Nächste Schicht Hero ──────────────────────────────── */}
+                {isLoading ? (
+                    <div className="rounded-2xl bg-card border border-border p-5 animate-pulse h-24" />
+                ) : (
+                    <NextShiftHero shifts={shifts} />
+                )}
+
+                {/* ── Tabs ──────────────────────────────────────────────── */}
+                <Tabs defaultValue="week">
+                    <TabsList className="grid grid-cols-3 w-full bg-secondary/50 border border-border/50">
+                        <TabsTrigger value="week"
+                            className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900 text-xs">
+                            Diese Woche
+                        </TabsTrigger>
+                        <TabsTrigger value="month"
+                            className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900 text-xs">
+                            Monat
+                        </TabsTrigger>
+                        <TabsTrigger value="team"
+                            className="data-[state=active]:bg-amber-500 data-[state=active]:text-slate-900 text-xs">
+                            Team
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <div className="mt-4">
+                        <TabsContent value="week">
+                            <WeekTab shifts={shifts} />
+                        </TabsContent>
+                        <TabsContent value="month">
+                            <MonthTab shifts={shifts} />
+                        </TabsContent>
+                        <TabsContent value="team">
+                            <TeamTab myEmployeeId={employee.id} />
+                        </TabsContent>
+                    </div>
                 </Tabs>
             </div>
+
+            {/* ── Kalender-Sync Dialog ──────────────────────────────────── */}
+            <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-amber-500" />
+                            Kalender-Sync
+                        </DialogTitle>
+                    </DialogHeader>
+                    <MyShiftsCalendarSync
+                        employeeId={employee.id}
+                        existingToken={employee.calendar_token}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

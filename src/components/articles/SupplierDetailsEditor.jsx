@@ -167,20 +167,22 @@ export default function SupplierDetailsEditor({ value = [], onChange, availableS
             <SmartCombobox
                 value={newName}
                 onChange={(val) => {
-                    setNewName(val);
-                    // If user selected an existing option directly, add it immediately
                     if (availableSuppliers.includes(val)) {
+                        // Existing supplier selected from list → add immediately, clear input
                         add(val);
+                        setNewName('');
+                    } else {
+                        setNewName(val);
                     }
                 }}
                 options={availableSuppliers.filter(s => !value.find(v => v.supplier_name === s))}
                 placeholder="Lieferant hinzufügen..."
                 allowCreate={true}
             />
-            {newName.trim() && !availableSuppliers.includes(newName.trim()) && (
+            {newName.trim() && (
                 <Button type="button" variant="outline" size="sm" onClick={() => add(newName)} className="w-full">
                     <Plus className="w-4 h-4 mr-2" />
-                    &quot;{newName.trim()}&quot; als neuen Lieferanten hinzufügen
+                    &quot;{newName.trim()}&quot; hinzufügen
                 </Button>
             )}
         </div>

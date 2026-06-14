@@ -60,7 +60,8 @@ function calcIngredientCost(ing, article) {
 }
 
 function calcTotalCost(ingredients, articles, scaleFactor = 1) {
-    return (ingredients || []).reduce((sum, ing) => {
+    const list = Array.isArray(ingredients) ? ingredients : [];
+    return list.reduce((sum, ing) => {
         const article = articles.find(a => a.id === ing.article_id);
         return sum + calcIngredientCost({ ...ing, amount: ing.amount * scaleFactor }, article);
     }, 0);

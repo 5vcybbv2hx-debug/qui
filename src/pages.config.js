@@ -77,7 +77,6 @@ import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
 import Recipes from './pages/Recipes';
 import Reports from './pages/Reports';
-import Reservations from './pages/Reservations';
 import Restock from './pages/Restock';
 import SalesAnalysis from './pages/SalesAnalysis';
 import GuestHub from './pages/GuestHub';
@@ -149,7 +148,6 @@ const CORE_PAGES = {
     "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
     "Reports": Reports,
-    "Reservations": Reservations,
     "Restock": Restock,
     "SalesAnalysis": SalesAnalysis,
     "GuestHub": GuestHub,

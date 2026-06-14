@@ -1,8 +1,22 @@
-import React, { useState } from 'react';
+/**
+ * Recipes — Rezeptverwaltung
+ * - Semantische Theme-Tokens (kein slate-* hardcoding)
+ * - Pill-Chips statt native <select>
+ * - Kompakte Karten → Detail-Dialog
+ * - ··· Menü für seltenere Aktionen
+ * - toast() statt alert(), AlertDialog statt window.confirm()
+ * - Kostenberechnung als Utility-Funktion (DRY)
+ */
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import { Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart, Lightbulb, CheckSquare, X, Sparkles, ChefHat } from 'lucide-react';
+import {
+    Plus, Search, Wine, Trash2, Edit, Settings, ShoppingCart,
+    Lightbulb, CheckSquare, X, Sparkles, ChefHat, MoreVertical,
+    FileText, Snowflake, GlassWater, UtensilsCrossed, StickyNote,
+    Minus, CreditCard
+} from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,120 +24,346 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import SavedFilters from '@/components/filters/SavedFilters';
+import { toast } from 'sonner';
 import IngredientSelector from '@/components/recipes/IngredientSelector';
 import PDFExportButton from '@/components/export/PDFExportButton';
-import QRCodeGenerator from '@/components/qr/QRCodeGenerator';
 import SlushyRecipeCard from '@/components/recipes/SlushyRecipeCard';
-import { Snowflake } from 'lucide-react';
 
-const categoryColors = {
-    'Cocktail': 'bg-pink-100 text-pink-700',
-    'Shot': 'bg-orange-100 text-orange-700',
-    'Longdrink': 'bg-blue-100 text-blue-700',
-    'Mocktail': 'bg-green-100 text-green-700',
-    'Moonshiner-Cocktails': 'bg-amber-100 text-amber-700',
-    'Sonstiges': 'bg-slate-100 text-slate-700'
+// ── Kategorien ────────────────────────────────────────────────────────────────
+const STANDARD_CATEGORIES = ['Cocktail', 'Shot', 'Longdrink', 'Mocktail', 'Moonshiner-Cocktails', 'Sonstiges'];
+const SLUSHY_CATEGORIES   = ['Vodka', 'Rum', 'Gin', 'Whiskey', 'Likör', 'Alkoholfrei', 'Sonstiges'];
+
+const CATEGORY_COLORS = {
+    'Cocktail':             'bg-pink-500/12 text-pink-400 border-pink-500/25',
+    'Shot':                 'bg-orange-500/12 text-orange-400 border-orange-500/25',
+    'Longdrink':            'bg-blue-500/12 text-blue-400 border-blue-500/25',
+    'Mocktail':             'bg-green-500/12 text-green-400 border-green-500/25',
+    'Moonshiner-Cocktails': 'bg-amber-500/12 text-amber-400 border-amber-500/25',
+    'Sonstiges':            'bg-secondary text-muted-foreground border-border',
 };
 
+// ── Kostenberechnung (DRY) ────────────────────────────────────────────────────
+function calcIngredientCost(ing, article) {
+    if (!article?.price_per_liter || !ing.amount) return 0;
+    const unit = (ing.unit || 'ml').toLowerCase();
+    if (unit === 'stk' || unit === 'stück') {
+        return article.purchase_price ? article.purchase_price * ing.amount : 0;
+    }
+    const factors = { ml: 1/1000, cl: 1/100, l: 1, g: 1/1000, kg: 1 };
+    const liters = ing.amount * (factors[unit] ?? 1/1000);
+    return liters * article.price_per_liter;
+}
+
+function calcTotalCost(ingredients, articles, scaleFactor = 1) {
+    return (ingredients || []).reduce((sum, ing) => {
+        const article = articles.find(a => a.id === ing.article_id);
+        return sum + calcIngredientCost({ ...ing, amount: ing.amount * scaleFactor }, article);
+    }, 0);
+}
+
+function getScaledIngredients(ingredients, originalServings, viewServings) {
+    const factor = viewServings / (originalServings || 1);
+    return (ingredients || []).map(ing => ({
+        ...ing,
+        amount: Math.round(ing.amount * factor * 10) / 10,
+    }));
+}
+
+// ── Detail-Dialog ─────────────────────────────────────────────────────────────
+function RecipeDetailDialog({ recipe, articles, permissions, open, onClose, onEdit, onDelete }) {
+    const [servings, setServings] = useState(recipe?.servings || 1);
+
+    if (!recipe) return null;
+
+    const scaleFactor = servings / (recipe.servings || 1);
+    const scaledIngredients = getScaledIngredients(recipe.ingredients, recipe.servings || 1, servings);
+    const totalCost = calcTotalCost(recipe.ingredients, articles, scaleFactor);
+    const catColor  = CATEGORY_COLORS[recipe.category] || CATEGORY_COLORS['Sonstiges'];
+
+    return (
+        <Dialog open={open} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+                <DialogHeader>
+                    <div className="flex items-start justify-between gap-3 pr-6">
+                        <div className="flex-1 min-w-0">
+                            <DialogTitle className="text-xl leading-snug">{recipe.name}</DialogTitle>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full border', catColor)}>
+                                    {recipe.category}
+                                </span>
+                                {recipe.glass_type && (
+                                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                        <GlassWater className="w-3 h-3" />{recipe.glass_type}
+                                    </span>
+                                )}
+                                {recipe.garnish && (
+                                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                                        <UtensilsCrossed className="w-3 h-3" />{recipe.garnish}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <div className="space-y-4 py-1">
+                    {/* Bild */}
+                    {recipe.image_url && (
+                        <img src={recipe.image_url} alt={recipe.name}
+                            className="w-full h-44 object-cover rounded-xl border border-border/50" />
+                    )}
+
+                    {/* Zutaten + Skalierung */}
+                    {recipe.ingredients?.length > 0 && (
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Zutaten</p>
+                                {/* Skalierung */}
+                                <div className="flex items-center gap-1.5 bg-secondary rounded-full px-2 py-0.5">
+                                    <button onClick={() => setServings(s => Math.max(1, s - 1))}
+                                        className="w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                                        <Minus className="w-3 h-3" />
+                                    </button>
+                                    <span className="text-xs font-semibold text-foreground min-w-[24px] text-center">
+                                        {servings}×
+                                    </span>
+                                    <button onClick={() => setServings(s => s + 1)}
+                                        className="w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+                                        <Plus className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="space-y-1.5">
+                                {scaledIngredients.map((ing, idx) => {
+                                    const article = articles.find(a => a.id === ing.article_id);
+                                    const cost = calcIngredientCost(ing, article);
+                                    return (
+                                        <div key={idx} className="flex items-center justify-between text-sm">
+                                            <span className="text-foreground">
+                                                <span className="font-semibold text-amber-500">
+                                                    {ing.amount}{ing.unit || 'ml'}
+                                                </span>
+                                                {' '}{ing.article_name}
+                                            </span>
+                                            {permissions.isManager && cost > 0 && (
+                                                <span className="text-xs text-green-400 font-medium ml-2 shrink-0">
+                                                    {cost.toFixed(2)} €
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {/* Gesamtkosten */}
+                            {permissions.isManager && totalCost > 0 && (
+                                <div className="mt-3 pt-2.5 border-t border-border/50 flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        <CreditCard className="w-3 h-3" />EK gesamt
+                                    </span>
+                                    <span className="text-sm font-bold text-green-400">{totalCost.toFixed(2)} €</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Zubereitung */}
+                    {recipe.preparation && (
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1.5">
+                                Zubereitung
+                            </p>
+                            <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
+                                {recipe.preparation}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Notizen */}
+                    {recipe.notes && (
+                        <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3">
+                            <p className="text-xs font-bold text-amber-400 mb-1 flex items-center gap-1">
+                                <StickyNote className="w-3 h-3" />Notiz
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{recipe.notes}</p>
+                        </div>
+                    )}
+                </div>
+
+                {permissions.isManager && (
+                    <DialogFooter className="gap-2 pt-2">
+                        <Button variant="outline" size="sm" onClick={() => { onClose(); onDelete(recipe.id); }}
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />Löschen
+                        </Button>
+                        <Button size="sm" onClick={() => { onClose(); onEdit(recipe); }}
+                            className="bg-amber-600 hover:bg-amber-700 text-white flex-1">
+                            <Edit className="w-3.5 h-3.5 mr-1.5" />Bearbeiten
+                        </Button>
+                    </DialogFooter>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// ── Kompakte Rezept-Karte ─────────────────────────────────────────────────────
+function RecipeCard({ recipe, articles, permissions, onSelect, isSelected, onClick }) {
+    const catColor  = CATEGORY_COLORS[recipe.category] || CATEGORY_COLORS['Sonstiges'];
+    const totalCost = calcTotalCost(recipe.ingredients, articles);
+    const ingCount  = recipe.ingredients?.length || 0;
+
+    return (
+        <div
+            className={cn(
+                'group relative border rounded-xl p-3.5 cursor-pointer transition-all bg-card',
+                isSelected
+                    ? 'border-amber-500 bg-amber-500/5'
+                    : 'border-border/60 hover:border-border'
+            )}
+            onClick={onClick}
+        >
+            {/* Checkbox für Multi-Selektion */}
+            {permissions.isManager && (
+                <button
+                    onClick={e => { e.stopPropagation(); onSelect(recipe.id); }}
+                    className={cn(
+                        'absolute top-3 right-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-all',
+                        isSelected
+                            ? 'bg-amber-500 border-amber-500'
+                            : 'border-border opacity-0 group-hover:opacity-100 bg-card'
+                    )}>
+                    {isSelected && <CheckSquare className="w-3 h-3 text-white" />}
+                </button>
+            )}
+
+            {/* Bild */}
+            {recipe.image_url && (
+                <div className="w-full h-28 rounded-lg overflow-hidden mb-3 border border-border/40">
+                    <img src={recipe.image_url} alt={recipe.name}
+                        className="w-full h-full object-cover" />
+                </div>
+            )}
+
+            {/* Name + Kategorie */}
+            <p className="font-semibold text-sm text-foreground leading-snug mb-1.5 pr-6">
+                {recipe.name}
+            </p>
+            <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full border inline-block', catColor)}>
+                {recipe.category}
+            </span>
+
+            {/* Meta-Infos */}
+            <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
+                {ingCount > 0 && <span>{ingCount} Zutat{ingCount !== 1 ? 'en' : ''}</span>}
+                {recipe.glass_type && <span>· {recipe.glass_type}</span>}
+                {permissions.isManager && totalCost > 0 && (
+                    <span className="text-green-400 font-medium">· {totalCost.toFixed(2)} €</span>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Haupt-Komponente ──────────────────────────────────────────────────────────
 export default function Recipes() {
-    const permissions = usePermissions();
-    const queryClient = useQueryClient();
-    const [modalOpen, setModalOpen] = useState(false);
-    const [selectedRecipe, setSelectedRecipe] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('alle');
-    const [ingredientFilter, setIngredientFilter] = useState('');
-    const [categoriesModalOpen, setCategoriesModalOpen] = useState(false);
-    const [selectedRecipes, setSelectedRecipes] = useState(new Set());
-    const [similarRecipesModal, setSimilarRecipesModal] = useState(false);
-    const [currentRecipeForSimilar, setCurrentRecipeForSimilar] = useState(null);
-    const [activeTab, setActiveTab] = useState('standard'); // 'standard' | 'slushy'
+    const permissions  = usePermissions();
+    const queryClient  = useQueryClient();
+
+    // Modal-States
+    const [modalOpen,          setModalOpen]          = useState(false);
+    const [selectedRecipe,     setSelectedRecipe]     = useState(null);
+    const [detailRecipe,       setDetailRecipe]       = useState(null);
+    const [deleteTarget,       setDeleteTarget]       = useState(null);
+    const [similarModal,       setSimilarModal]       = useState(false);
+    const [similarRecipe,      setSimilarRecipe]      = useState(null);
+    const [categoriesOpen,     setCategoriesOpen]     = useState(false);
+
+    // Filter
+    const [searchQuery,        setSearchQuery]        = useState('');
+    const [categoryFilter,     setCategoryFilter]     = useState('alle');
+    const [ingredientFilter,   setIngredientFilter]   = useState('');
+    const [activeTab,          setActiveTab]          = useState('standard');
+
+    // Multi-Selektion
+    const [selectedRecipes,    setSelectedRecipes]    = useState(new Set());
+
+    // Skalierung (pro Rezept-ID)
+    const [viewServings,       setViewServings]       = useState({});
+
+    // KI-Status
+    const [suggestingIngredients,    setSuggestingIngredients]    = useState(false);
+    const [generatingFromInventory,  setGeneratingFromInventory]  = useState(false);
+    const [uploadingImage,           setUploadingImage]           = useState(false);
+
     const [formData, setFormData] = useState({
-        name: '',
-        category: 'Cocktail',
-        recipe_type: 'standard',
-        slushy_spirit_base: '',
-        slushy_original_volume_liters: '',
-        servings: 1,
-        ingredients: [],
-        preparation: '',
-        glass_type: '',
-        garnish: '',
-        notes: '',
-        image_url: ''
-    });
-    const [uploadingImage, setUploadingImage] = useState(false);
-    const [viewServings, setViewServings] = useState({});
-    const [suggestingIngredients, setSuggestingIngredients] = useState(false);
-    const [generatingFromInventory, setGeneratingFromInventory] = useState(false);
-    const [qrCodeOpen, setQrCodeOpen] = useState(false);
-    const [qrCodeRecipe, setQrCodeRecipe] = useState(null);
-
-    const { data: recipes = [] } = useQuery({
-        queryKey: ['recipes'],
-        queryFn: () => base44.entities.Recipe.list('name', 500),
-        staleTime: STALE.SLOW,
+        name: '', category: 'Cocktail', recipe_type: 'standard',
+        slushy_spirit_base: '', slushy_original_volume_liters: '',
+        servings: 1, ingredients: [], preparation: '',
+        glass_type: '', garnish: '', notes: '', image_url: ''
     });
 
-    const { data: articles = [] } = useQuery({
-        queryKey: ['articles'],
-        queryFn: () => base44.entities.Article.list('name', 500),
-        staleTime: STALE.SLOW,
-    });
+    // ── Queries ───────────────────────────────────────────────────────────────
+    const { data: recipes  = [] } = useQuery({ queryKey: ['recipes'],  queryFn: () => base44.entities.Recipe.list('name', 500),   staleTime: STALE.SLOW });
+    const { data: articles = [] } = useQuery({ queryKey: ['articles'], queryFn: () => base44.entities.Article.list('name', 500),  staleTime: STALE.SLOW });
 
-    const { data: shoppingList = [] } = useQuery({
-        queryKey: ['shopping-list'],
-        queryFn: () => base44.entities.ShoppingList.list(),
-        staleTime: STALE.SLOW,
-    });
-
+    // ── Mutations ─────────────────────────────────────────────────────────────
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.Recipe.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recipes'] });
-            closeModal();
-        },
-        onError: (err) => {
-            alert('Fehler beim Erstellen: ' + (err?.message || JSON.stringify(err)));
-        }
+        mutationFn: d => base44.entities.Recipe.create(d),
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipes'] }); closeModal(); toast.success('Rezept erstellt'); },
+        onError:   e => toast.error('Fehler: ' + (e?.message || 'Unbekannt')),
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.Recipe.update(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recipes'] });
-            closeModal();
-        },
-        onError: (err) => {
-            alert('Fehler beim Speichern: ' + (err?.message || JSON.stringify(err)));
-        }
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipes'] }); closeModal(); toast.success('Rezept gespeichert'); },
+        onError:   e => toast.error('Fehler: ' + (e?.message || 'Unbekannt')),
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.Recipe.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recipes'] });
-        }
+        mutationFn: id => base44.entities.Recipe.delete(id),
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['recipes'] }); toast.success('Rezept gelöscht'); setDeleteTarget(null); },
+        onError:   () => toast.error('Löschen fehlgeschlagen'),
     });
 
-    const createShoppingItemMutation = useMutation({
-        mutationFn: (data) => base44.entities.ShoppingList.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['shopping-list']);
-        }
+    const createShoppingMutation = useMutation({
+        mutationFn: d => base44.entities.ShoppingList.create(d),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shopping-list'] }),
     });
 
+    // ── Filter-Logik ──────────────────────────────────────────────────────────
+    const standardRecipes = useMemo(() => recipes.filter(r => r.recipe_type !== 'slushy'), [recipes]);
+    const slushyRecipes   = useMemo(() => recipes.filter(r => r.recipe_type === 'slushy'),  [recipes]);
+
+    const filteredRecipes = useMemo(() => {
+        const base = activeTab === 'slushy' ? slushyRecipes : standardRecipes;
+        return base.filter(r => {
+            if (categoryFilter !== 'alle' && r.category !== categoryFilter) return false;
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                if (!r.name?.toLowerCase().includes(q) && !r.preparation?.toLowerCase().includes(q)) return false;
+            }
+            if (ingredientFilter) {
+                const qI = ingredientFilter.toLowerCase();
+                const hasIng = (r.ingredients || []).some(i => i.article_name?.toLowerCase().includes(qI));
+                if (!hasIng) return false;
+            }
+            return true;
+        });
+    }, [recipes, activeTab, categoryFilter, searchQuery, ingredientFilter, standardRecipes, slushyRecipes]);
+
+    const activeCategories = activeTab === 'slushy' ? SLUSHY_CATEGORIES : STANDARD_CATEGORIES;
+
+    // ── Modal Helpers ─────────────────────────────────────────────────────────
     const openModal = (recipe = null) => {
         if (recipe) {
             setSelectedRecipe(recipe);
             setFormData({
-                name: recipe.name,
-                category: recipe.category,
+                name: recipe.name, category: recipe.category,
                 recipe_type: recipe.recipe_type || 'standard',
                 slushy_spirit_base: recipe.slushy_spirit_base || '',
                 slushy_original_volume_liters: recipe.slushy_original_volume_liters || '',
@@ -133,1112 +373,552 @@ export default function Recipes() {
                 glass_type: recipe.glass_type || '',
                 garnish: recipe.garnish || '',
                 notes: recipe.notes || '',
-                image_url: recipe.image_url || ''
+                image_url: recipe.image_url || '',
             });
         } else {
             setSelectedRecipe(null);
             setFormData({
-                name: '',
-                category: categoryFilter !== 'alle' ? categoryFilter : 'Cocktail',
+                name: '', category: categoryFilter !== 'alle' ? categoryFilter : 'Cocktail',
                 recipe_type: activeTab === 'slushy' ? 'slushy' : 'standard',
-                slushy_spirit_base: '',
-                slushy_original_volume_liters: '',
-                servings: 1,
-                ingredients: [],
-                preparation: '',
-                glass_type: '',
-                garnish: '',
-                notes: '',
-                image_url: ''
+                slushy_spirit_base: '', slushy_original_volume_liters: '',
+                servings: 1, ingredients: [], preparation: '',
+                glass_type: '', garnish: '', notes: '', image_url: '',
             });
         }
         setModalOpen(true);
     };
 
-    const handleImageUpload = async (e) => {
+    const closeModal = () => { setModalOpen(false); setSelectedRecipe(null); };
+
+    const handleSave = () => {
+        if (!formData.name.trim()) { toast.error('Name ist erforderlich'); return; }
+        if (selectedRecipe) {
+            updateMutation.mutate({ id: selectedRecipe.id, data: formData });
+        } else {
+            createMutation.mutate(formData);
+        }
+    };
+
+    // ── Bild-Upload ───────────────────────────────────────────────────────────
+    const handleImageUpload = async e => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         setUploadingImage(true);
         try {
             const { file_url } = await base44.integrations.Core.UploadFile({ file });
-            setFormData({ ...formData, image_url: file_url });
-        } catch (error) {
-            alert('Fehler beim Hochladen des Bildes');
+            setFormData(f => ({ ...f, image_url: file_url }));
+            toast.success('Bild hochgeladen');
+        } catch {
+            toast.error('Fehler beim Hochladen');
         } finally {
             setUploadingImage(false);
         }
     };
 
+    // ── KI-Aktionen ───────────────────────────────────────────────────────────
     const suggestIngredients = async () => {
-        if (!formData.name) {
-            alert('Bitte gib zuerst einen Rezeptnamen ein');
-            return;
-        }
-
+        if (!formData.name) { toast.error('Bitte zuerst einen Namen eingeben'); return; }
         setSuggestingIngredients(true);
         try {
-            const availableArticles = articles.map(a => ({
-                id: a.id,
-                name: a.name,
-                category: a.category
-            }));
-
             const result = await base44.integrations.Core.InvokeLLM({
                 prompt: `Du bist ein professioneller Barkeeper. Erstelle eine Zutatenliste für: "${formData.name}".
-
-Verfügbare Artikel in der Datenbank:
-${JSON.stringify(availableArticles, null, 2)}
-
-WICHTIG: Nutze NUR Artikel aus der obigen Liste! Gib die article_id, article_name, amount (als Zahl) und unit (ml, cl, l, g, kg, oder Stück) zurück.
-
-Beispiel-Format:
-[
-  {"article_id": "123", "article_name": "Rum", "amount": 40, "unit": "ml"},
-  {"article_id": "456", "article_name": "Limettensaft", "amount": 20, "unit": "ml"}
-]`,
+Verfügbare Artikel: ${JSON.stringify(articles.map(a => ({ id: a.id, name: a.name, category: a.category })))}
+WICHTIG: Nutze NUR Artikel aus der Liste. Antworte mit JSON: {"ingredients":[{"article_id":"...","article_name":"...","amount":40,"unit":"ml"}]}`,
                 response_json_schema: {
                     type: "object",
                     properties: {
-                        ingredients: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    article_id: { type: "string" },
-                                    article_name: { type: "string" },
-                                    amount: { type: "number" },
-                                    unit: { type: "string" }
-                                }
-                            }
-                        }
+                        ingredients: { type: "array", items: { type: "object",
+                            properties: { article_id: {type:"string"}, article_name: {type:"string"}, amount: {type:"number"}, unit: {type:"string"} }
+                        }}
                     }
                 }
             });
-
-            if (result.ingredients && Array.isArray(result.ingredients)) {
-                setFormData({ ...formData, ingredients: result.ingredients });
+            if (result.ingredients?.length) {
+                setFormData(f => ({ ...f, ingredients: result.ingredients }));
+                toast.success(`${result.ingredients.length} Zutaten vorgeschlagen`);
             }
-        } catch (error) {
-            alert('Fehler bei der KI-Vorschlagsfunktion');
-        } finally {
-            setSuggestingIngredients(false);
-        }
+        } catch { toast.error('KI-Vorschlag fehlgeschlagen'); }
+        finally  { setSuggestingIngredients(false); }
     };
 
     const generateRecipeFromInventory = async () => {
         setGeneratingFromInventory(true);
         try {
-            const availableArticles = articles
-                .filter(a => a.current_stock > 0)
-                .map(a => ({
-                    id: a.id,
-                    name: a.name,
-                    category: a.category,
-                    stock: a.current_stock
-                }));
-
-            if (availableArticles.length === 0) {
-                alert('Keine Artikel mit Bestand im Inventar gefunden');
-                return;
-            }
-
+            const available = articles.filter(a => a.current_stock > 0).map(a => ({ id: a.id, name: a.name, category: a.category, stock: a.current_stock }));
+            if (!available.length) { toast.error('Kein Bestand im Inventar'); return; }
             const result = await base44.integrations.Core.InvokeLLM({
-                prompt: `Du bist ein kreativer Barkeeper. Erstelle ein interessantes Cocktail-Rezept basierend auf folgenden verfügbaren Artikeln:
-
-${JSON.stringify(availableArticles, null, 2)}
-
-Erstelle ein vollständiges Rezept mit:
-- name: kreativer Rezeptname
-- category: wähle aus (Cocktail, Longdrink, Shot, Mocktail)
-- ingredients: Array mit article_id, article_name, amount (Zahl), unit (ml/cl/l/g/kg/Stück)
-- preparation: detaillierte Zubereitungsanleitung
-- glass_type: passende Glasart
-- garnish: Garnitur
-
-Nutze NUR verfügbare Artikel aus der obigen Liste!`,
+                prompt: `Du bist ein kreativer Barkeeper. Erstelle ein Cocktail-Rezept aus diesen Artikeln: ${JSON.stringify(available)}.
+Antworte mit JSON: {"name":"...","category":"Cocktail","servings":1,"ingredients":[...],"preparation":"...","glass_type":"...","garnish":"..."}`,
                 response_json_schema: {
                     type: "object",
                     properties: {
-                        name: { type: "string" },
-                        category: { type: "string" },
-                        ingredients: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    article_id: { type: "string" },
-                                    article_name: { type: "string" },
-                                    amount: { type: "number" },
-                                    unit: { type: "string" }
-                                }
-                            }
-                        },
-                        preparation: { type: "string" },
-                        glass_type: { type: "string" },
-                        garnish: { type: "string" }
+                        name: {type:"string"}, category: {type:"string"}, servings: {type:"number"},
+                        ingredients: {type:"array"}, preparation: {type:"string"},
+                        glass_type: {type:"string"}, garnish: {type:"string"}
                     }
                 }
             });
-
             if (result.name) {
-                setFormData({
-                    name: result.name,
-                    category: result.category || 'Cocktail',
-                    servings: 1,
-                    ingredients: result.ingredients || [],
-                    preparation: result.preparation || '',
-                    glass_type: result.glass_type || '',
-                    garnish: result.garnish || '',
-                    notes: 'Automatisch generiert aus verfügbaren Artikeln',
-                    image_url: ''
-                });
+                setSelectedRecipe(null);
+                setFormData({ ...result, recipe_type: 'standard', slushy_spirit_base: '', slushy_original_volume_liters: '', notes: '', image_url: '' });
                 setModalOpen(true);
+                toast.success(`KI-Rezept „${result.name}" erstellt`);
             }
-        } catch (error) {
-            alert('Fehler bei der Rezeptgenerierung');
-        } finally {
-            setGeneratingFromInventory(false);
-        }
+        } catch { toast.error('KI-Generierung fehlgeschlagen'); }
+        finally  { setGeneratingFromInventory(false); }
     };
 
-    const getScaledIngredients = (ingredients, baseServings, targetServings) => {
-        if (!ingredients || !baseServings || !targetServings) return ingredients;
-        const factor = targetServings / baseServings;
-        return ingredients.map(ing => ({
-            ...ing,
-            amount: ing.amount ? Math.round(ing.amount * factor * 10) / 10 : 0
-        }));
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setSelectedRecipe(null);
-    };
-
-    const handleSubmit = (e) => {
-        if (e && e.preventDefault) e.preventDefault();
-        if (!formData.name?.trim()) {
-            alert('Bitte gib einen Rezeptnamen ein.');
-            return;
-        }
-        const cleanData = {
-            ...formData,
-            slushy_original_volume_liters: formData.slushy_original_volume_liters === '' || formData.slushy_original_volume_liters === undefined ? null : Number(formData.slushy_original_volume_liters),
-            servings: formData.servings === '' || formData.servings === undefined ? 1 : Number(formData.servings),
-            slushy_rating: formData.slushy_rating === '' || formData.slushy_rating === undefined ? null : Number(formData.slushy_rating),
-        };
-        if (selectedRecipe) {
-            updateMutation.mutate({ id: selectedRecipe.id, data: cleanData });
-        } else {
-            createMutation.mutate(cleanData);
-        }
-    };
-
-    const handleDelete = (id) => {
-        if (confirm('Rezept wirklich löschen?')) {
-            deleteMutation.mutate(id);
-        }
-    };
-
-    const standardRecipes = recipes.filter(r => !r.recipe_type || r.recipe_type === 'standard');
-    const slushyRecipes = recipes.filter(r => r.recipe_type === 'slushy');
-
-    const filteredRecipes = standardRecipes.filter(recipe => {
-        const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory = categoryFilter === 'alle' || recipe.category === categoryFilter;
-        const matchesIngredient = !ingredientFilter || 
-            recipe.ingredients?.some(ing => 
-                ing.article_name?.toLowerCase().includes(ingredientFilter.toLowerCase())
-            );
-        return matchesSearch && matchesCategory && matchesIngredient;
-    });
-
-    const filteredSlushyRecipes = slushyRecipes.filter(recipe => {
-        const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesSpirit = categoryFilter === 'alle' || recipe.slushy_spirit_base === categoryFilter;
-        return matchesSearch && matchesSpirit;
-    });
-
-    const toggleRecipeSelection = (recipeId) => {
-        setSelectedRecipes(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(recipeId)) {
-                newSet.delete(recipeId);
-            } else {
-                newSet.add(recipeId);
-            }
-            return newSet;
-        });
-    };
-
+    // ── Einkaufsliste ─────────────────────────────────────────────────────────
     const generateShoppingList = async () => {
-        if (selectedRecipes.size === 0) return;
-
-        const selectedRecipeObjects = recipes.filter(r => selectedRecipes.has(r.id));
-        const ingredientsMap = new Map();
-
-        // Sammle alle Zutaten
-        selectedRecipeObjects.forEach(recipe => {
-            const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-            ingredients.forEach(ing => {
-                const key = ing.article_name;
-                if (ingredientsMap.has(key)) {
-                    ingredientsMap.set(key, {
-                        ...ingredientsMap.get(key),
-                        amount: ingredientsMap.get(key).amount + ing.amount
-                    });
+        const selected = recipes.filter(r => selectedRecipes.has(r.id));
+        const map = new Map();
+        selected.forEach(r => {
+            (r.ingredients || []).forEach(ing => {
+                if (map.has(ing.article_id)) {
+                    map.get(ing.article_id).amount += ing.amount;
                 } else {
-                    ingredientsMap.set(key, {
-                        article_id: ing.article_id,
-                        article_name: ing.article_name,
-                        amount: ing.amount
-                    });
+                    map.set(ing.article_id, { ...ing });
                 }
             });
         });
-
-        // Füge zur Einkaufsliste hinzu
-        for (const [_, ingredient] of ingredientsMap) {
-            await createShoppingItemMutation.mutateAsync({
-                item_name: ingredient.article_name,
-                category: 'C+C',
-                quantity: Math.ceil(ingredient.amount / 100), // Umrechnung in größere Einheiten
-                unit: 'Stück',
-                status: 'offen',
-                notes: `${ingredient.amount}ml gesamt · Für Rezepte: ${selectedRecipeObjects.map(r => r.name).join(', ')}`
-            });
-        }
-
-        alert(`${ingredientsMap.size} Artikel zur Einkaufsliste hinzugefügt!`);
-        setSelectedRecipes(new Set());
+        try {
+            for (const [, ing] of map) {
+                await createShoppingMutation.mutateAsync({
+                    item_name: ing.article_name, category: 'C+C',
+                    quantity: Math.ceil(ing.amount / 100), unit: 'Stück', status: 'offen',
+                    notes: `${ing.amount}ml gesamt · Für: ${selected.map(r => r.name).join(', ')}`
+                });
+            }
+            toast.success(`${map.size} Artikel zur Einkaufsliste hinzugefügt`);
+            setSelectedRecipes(new Set());
+        } catch { toast.error('Fehler beim Erstellen der Einkaufsliste'); }
     };
 
-    const findSimilarRecipes = (recipe) => {
+    // ── Ähnliche Rezepte ──────────────────────────────────────────────────────
+    const findSimilarRecipes = recipe => {
         if (!recipe) return [];
-
-        const currentIngredients = Array.isArray(recipe.ingredients) 
-            ? recipe.ingredients.map(i => i.article_id)
-            : [];
-        
+        const currIds = (recipe.ingredients || []).map(i => i.article_id);
         return recipes
             .filter(r => r.id !== recipe.id)
             .map(r => {
-                let score = 0;
-                
-                // Punkte für gleiche Kategorie
-                if (r.category === recipe.category) score += 3;
-                
-                // Punkte für gemeinsame Artikel
-                const otherIngredients = Array.isArray(r.ingredients) 
-                    ? r.ingredients.map(i => i.article_id)
-                    : [];
-                currentIngredients.forEach(ingId => {
-                    if (otherIngredients.includes(ingId)) {
-                        score += 2;
-                    }
-                });
-                
+                let score = r.category === recipe.category ? 3 : 0;
+                const otherIds = (r.ingredients || []).map(i => i.article_id);
+                currIds.forEach(id => { if (otherIds.includes(id)) score += 2; });
                 return { recipe: r, score };
             })
-            .filter(item => item.score > 0)
+            .filter(x => x.score > 0)
             .sort((a, b) => b.score - a.score)
             .slice(0, 5)
-            .map(item => item.recipe);
+            .map(x => x.recipe);
     };
 
-    const showSimilarRecipes = (recipe) => {
-        setCurrentRecipeForSimilar(recipe);
-        setSimilarRecipesModal(true);
-    };
+    const toggleSelect = id =>
+        setSelectedRecipes(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
 
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="min-h-screen bg-slate-900 pb-24 md:pb-0">
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 mb-5 sm:mb-8">
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+
+                {/* ── Header ─────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-lg sm:text-2xl font-bold text-white tracking-tight">Rezepte</h1>
-                        <p className="text-slate-400 text-sm mt-1">
+                        <h1 className="text-xl font-bold text-foreground">Rezepte</h1>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                             {recipes.length} Rezept{recipes.length !== 1 ? 'e' : ''}
                         </p>
                     </div>
                     {permissions.isManager && (
-                         <div className="flex gap-1 sm:gap-2 flex-wrap">
-                            <PDFExportButton
-                                data={filteredRecipes}
-                                filename="rezepte"
-                                title="Rezepte"
-                                columns={[
-                                    { label: 'Name', field: 'name' },
-                                    { label: 'Kategorie', field: 'category' },
-                                    { label: 'Zutaten', render: (r) => r.ingredients?.length || 0 },
-                                    { label: 'Glas', field: 'glass_type' }
-                                ]}
-                                variant="outline"
-                                className="border-green-600 text-green-600 hover:bg-green-50"
-                            />
-                            <Button 
-                                onClick={generateRecipeFromInventory}
-                                disabled={generatingFromInventory}
-                                variant="outline"
-                                className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                            >
-                                <ChefHat className="w-4 h-4 mr-2" />
-                                {generatingFromInventory ? 'Generiere...' : 'KI-Rezept'}
-                            </Button>
-                            <Button 
-                                onClick={() => setCategoriesModalOpen(true)}
-                                variant="outline"
-                                className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                            >
-                                <Settings className="w-4 h-4 mr-2" />
-                                Kategorien
-                            </Button>
-                            <Button 
-                                onClick={() => openModal()}
-                                className="bg-amber-600 hover:bg-amber-700"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Rezept
+                        <div className="flex items-center gap-2">
+                            {/* ··· Mehr-Menü */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="h-9 w-9">
+                                        <MoreVertical className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52">
+                                    <DropdownMenuItem onClick={generateRecipeFromInventory} disabled={generatingFromInventory}>
+                                        <ChefHat className="w-4 h-4 mr-2" />
+                                        {generatingFromInventory ? 'Generiere…' : 'KI-Rezept aus Inventar'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setCategoriesOpen(true)}>
+                                        <Settings className="w-4 h-4 mr-2" />
+                                        Kategorien verwalten
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <PDFExportButton
+                                        data={filteredRecipes}
+                                        filename="rezepte"
+                                        title="Rezepte"
+                                        columns={[
+                                            { label: 'Name', field: 'name' },
+                                            { label: 'Kategorie', field: 'category' },
+                                            { label: 'Zutaten', render: r => r.ingredients?.length || 0 },
+                                            { label: 'Glas', field: 'glass_type' },
+                                        ]}
+                                        variant="ghost"
+                                        className="w-full justify-start px-2 text-sm font-normal h-8"
+                                        label={<><FileText className="w-4 h-4 mr-2" />PDF exportieren</>}
+                                    />
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* + Neu */}
+                            <Button size="sm" onClick={() => openModal()}
+                                className="h-9 bg-amber-600 hover:bg-amber-700 text-white gap-1.5">
+                                <Plus className="w-4 h-4" />
+                                <span className="hidden sm:inline">Neues Rezept</span>
                             </Button>
                         </div>
                     )}
                 </div>
 
-                {/* Shopping List Generator */}
-                {selectedRecipes.size > 0 && (
-                    <Card className="p-4 bg-amber-900/20 border-amber-600/30 mb-6">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <CheckSquare className="w-5 h-5 text-amber-400" />
-                                <div>
-                                    <p className="font-semibold text-white">
-                                        {selectedRecipes.size} Rezept{selectedRecipes.size !== 1 ? 'e' : ''} ausgewählt
-                                    </p>
-                                    <p className="text-xs text-amber-300">
-                                        Generiere eine Einkaufsliste mit allen benötigten Zutaten
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setSelectedRecipes(new Set())}
-                                    className="border-slate-600 text-slate-300 hover:bg-slate-800"
-                                >
-                                    Abbrechen
-                                </Button>
-                                <Button
-                                    onClick={generateShoppingList}
-                                    className="bg-amber-600 hover:bg-amber-700"
-                                >
-                                    <ShoppingCart className="w-4 h-4 mr-2" />
-                                    Einkaufsliste erstellen
-                                </Button>
-                            </div>
-                        </div>
-                    </Card>
-                )}
-
-                {/* Tab Switcher */}
-                <div className="flex gap-1 p-1 bg-card border border-border rounded-xl mb-5">
-                    <button
-                        onClick={() => setActiveTab('standard')}
+                {/* ── Tab Switcher ────────────────────────────────────────── */}
+                <div className="flex gap-1 p-1 bg-secondary border border-border rounded-xl">
+                    <button onClick={() => { setActiveTab('standard'); setCategoryFilter('alle'); }}
                         className={cn(
-                            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all',
-                            activeTab === 'standard'
-                                ? 'bg-primary text-primary-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                        )}
-                    >
+                            'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all',
+                            activeTab === 'standard' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        )}>
                         <Wine className="w-4 h-4" />
-                        Cocktails ({standardRecipes.length})
+                        Cocktails <span className="opacity-60 text-xs">({standardRecipes.length})</span>
                     </button>
-                    <button
-                        onClick={() => setActiveTab('slushy')}
+                    <button onClick={() => { setActiveTab('slushy'); setCategoryFilter('alle'); }}
                         className={cn(
-                            'flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-semibold transition-all',
-                            activeTab === 'slushy'
-                                ? 'bg-cyan-600 text-white shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                        )}
-                    >
+                            'flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all',
+                            activeTab === 'slushy' ? 'bg-cyan-500/15 text-cyan-400 shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                        )}>
                         <Snowflake className="w-4 h-4" />
-                        Slushy ({slushyRecipes.length})
+                        Slushy <span className="opacity-60 text-xs">({slushyRecipes.length})</span>
                     </button>
                 </div>
 
-                {/* Search and Filter */}
-                <Card className="p-4 bg-slate-800 border-slate-700 mb-6">
-                    <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <Input
-                                    placeholder="Rezept suchen..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 bg-slate-900 border-slate-700"
-                                />
-                            </div>
-                            <select
-                                value={categoryFilter}
-                                onChange={(e) => setCategoryFilter(e.target.value)}
-                                className="px-3 py-2 rounded-md bg-slate-900 border border-slate-700 text-white text-sm"
-                            >
-                                {activeTab === 'standard' ? (
-                                    <>
-                                        <option value="alle">Alle Kategorien</option>
-                                        <option value="Cocktail">Cocktail</option>
-                                        <option value="Shot">Shot</option>
-                                        <option value="Longdrink">Longdrink</option>
-                                        <option value="Mocktail">Mocktail</option>
-                                        <option value="Moonshiner-Cocktails">Moonshiner-Cocktails</option>
-                                        <option value="Sonstiges">Sonstiges</option>
-                                    </>
-                                ) : (
-                                    <>
-                                        <option value="alle">Alle Spirituosen</option>
-                                        <option value="Vodka">Vodka</option>
-                                        <option value="Rum">Rum</option>
-                                        <option value="Gin">Gin</option>
-                                        <option value="Whiskey">Whiskey</option>
-                                        <option value="Likör">Likör</option>
-                                        <option value="Alkoholfrei">Alkoholfrei</option>
-                                        <option value="Sonstiges">Sonstiges</option>
-                                    </>
-                                )}
-                            </select>
-                            <div className="relative flex-1 sm:max-w-[200px]">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                <Input
-                                    placeholder="Nach Zutat..."
-                                    value={ingredientFilter}
-                                    onChange={(e) => setIngredientFilter(e.target.value)}
-                                    className="pl-10 bg-slate-900 border-slate-700"
-                                />
-                            </div>
-                        </div>
-                        <SavedFilters
-                            storageKey="recipes_saved_filters"
-                            currentFilters={{ searchQuery, categoryFilter, ingredientFilter }}
-                            onApplyFilter={(filters) => {
-                                setSearchQuery(filters.searchQuery || '');
-                                setCategoryFilter(filters.categoryFilter || 'alle');
-                                setIngredientFilter(filters.ingredientFilter || '');
-                            }}
-                        />
+                {/* ── Suche ───────────────────────────────────────────────── */}
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input placeholder="Rezept suchen…" value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="pl-9 h-10" />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
-                </Card>
+                    <div className="relative w-40">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input placeholder="Zutat…" value={ingredientFilter}
+                            onChange={e => setIngredientFilter(e.target.value)}
+                            className="pl-9 h-10" />
+                    </div>
+                </div>
 
-                {/* Slushy Grid */}
-                {activeTab === 'slushy' && (
-                    filteredSlushyRecipes.length > 0 ? (
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredSlushyRecipes.map(recipe => (
-                                <SlushyRecipeCard
-                                    key={recipe.id}
-                                    recipe={recipe}
-                                    onEdit={openModal}
-                                    onDelete={(id) => { if (confirm('Slushy-Rezept wirklich löschen?')) deleteMutation.mutate(id); }}
-                                    isManager={permissions.isManager}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <Card className="p-12 bg-card border-border">
-                            <div className="text-center text-muted-foreground">
-                                <Snowflake className="w-16 h-16 mx-auto mb-4 opacity-50 text-cyan-400" />
-                                <p className="text-lg font-medium">Keine Slushy-Rezepte gefunden</p>
-                                <p className="text-sm mt-1">Füge dein erstes Slushy-Rezept hinzu</p>
+                {/* ── Kategorie-Chips ─────────────────────────────────────── */}
+                <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+                    <button onClick={() => setCategoryFilter('alle')}
+                        className={cn('shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                            categoryFilter === 'alle' ? 'bg-amber-500 border-amber-500 text-white' : 'border-border text-muted-foreground bg-card hover:text-foreground')}>
+                        Alle
+                    </button>
+                    {activeCategories.map(cat => (
+                        <button key={cat} onClick={() => setCategoryFilter(cat)}
+                            className={cn('shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                                categoryFilter === cat ? 'bg-amber-500 border-amber-500 text-white' : 'border-border text-muted-foreground bg-card hover:text-foreground')}>
+                            {cat}
+                            <span className="opacity-50 ml-1">
+                                {(activeTab === 'slushy' ? slushyRecipes : standardRecipes).filter(r => r.category === cat).length}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* ── Multi-Select Banner ─────────────────────────────────── */}
+                {selectedRecipes.size > 0 && (
+                    <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-xl p-3">
+                        <div className="flex items-center gap-2.5">
+                            <CheckSquare className="w-4 h-4 text-amber-500" />
+                            <div>
+                                <p className="text-sm font-semibold text-foreground">
+                                    {selectedRecipes.size} Rezept{selectedRecipes.size !== 1 ? 'e' : ''} ausgewählt
+                                </p>
+                                <p className="text-xs text-muted-foreground">Einkaufsliste mit allen Zutaten generieren</p>
                             </div>
-                        </Card>
-                    )
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setSelectedRecipes(new Set())} className="h-8">
+                                Abbrechen
+                            </Button>
+                            <Button size="sm" onClick={generateShoppingList}
+                                className="h-8 bg-amber-600 hover:bg-amber-700 text-white">
+                                <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Einkaufsliste
+                            </Button>
+                        </div>
+                    </div>
                 )}
 
-                {/* Standard Recipes Grid */}
-                {activeTab === 'standard' && filteredRecipes.length > 0 ? (
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* ── Rezept-Grid / Slushy-Liste ─────────────────────────── */}
+                {filteredRecipes.length === 0 ? (
+                    <div className="text-center py-16 text-muted-foreground">
+                        <Wine className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                        <p className="font-semibold text-foreground">Keine Rezepte gefunden</p>
+                        <p className="text-sm mt-1">
+                            {searchQuery || ingredientFilter || categoryFilter !== 'alle'
+                                ? 'Andere Filter probieren'
+                                : 'Erstes Rezept anlegen'}
+                        </p>
+                        {permissions.isManager && !searchQuery && !ingredientFilter && categoryFilter === 'alle' && (
+                            <Button size="sm" onClick={() => openModal()} className="mt-4 bg-amber-600 hover:bg-amber-700 text-white">
+                                <Plus className="w-4 h-4 mr-1.5" />Neues Rezept
+                            </Button>
+                        )}
+                    </div>
+                ) : activeTab === 'slushy' ? (
+                    <div className="space-y-3">
                         {filteredRecipes.map(recipe => (
-                            <Card key={recipe.id} className="overflow-hidden bg-slate-800 border-slate-700 shadow-sm hover:shadow-md transition-shadow">
-                                {recipe.image_url && (
-                                    <div className="w-full h-40 overflow-hidden bg-slate-900">
-                                        <img 
-                                            src={recipe.image_url} 
-                                            alt={recipe.name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                )}
-                                <div className="p-5">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center gap-2 flex-1">
-                                            <button
-                                                onClick={() => toggleRecipeSelection(recipe.id)}
-                                                className={cn(
-                                                    "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
-                                                    selectedRecipes.has(recipe.id)
-                                                        ? "bg-amber-600 border-amber-600"
-                                                        : "border-slate-600 hover:border-amber-500"
-                                                )}
-                                            >
-                                                {selectedRecipes.has(recipe.id) && (
-                                                    <CheckSquare className="w-3 h-3 text-white" />
-                                                )}
-                                            </button>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-white mb-2">{recipe.name}</h3>
-                                                <Badge className={cn("text-xs", categoryColors[recipe.category])}>
-                                                    {recipe.category}
-                                                </Badge>
-                                            </div>
-                                        </div>
-                                    <div className="flex gap-1">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => showSimilarRecipes(recipe)}
-                                            className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
-                                            title="Ähnliche Rezepte"
-                                        >
-                                            <Lightbulb className="w-4 h-4" />
-                                        </Button>
-                                        {permissions.isManager && (
-                                            <>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => {
-                                                        setQrCodeRecipe(recipe);
-                                                        setQrCodeOpen(true);
-                                                    }}
-                                                    className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
-                                                    title="QR-Code"
-                                                >
-                                                    <Wine className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => openModal(recipe)}
-                                                    className="h-8 w-8 text-slate-400 hover:text-slate-200 hover:bg-slate-700"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleDelete(recipe.id)}
-                                                    className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-900/20"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 text-sm">
-                                   {recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
-                                       <div>
-                                           <div className="flex items-center justify-between mb-2">
-                                               <p className="font-medium text-slate-300">Zutaten:</p>
-                                               <div className="flex items-center gap-2">
-                                                   <Button
-                                                       variant="ghost"
-                                                       size="icon"
-                                                       onClick={() => setViewServings(prev => ({
-                                                           ...prev,
-                                                           [recipe.id]: Math.max(1, (prev[recipe.id] || recipe.servings || 1) - 1)
-                                                       }))}
-                                                       className="h-6 w-6 text-slate-400 hover:text-white"
-                                                   >
-                                                       -
-                                                   </Button>
-                                                   <span className="text-xs text-slate-400">
-                                                       {viewServings[recipe.id] || recipe.servings || 1}x
-                                                   </span>
-                                                   <Button
-                                                       variant="ghost"
-                                                       size="icon"
-                                                       onClick={() => setViewServings(prev => ({
-                                                           ...prev,
-                                                           [recipe.id]: (prev[recipe.id] || recipe.servings || 1) + 1
-                                                       }))}
-                                                       className="h-6 w-6 text-slate-400 hover:text-white"
-                                                   >
-                                                       +
-                                                   </Button>
-                                               </div>
-                                           </div>
-                                           <div className="text-slate-400 text-xs leading-relaxed space-y-1">
-                                               {getScaledIngredients(
-                                                   recipe.ingredients, 
-                                                   recipe.servings || 1, 
-                                                   viewServings[recipe.id] || recipe.servings || 1
-                                               ).map((ing, idx) => {
-                                                   const article = articles.find(a => a.id === ing.article_id);
-                                                   let cost = 0;
-
-                                                   // Kostenberechnung basierend auf Einheit (Fallback zu ml für alte Rezepte)
-                                                   if (article?.price_per_liter && ing.amount) {
-                                                       const unit = ing.unit || 'ml';
-                                                       let amountInLiters = 0;
-                                                       switch (unit.toLowerCase()) {
-                                                           case 'ml':
-                                                               amountInLiters = ing.amount / 1000;
-                                                               break;
-                                                           case 'cl':
-                                                               amountInLiters = ing.amount / 100;
-                                                               break;
-                                                           case 'l':
-                                                               amountInLiters = ing.amount;
-                                                               break;
-                                                           case 'g':
-                                                               amountInLiters = ing.amount / 1000;
-                                                               break;
-                                                           case 'kg':
-                                                               amountInLiters = ing.amount;
-                                                               break;
-                                                           case 'stk':
-                                                           case 'stück':
-                                                               cost = article.purchase_price ? article.purchase_price * ing.amount : 0;
-                                                               break;
-                                                       }
-                                                       if (amountInLiters > 0) {
-                                                           cost = amountInLiters * article.price_per_liter;
-                                                       }
-                                                   }
-
-                                                   return (
-                                                       <p key={idx} className="flex justify-between items-center">
-                                                           <span>
-                                                               {ing.amount > 0 && `${ing.amount}${ing.unit || 'ml'} `}
-                                                               {ing.article_name}
-                                                           </span>
-                                                           {permissions.isManager && cost > 0 && (
-                                                               <span className="text-green-400 font-medium ml-2">
-                                                                   {cost.toFixed(2)} €
-                                                               </span>
-                                                           )}
-                                                       </p>
-                                                   );
-                                               })}
-                                           </div>
-                                       </div>
-                                   )}
-
-                                   {permissions.isManager && recipe.ingredients && Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
-                                       <div className="pt-2 border-t border-slate-700">
-                                           <p className="font-medium text-green-400 mb-1">Gesamtkosten (EK):</p>
-                                           <div className="text-green-300 text-xs">
-                                               {(() => {
-                                                   const scaledIngredients = getScaledIngredients(
-                                                       recipe.ingredients, 
-                                                       recipe.servings || 1, 
-                                                       viewServings[recipe.id] || recipe.servings || 1
-                                                   );
-                                                   let totalCost = 0;
-                                                   scaledIngredients.forEach(ing => {
-                                                       const article = articles.find(a => a.id === ing.article_id);
-                                                       if (article?.price_per_liter && ing.amount) {
-                                                           const unit = ing.unit || 'ml';
-                                                           let amountInLiters = 0;
-                                                           switch (unit.toLowerCase()) {
-                                                               case 'ml':
-                                                                   amountInLiters = ing.amount / 1000;
-                                                                   break;
-                                                               case 'cl':
-                                                                   amountInLiters = ing.amount / 100;
-                                                                   break;
-                                                               case 'l':
-                                                                   amountInLiters = ing.amount;
-                                                                   break;
-                                                               case 'g':
-                                                                   amountInLiters = ing.amount / 1000;
-                                                                   break;
-                                                               case 'kg':
-                                                                   amountInLiters = ing.amount;
-                                                                   break;
-                                                               case 'stk':
-                                                               case 'stück':
-                                                                   totalCost += article.purchase_price ? article.purchase_price * ing.amount : 0;
-                                                                   return;
-                                                           }
-                                                           if (amountInLiters > 0) {
-                                                               totalCost += amountInLiters * article.price_per_liter;
-                                                           }
-                                                       }
-                                                   });
-                                                   return totalCost > 0 ? `${totalCost.toFixed(2)} €` : 'Keine Preise hinterlegt';
-                                               })()}
-                                           </div>
-                                       </div>
-                                   )}
-
-                                    {recipe.preparation && (
-                                        <div>
-                                            <p className="font-medium text-slate-300 mb-1">Zubereitung:</p>
-                                            <p className="text-slate-400 text-xs leading-relaxed">
-                                                {recipe.preparation}
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {(recipe.glass_type || recipe.garnish) && (
-                                        <div className="pt-2 border-t border-slate-700 text-xs text-slate-400">
-                                            {recipe.glass_type && <p>Glas: {recipe.glass_type}</p>}
-                                            {recipe.garnish && <p>Garnitur: {recipe.garnish}</p>}
-                                        </div>
-                                    )}
-                                    </div>
-                                    </div>
-                                    </Card>
+                            <SlushyRecipeCard key={recipe.id} recipe={recipe}
+                                onEdit={permissions.isManager ? () => openModal(recipe) : undefined}
+                                onDelete={permissions.isManager ? () => setDeleteTarget(recipe.id) : undefined}
+                            />
                         ))}
                     </div>
-                ) : activeTab === 'standard' ? (
-                    <Card className="p-12 bg-slate-800 border-slate-700 shadow-sm">
-                        <div className="text-center text-slate-400">
-                            <Wine className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                            <p className="text-lg font-medium">Keine Rezepte gefunden</p>
-                            <p className="text-sm mt-1">
-                                {searchQuery ? 'Versuche einen anderen Suchbegriff' : 'Füge dein erstes Rezept hinzu'}
-                            </p>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {filteredRecipes.map(recipe => (
+                            <RecipeCard
+                                key={recipe.id}
+                                recipe={recipe}
+                                articles={articles}
+                                permissions={permissions}
+                                isSelected={selectedRecipes.has(recipe.id)}
+                                onSelect={toggleSelect}
+                                onClick={() => setDetailRecipe(recipe)}
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* ── Detail-Dialog ───────────────────────────────────────────── */}
+            {detailRecipe && (
+                <RecipeDetailDialog
+                    recipe={detailRecipe}
+                    articles={articles}
+                    permissions={permissions}
+                    open={!!detailRecipe}
+                    onClose={() => setDetailRecipe(null)}
+                    onEdit={r => { setDetailRecipe(null); openModal(r); }}
+                    onDelete={id => { setDetailRecipe(null); setDeleteTarget(id); }}
+                />
+            )}
+
+            {/* ── Edit / Create Modal ─────────────────────────────────────── */}
+            <Dialog open={modalOpen} onOpenChange={o => !o && closeModal()}>
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{selectedRecipe ? 'Rezept bearbeiten' : 'Neues Rezept'}</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-2">
+                        {/* Name */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs text-muted-foreground">Name *</Label>
+                            <Input className="h-9" placeholder="z.B. Mojito, Aperol Spritz…"
+                                value={formData.name}
+                                onChange={e => setFormData(f => ({ ...f, name: e.target.value }))} />
                         </div>
-                    </Card>
-                ) : null}
 
-                {/* Modal */}
-                <Dialog open={modalOpen} onOpenChange={closeModal}>
-                    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>
-                                {selectedRecipe ? 'Rezept bearbeiten' : 'Neues Rezept'}
-                            </DialogTitle>
-                        </DialogHeader>
-                        
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4" id="recipe-form">
-                            {/* Recipe Type Toggle */}
-                            <div className="flex gap-1 p-1 bg-secondary/50 rounded-lg">
-                                <button type="button"
-                                    onClick={() => setFormData({...formData, recipe_type: 'standard'})}
-                                    className={cn('flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
-                                        formData.recipe_type !== 'slushy' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'
-                                    )}>
-                                    <Wine className="w-3.5 h-3.5" /> Standard-Cocktail
-                                </button>
-                                <button type="button"
-                                    onClick={() => setFormData({...formData, recipe_type: 'slushy'})}
-                                    className={cn('flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-xs font-semibold transition-all',
-                                        formData.recipe_type === 'slushy' ? 'bg-cyan-600 text-white shadow-sm' : 'text-muted-foreground'
-                                    )}>
-                                    <Snowflake className="w-3.5 h-3.5" /> Slushy-Rezept
-                                </button>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Name *</Label>
-                                <Input
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder={formData.recipe_type === 'slushy' ? 'z.B. Frozen Mojito' : 'z.B. Mojito'}
-                                    required
-                                />
-                            </div>
-
-                            {formData.recipe_type === 'slushy' ? (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-2">
-                                        <Label>Basis-Spirituose</Label>
-                                        <Select value={formData.slushy_spirit_base} onValueChange={(v) => setFormData({ ...formData, slushy_spirit_base: v })}>
-                                            <SelectTrigger><SelectValue placeholder="Wählen..." /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Vodka">Vodka</SelectItem>
-                                                <SelectItem value="Rum">Rum</SelectItem>
-                                                <SelectItem value="Gin">Gin</SelectItem>
-                                                <SelectItem value="Whiskey">Whiskey</SelectItem>
-                                                <SelectItem value="Likör">Likör</SelectItem>
-                                                <SelectItem value="Alkoholfrei">Alkoholfrei</SelectItem>
-                                                <SelectItem value="Sonstiges">Sonstiges</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Original-Menge (Liter)</Label>
-                                        <Input
-                                            type="number"
-                                            step="0.1"
-                                            value={formData.slushy_original_volume_liters}
-                                            onChange={(e) => setFormData({ ...formData, slushy_original_volume_liters: parseFloat(e.target.value) || '' })}
-                                            placeholder="z.B. 9.5"
-                                        />
-                                        <p className="text-[10px] text-muted-foreground">Wird automatisch auf 3,5L skaliert</p>
-                                    </div>
-                                </div>
-                            ) : (
+                        {/* Slushy-spezifische Felder */}
+                        {formData.recipe_type === 'slushy' ? (
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-2">
-                                    <Label>Kategorie</Label>
-                                    <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Spirituose</Label>
+                                    <Select value={formData.slushy_spirit_base}
+                                        onValueChange={v => setFormData(f => ({ ...f, slushy_spirit_base: v }))}>
+                                        <SelectTrigger className="h-9"><SelectValue placeholder="Wählen…" /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Cocktail">Cocktail</SelectItem>
-                                            <SelectItem value="Shot">Shot</SelectItem>
-                                            <SelectItem value="Longdrink">Longdrink</SelectItem>
-                                            <SelectItem value="Mocktail">Mocktail</SelectItem>
-                                            <SelectItem value="Moonshiner-Cocktails">Moonshiner-Cocktails</SelectItem>
-                                            <SelectItem value="Sonstiges">Sonstiges</SelectItem>
+                                            {SLUSHY_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Portionen</Label>
-                                    <Input
-                                        type="number"
-                                        min="1"
-                                        value={formData.servings}
-                                        onChange={(e) => setFormData({ ...formData, servings: parseInt(e.target.value) || 1 })}
-                                    />
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Originalmenge (L)</Label>
+                                    <Input className="h-9" type="number" step="0.1" placeholder="z.B. 9.5"
+                                        value={formData.slushy_original_volume_liters}
+                                        onChange={e => setFormData(f => ({ ...f, slushy_original_volume_liters: parseFloat(e.target.value) || '' }))} />
+                                    <p className="text-[10px] text-muted-foreground">Wird auf 3,5L skaliert</p>
                                 </div>
                             </div>
-                            )}
+                        ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Kategorie</Label>
+                                    <Select value={formData.category}
+                                        onValueChange={v => setFormData(f => ({ ...f, category: v }))}>
+                                        <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            {STANDARD_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs text-muted-foreground">Portionen</Label>
+                                    <Input className="h-9" type="number" min="1"
+                                        value={formData.servings}
+                                        onChange={e => setFormData(f => ({ ...f, servings: parseInt(e.target.value) || 1 }))} />
+                                </div>
+                            </div>
+                        )}
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label>Zutaten</Label>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={suggestIngredients}
-                                        disabled={suggestingIngredients || !formData.name}
-                                        className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                                    >
-                                        <Sparkles className="w-3 h-3 mr-1" />
-                                        {suggestingIngredients ? 'Vorschläge...' : 'KI-Vorschläge'}
+                        {/* Zutaten */}
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <Label className="text-xs text-muted-foreground">Zutaten</Label>
+                                <Button type="button" variant="outline" size="sm"
+                                    onClick={suggestIngredients}
+                                    disabled={suggestingIngredients || !formData.name}
+                                    className="h-7 text-xs gap-1 border-amber-500/40 text-amber-500 hover:bg-amber-500/10">
+                                    <Sparkles className="w-3 h-3" />
+                                    {suggestingIngredients ? 'Lädt…' : 'KI-Vorschlag'}
+                                </Button>
+                            </div>
+                            <IngredientSelector
+                                ingredients={formData.ingredients}
+                                onChange={newIngredients => setFormData(f => ({ ...f, ingredients: newIngredients }))}
+                                articles={articles}
+                            />
+                        </div>
+
+                        {/* Zubereitung */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs text-muted-foreground">Zubereitung</Label>
+                            <Textarea placeholder="Minze muddeln, Eis hinzufügen…" rows={3}
+                                value={formData.preparation}
+                                onChange={e => setFormData(f => ({ ...f, preparation: e.target.value }))} />
+                        </div>
+
+                        {/* Glas + Garnitur */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Glasart</Label>
+                                <Input className="h-9" placeholder="z.B. Highball"
+                                    value={formData.glass_type}
+                                    onChange={e => setFormData(f => ({ ...f, glass_type: e.target.value }))} />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className="text-xs text-muted-foreground">Garnitur</Label>
+                                <Input className="h-9" placeholder="z.B. Minzzweig"
+                                    value={formData.garnish}
+                                    onChange={e => setFormData(f => ({ ...f, garnish: e.target.value }))} />
+                            </div>
+                        </div>
+
+                        {/* Notizen */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs text-muted-foreground">Notizen</Label>
+                            <Textarea placeholder="Zusätzliche Hinweise…" rows={2}
+                                value={formData.notes}
+                                onChange={e => setFormData(f => ({ ...f, notes: e.target.value }))} />
+                        </div>
+
+                        {/* Bild */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs text-muted-foreground">Bild (optional)</Label>
+                            {formData.image_url && (
+                                <div className="relative w-full h-32 rounded-xl overflow-hidden border border-border/50">
+                                    <img src={formData.image_url} alt="Vorschau" className="w-full h-full object-cover" />
+                                    <Button type="button" variant="destructive" size="sm"
+                                        onClick={() => setFormData(f => ({ ...f, image_url: '' }))}
+                                        className="absolute top-2 right-2 h-7 text-xs">
+                                        Entfernen
                                     </Button>
                                 </div>
-                                <IngredientSelector
-                                    ingredients={formData.ingredients}
-                                    onChange={(newIngredients) => setFormData({ ...formData, ingredients: newIngredients })}
-                                    articles={articles}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Zubereitung</Label>
-                                <Textarea
-                                    value={formData.preparation}
-                                    onChange={(e) => setFormData({ ...formData, preparation: e.target.value })}
-                                    placeholder="Minze mit Zucker muddeln..."
-                                    rows={4}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-2">
-                                    <Label>Glasart</Label>
-                                    <Input
-                                        value={formData.glass_type}
-                                        onChange={(e) => setFormData({ ...formData, glass_type: e.target.value })}
-                                        placeholder="z.B. Highball"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Garnitur</Label>
-                                    <Input
-                                        value={formData.garnish}
-                                        onChange={(e) => setFormData({ ...formData, garnish: e.target.value })}
-                                        placeholder="z.B. Minzzweig"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Notizen</Label>
-                                <Textarea
-                                    value={formData.notes}
-                                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                    placeholder="Zusätzliche Hinweise..."
-                                    rows={2}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Bild</Label>
-                                <div className="space-y-2">
-                                    {formData.image_url && (
-                                        <div className="relative w-full h-32 rounded-lg overflow-hidden border border-slate-300">
-                                            <img src={formData.image_url} alt="Rezeptbild" className="w-full h-full object-cover" />
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => setFormData({ ...formData, image_url: '' })}
-                                                className="absolute top-2 right-2"
-                                            >
-                                                Entfernen
-                                            </Button>
-                                        </div>
-                                    )}
-                                    <div className="flex gap-2">
-                                       <label className="flex-1">
-                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-slate-600 bg-slate-700 text-slate-100 text-sm cursor-pointer hover:bg-slate-600 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
-                                               📁 Datei wählen
-                                           </div>
-                                           <Input
-                                               type="file"
-                                               accept="image/*"
-                                               onChange={handleImageUpload}
-                                               disabled={uploadingImage}
-                                               className="hidden"
-                                           />
-                                       </label>
-                                       <label className="flex-1">
-                                           <div className={`flex items-center justify-center gap-2 px-3 py-2 rounded-md border border-amber-400 bg-amber-50 text-amber-700 text-sm cursor-pointer hover:bg-amber-100 ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
-                                               📷 Foto aufnehmen
-                                           </div>
-                                           <Input
-                                               type="file"
-                                               accept="image/*"
-                                               capture="environment"
-                                               onChange={handleImageUpload}
-                                               disabled={uploadingImage}
-                                               className="hidden"
-                                           />
-                                       </label>
+                            )}
+                            <div className="flex gap-2">
+                                <label className="flex-1 cursor-pointer">
+                                    <div className={cn(
+                                        'flex items-center justify-center gap-1.5 h-9 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-all',
+                                        uploadingImage && 'opacity-50 pointer-events-none'
+                                    )}>
+                                        📁 Datei
                                     </div>
-                                    {uploadingImage && <p className="text-xs text-slate-500">Wird hochgeladen...</p>}
-                                </div>
+                                    <Input type="file" accept="image/*" onChange={handleImageUpload}
+                                        disabled={uploadingImage} className="hidden" />
+                                </label>
+                                <label className="flex-1 cursor-pointer">
+                                    <div className={cn(
+                                        'flex items-center justify-center gap-1.5 h-9 rounded-lg border border-amber-500/40 text-xs font-medium text-amber-500 hover:bg-amber-500/10 transition-all',
+                                        uploadingImage && 'opacity-50 pointer-events-none'
+                                    )}>
+                                        📷 Foto
+                                    </div>
+                                    <Input type="file" accept="image/*" capture="environment"
+                                        onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
+                                </label>
                             </div>
-
-                            <div className="flex gap-2 pt-4 pb-4">
-                                <Button type="button" variant="outline" onClick={closeModal} className="flex-1">
-                                    Abbrechen
-                                </Button>
-                                <Button 
-                                    type="button"
-                                    disabled={createMutation.isPending || updateMutation.isPending}
-                                    className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
-                                    onClick={() => handleSubmit()}
-                                >
-                                    {(createMutation.isPending || updateMutation.isPending) ? 'Wird gespeichert...' : (selectedRecipe ? 'Speichern' : 'Hinzufügen')}
-                                </Button>
-                            </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Categories Modal */}
-                <Dialog open={categoriesModalOpen} onOpenChange={setCategoriesModalOpen}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Kategorien verwalten</DialogTitle>
-                        </DialogHeader>
-                        
-                        <div className="mt-4">
-                            <p className="text-sm text-slate-600 mb-4">
-                                Um Kategorien hinzuzufügen oder zu ändern, bearbeite die Recipe-Entity in der Datenbank.
-                            </p>
-                            <div className="space-y-2">
-                                <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">Aktuelle Kategorien:</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {Object.keys(categoryColors).map(category => (
-                                        <Badge key={category} className={cn("text-xs", categoryColors[category])}>
-                                            {category}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </div>
+                            {uploadingImage && <p className="text-xs text-muted-foreground">Wird hochgeladen…</p>}
                         </div>
+                    </div>
 
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setCategoriesModalOpen(false)}
-                            className="w-full mt-4"
-                        >
-                            Schließen
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={closeModal}>Abbrechen</Button>
+                        <Button onClick={handleSave}
+                            disabled={createMutation.isPending || updateMutation.isPending}
+                            className="bg-amber-600 hover:bg-amber-700 text-white">
+                            {(createMutation.isPending || updateMutation.isPending)
+                                ? 'Speichert…' : selectedRecipe ? 'Speichern' : 'Erstellen'}
                         </Button>
-                    </DialogContent>
-                </Dialog>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-                {/* QR Code Modal */}
-                <Dialog open={qrCodeOpen} onOpenChange={setQrCodeOpen}>
-                    <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>
-                                QR-Code: {qrCodeRecipe?.name}
-                            </DialogTitle>
-                        </DialogHeader>
-                        {qrCodeRecipe && (
-                            <QRCodeGenerator 
-                                itemId={qrCodeRecipe.id} 
-                                itemName={qrCodeRecipe.name}
-                                type="recipe"
-                            />
+            {/* ── Delete Confirm ──────────────────────────────────────────── */}
+            <AlertDialog open={!!deleteTarget} onOpenChange={o => !o && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Rezept löschen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Dieser Vorgang kann nicht rückgängig gemacht werden.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => deleteMutation.mutate(deleteTarget)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Löschen
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* ── Ähnliche Rezepte ────────────────────────────────────────── */}
+            <Dialog open={similarModal} onOpenChange={setSimilarModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Ähnliche Rezepte zu „{similarRecipe?.name}"</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2 py-1">
+                        {findSimilarRecipes(similarRecipe).map(r => (
+                            <button key={r.id}
+                                onClick={() => { setSimilarModal(false); setDetailRecipe(r); }}
+                                className="w-full text-left p-3 rounded-xl border border-border/60 hover:border-border bg-card transition-all">
+                                <p className="font-semibold text-sm text-foreground">{r.name}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">{r.category} · {r.ingredients?.length || 0} Zutaten</p>
+                            </button>
+                        ))}
+                        {findSimilarRecipes(similarRecipe).length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-6">Keine ähnlichen Rezepte gefunden</p>
                         )}
-                    </DialogContent>
-                </Dialog>
-
-                {/* Similar Recipes Modal */}
-                <Dialog open={similarRecipesModal} onOpenChange={setSimilarRecipesModal}>
-                    <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle className="flex items-center gap-2">
-                                <Lightbulb className="w-5 h-5 text-amber-500" />
-                                Ähnliche Rezepte zu "{currentRecipeForSimilar?.name}"
-                            </DialogTitle>
-                        </DialogHeader>
-                        
-                        <div className="mt-4">
-                            {(() => {
-                                const similar = findSimilarRecipes(currentRecipeForSimilar);
-                                return similar.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {similar.map(recipe => (
-                                            <Card key={recipe.id} className="p-4 bg-slate-800 border-slate-700 hover:border-amber-600/50 transition-colors cursor-pointer"
-                                                onClick={() => {
-                                                    setSimilarRecipesModal(false);
-                                                    openModal(recipe);
-                                                }}>
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <h3 className="font-semibold text-white mb-1">{recipe.name}</h3>
-                                                        <Badge className={cn("text-xs mb-2", categoryColors[recipe.category])}>
-                                                            {recipe.category}
-                                                        </Badge>
-                                                        {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
-                                                            <p className="text-xs text-slate-400 line-clamp-2">
-                                                                {recipe.ingredients.slice(0, 3).map(i => i.article_name).join(', ')}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-8 text-slate-400">
-                                        <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                                        <p>Keine ähnlichen Rezepte gefunden</p>
-                                    </div>
-                                );
-                            })()}
-                        </div>
-
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setSimilarRecipesModal(false)}
-                            className="w-full mt-4"
-                        >
-                            Schließen
-                        </Button>
-                    </DialogContent>
-                </Dialog>
-            </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

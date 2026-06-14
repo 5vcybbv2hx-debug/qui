@@ -77,11 +77,6 @@ export default function WeeklyTasks() {
     const permissions  = usePermissions();
     const queryClient  = useQueryClient();
 
-    // Nur Manager/Admin darf diese Seite sehen
-    if (!permissions.isManager && !permissions.isAdmin) {
-        return <PermissionDenied message="Diese Ansicht ist nur für Manager verfügbar." />;
-    }
-
     // ── Woche ─────────────────────────────────────────────────────────────────
     const [weekStart, setWeekStart] = useState(() =>
         startOfWeek(new Date(), { weekStartsOn: 1 })
@@ -226,6 +221,11 @@ export default function WeeklyTasks() {
     }, []);
 
     // ── Render ────────────────────────────────────────────────────────────────
+    // Nur Manager/Admin darf diese Seite sehen (guard AFTER all hooks)
+    if (!permissions.isManager && !permissions.isAdmin) {
+        return <PermissionDenied message="Diese Ansicht ist nur für Manager verfügbar." />;
+    }
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
 

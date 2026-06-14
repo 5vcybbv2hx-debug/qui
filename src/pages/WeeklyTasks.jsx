@@ -1,42 +1,32 @@
 /**
  * WeeklyTasks — Manager Wochenplaner
- * Zeitachse immer sichtbar (07:00–23:00), 7 Tage als Spalten.
- * Klick auf Slot → Todo einplanen ODER neuen Termin anlegen.
- * Backlog-Panel: alle offenen, noch nicht eingeplanten Todos.
+ * Mobile-first: Tab-Switch zwischen Kalender und Backlog
  */
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { STALE } from '@/lib/queryUtils';
 import {
-    format, addDays, startOfWeek, isSameDay, parseISO, isToday
+    format, addDays, startOfWeek, isSameDay, isToday
 } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
     ChevronLeft, ChevronRight, Plus, X, Clock, CalendarDays,
-    CheckSquare, Trash2, GripVertical, Circle, Check
+    CheckSquare, Trash2, Check, List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
-import {
-    Popover, PopoverContent, PopoverTrigger
-} from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-// HOUR_START / HOUR_END werden als State verwaltet (konfigurierbar)
-// Stunden 0–27 erlaubt (>23 = nächster Tag, z.B. 25 = 01:00)
-const SLOT_H       = 56; // px pro Stunde
-const MIN_DURATION = 30;
+const SLOT_H = 56; // px pro Stunde
 
 function displayHour(h) {
-    // 24 → "00", 25 → "01", etc.
     return String(h % 24).padStart(2, '0') + ':00';
 }
 
@@ -83,26 +73,34 @@ export default function WeeklyTasks() {
     );
 
     // ── Zeitachse (konfigurierbar) ────────────────────────────────────────────
-    // Default: 10:00–26:00 (= bis 02:00 nächsten Tag)
     const [hourStart, setHourStart] = useState(10);
     const [hourEnd,   setHourEnd]   = useState(26);
-    const hours = Array.from(
-        { length: hourEnd - hourStart },
-        (_, i) => hourStart + i
-    );
+    const hours = Array.from({ length: hourEnd - hourStart }, (_, i) => hourStart + i);
     const totalPx = (hourEnd - hourStart) * SLOT_H;
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
     const weekLabel = `${format(weekStart, 'd. MMM')} – ${format(addDays(weekStart, 6), 'd. MMM yyyy', { locale: de })}`;
 
+    // ── Mobile Tab ────────────────────────────────────────────────────────────
+    const [mobileTab, setMobileTab] = useState('calendar'); // 'calendar' | 'backlog'
+
     // ── UI State ──────────────────────────────────────────────────────────────
-    const [slotPopover,    setSlotPopover]    = useState(null); // { date, hour }
-    const [editItem,       setEditItem]       = useState(null); // { type: 'todo'|'appointment', item }
-    const [backlogOpen,    setBacklogOpen]    = useState(true);
+    const [slotPopover,    setSlotPopover]    = useState(null);
+    const [editItem,       setEditItem]       = useState(null);
     const [newTitle,       setNewTitle]       = useState('');
     const [newTime,        setNewTime]        = useState('');
     const [newDuration,    setNewDuration]    = useState(60);
     const [newColor,       setNewColor]       = useState('blue');
-    const [newMode,        setNewMode]        = useState('appointment'); // 'appointment' | 'todo-pick'
+    const [newMode,        setNewMode]        = useState('appointment');
+    // Mobile: welcher Tag ist aktiv
+    const [activeDayIdx,   setActiveDayIdx]   = useState(() => {
+        const today = new Date();
+        const idx = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(today, { weekStartsOn: 1 }), i))
+            .findIndex(d => isSameDay(d, today));
+        return idx >= 0 ? idx : 0;
+    });
+    // Zeitbereich-Dialog (Mobile)
+    const [timeConfigOpen, setTimeConfigOpen] = useState(false);
+
     const gridRef = useRef(null);
 
     // ── Queries ───────────────────────────────────────────────────────────────
@@ -112,7 +110,7 @@ export default function WeeklyTasks() {
         staleTime: 60_000,
     });
 
-    const weekStr = format(weekStart, 'yyyy-MM-dd');
+    const weekStr    = format(weekStart, 'yyyy-MM-dd');
     const weekEndStr = format(addDays(weekStart, 6), 'yyyy-MM-dd');
 
     const { data: appointments = [] } = useQuery({
@@ -147,7 +145,6 @@ export default function WeeklyTasks() {
     };
 
     // ── Derived ───────────────────────────────────────────────────────────────
-    // Todos die in dieser Woche eingeplant sind
     const plannedTodos = useMemo(() =>
         todos.filter(t =>
             t.planned_date &&
@@ -156,7 +153,6 @@ export default function WeeklyTasks() {
         ), [todos, weekStr, weekEndStr]
     );
 
-    // Backlog: offen, nicht erledigt, nicht diese Woche eingeplant
     const backlogTodos = useMemo(() =>
         todos.filter(t =>
             t.status !== 'erledigt' &&
@@ -168,14 +164,13 @@ export default function WeeklyTasks() {
         }), [todos, weekStr, weekEndStr]
     );
 
-    // Woche-Appointments
     const weekAppointments = useMemo(() =>
         appointments.filter(a =>
             a.date >= weekStr && a.date <= weekEndStr
         ), [appointments, weekStr, weekEndStr]
     );
 
-    // ── Slot-Klick Handler ────────────────────────────────────────────────────
+    // ── Handler ───────────────────────────────────────────────────────────────
     const handleSlotClick = (date, hour) => {
         setNewTitle('');
         setNewTime(minutesToTime(hour * 60));
@@ -204,8 +199,8 @@ export default function WeeklyTasks() {
         updateTodo.mutate({
             id: todo.id,
             data: {
-                planned_date: format(date, 'yyyy-MM-dd'),
-                planned_time: time,
+                planned_date:     format(date, 'yyyy-MM-dd'),
+                planned_time:     time,
                 planned_duration: newDuration,
             },
         });
@@ -216,75 +211,74 @@ export default function WeeklyTasks() {
     useEffect(() => {
         if (!gridRef.current) return;
         const now = new Date();
-        const px = minutesToPx(now.getHours() * 60 + now.getMinutes() - hourStart * 60);
+        const px = minutesToPx(now.getHours() * 60 + now.getMinutes(), hourStart);
         gridRef.current.scrollTop = Math.max(0, px - 120);
     }, []);
 
-    // ── Render ────────────────────────────────────────────────────────────────
-    // Nur Manager/Admin darf diese Seite sehen (guard AFTER all hooks)
+    // Beim Wochenwechsel: activeDay auf Montag setzen
+    useEffect(() => {
+        setActiveDayIdx(0);
+    }, [weekStart]);
+
+    // ── Guard (nach allen Hooks!) ─────────────────────────────────────────────
     if (!permissions.isManager && !permissions.isAdmin) {
         return <PermissionDenied message="Diese Ansicht ist nur für Manager verfügbar." />;
     }
 
+    const activeDay    = weekDays[activeDayIdx];
+    const activeDateStr = format(activeDay, 'yyyy-MM-dd');
+
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-background flex flex-col">
 
             {/* ── Top-Bar ─────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-30">
-                <div className="flex items-center gap-3">
-                    <CalendarDays className="w-5 h-5 text-amber-500" />
-                    <div>
-                        <h1 className="text-base font-bold text-foreground leading-none">Wochenplaner</h1>
-                        <p className="text-xs text-muted-foreground mt-0.5">{weekLabel}</p>
+            <div className="flex items-center justify-between px-3 py-2.5 border-b border-border bg-card/80 backdrop-blur-xl sticky top-0 z-30 gap-2">
+                {/* Links: Titel + Wochenlabel */}
+                <div className="flex items-center gap-2 min-w-0">
+                    <CalendarDays className="w-4 h-4 text-amber-500 shrink-0" />
+                    <div className="min-w-0">
+                        <h1 className="text-sm font-bold text-foreground leading-none">Wochenplaner</h1>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{weekLabel}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                {/* Rechts: Navigation + Heute + Zeitbereich */}
+                <div className="flex items-center gap-1.5 shrink-0">
                     <Button size="sm" variant="outline"
                         onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
-                        className="h-8 px-2.5 text-xs">
+                        className="h-7 px-2 text-xs">
                         Heute
                     </Button>
                     <div className="flex border border-border rounded-lg overflow-hidden">
                         <button onClick={() => setWeekStart(d => addDays(d, -7))}
-                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent">
-                            <ChevronLeft className="w-4 h-4" />
+                            className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-accent">
+                            <ChevronLeft className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => setWeekStart(d => addDays(d, 7))}
-                            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent border-l border-border">
-                            <ChevronRight className="w-4 h-4" />
+                            className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:bg-accent border-l border-border">
+                            <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                     </div>
-                    <Button size="sm" variant="outline"
-                        onClick={() => setBacklogOpen(o => !o)}
-                        className={cn('h-8 px-2.5 text-xs gap-1.5',
-                            backlogOpen ? 'bg-amber-500/10 border-amber-500/40 text-amber-400' : '')}>
-                        <CheckSquare className="w-3.5 h-3.5" />
-                        Backlog
-                        {backlogTodos.length > 0 && (
-                            <span className="bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                {backlogTodos.length}
-                            </span>
-                        )}
-                    </Button>
-
-                    {/* Zeitachse konfigurieren */}
-                    <div className="flex items-center gap-1 border border-border rounded-lg px-2 h-8 bg-card">
+                    {/* Zeitbereich — auf Mobile als Button, auf Desktop inline */}
+                    <button
+                        onClick={() => setTimeConfigOpen(true)}
+                        className="md:hidden flex items-center gap-1 h-7 px-2 rounded-lg border border-border bg-card text-xs text-muted-foreground hover:text-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{String(hourStart).padStart(2,'0')}–{hourEnd >= 24 ? String(hourEnd-24).padStart(2,'0')+'+' : String(hourEnd).padStart(2,'0')}</span>
+                    </button>
+                    {/* Desktop Zeitbereich inline */}
+                    <div className="hidden md:flex items-center gap-1 border border-border rounded-lg px-2 h-7 bg-card">
                         <Clock className="w-3 h-3 text-muted-foreground shrink-0" />
-                        <select
-                            value={hourStart}
-                            onChange={e => setHourStart(Number(e.target.value))}
-                            className="h-full bg-transparent text-xs text-foreground border-none outline-none cursor-pointer pr-1"
-                            title="Startzeit">
+                        <select value={hourStart} onChange={e => setHourStart(Number(e.target.value))}
+                            className="h-full bg-transparent text-xs text-foreground border-none outline-none cursor-pointer pr-1">
                             {Array.from({ length: 24 }, (_, i) => i).map(h => (
                                 <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>
                             ))}
                         </select>
                         <span className="text-muted-foreground text-xs">–</span>
-                        <select
-                            value={hourEnd}
-                            onChange={e => setHourEnd(Number(e.target.value))}
-                            className="h-full bg-transparent text-xs text-foreground border-none outline-none cursor-pointer pr-1"
-                            title="Endzeit">
+                        <select value={hourEnd} onChange={e => setHourEnd(Number(e.target.value))}
+                            className="h-full bg-transparent text-xs text-foreground border-none outline-none cursor-pointer pr-1">
                             {Array.from({ length: 18 }, (_, i) => i + 16).map(h => (
                                 <option key={h} value={h}>
                                     {h < 24 ? String(h).padStart(2,'0') : String(h-24).padStart(2,'0')}:00
@@ -296,14 +290,223 @@ export default function WeeklyTasks() {
                 </div>
             </div>
 
-            <div className="flex flex-1 overflow-hidden">
+            {/* ── Mobile Tab-Leiste ────────────────────────────────────────── */}
+            <div className="md:hidden flex border-b border-border bg-card">
+                <button
+                    onClick={() => setMobileTab('calendar')}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold border-b-2 transition-colors',
+                        mobileTab === 'calendar'
+                            ? 'border-amber-500 text-amber-500'
+                            : 'border-transparent text-muted-foreground'
+                    )}>
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    Kalender
+                </button>
+                <button
+                    onClick={() => setMobileTab('backlog')}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold border-b-2 transition-colors',
+                        mobileTab === 'backlog'
+                            ? 'border-amber-500 text-amber-500'
+                            : 'border-transparent text-muted-foreground'
+                    )}>
+                    <List className="w-3.5 h-3.5" />
+                    Backlog
+                    {backlogTodos.length > 0 && (
+                        <span className="bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                            {backlogTodos.length}
+                        </span>
+                    )}
+                </button>
+            </div>
 
-                {/* ── Kalender-Hauptbereich ─────────────────────────────── */}
+            {/* ── Mobile Kalender-Ansicht ──────────────────────────────────── */}
+            {mobileTab === 'calendar' && (
+                <div className="md:hidden flex flex-col flex-1 overflow-hidden">
+                    {/* Tag-Scroller */}
+                    <div className="flex border-b border-border bg-card overflow-x-auto scrollbar-hide px-1 gap-1 py-1.5">
+                        {weekDays.map((day, i) => {
+                            const active = i === activeDayIdx;
+                            const now    = isToday(day);
+                            return (
+                                <button key={i}
+                                    onClick={() => setActiveDayIdx(i)}
+                                    className={cn(
+                                        'flex flex-col items-center px-3 py-1.5 rounded-xl shrink-0 transition-all',
+                                        active
+                                            ? 'bg-amber-500 text-white'
+                                            : now
+                                                ? 'bg-amber-500/10 text-amber-500'
+                                                : 'text-muted-foreground hover:bg-accent/50'
+                                    )}>
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider">
+                                        {format(day, 'EEE', { locale: de })}
+                                    </span>
+                                    <span className="text-base font-bold leading-tight">{format(day, 'd')}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Zeitachse für aktiven Tag */}
+                    <div ref={gridRef} className="flex-1 overflow-y-auto">
+                        <div className="flex" style={{ height: `${totalPx}px` }}>
+                            {/* Zeitachse links */}
+                            <div className="w-12 shrink-0 relative">
+                                {hours.map(h => (
+                                    <div key={h}
+                                        className="absolute left-0 right-0 flex items-start justify-end pr-1.5"
+                                        style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}>
+                                        <span className="text-[10px] text-muted-foreground font-mono -mt-2">
+                                            {displayHour(h)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Tag-Spalte */}
+                            <div className="flex-1 border-l border-border relative">
+                                {/* Stunden-Linien */}
+                                {hours.map(h => (
+                                    <div key={h}
+                                        className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group"
+                                        style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
+                                        onClick={() => handleSlotClick(activeDay, h)}>
+                                        <div className="absolute left-0 right-0 border-t border-border/20"
+                                            style={{ top: `${SLOT_H / 2}px` }} />
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Plus className="w-4 h-4 text-muted-foreground/50" />
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Jetzt-Linie */}
+                                {isToday(activeDay) && (() => {
+                                    const now = new Date();
+                                    const nowPx = minutesToPx(now.getHours() * 60 + now.getMinutes(), hourStart);
+                                    if (nowPx < 0) return null;
+                                    return (
+                                        <div className="absolute left-0 right-0 z-10 pointer-events-none"
+                                            style={{ top: `${nowPx}px` }}>
+                                            <div className="flex items-center">
+                                                <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 -ml-1" />
+                                                <div className="flex-1 border-t-2 border-red-500" />
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Eingeplante Todos */}
+                                {plannedTodos
+                                    .filter(t => t.planned_date === activeDateStr)
+                                    .map(todo => {
+                                        if (!todo.planned_time) return null;
+                                        const startMin = timeToMinutes(todo.planned_time);
+                                        if (startMin < hourStart * 60 || startMin >= hourEnd * 60) return null;
+                                        const dur = todo.planned_duration || 60;
+                                        const top = minutesToPx(startMin, hourStart);
+                                        const h   = Math.max(durationToPx(dur), 24);
+                                        const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                                        return (
+                                            <div key={todo.id}
+                                                className="absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-pointer hover:bg-blue-500/25 transition-colors flex"
+                                                style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
+                                                onClick={e => { e.stopPropagation(); setEditItem({ type: 'todo', item: todo }); }}>
+                                                <div className={cn('w-1 shrink-0', pCfg)} />
+                                                <div className="flex-1 px-1.5 py-1 min-w-0">
+                                                    <p className="text-[11px] font-semibold text-blue-200 truncate leading-tight">
+                                                        {todo.planned_time} {todo.title}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                {/* Termine */}
+                                {weekAppointments
+                                    .filter(a => a.date === activeDateStr)
+                                    .map(appt => {
+                                        const startMin = timeToMinutes(appt.start_time);
+                                        if (startMin < hourStart * 60 || startMin >= hourEnd * 60) return null;
+                                        const dur = appt.duration || 60;
+                                        const top = minutesToPx(startMin, hourStart);
+                                        const h   = Math.max(durationToPx(dur), 24);
+                                        const col = APPOINTMENT_COLORS[appt.color] || APPOINTMENT_COLORS.blue;
+                                        return (
+                                            <div key={appt.id}
+                                                className={cn(
+                                                    'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-pointer transition-colors',
+                                                    col.bg, col.border
+                                                )}
+                                                style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
+                                                onClick={e => { e.stopPropagation(); setEditItem({ type: 'appointment', item: appt }); }}>
+                                                <div className="px-1.5 py-1 min-w-0">
+                                                    <p className={cn('text-[11px] font-semibold truncate leading-tight', col.text)}>
+                                                        {appt.start_time} {appt.title}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Mobile Backlog-Ansicht ───────────────────────────────────── */}
+            {mobileTab === 'backlog' && (
+                <div className="md:hidden flex-1 overflow-y-auto">
+                    <div className="px-3 py-3 border-b border-border">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                            {backlogTodos.length} offene Aufgaben
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Wechsle zum Kalender → Klick auf Slot → Todo einplanen
+                        </p>
+                    </div>
+                    <div className="p-3 space-y-2">
+                        {backlogTodos.length === 0 ? (
+                            <div className="text-center py-12 text-muted-foreground">
+                                <Check className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                                <p className="text-sm">Alles eingeplant!</p>
+                            </div>
+                        ) : backlogTodos.map(todo => {
+                            const stripe = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                            return (
+                                <div key={todo.id}
+                                    className="flex gap-2.5 p-3 rounded-xl border border-border bg-card">
+                                    <div className={cn('w-1 rounded-full shrink-0', stripe)} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-foreground">{todo.title}</p>
+                                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                            {todo.category && (
+                                                <span className="text-xs text-muted-foreground">{todo.category}</span>
+                                            )}
+                                            {todo.due_date && (
+                                                <span className="text-xs text-amber-400">{todo.due_date}</span>
+                                            )}
+                                            {todo.priority && (
+                                                <Badge variant="outline" className="text-[10px] h-4 px-1.5">{todo.priority}</Badge>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Desktop: volle Wochenansicht ─────────────────────────────── */}
+            <div className="hidden md:flex flex-1 overflow-hidden">
+
+                {/* Kalender-Hauptbereich */}
                 <div className="flex-1 flex flex-col overflow-hidden">
 
-                    {/* Tages-Header (sticky) */}
-                    <div className="flex border-b border-border bg-card sticky top-[57px] z-20">
-                        {/* Zeitachsen-Label-Spalte */}
+                    {/* Tages-Header */}
+                    <div className="flex border-b border-border bg-card sticky top-[53px] z-20">
                         <div className="w-14 shrink-0" />
                         {weekDays.map((day, i) => {
                             const isNow = isToday(day);
@@ -326,11 +529,9 @@ export default function WeeklyTasks() {
                         })}
                     </div>
 
-                    {/* Zeitachse + Grid (scrollbar) */}
+                    {/* Zeitachse + Grid */}
                     <div ref={gridRef} className="flex-1 overflow-y-auto overflow-x-hidden">
                         <div className="flex" style={{ height: `${totalPx}px`, minHeight: '100%' }}>
-
-                            {/* Zeitachse links */}
                             <div className="w-14 shrink-0 relative">
                                 {hours.map(h => (
                                     <div key={h}
@@ -343,16 +544,14 @@ export default function WeeklyTasks() {
                                 ))}
                             </div>
 
-                            {/* 7 Tages-Spalten */}
                             {weekDays.map((day, di) => {
                                 const dateStr = format(day, 'yyyy-MM-dd');
-                                const isNow = isToday(day);
-                                const now = new Date();
-                                const nowPx = isNow
-                                    ? minutesToPx(now.getHours() * 60 + now.getMinutes() - hourStart * 60)
+                                const isNow   = isToday(day);
+                                const now     = new Date();
+                                const nowPx   = isNow
+                                    ? minutesToPx(now.getHours() * 60 + now.getMinutes(), hourStart)
                                     : null;
 
-                                // Einträge für diesen Tag
                                 const dayTodos = plannedTodos.filter(t => t.planned_date === dateStr);
                                 const dayAppts = weekAppointments.filter(a => a.date === dateStr);
 
@@ -362,25 +561,20 @@ export default function WeeklyTasks() {
                                             'flex-1 border-l border-border relative',
                                             isNow && 'bg-amber-500/4'
                                         )}>
-
-                                        {/* Stunden-Linien + klickbare Slots */}
                                         {hours.map(h => (
                                             <div key={h}
                                                 className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group"
                                                 style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
                                                 onClick={() => handleSlotClick(day, h)}>
-                                                {/* Halbe-Stunden-Linie */}
                                                 <div className="absolute left-0 right-0 border-t border-border/20"
                                                     style={{ top: `${SLOT_H / 2}px` }} />
-                                                {/* Hover-Hint */}
                                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Plus className="w-4 h-4 text-muted-foreground/50" />
                                                 </div>
                                             </div>
                                         ))}
 
-                                        {/* Jetzt-Linie */}
-                                        {nowPx !== null && (
+                                        {nowPx !== null && nowPx >= 0 && (
                                             <div className="absolute left-0 right-0 z-10 pointer-events-none"
                                                 style={{ top: `${nowPx}px` }}>
                                                 <div className="flex items-center">
@@ -390,7 +584,6 @@ export default function WeeklyTasks() {
                                             </div>
                                         )}
 
-                                        {/* ── Eingeplante Todos ── */}
                                         {dayTodos.map(todo => {
                                             if (!todo.planned_time) return null;
                                             const startMin = timeToMinutes(todo.planned_time);
@@ -399,7 +592,6 @@ export default function WeeklyTasks() {
                                             const top  = minutesToPx(startMin, hourStart);
                                             const h    = Math.max(durationToPx(dur), 24);
                                             const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
-
                                             return (
                                                 <div key={todo.id}
                                                     className="absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-pointer hover:bg-blue-500/25 transition-colors flex"
@@ -418,32 +610,27 @@ export default function WeeklyTasks() {
                                             );
                                         })}
 
-                                        {/* ── Termine ── */}
                                         {dayAppts.map(appt => {
                                             const startMin = timeToMinutes(appt.start_time);
                                             if (startMin < hourStart * 60 || startMin >= hourEnd * 60) return null;
-                                            const dur  = appt.duration || 60;
-                                            const top  = minutesToPx(startMin, hourStart);
-                                            const h    = Math.max(durationToPx(dur), 24);
-                                            const col  = APPOINTMENT_COLORS[appt.color] || APPOINTMENT_COLORS.blue;
-
+                                            const dur = appt.duration || 60;
+                                            const top = minutesToPx(startMin, hourStart);
+                                            const h   = Math.max(durationToPx(dur), 24);
+                                            const col = APPOINTMENT_COLORS[appt.color] || APPOINTMENT_COLORS.blue;
                                             return (
                                                 <div key={appt.id}
                                                     className={cn(
                                                         'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-pointer transition-colors',
-                                                        col.bg, col.border,
-                                                        `hover:brightness-110`
+                                                        col.bg, col.border
                                                     )}
                                                     style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
                                                     onClick={e => { e.stopPropagation(); setEditItem({ type: 'appointment', item: appt }); }}>
-                                                    <div className="flex-1 px-1.5 py-1 min-w-0">
+                                                    <div className="px-1.5 py-1 min-w-0">
                                                         <p className={cn('text-[11px] font-semibold truncate leading-tight', col.text)}>
                                                             {appt.start_time} {appt.title}
                                                         </p>
                                                         {h > 36 && appt.notes && (
-                                                            <p className={cn('text-[10px] truncate', col.text, 'opacity-70')}>
-                                                                {appt.notes}
-                                                            </p>
+                                                            <p className={cn('text-[10px] truncate', col.text, 'opacity-70')}>{appt.notes}</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -456,47 +643,81 @@ export default function WeeklyTasks() {
                     </div>
                 </div>
 
-                {/* ── Backlog-Panel (rechts) ────────────────────────────── */}
-                {backlogOpen && (
-                    <div className="w-64 shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
-                        <div className="px-3 py-3 border-b border-border">
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                Backlog · {backlogTodos.length} offen
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                                Klick auf Slot → Todo einplanen
-                            </p>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
-                            {backlogTodos.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    <Check className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                                    <p className="text-xs">Alles eingeplant!</p>
-                                </div>
-                            ) : backlogTodos.map(todo => {
-                                const stripe = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
-                                return (
-                                    <div key={todo.id}
-                                        className="flex gap-2 p-2 rounded-xl border border-border bg-background hover:bg-accent/30 transition-colors cursor-default group">
-                                        <div className={cn('w-1 rounded-full shrink-0', stripe)} />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold text-foreground truncate">{todo.title}</p>
-                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                                {todo.category && (
-                                                    <span className="text-[10px] text-muted-foreground">{todo.category}</span>
-                                                )}
-                                                {todo.due_date && (
-                                                    <span className="text-[10px] text-amber-400">{todo.due_date}</span>
-                                                )}
-                                            </div>
+                {/* Desktop Backlog-Panel */}
+                <div className="w-64 shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
+                    <div className="px-3 py-3 border-b border-border">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                            Backlog · {backlogTodos.length} offen
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Klick auf Slot → Todo einplanen</p>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+                        {backlogTodos.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Check className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                                <p className="text-xs">Alles eingeplant!</p>
+                            </div>
+                        ) : backlogTodos.map(todo => {
+                            const stripe = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                            return (
+                                <div key={todo.id}
+                                    className="flex gap-2 p-2 rounded-xl border border-border bg-background hover:bg-accent/30 transition-colors cursor-default">
+                                    <div className={cn('w-1 rounded-full shrink-0', stripe)} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-semibold text-foreground truncate">{todo.title}</p>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                            {todo.category && (
+                                                <span className="text-[10px] text-muted-foreground">{todo.category}</span>
+                                            )}
+                                            {todo.due_date && (
+                                                <span className="text-[10px] text-amber-400">{todo.due_date}</span>
+                                            )}
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
-                )}
+                </div>
             </div>
+
+            {/* ── Mobile Zeitbereich-Dialog ─────────────────────────────────── */}
+            <Dialog open={timeConfigOpen} onOpenChange={setTimeConfigOpen}>
+                <DialogContent className="max-w-xs">
+                    <DialogHeader>
+                        <DialogTitle className="text-sm flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-muted-foreground" />
+                            Zeitbereich einstellen
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-xs text-muted-foreground mb-2">Startzeit</p>
+                            <select value={hourStart} onChange={e => setHourStart(Number(e.target.value))}
+                                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground">
+                                {Array.from({ length: 24 }, (_, i) => i).map(h => (
+                                    <option key={h} value={h}>{String(h).padStart(2,'0')}:00 Uhr</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground mb-2">Endzeit</p>
+                            <select value={hourEnd} onChange={e => setHourEnd(Number(e.target.value))}
+                                className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm text-foreground">
+                                {Array.from({ length: 18 }, (_, i) => i + 16).map(h => (
+                                    <option key={h} value={h}>
+                                        {h < 24 ? String(h).padStart(2,'0') : String(h-24).padStart(2,'0')}:00 Uhr
+                                        {h >= 24 ? ' (nächster Tag)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <Button onClick={() => setTimeConfigOpen(false)} className="w-full h-9 bg-amber-600 hover:bg-amber-700 text-white text-sm">
+                            Übernehmen
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* ── Slot-Popover: Neuer Eintrag ──────────────────────────────── */}
             {slotPopover && (
@@ -539,14 +760,10 @@ export default function WeeklyTasks() {
                         {/* Neuer Termin */}
                         {newMode === 'appointment' && (
                             <div className="space-y-3">
-                                <Input
-                                    autoFocus
-                                    placeholder="Titel des Termins…"
-                                    value={newTitle}
-                                    onChange={e => setNewTitle(e.target.value)}
+                                <Input autoFocus placeholder="Titel des Termins…"
+                                    value={newTitle} onChange={e => setNewTitle(e.target.value)}
                                     onKeyDown={e => e.key === 'Enter' && handleCreateAppointment()}
-                                    className="h-10"
-                                />
+                                    className="h-10" />
                                 <div className="flex gap-2">
                                     <div className="flex-1">
                                         <p className="text-[10px] text-muted-foreground mb-1">Startzeit</p>
@@ -564,22 +781,19 @@ export default function WeeklyTasks() {
                                         </select>
                                     </div>
                                 </div>
-                                {/* Farbe */}
                                 <div>
                                     <p className="text-[10px] text-muted-foreground mb-1.5">Farbe</p>
                                     <div className="flex gap-2">
                                         {Object.entries(APPOINTMENT_COLORS).map(([key, col]) => (
                                             <button key={key} onClick={() => setNewColor(key)}
                                                 className={cn(
-                                                    'w-7 h-7 rounded-full transition-all',
-                                                    col.dot,
+                                                    'w-7 h-7 rounded-full transition-all', col.dot,
                                                     newColor === key ? 'ring-2 ring-offset-2 ring-offset-card ring-white scale-110' : 'opacity-60 hover:opacity-100'
                                                 )} />
                                         ))}
                                     </div>
                                 </div>
-                                <Button onClick={handleCreateAppointment}
-                                    disabled={!newTitle.trim()}
+                                <Button onClick={handleCreateAppointment} disabled={!newTitle.trim()}
                                     className="w-full h-9 bg-amber-600 hover:bg-amber-700 text-white">
                                     Termin anlegen
                                 </Button>
@@ -609,7 +823,6 @@ export default function WeeklyTasks() {
                                         </button>
                                     );
                                 })}
-                                {/* Dauer-Wahl */}
                                 <div className="pt-2 border-t border-border">
                                     <p className="text-[10px] text-muted-foreground mb-1.5">Dauer</p>
                                     <div className="flex gap-1.5 flex-wrap">
@@ -632,7 +845,7 @@ export default function WeeklyTasks() {
                 </div>
             )}
 
-            {/* ── Edit-Dialog: Termin / Todo-Planung ───────────────────────── */}
+            {/* ── Edit-Dialog ───────────────────────────────────────────────── */}
             <Dialog open={!!editItem} onOpenChange={o => !o && setEditItem(null)}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
@@ -644,29 +857,19 @@ export default function WeeklyTasks() {
                         <div className="space-y-3">
                             <Input
                                 value={editItem.item.title}
-                                onChange={e => setEditItem(prev => ({
-                                    ...prev,
-                                    item: { ...prev.item, title: e.target.value }
-                                }))}
-                                className="h-10"
-                            />
+                                onChange={e => setEditItem(prev => ({ ...prev, item: { ...prev.item, title: e.target.value } }))}
+                                className="h-10" />
                             <div className="flex gap-2">
                                 <div className="flex-1">
                                     <p className="text-[10px] text-muted-foreground mb-1">Startzeit</p>
                                     <input type="time" value={editItem.item.start_time}
-                                        onChange={e => setEditItem(prev => ({
-                                            ...prev,
-                                            item: { ...prev.item, start_time: e.target.value }
-                                        }))}
+                                        onChange={e => setEditItem(prev => ({ ...prev, item: { ...prev.item, start_time: e.target.value } }))}
                                         className="w-full h-9 px-2 rounded-lg border border-border bg-background text-sm text-foreground" />
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-[10px] text-muted-foreground mb-1">Dauer (Min)</p>
                                     <select value={editItem.item.duration}
-                                        onChange={e => setEditItem(prev => ({
-                                            ...prev,
-                                            item: { ...prev.item, duration: Number(e.target.value) }
-                                        }))}
+                                        onChange={e => setEditItem(prev => ({ ...prev, item: { ...prev.item, duration: Number(e.target.value) } }))}
                                         className="w-full h-9 px-2 rounded-lg border border-border bg-background text-sm text-foreground">
                                         {[15, 30, 45, 60, 90, 120].map(m => (
                                             <option key={m} value={m}>{m < 60 ? `${m} Min` : `${m / 60} Std`}</option>
@@ -692,10 +895,7 @@ export default function WeeklyTasks() {
                                     Speichern
                                 </Button>
                                 <Button variant="outline" size="sm"
-                                    onClick={() => {
-                                        deleteAppointment.mutate(editItem.item.id);
-                                        setEditItem(null);
-                                    }}
+                                    onClick={() => { deleteAppointment.mutate(editItem.item.id); setEditItem(null); }}
                                     className="h-9 text-red-400 border-red-500/30 hover:bg-red-500/10">
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -721,10 +921,7 @@ export default function WeeklyTasks() {
                                 </div>
                             </div>
                             <Button variant="outline"
-                                onClick={() => {
-                                    deleteTodoPlanning(editItem.item);
-                                    setEditItem(null);
-                                }}
+                                onClick={() => { deleteTodoPlanning(editItem.item); setEditItem(null); }}
                                 className="w-full h-9 text-sm text-muted-foreground hover:text-foreground">
                                 Aus Wochenplan entfernen
                             </Button>

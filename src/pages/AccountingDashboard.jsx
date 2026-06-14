@@ -295,7 +295,6 @@ export default function AccountingDashboard() {
                             { label: 'Kreditoren', icon: TrendingDown, href: '/AccountingCreditors', color: 'text-red-400', bg: 'bg-red-500/10' },
                             { label: 'Fixkosten', icon: RefreshCw, href: '/AccountingFixedCosts', color: 'text-orange-400', bg: 'bg-orange-500/10' },
                             { label: 'Verbindlichkeiten', icon: TrendingDown, href: '/AccountingLiabilities', color: 'text-rose-400', bg: 'bg-rose-500/10' },
-                            { label: 'Bankkonten', icon: Building2, href: '/AccountingBank', color: 'text-sky-400', bg: 'bg-sky-500/10' },
                             { label: 'Export', icon: Download, href: '/AccountingExport', color: 'text-purple-400', bg: 'bg-purple-500/10' },
                             { label: 'Monatsabschluss', icon: Calendar, href: '/AccountingMonthlyClosing', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
                         ].map(item => (

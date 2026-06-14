@@ -1,303 +1,464 @@
-import React, { useState } from 'react';
+/**
+ * DATEV-Export — Monatsexport für den Steuerberater
+ *
+ * Erzeugt zwei Dateien:
+ *  1. EXTF_Buchungsstapel_YYYY-MM.csv  — DATEV-konformes Buchungsstapel-Format
+ *  2. Belege_YYYY-MM.zip               — alle Belegbilder des Monats (via JSZip)
+ *
+ * Der Steuerberater importiert beides direkt in DATEV Unternehmen Online.
+ */
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '@/lib/queryUtils';
 import { base44 } from '@/api/base44Client';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Download, FileText, Table, Archive, CheckCircle2, Loader2, BookOpen, TrendingDown, TrendingUp, Calendar, RefreshCw } from 'lucide-react';
-import { format } from 'date-fns';
+import {
+    Download, FileText, Archive, CheckCircle2, Receipt,
+    ChevronLeft, ChevronRight, Info, Package
+} from 'lucide-react';
+import { format, subMonths, addMonths } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-const fmt = (n) => n?.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? '0,00';
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const fmt = n => (n ?? 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function downloadCSV(rows, filename) {
-    const csv = rows.map(r => r.join(';')).join('\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+function MonthNav({ value, onChange }) {
+    const date = new Date(value + '-01');
+    const isCurrentMonth = value === format(new Date(), 'yyyy-MM');
+    return (
+        <div className="flex items-center gap-2">
+            <button onClick={() => onChange(format(subMonths(date, 1), 'yyyy-MM'))}
+                className="w-9 h-9 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-base font-bold text-foreground min-w-[130px] text-center">
+                {format(date, 'MMMM yyyy', { locale: de })}
+            </span>
+            <button onClick={() => onChange(format(addMonths(date, 1), 'yyyy-MM'))}
+                disabled={isCurrentMonth}
+                className="w-9 h-9 flex items-center justify-center rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                <ChevronRight className="w-4 h-4" />
+            </button>
+        </div>
+    );
+}
+
+// ── DATEV EXTF Buchungsstapel ─────────────────────────────────────────────────
+function buildDATEVCsv(receipts, month, beraterNr, mandantenNr) {
+    const now  = new Date();
+    const ts   = format(now, 'yyyyMMddHHmmssSSS');
+    const [y, m] = month.split('-');
+    const wjBeginn = `${y}0101`;     // Wirtschaftsjahresbeginn 1.1.
+    const sachkonto = '1200';         // Gegenkonto: Bank (SKR03) — Steuerberater passt ggf. an
+
+    // DATEV EXTF Header (Zeile 1) — exaktes Format laut DATEV-Spec
+    const header = [
+        '"EXTF"',        // Kennzeichen
+        '700',           // Versionsnummer
+        '21',            // Datenkategorie: 21 = Buchungsstapel
+        '"Buchungsstapel"',
+        '13',            // Formatversion
+        ts,              // Erstellt am
+        '',              // Importiert
+        '"RE"',          // Herkunft
+        '',              // Exportiert von
+        '',              // Importiert von
+        beraterNr || '0',
+        mandantenNr || '0',
+        wjBeginn,        // WJ-Beginn
+        '4',             // Sachkontenlänge
+        `${y}${m}01`,   // Datum von
+        `${y}${m}${new Date(Number(y), Number(m), 0).getDate()}`, // Datum bis
+        '"BarShift Pro"', // Bezeichnung
+        '',              // Diktatkürzel
+        '1',             // Buchungstyp: 1=Fibu-Buchung
+        '0',             // Rechnungslegungszweck
+        '0',             // Festschreibung
+        'EUR',           // WKZ
+        '',              // Derivatskennzeichen
+        '',              // SKR
+        '',              // Branchenlösung
+        '',              // Anwendungsinformation
+        '',              // Länge Buchungstext
+        '',              // ÖPNV
+    ].join(';');
+
+    // Spalten-Header (Zeile 2)
+    const cols = [
+        'Umsatz (ohne Soll/Haben-Kz)',
+        'Soll/Haben-Kennzeichen',
+        'WKZ Umsatz',
+        'Kurs',
+        'Basis-Umsatz',
+        'WKZ Basis-Umsatz',
+        'Konto',
+        'Gegenkonto (ohne BU-Schlüssel)',
+        'BU-Schlüssel',
+        'Belegdatum',
+        'Belegfeld 1',
+        'Belegfeld 2',
+        'Skonto',
+        'Buchungstext',
+        'Postensperre',
+        'Diverse Adressnummer',
+        'Geschäftspartnerbank',
+        'Sachverhalt',
+        'Zinssperre',
+        'Beleglink',
+        'Beleginfo - Art 1',
+        'Beleginfo - Inhalt 1',
+        'Beleginfo - Art 2',
+        'Beleginfo - Inhalt 2',
+        'Beleginfo - Art 3',
+        'Beleginfo - Inhalt 3',
+        'Beleginfo - Art 4',
+        'Beleginfo - Inhalt 4',
+        'Beleginfo - Art 5',
+        'Beleginfo - Inhalt 5',
+        'Beleginfo - Art 6',
+        'Beleginfo - Inhalt 6',
+        'Beleginfo - Art 7',
+        'Beleginfo - Inhalt 7',
+        'Beleginfo - Art 8',
+        'Beleginfo - Inhalt 8',
+        'KOST1 - Kostenstelle',
+        'KOST2 - Kostenstelle',
+        'Kost-Menge',
+        'EU-Land u. UStID',
+        'EU-Steuersatz',
+        'Abw. Versteuerungsart',
+        'Sachverhalt L+L',
+        'Funktionsergänzung L+L',
+        'BU 49 Hauptfunktionstyp',
+        'BU 49 Hauptfunktionsnummer',
+        'BU 49 Funktionsergänzung',
+        'Zusatzinformation - Art 1',
+        'Zusatzinformation - Inhalt 1',
+        'Zusatzinformation - Art 2',
+        'Zusatzinformation - Inhalt 2',
+        'Stück',
+        'Gewicht',
+        'Zahlweise',
+        'Forderungsart',
+        'Veranlagungsjahr',
+        'Zugeordnete Fälligkeit',
+        'Skontotyp',
+        'Auftragsnummer',
+        'Buchungstyp',
+        'USt-Schlüssel (Anzahlungen)',
+        'EU-Mitgliedstaat (Anzahlungen)',
+        'Sachverhalt§13b UStG (Anzahlungen)',
+        'Erlöskonto (Anzahlungen)',
+        'Herkunft-Kz',
+        'Buchungs GUID',
+        'KOST-Datum',
+        'SEPA-Mandatsreferenz',
+        'Skontosperre',
+        'Gesellschaftername',
+        'Beteiligtennummer',
+        'Identifikationsnummer',
+        'Zeichnernummer',
+        'Postensperre bis',
+        'Bezeichnung SoBil-Sachverhalt',
+        'Kennzeichen SoBil-Buchung',
+        'Festschreibung',
+        'Leistungsdatum',
+        'Datum Zuord. Steuerperiode',
+        'Fälligkeit',
+        'Generalumkehr (GU)',
+        'Steuersatz',
+        'Land',
+        'Abrechnungsreferenz',
+        'BVV-Position',
+        'EU-Steuersatz Land',
+        'EU-Steuersatz',
+    ].join(';');
+
+    // BU-Schlüssel aus Steuersatz
+    const buKey = rate => {
+        if (rate === 19) return '9';
+        if (rate === 7)  return '8';
+        return '';  // 0% — kein BU-Schlüssel
+    };
+
+    // Datenzeilen
+    const rows = receipts.map(r => {
+        const betrag    = (r.amount_gross || 0).toFixed(2).replace('.', ',');
+        const datum     = r.receipt_date ? format(new Date(r.receipt_date), 'ddMM') : '';
+        const konto     = r.datev_account || '4990';
+        const bu        = buKey(r.tax_rate ?? 19);
+        const belegfeld = r.receipt_number || r.id?.slice(0, 12) || '';
+        const text      = [r.supplier_name, r.category].filter(Boolean).join(' / ');
+        const beleglink = r.file_url ? r.id : '';
+
+        // 86 Felder — nicht benötigte bleiben leer
+        const fields = Array(86).fill('');
+        fields[0]  = betrag;           // Umsatz
+        fields[1]  = 'S';              // Soll (Ausgabe)
+        fields[2]  = 'EUR';            // WKZ
+        fields[3]  = '';               // Kurs
+        fields[4]  = '';               // Basis-Umsatz
+        fields[5]  = '';               // WKZ Basis
+        fields[6]  = konto;            // Konto (Aufwandskonto)
+        fields[7]  = sachkonto;        // Gegenkonto (Bank/Kasse)
+        fields[8]  = bu;               // BU-Schlüssel
+        fields[9]  = datum;            // Belegdatum (TTMM)
+        fields[10] = belegfeld;        // Belegfeld 1 (Rechnungsnr.)
+        fields[11] = '';               // Belegfeld 2
+        fields[12] = '';               // Skonto
+        fields[13] = `"${text}"`;      // Buchungstext
+        fields[19] = beleglink;        // Beleglink
+
+        return fields.join(';');
+    });
+
+    return [header, cols, ...rows].join('\r\n');
+}
+
+function downloadFile(content, filename, mime) {
+    const bom  = mime.includes('csv') ? '\uFEFF' : '';
+    const blob = new Blob([bom + content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
     a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
 }
 
+// ── Hauptseite ────────────────────────────────────────────────────────────────
 export default function AccountingExport() {
     const permissions = usePermissions();
-    const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
-    const [exportProgress, setExportProgress] = useState(0);
-    const [isExporting, setIsExporting] = useState(false);
-    const [done, setDone] = useState(false);
-    const [readyToLoad, setReadyToLoad] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(format(subMonths(new Date(), 0), 'yyyy-MM'));
+    const [exporting,     setExporting]     = useState(false);
+    const [done,          setDone]          = useState(false);
 
-    const { data: cashbookEntries = [] } = useQuery({ queryKey: ['cashbook-entries'], queryFn: () => base44.entities.CashbookEntry.list('-date'), enabled: readyToLoad });
-    const { data: receipts = [] } = useQuery({ queryKey: ['accounting-receipts'], queryFn: () => base44.entities.AccountingReceipt.list('-receipt_date'), enabled: readyToLoad });
-    const { data: creditorInvoices = [] } = useQuery({ queryKey: ['creditor-invoices'], queryFn: () => base44.entities.CreditorInvoice.list('-invoice_date'), enabled: readyToLoad });
-    const { data: debitorInvoices = [] } = useQuery({ queryKey: ['debitor-invoices'], queryFn: () => base44.entities.DebitorInvoice.list('-invoice_date'), enabled: readyToLoad });
-    const { data: dailyRevenues = [] } = useQuery({ queryKey: ['daily-revenues'], queryFn: () => base44.entities.DailyRevenue.list('-date'), enabled: readyToLoad });
-    const { data: recurringExpenses = [] } = useQuery({ queryKey: ['recurring-expenses'], queryFn: () => base44.entities.RecurringExpense.list('title'), enabled: readyToLoad });
-    const { data: recurringOccurrences = [] } = useQuery({ queryKey: ['recurring-expense-occurrences'], queryFn: () => base44.entities.RecurringExpenseOccurrence.list('-month'), enabled: readyToLoad });
-    const { data: liabilities = [] } = useQuery({ queryKey: ['liabilities'], queryFn: () => base44.entities.Liability.list('-due_date'), enabled: readyToLoad });
-    const { data: liabilityPayments = [] } = useQuery({ queryKey: ['liability-payments'], queryFn: () => base44.entities.LiabilityPayment.list('-payment_date'), enabled: readyToLoad });
+    // DATEV-Nummern (optional — nur für korrekte Header)
+    const [beraterNr,    setBeraterNr]    = useState('');
+    const [mandantenNr,  setMandantenNr]  = useState('');
 
-    const filtered = {
-        cashbook: cashbookEntries.filter(e => e.date?.startsWith(selectedMonth)),
-        receipts: receipts.filter(r => r.receipt_date?.startsWith(selectedMonth)),
-        creditors: creditorInvoices.filter(i => i.invoice_date?.startsWith(selectedMonth)),
-        debitors: debitorInvoices.filter(i => i.invoice_date?.startsWith(selectedMonth)),
-        revenues: dailyRevenues.filter(r => r.date?.startsWith(selectedMonth)),
-        fixedCostOccurrences: recurringOccurrences.filter(o => o.month === selectedMonth),
-        liabilitiesOpen: liabilities.filter(l => l.status !== 'bezahlt'),
-        liabilityPaymentsMonth: liabilityPayments.filter(p => p.payment_date?.startsWith(selectedMonth)),
-    };
+    const { data: receipts = [] } = useQuery({
+        queryKey: ['accounting-receipts'],
+        queryFn:  () => base44.entities.AccountingReceipt.list('-receipt_date', 500),
+        staleTime: STALE.MEDIUM,
+    });
 
-    const exportCashbook = () => {
-        const rows = [
-            ['Datum', 'Uhrzeit', 'Buchungsart', 'Beschreibung', 'Kategorie', 'Brutto (€)', 'Netto (€)', 'USt (%)', 'USt (€)', 'Zahlungsart', 'Status'],
-            ...filtered.cashbook.map(e => [
-                e.date, e.time || '', e.entry_type, e.description || '', e.category || '',
-                (e.amount || 0).toFixed(2), (e.amount_net || 0).toFixed(2),
-                e.tax_rate || '', (e.tax_amount || 0).toFixed(2), e.payment_method || '', e.status || ''
-            ])
-        ];
-        downloadCSV(rows, `Kassenbuch_${selectedMonth}.csv`);
-    };
+    const monthReceipts = useMemo(() =>
+        receipts.filter(r => r.receipt_date?.startsWith(selectedMonth)),
+        [receipts, selectedMonth]
+    );
 
-    const exportCreditors = () => {
-        const rows = [
-            ['Datum', 'Fälligkeit', 'Lieferant', 'Rechnungsnr.', 'Brutto (€)', 'Netto (€)', 'USt (%)', 'USt (€)', 'Kategorie', 'Status'],
-            ...filtered.creditors.map(i => [
-                i.invoice_date, i.due_date || '', i.supplier_name, i.invoice_number || '',
-                (i.amount_gross || 0).toFixed(2), (i.amount_net || 0).toFixed(2),
-                i.tax_rate || '', (i.tax_amount || 0).toFixed(2), i.category || '', i.payment_status || ''
-            ])
-        ];
-        downloadCSV(rows, `Kreditoren_${selectedMonth}.csv`);
-    };
+    const totalGross = monthReceipts.reduce((s, r) => s + (r.amount_gross || 0), 0);
+    const totalTax   = monthReceipts.reduce((s, r) => {
+        const rate = (r.tax_rate || 19) / 100;
+        return s + ((r.amount_gross || 0) / (1 + rate) * rate);
+    }, 0);
+    const withImage  = monthReceipts.filter(r => r.file_url).length;
 
-    const exportDebitors = () => {
-        const rows = [
-            ['Datum', 'Fälligkeit', 'Kunde', 'Rechnungsnr.', 'Brutto (€)', 'Netto (€)', 'USt (%)', 'Beschreibung', 'Status'],
-            ...filtered.debitors.map(i => [
-                i.invoice_date, i.due_date || '', i.customer_name, i.invoice_number || '',
-                (i.amount_gross || 0).toFixed(2), (i.amount_net || 0).toFixed(2),
-                i.tax_rate || '', i.description || '', i.payment_status || ''
-            ])
-        ];
-        downloadCSV(rows, `Debitoren_${selectedMonth}.csv`);
-    };
-
-    const exportDatev = () => {
-        // DATEV Buchungsstapel-Format (vereinfacht)
-        const rows = [
-            ['"EXTF"', '700', '21', '"Buchungsstapel"', '7', '', '', '1', '', '"RE"', '""', '""', '', '', '"EUR"', ''],
-            ['Umsatz', 'Soll/Haben-Kennzeichen', 'WKZ Umsatz', 'Kurs', 'Basis-Umsatz', 'WKZ Basis-Umsatz', 'Konto', 'Gegenkonto', 'BU-Schlüssel', 'Belegdatum', 'Belegfeld1', 'Belegfeld2', 'Skonto', 'Buchungstext'],
-            ...filtered.creditors.map(i => [
-                (i.amount_net || 0).toFixed(2).replace('.', ','),
-                'S', 'EUR', '', '', '', '4000', '1600', '',
-                (i.invoice_date || '').replace(/-/g, '').slice(4),
-                i.invoice_number || '', '', '', i.supplier_name || ''
-            ]),
-            ...filtered.debitors.map(i => [
-                (i.amount_net || 0).toFixed(2).replace('.', ','),
-                'H', 'EUR', '', '', '', '8000', '1200', '',
-                (i.invoice_date || '').replace(/-/g, '').slice(4),
-                i.invoice_number || '', '', '', i.customer_name || ''
-            ])
-        ];
-        downloadCSV(rows, `DATEV_Buchungsstapel_${selectedMonth}.csv`);
-    };
-
-    const exportFixedCosts = () => {
-        const rows = [
-            ['Bezeichnung', 'Kategorie', 'Lieferant', 'Intervall', 'Fälligkeit', 'Brutto (€)', 'Netto (€)', 'USt (%)', 'Zahlungsart', 'Status', 'Beleg-ID', 'DATEV-Konto'],
-            ...filtered.fixedCostOccurrences.map(occ => {
-                const exp = recurringExpenses.find(e => e.id === occ.recurring_expense_id) || {};
-                return [
-                    exp.title || '', exp.category || '', exp.supplier_name || '', exp.interval || '',
-                    occ.due_date || '', (occ.expected_amount || 0).toFixed(2),
-                    exp.amount_net ? exp.amount_net.toFixed(2) : '',
-                    exp.vat_rate || '', exp.payment_method || '', occ.status || '',
-                    occ.receipt_id || '', exp.accounting_mapping || ''
-                ];
-            })
-        ];
-        downloadCSV(rows, `Fixkosten_${selectedMonth}.csv`);
-    };
-
-    const exportLiabilities = () => {
-        const rows = [
-            ['Bezeichnung', 'Gläubiger', 'Kategorie', 'Ursprungsbetrag (€)', 'Bezahlt (€)', 'Restbetrag (€)', 'Status', 'Priorität', 'Fällig', 'Mahnstufe', 'Ratenzahlung', 'Rate (€)', 'Nächste Zahlung'],
-            ...filtered.liabilitiesOpen.map(l => [
-                l.title, l.creditor_name || '', l.category || '',
-                (l.original_amount || 0).toFixed(2), (l.paid_amount || 0).toFixed(2),
-                ((l.original_amount || 0) - (l.paid_amount || 0)).toFixed(2),
-                l.status, l.priority || '', l.due_date || '', l.dunning_level || 0,
-                l.payment_plan_enabled ? 'Ja' : 'Nein',
-                l.installment_amount ? l.installment_amount.toFixed(2) : '',
-                l.next_payment_date || ''
-            ])
-        ];
-        downloadCSV(rows, `Verbindlichkeiten_${selectedMonth}.csv`);
-    };
-
-    const exportRevenues = () => {
-        const rows = [
-            ['Datum', 'Umsatz Gesamt (€)', 'Davon Bar (€)', 'Davon EC (€)', 'USt (€)', 'Notizen'],
-            ...filtered.revenues.map(r => [
-                r.date, (r.revenue || 0).toFixed(2), (r.revenue_cash || 0).toFixed(2),
-                (r.revenue_ec || 0).toFixed(2), (r.vat || 0).toFixed(2), r.notes || ''
-            ])
-        ];
-        downloadCSV(rows, `Tagesumsaetze_${selectedMonth}.csv`);
-    };
-
-    const runFullExport = async () => {
-        setIsExporting(true);
-        setDone(false);
-        for (let i = 0; i <= 100; i += 20) {
-            setExportProgress(i);
-            await new Promise(r => setTimeout(r, 300));
+    const handleExport = async () => {
+        if (monthReceipts.length === 0) {
+            toast.error('Keine Belege in diesem Monat');
+            return;
         }
-        exportCashbook();
-        await new Promise(r => setTimeout(r, 200));
-        exportCreditors();
-        await new Promise(r => setTimeout(r, 200));
-        exportDebitors();
-        await new Promise(r => setTimeout(r, 200));
-        exportDatev();
-        await new Promise(r => setTimeout(r, 200));
-        exportRevenues();
-        await new Promise(r => setTimeout(r, 200));
-        exportFixedCosts();
-        await new Promise(r => setTimeout(r, 200));
-        exportLiabilities();
-        setIsExporting(false);
-        setDone(true);
-        setTimeout(() => setDone(false), 4000);
+        setExporting(true);
+        setDone(false);
+        try {
+            // 1. DATEV CSV
+            const csv      = buildDATEVCsv(monthReceipts, selectedMonth, beraterNr, mandantenNr);
+            const csvName  = `EXTF_Buchungsstapel_${selectedMonth}.csv`;
+            downloadFile(csv, csvName, 'text/csv;charset=utf-8;');
+
+            // 2. ZIP mit Belegen (wenn vorhanden)
+            if (withImage > 0) {
+                // JSZip dynamisch laden
+                const JSZip = (await import('jszip')).default;
+                const zip   = new JSZip();
+                const folder = zip.folder(`Belege_${selectedMonth}`);
+
+                await Promise.all(
+                    monthReceipts
+                        .filter(r => r.file_url)
+                        .map(async (r, i) => {
+                            try {
+                                const resp = await fetch(r.file_url);
+                                const blob = await resp.blob();
+                                const ext  = r.file_url.split('.').pop().split('?')[0] || 'jpg';
+                                const name = `${String(i + 1).padStart(3, '0')}_${(r.supplier_name || 'Beleg').replace(/[^a-zA-Z0-9]/g, '_')}.${ext}`;
+                                folder.file(name, blob);
+                            } catch {
+                                // Bild nicht erreichbar — überspringen
+                            }
+                        })
+                );
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const zipUrl  = URL.createObjectURL(zipBlob);
+                const a       = document.createElement('a');
+                a.href = zipUrl;
+                a.download = `Belege_${selectedMonth}.zip`;
+                a.click();
+                URL.revokeObjectURL(zipUrl);
+            }
+
+            setDone(true);
+            toast.success(`Export fertig — ${monthReceipts.length} Buchungssätze + ${withImage} Belege`);
+        } catch (e) {
+            toast.error('Export fehlgeschlagen: ' + e.message);
+        } finally {
+            setExporting(false);
+        }
     };
 
-    if (!permissions.canExportAccounting) return <PermissionDenied message="Kein Zugriff auf das Exportcenter." />;
+    if (!permissions.canViewAccounting) {
+        return <PermissionDenied message="Kein Zugriff auf den Export." />;
+    }
 
-    const label = format(new Date(selectedMonth + '-01'), 'MMMM yyyy', { locale: de });
-
-    const exportItems = [
-        { label: 'Kassenbuch CSV', icon: BookOpen, color: 'text-amber-400 bg-amber-500/10', action: exportCashbook, count: filtered.cashbook.length },
-        { label: 'Kreditoren CSV', icon: TrendingDown, color: 'text-red-400 bg-red-500/10', action: exportCreditors, count: filtered.creditors.length },
-        { label: 'Debitoren CSV', icon: TrendingUp, color: 'text-green-400 bg-green-500/10', action: exportDebitors, count: filtered.debitors.length },
-        { label: 'DATEV Buchungsstapel', icon: FileText, color: 'text-purple-400 bg-purple-500/10', action: exportDatev, count: filtered.creditors.length + filtered.debitors.length },
-        { label: 'Tagesumsätze CSV', icon: Calendar, color: 'text-blue-400 bg-blue-500/10', action: exportRevenues, count: filtered.revenues.length },
-        { label: 'Fixkosten CSV', icon: RefreshCw, color: 'text-orange-400 bg-orange-500/10', action: exportFixedCosts, count: filtered.fixedCostOccurrences.length },
-        { label: 'Verbindlichkeiten CSV', icon: TrendingDown, color: 'text-rose-400 bg-rose-500/10', action: exportLiabilities, count: filtered.liabilitiesOpen.length },
-    ];
+    const [y, m] = selectedMonth.split('-');
+    const monthLabel = format(new Date(Number(y), Number(m) - 1, 1), 'MMMM yyyy', { locale: de });
 
     return (
-        <div className="min-h-screen bg-background pb-24 md:pb-6">
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                        <Download className="w-5 h-5 text-purple-400" />
-                        <h1 className="text-lg font-bold text-foreground">Exportcenter</h1>
-                    </div>
-                    <Input
-                        type="month" value={selectedMonth}
-                        onChange={e => { setSelectedMonth(e.target.value); setDone(false); }}
-                        className="h-8 text-xs w-36"
-                    />
-                </div>
-            </div>
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="max-w-lg mx-auto px-4 py-5 space-y-5">
 
-            <div className="px-4 md:px-6 space-y-5 max-w-2xl mx-auto pt-4">
-                {/* Monatsübersicht */}
-                <Card className="p-4 bg-card border-border">
-                    <h2 className="font-semibold text-foreground text-sm mb-3">Daten für {label}</h2>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                        {[
-                            ['Kassenbucheinträge', filtered.cashbook.length],
-                            ['Belege', filtered.receipts.length],
-                            ['Kreditoren', filtered.creditors.length],
-                            ['Debitoren', filtered.debitors.length],
-                            ['Tagesumsätze', filtered.revenues.length],
-                            ['Gesamtumsatz', `${fmt(filtered.revenues.reduce((s, r) => s + (r.revenue || 0), 0))} €`],
-                            ['Fixkosten', filtered.fixedCostOccurrences.length],
-                            ['Verbindlichkeiten (offen)', filtered.liabilitiesOpen.length],
-                        ].map(([k, v]) => (
-                            <div key={k} className="flex justify-between py-1.5 border-b border-border last:border-0">
-                                <span className="text-muted-foreground">{k}</span>
-                                <span className="font-semibold text-foreground">{v}</span>
-                            </div>
-                        ))}
+                {/* Header */}
+                <div>
+                    <h1 className="text-xl font-bold text-foreground">DATEV-Export</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        Buchungsstapel + Belege für den Steuerberater
+                    </p>
+                </div>
+
+                {/* Monatsauswahl */}
+                <Card className="p-4 bg-card border-border space-y-3">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Monat wählen</p>
+                    <MonthNav value={selectedMonth} onChange={v => { setSelectedMonth(v); setDone(false); }} />
+
+                    {/* Monats-Übersicht */}
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                        <div className="bg-secondary/40 rounded-xl p-3 text-center">
+                            <p className="text-lg font-bold text-foreground">{monthReceipts.length}</p>
+                            <p className="text-[10px] text-muted-foreground">Belege</p>
+                        </div>
+                        <div className="bg-secondary/40 rounded-xl p-3 text-center">
+                            <p className="text-lg font-bold text-foreground">{fmt(totalGross)} €</p>
+                            <p className="text-[10px] text-muted-foreground">Gesamt brutto</p>
+                        </div>
+                        <div className="bg-secondary/40 rounded-xl p-3 text-center">
+                            <p className="text-lg font-bold text-foreground">{fmt(totalTax)} €</p>
+                            <p className="text-[10px] text-muted-foreground">MwSt. gesamt</p>
+                        </div>
                     </div>
                 </Card>
 
-                {/* Daten laden Button */}
-                {!readyToLoad && (
-                    <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
-                        <div className="flex items-center gap-3">
-                            <div className="flex-1">
-                                <h3 className="font-semibold text-foreground text-sm">Daten vorab laden</h3>
-                                <p className="text-xs text-muted-foreground mt-0.5">Klick hier, um alle Daten zu laden, bevor du den Export startest</p>
-                            </div>
-                            <Button onClick={() => setReadyToLoad(true)} className="bg-purple-500 hover:bg-purple-600 text-primary-foreground gap-2">
-                                <Download className="w-4 h-4" /> Daten laden
-                            </Button>
-                        </div>
-                    </Card>
-                )}
-
-                {/* Komplett-Export */}
-                {readyToLoad && (
-                    <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Archive className="w-5 h-5 text-purple-400" />
-                                    <h3 className="font-semibold text-foreground">Komplett-Export</h3>
-                                </div>
-                                <p className="text-xs text-muted-foreground">Alle Dateien für {label} auf einmal herunterladen</p>
-                            </div>
-                            {done && <Badge className="bg-green-500/15 text-green-400 border-green-500/20 text-xs gap-1 shrink-0"><CheckCircle2 className="w-3 h-3" />Fertig</Badge>}
-                        </div>
-                        {isExporting && (
-                            <div className="mt-3 space-y-1.5">
-                                <Progress value={exportProgress} className="h-1.5" />
-                                <p className="text-xs text-muted-foreground">Exportiere... {exportProgress}%</p>
-                            </div>
-                        )}
-                        <Button onClick={runFullExport} disabled={isExporting} className="w-full mt-3 bg-purple-500 hover:bg-purple-600 text-primary-foreground gap-2">
-                            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            {isExporting ? 'Exportiere...' : 'Alle Dateien herunterladen'}
-                        </Button>
-                    </Card>
-                )}
-
-                {/* Einzelexporte */}
-                <div>
-                    <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">Einzelexporte</h2>
-                    <div className="space-y-2">
-                        {exportItems.map(item => (
-                            <Card key={item.label} className="p-4 bg-card border-border">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', item.color.split(' ')[1])}>
-                                            <item.icon className={cn('w-5 h-5', item.color.split(' ')[0])} />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-foreground">{item.label}</p>
-                                            <p className="text-xs text-muted-foreground">{item.count} Einträge</p>
-                                        </div>
-                                    </div>
-                                    <Button variant="outline" size="sm" onClick={item.action} disabled={item.count === 0} className="h-8 gap-1.5 text-xs">
-                                        <Download className="w-3.5 h-3.5" /> CSV
-                                    </Button>
-                                </div>
-                            </Card>
-                        ))}
+                {/* DATEV-Nummern (optional) */}
+                <Card className="p-4 bg-card border-border space-y-3">
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex-1">
+                            DATEV-Nummern
+                        </p>
+                        <Badge variant="outline" className="text-[10px]">optional</Badge>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                        Vom Steuerberater mitgeteilt. Ohne Angabe wird 0 verwendet — der Steuerberater kann das beim Import korrigieren.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Beraternummer</label>
+                            <input value={beraterNr} onChange={e => setBeraterNr(e.target.value)}
+                                placeholder="z.B. 12345"
+                                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs text-muted-foreground">Mandantennummer</label>
+                            <input value={mandantenNr} onChange={e => setMandantenNr(e.target.value)}
+                                placeholder="z.B. 1001"
+                                className="w-full h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring" />
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Was wird exportiert */}
+                <Card className="p-4 bg-card border-border space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">
+                        Export-Inhalt
+                    </p>
+                    <div className="flex items-center gap-3 py-2 border-b border-border/40">
+                        <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground">EXTF_Buchungsstapel_{selectedMonth}.csv</p>
+                            <p className="text-xs text-muted-foreground">DATEV-konformes Buchungsstapel-Format · {monthReceipts.length} Buchungssätze</p>
+                        </div>
+                        <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                    </div>
+                    <div className="flex items-center gap-3 py-2">
+                        <Archive className="w-4 h-4 text-amber-400 shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold text-foreground">Belege_{selectedMonth}.zip</p>
+                            <p className="text-xs text-muted-foreground">
+                                {withImage} Belegbilder verknüpft
+                                {monthReceipts.length - withImage > 0 && ` · ${monthReceipts.length - withImage} ohne Bild`}
+                            </p>
+                        </div>
+                        {withImage > 0
+                            ? <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+                            : <Receipt className="w-4 h-4 text-muted-foreground shrink-0" />
+                        }
+                    </div>
+                </Card>
+
+                {/* Hinweis */}
+                <div className="flex items-start gap-2.5 text-xs text-muted-foreground bg-secondary/30 rounded-xl p-3.5">
+                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-400" />
+                    <p className="leading-relaxed">
+                        Die CSV-Datei kann direkt in <strong className="text-foreground">DATEV Unternehmen Online</strong> importiert werden.
+                        Die ZIP-Datei enthält alle Belegbilder — dein Steuerberater lädt beide über <strong className="text-foreground">DATEV Belegtransfer</strong> hoch.
+                        Gegenkonto ist standardmäßig <strong className="text-foreground">1200 (Bank)</strong> — bei Barzahlungen bitte mit dem Steuerberater abstimmen.
+                    </p>
                 </div>
+
+                {/* Export-Button */}
+                {done ? (
+                    <div className="flex flex-col items-center gap-3 py-4">
+                        <div className="w-14 h-14 rounded-2xl bg-green-500/15 flex items-center justify-center">
+                            <CheckCircle2 className="w-7 h-7 text-green-400" />
+                        </div>
+                        <p className="font-bold text-foreground">Export fertig!</p>
+                        <p className="text-xs text-muted-foreground text-center">
+                            CSV + ZIP wurden heruntergeladen.<br />
+                            Weiterleiten an den Steuerberater.
+                        </p>
+                        <Button variant="outline" size="sm" onClick={() => setDone(false)}>
+                            Neuer Export
+                        </Button>
+                    </div>
+                ) : (
+                    <Button
+                        onClick={handleExport}
+                        disabled={exporting || monthReceipts.length === 0}
+                        className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-bold text-base gap-2">
+                        {exporting ? (
+                            <>
+                                <Package className="w-5 h-5 animate-pulse" />
+                                Wird exportiert…
+                            </>
+                        ) : (
+                            <>
+                                <Download className="w-5 h-5" />
+                                {monthLabel} exportieren
+                            </>
+                        )}
+                    </Button>
+                )}
+
+                {monthReceipts.length === 0 && (
+                    <p className="text-center text-xs text-muted-foreground">
+                        Keine Belege im gewählten Monat
+                    </p>
+                )}
             </div>
         </div>
     );

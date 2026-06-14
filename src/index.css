@@ -4,40 +4,40 @@
 
 @layer base {
   :root {
-    /* Brand gradient tokens — updated by theme system */
-    --brand-from: #22d3ee;
-    --brand-via: #06b6d4;
-    --brand-fg: #0a1a1f;
+    /* Brand gradient tokens */
+    --brand-from: #0891b2;
+    --brand-via: #0e7490;
+    --brand-fg: #ffffff;
 
-    /* Light mode (rarely used) */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    /* Light mode — vollständig durchdesignt */
+    --background: 210 20% 96%;       /* warmes Off-White */
+    --foreground: 210 25% 12%;       /* tiefdunkles Blaugrau */
+    --card: 0 0% 100%;               /* weiße Karten */
+    --card-foreground: 210 25% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 187 92% 69%;
-    --primary-foreground: 20 14% 10%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 186 94% 82%;
-    --accent-foreground: 20 14% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 185 96% 90%;
+    --popover-foreground: 210 25% 12%;
+    --primary: 187 92% 35%;          /* Teal — im Hellen dunkler damit lesbar */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 15% 90%;        /* helles Grau */
+    --secondary-foreground: 210 25% 20%;
+    --muted: 210 15% 92%;
+    --muted-foreground: 210 15% 45%;
+    --accent: 187 50% 88%;           /* helles Teal-Tint */
+    --accent-foreground: 187 92% 20%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 15% 82%;
+    --input: 210 15% 88%;
+    --ring: 187 92% 35%;
     --radius: 0.75rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 183 100% 96%;
+    --sidebar-background: 210 20% 93%;
+    --sidebar-foreground: 210 25% 15%;
+    --sidebar-primary: 187 92% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 15% 88%;
+    --sidebar-accent-foreground: 210 25% 15%;
+    --sidebar-border: 210 15% 80%;
+    --sidebar-ring: 187 92% 35%;
   }
 
   .dark {

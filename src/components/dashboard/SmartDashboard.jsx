@@ -77,10 +77,22 @@ function QuickLink({ page, icon: Icon, label, sub, color }) {
 
 // ─── Tab: HEUTE ─────────────────────────────────────────────────────────────
 
-function TodayTab({ currentUser, currentEmployee, permissions, employees, todayEvents, todayReservations }) {
+function TodayTab({ currentUser, currentEmployee, permissions, employees, todayEvents, todayReservations, todayShifts, myTodos }) {
+    const today = format(new Date(), 'yyyy-MM-dd');
+
+    // Meine heutige Schicht
+    const myTodayShift = todayShifts.find(s => s.employee_id === currentEmployee?.id);
+
+    // Geburtstage heute
+    const birthdaysToday = employees.filter(e => {
+        if (!e.birthday) return false;
+        const bday = e.birthday.slice(5); // MM-DD
+        return bday === today.slice(5);
+    });
+
     return (
         <div className="space-y-5">
-            {/* Unterschrift erforderlich - nur für eigene Person */}
+            {/* Unterschrift erforderlich */}
             {currentEmployee && !currentEmployee.sig_employee && (
                 <Link to={createPageUrl('Employees') + `?employee=${currentEmployee.id}`}>
                     <Card className="bg-blue-500/10 border-blue-500/30 hover:bg-blue-500/15 transition-colors">
@@ -96,17 +108,128 @@ function TodayTab({ currentUser, currentEmployee, permissions, employees, todayE
                 </Link>
             )}
 
-            {/* Schichttausch-Posteingang: direkte Anfragen */}
-            {currentEmployee && <ShiftSwapInboxCard currentEmployee={currentEmployee} />}
+            {/* Meine heutige Schicht */}
+            {currentEmployee && (
+                <section>
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide mb-3">
+                        <Clock className="w-4 h-4 text-amber-400" />Meine Schicht heute
+                    </h3>
+                    {myTodayShift ? (
+                        <Card className="border-amber-500/30 bg-amber-500/5">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                                    style={{ backgroundColor: currentEmployee.color || '#64748b' }}>
+                                    {currentEmployee.name?.charAt(0)}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-semibold text-foreground">{myTodayShift.start_time} – {myTodayShift.end_time} Uhr</p>
+                                    {myTodayShift.shift_type && <p className="text-xs text-amber-400 mt-0.5">{myTodayShift.shift_type}</p>}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card className="bg-card border-border">
+                            <CardContent className="p-3 text-center">
+                                <p className="text-sm text-muted-foreground">Keine Schicht heute eingetragen</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </section>
+            )}
 
-            {/* Meine Zeiten Widget (für alle Mitarbeiter) */}
+            {/* Stempeluhr */}
             <MyTimeWidget />
 
-            {/* Personalisierte Schnellzugriffe */}
-            <PersonalizedQuickLinks userEmail={currentUser?.email} permissions={permissions} />
+            {/* Schichttausch-Posteingang */}
+            {currentEmployee && <ShiftSwapInboxCard currentEmployee={currentEmployee} />}
 
-            {/* Geburtstage */}
-            <UpcomingBirthdaysWidget employees={employees} />
+            {/* Team heute */}
+            <section>
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
+                        <Users className="w-4 h-4 text-blue-400" />Team heute ({todayShifts.length})
+                    </h3>
+                    <Link to={createPageUrl('Calendar')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                        Schichtplan <ArrowRight className="w-3 h-3" />
+                    </Link>
+                </div>
+                {todayShifts.length === 0 ? (
+                    <Card className="bg-card border-border">
+                        <CardContent className="p-3 text-center">
+                            <p className="text-sm text-muted-foreground">Keine Schichten heute</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                        {todayShifts.map(s => {
+                            const emp = employees.find(e => e.id === s.employee_id);
+                            return (
+                                <Card key={s.id} className="bg-card border-border">
+                                    <CardContent className="p-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                                                style={{ backgroundColor: s.color || emp?.color || '#64748b' }}>
+                                                {s.employee_name?.charAt(0)}
+                                            </div>
+                                            <p className="text-xs font-medium text-foreground truncate">{s.employee_name}</p>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground">{s.start_time}–{s.end_time}</p>
+                                        {s.shift_type && <p className="text-[10px] text-blue-400 mt-0.5">{s.shift_type}</p>}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+            </section>
+
+            {/* Meine offenen Aufgaben */}
+            {myTodos && myTodos.length > 0 && (
+                <section>
+                    <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide">
+                            <CheckSquare className="w-4 h-4 text-orange-400" />Meine Aufgaben ({myTodos.length})
+                        </h3>
+                        <Link to={createPageUrl('Todos')} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                            Alle <ArrowRight className="w-3 h-3" />
+                        </Link>
+                    </div>
+                    <div className="space-y-2">
+                        {myTodos.slice(0, 3).map(t => (
+                            <Card key={t.id} className="bg-card border-border">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <Circle className="w-4 h-4 text-orange-400 shrink-0" />
+                                    <p className="text-sm text-foreground truncate flex-1">{t.title}</p>
+                                    {t.priority === 'dringend' && <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-[10px]">Dringend</Badge>}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Geburtstage heute */}
+            {birthdaysToday.length > 0 && (
+                <section>
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-wide mb-3">
+                        🎂 Geburtstag heute
+                    </h3>
+                    <div className="space-y-2">
+                        {birthdaysToday.map(e => (
+                            <Card key={e.id} className="border-pink-500/30 bg-pink-500/5">
+                                <CardContent className="p-3 flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                                        style={{ backgroundColor: e.color || '#64748b' }}>
+                                        {e.name?.charAt(0)}
+                                    </div>
+                                    <p className="text-sm font-medium text-foreground">{e.name}</p>
+                                    <span className="ml-auto text-lg">🎉</span>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Events heute */}
             {todayEvents.length > 0 && (
@@ -157,6 +280,9 @@ function TodayTab({ currentUser, currentEmployee, permissions, employees, todayE
                     </div>
                 </section>
             )}
+
+            {/* Personalisierte Schnellzugriffe */}
+            <PersonalizedQuickLinks userEmail={currentUser?.email} permissions={permissions} />
         </div>
     );
 }
@@ -647,6 +773,8 @@ export default function SmartDashboard({ currentUser, currentEmployee, isManager
                             employees={employees}
                             todayEvents={todayEvents}
                             todayReservations={todayReservations}
+                            todayShifts={todayShifts}
+                            myTodos={myTodos}
                         />
                     )}
                     {activeTab === 'team' && (

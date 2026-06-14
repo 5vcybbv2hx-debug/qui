@@ -66,6 +66,8 @@ function durationToPx(minutes) {
 export default function WeeklyTasks() {
     const permissions  = usePermissions();
     const queryClient  = useQueryClient();
+    const [draggedTodo, setDraggedTodo] = useState(null);
+    const [dragOverSlot, setDragOverSlot] = useState(null); // { dateStr, hour }
 
     // ── Woche ─────────────────────────────────────────────────────────────────
     const [weekStart, setWeekStart] = useState(() =>
@@ -142,6 +144,43 @@ export default function WeeklyTasks() {
 
     const deleteTodoPlanning = (todo) => {
         updateTodo.mutate({ id: todo.id, data: { planned_date: null, planned_time: null } });
+    };
+
+    // ── Drag & Drop Handler ───────────────────────────────────────────────────
+    const handleDragStart = (e, todo) => {
+        setDraggedTodo(todo);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragEnd = () => {
+        setDraggedTodo(null);
+        setDragOverSlot(null);
+    };
+
+    const handleSlotDragOver = (e, dateStr, hour) => {
+        if (!draggedTodo) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDragOverSlot({ dateStr, hour });
+    };
+
+    const handleSlotDrop = (e, date, hour) => {
+        e.preventDefault();
+        if (!draggedTodo) return;
+        updateTodo.mutate({
+            id: draggedTodo.id,
+            data: {
+                planned_date:     format(date, 'yyyy-MM-dd'),
+                planned_time:     minutesToTime(hour * 60),
+                planned_duration: 60,
+            },
+        });
+        setDraggedTodo(null);
+        setDragOverSlot(null);
+    };
+
+    const handleSlotDragLeave = () => {
+        setDragOverSlot(null);
     };
 
     // ── Derived ───────────────────────────────────────────────────────────────
@@ -368,18 +407,33 @@ export default function WeeklyTasks() {
                             {/* Tag-Spalte */}
                             <div className="flex-1 border-l border-border relative">
                                 {/* Stunden-Linien */}
-                                {hours.map(h => (
-                                    <div key={h}
-                                        className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group"
-                                        style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
-                                        onClick={() => handleSlotClick(activeDay, h)}>
-                                        <div className="absolute left-0 right-0 border-t border-border/20"
-                                            style={{ top: `${SLOT_H / 2}px` }} />
-                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Plus className="w-4 h-4 text-muted-foreground/50" />
-                                        </div>
-                                    </div>
-                                ))}
+                                {hours.map(h => {
+                                   const isDropTarget = dragOverSlot?.dateStr === activeDateStr && dragOverSlot?.hour === h;
+                                   return (
+                                   <div key={h}
+                                       className={cn(
+                                           'absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group',
+                                           isDropTarget && draggedTodo && 'bg-amber-500/20 border-amber-500/50'
+                                       )}
+                                       style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
+                                       onClick={() => handleSlotClick(activeDay, h)}
+                                       onDragOver={e => handleSlotDragOver(e, activeDateStr, h)}
+                                       onDragLeave={handleSlotDragLeave}
+                                       onDrop={e => handleSlotDrop(e, activeDay, h)}>
+                                       <div className="absolute left-0 right-0 border-t border-border/20"
+                                           style={{ top: `${SLOT_H / 2}px` }} />
+                                       {isDropTarget && draggedTodo ? (
+                                           <div className="absolute inset-0 flex items-center justify-center">
+                                               <span className="text-[10px] text-amber-400 font-semibold truncate px-1">{draggedTodo.title}</span>
+                                           </div>
+                                       ) : (
+                                           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                               <Plus className="w-4 h-4 text-muted-foreground/50" />
+                                           </div>
+                                       )}
+                                   </div>
+                                   );
+                                })}
 
                                 {/* Jetzt-Linie */}
                                 {isToday(activeDay) && (() => {
@@ -563,18 +617,33 @@ export default function WeeklyTasks() {
                                             'flex-1 border-l border-border relative min-w-[120px]',
                                             isNow && 'bg-amber-500/4'
                                         )}>
-                                        {hours.map(h => (
+                                        {hours.map(h => {
+                                            const isDropTarget = dragOverSlot?.dateStr === dateStr && dragOverSlot?.hour === h;
+                                            return (
                                             <div key={h}
-                                                className="absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group"
+                                                className={cn(
+                                                    'absolute left-0 right-0 border-t border-border/40 cursor-pointer hover:bg-accent/30 transition-colors group',
+                                                    isDropTarget && draggedTodo && 'bg-amber-500/20 border-amber-500/50'
+                                                )}
                                                 style={{ top: `${(h - hourStart) * SLOT_H}px`, height: `${SLOT_H}px` }}
-                                                onClick={() => handleSlotClick(day, h)}>
+                                                onClick={() => handleSlotClick(day, h)}
+                                                onDragOver={e => handleSlotDragOver(e, dateStr, h)}
+                                                onDragLeave={handleSlotDragLeave}
+                                                onDrop={e => handleSlotDrop(e, day, h)}>
                                                 <div className="absolute left-0 right-0 border-t border-border/20"
                                                     style={{ top: `${SLOT_H / 2}px` }} />
-                                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Plus className="w-4 h-4 text-muted-foreground/50" />
-                                                </div>
+                                                {isDropTarget && draggedTodo ? (
+                                                    <div className="absolute inset-0 flex items-center justify-center">
+                                                        <span className="text-[10px] text-amber-400 font-semibold truncate px-1">{draggedTodo.title}</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Plus className="w-4 h-4 text-muted-foreground/50" />
+                                                    </div>
+                                                )}
                                             </div>
-                                        ))}
+                                            );
+                                        })}
 
                                         {nowPx !== null && nowPx >= 0 && (
                                             <div className="absolute left-0 right-0 z-10 pointer-events-none"
@@ -651,7 +720,7 @@ export default function WeeklyTasks() {
                         <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                             Backlog · {backlogTodos.length} offen
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Klick auf Slot → Todo einplanen</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Drag → Zeitslot zum Einplanen</p>
                     </div>
                     <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
                         {backlogTodos.length === 0 ? (
@@ -661,9 +730,16 @@ export default function WeeklyTasks() {
                             </div>
                         ) : backlogTodos.map(todo => {
                             const stripe = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
+                            const isDragging = draggedTodo?.id === todo.id;
                             return (
                                 <div key={todo.id}
-                                    className="flex gap-2 p-2 rounded-xl border border-border bg-background hover:bg-accent/30 transition-colors cursor-default">
+                                    draggable
+                                    onDragStart={e => handleDragStart(e, todo)}
+                                    onDragEnd={handleDragEnd}
+                                    className={cn(
+                                        'flex gap-2 p-2 rounded-xl border border-border bg-background hover:bg-accent/30 transition-colors cursor-grab active:cursor-grabbing select-none',
+                                        isDragging && 'opacity-40 border-amber-500/50'
+                                    )}>
                                     <div className={cn('w-1 rounded-full shrink-0', stripe)} />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs font-semibold text-foreground truncate">{todo.title}</p>

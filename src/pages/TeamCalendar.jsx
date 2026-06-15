@@ -41,15 +41,15 @@ export default function TeamCalendar() {
     const shiftFrom = format(subMonths(startOfMonth(viewMonth), 1), 'yyyy-MM-dd');
     const shiftTo   = format(addMonths(endOfMonth(viewMonth),   1), 'yyyy-MM-dd');
 
-    // ── Queries — serverseitig gefiltert ──────────────────────────────────────
-    const { data: shifts = [] } = useQuery({
-        queryKey: ['shifts-calendar', shiftFrom, shiftTo],
-        queryFn:  () => base44.entities.Shift.filter(
-            { date__gte: shiftFrom, date__lte: shiftTo },
-            'date', 500
-        ),
+    // ── Queries ───────────────────────────────────────────────────────────────
+    const { data: allShifts = [] } = useQuery({
+        queryKey: ['shifts-calendar'],
+        queryFn:  () => base44.entities.Shift.list('date', 3000),
         staleTime: STALE.SHORT,
     });
+
+    // Clientseitiger Datumsfilter
+    const shifts = allShifts.filter(s => s.date >= shiftFrom && s.date <= shiftTo);
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],

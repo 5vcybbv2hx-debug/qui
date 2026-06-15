@@ -3,7 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfMonth, endOfMonth, parseISO, startOfWeek, endOfWeek, startOfDay, endOfDay, differenceInMinutes } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, TrendingUp, LogIn, LogOut, Coffee, Pause, Play, Filter, X, Clock3, Euro, Star } from 'lucide-react';
+import { Clock, Plus, Pencil, Trash2, Calendar, CheckCircle2, FileText, Check, TrendingUp, LogIn, LogOut, Coffee, Pause, Play, Filter, X, Clock3, Euro, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -718,19 +719,18 @@ export default function TimeTracking() {
                     </div>
                 )}
 
-                {/* Rechtliche Hinweise */}
-                <Card className="p-4 bg-blue-900/20 border-blue-700/30 mb-6">
-                    <div className="flex gap-3">
-                        <div className="text-blue-400 mt-0.5">ℹ️</div>
-                        <div className="text-xs sm:text-sm text-blue-200">
-                            <p className="font-semibold mb-1">Rechtskonform nach ArbZG</p>
-                            <p className="text-blue-300">
-                                • Zeiterfassungen werden 2 Jahre gespeichert • Max. 10h pro Tag (§3) • Mind. 11h Ruhezeit (§5) • 
-                                Genehmigte Einträge sind unveränderbar • Bei &gt;6h: 30 Min Pause, bei &gt;9h: 45 Min Pause (§4)
-                            </p>
+                {/* ArbZG Hinweis — kompakt, aufklappbar */}
+                {permissions.isManager && (
+                    <details className="mb-4 group">
+                        <summary className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer select-none list-none py-1">
+                            <span className="w-4 h-4 flex items-center justify-center rounded-full border border-border text-[10px] shrink-0">i</span>
+                            ArbZG-Hinweise anzeigen
+                        </summary>
+                        <div className="mt-2 px-3 py-2.5 rounded-xl border border-border bg-secondary/30 text-xs text-muted-foreground leading-relaxed">
+                            Max. 10h/Tag (§3) · Mind. 11h Ruhezeit (§5) · Bei &gt;6h: 30 Min Pause, bei &gt;9h: 45 Min (§4) · Einträge 2 Jahre gespeichert
                         </div>
-                    </div>
-                </Card>
+                    </details>
+                )}
 
                 {/* Zeiterfassung Section */}
                 <div className="space-y-6">
@@ -741,7 +741,7 @@ export default function TimeTracking() {
                 <div className="mb-1">
                     <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">Meine Stunden</p>
                     <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/40 to-card border-border">
+                        <Card className="p-3 sm:p-4 bg-secondary/40 border-border">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Heute</p>
@@ -750,7 +750,7 @@ export default function TimeTracking() {
                                 <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-blue-400 opacity-50" />
                             </div>
                         </Card>
-                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/40 to-card border-border">
+                        <Card className="p-3 sm:p-4 bg-secondary/40 border-border">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Woche</p>
@@ -759,7 +759,7 @@ export default function TimeTracking() {
                                 <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-purple-400 opacity-50" />
                             </div>
                         </Card>
-                        <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/40 to-card border-border">
+                        <Card className="p-3 sm:p-4 bg-secondary/40 border-border">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Monat</p>
@@ -777,32 +777,32 @@ export default function TimeTracking() {
                     <div className="mb-1">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Gesamt Team</p>
                         <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-900/20 to-card border-border/50">
+                            <Card className="p-3 sm:p-4 bg-secondary/20 border-border/50">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Heute</p>
                                         <p className="text-xl sm:text-2xl font-bold text-foreground">{todayHours.toFixed(1)}h</p>
                                     </div>
-                                    <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-blue-500 opacity-30" />
+                                    <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground opacity-40" />
                                 </div>
                             </Card>
-                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-900/20 to-card border-border/50">
+                            <Card className="p-3 sm:p-4 bg-secondary/20 border-border/50">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Woche</p>
                                         <p className="text-xl sm:text-2xl font-bold text-foreground">{weekHours.toFixed(1)}h</p>
                                     </div>
-                                    <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-purple-500 opacity-30" />
+                                    <Calendar className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground opacity-40" />
                                 </div>
                             </Card>
-                            <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-900/20 to-card border-border/50">
+                            <Card className="p-3 sm:p-4 bg-secondary/20 border-border/50">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-[10px] sm:text-xs text-muted-foreground mb-1">Monat</p>
                                         <p className="text-xl sm:text-2xl font-bold text-foreground">{totalHours.toFixed(1)}h</p>
-                                        <p className="text-[10px] sm:text-xs text-green-500 mt-0.5">{approvedHours.toFixed(1)}h ✓</p>
+                                        <p className="text-[10px] sm:text-xs text-green-400 mt-0.5">{approvedHours.toFixed(1)}h ✓</p>
                                     </div>
-                                    <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-amber-500 opacity-30" />
+                                    <CheckCircle2 className="w-5 h-5 sm:w-8 sm:h-8 text-muted-foreground opacity-40" />
                                 </div>
                             </Card>
                         </div>
@@ -810,32 +810,21 @@ export default function TimeTracking() {
                 )}
 
                 {/* Month Selector */}
-                <Card className="p-3 sm:p-4 bg-card border-border mb-4">
                 <div className="flex items-center justify-between gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-                    className="border-border hover:bg-accent text-muted-foreground text-xs sm:text-sm px-2 sm:px-4"
-                        >
-                            <span className="hidden sm:inline">← Vorheriger</span>
-                            <span className="sm:hidden">←</span>
-                        </Button>
-                        <div className="flex items-center gap-1 sm:gap-2 text-foreground">
-                            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
-                            <span className="font-semibold text-sm sm:text-base">{format(selectedMonth, 'MMM yyyy', { locale: de })}</span>
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-                            className="border-border hover:bg-accent text-muted-foreground text-xs sm:text-sm px-2 sm:px-4"
-                        >
-                            <span className="hidden sm:inline">Nächster →</span>
-                            <span className="sm:hidden">→</span>
-                        </Button>
-                    </div>
-                </Card>
+                    <button
+                        onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm font-bold text-foreground">
+                        {format(selectedMonth, 'MMMM yyyy', { locale: de })}
+                    </span>
+                    <button
+                        onClick={() => setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-all">
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
 
                 {/* Filter Bar */}
                 {permissions.isManager && (

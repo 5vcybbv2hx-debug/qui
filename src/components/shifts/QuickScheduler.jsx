@@ -21,15 +21,31 @@ export default function QuickScheduler({ employees, shiftTypes, shifts, onCreate
     const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
     // Sort shift types by start_time
-    const sortedTypes = [...(shiftTypes || [])].sort((a, b) => {
+    const sortedTypesBase = [...(shiftTypes || [])].sort((a, b) => {
         const at = a.start_time || '00:00';
         const bt = b.start_time || '00:00';
         return at.localeCompare(bt);
     });
 
+    // Prüfen ob es Schichten gibt, die keinem ShiftType zugeordnet sind
+    const knownTypeNames = new Set(sortedTypesBase.map(t => t.name));
+    const weekShifts = shifts.filter(s => {
+        const d = new Date(s.date);
+        return d >= weekStart && d <= addDays(weekStart, 6);
+    });
+    const hasOrphanShifts = weekShifts.some(s => !knownTypeNames.has(s.shift_type));
+    const sortedTypes = hasOrphanShifts
+        ? [...sortedTypesBase, { id: '__other__', name: 'Sonstige', _isOther: true }]
+        : sortedTypesBase;
+
     // Get shifts for a specific day + shiftType
     const getShiftsForSlot = (day, shiftType) => {
         const dateStr = format(day, 'yyyy-MM-dd');
+        if (shiftType._isOther) {
+            // Alle Schichten ohne bekannten shift_type
+            const knownNames = new Set(sortedTypes.filter(t => !t._isOther).map(t => t.name));
+            return shifts.filter(s => s.date === dateStr && !knownNames.has(s.shift_type));
+        }
         return shifts.filter(s => s.date === dateStr && s.shift_type === shiftType.name);
     };
 
@@ -133,7 +149,7 @@ export default function QuickScheduler({ employees, shiftTypes, shifts, onCreate
                                 <tr key={shiftType.id} className={cn('border-t border-border', si % 2 === 0 ? 'bg-card' : 'bg-muted/20')}>
                                     {/* Shift type label */}
                                     <td className="px-3 py-2">
-                                        <div className="font-semibold text-sm text-foreground">{shiftType.name}</div>
+                                        <div className={cn("font-semibold text-sm", shiftType._isOther ? "text-muted-foreground italic" : "text-foreground")}>{shiftType.name}</div>
                                         {shiftType.start_time && (
                                             <div className="text-[11px] text-muted-foreground font-mono">
                                                 {shiftType.start_time}–{shiftType.end_time}
@@ -142,11 +158,11 @@ export default function QuickScheduler({ employees, shiftTypes, shifts, onCreate
                                     </td>
                                     {/* Day cells */}
                                     {days.map((day, di) => {
-                                        const slotShifts = getShiftsForSlot(day, shiftType);
-                                        const droppableId = `slot|${format(day, 'yyyy-MM-dd')}|${shiftType.name}`;
-                                        return (
-                                            <td key={di} className="px-1 py-1 align-top">
-                                                <Droppable droppableId={droppableId}>
+                                       const slotShifts = getShiftsForSlot(day, shiftType);
+                                       const droppableId = `slot|${format(day, 'yyyy-MM-dd')}|${shiftType.name}`;
+                                       return (
+                                           <td key={di} className="px-1 py-1 align-top">
+                                               <Droppable droppableId={droppableId} isDropDisabled={!!shiftType._isOther}>
                                                     {(provided, snapshot) => (
                                                         <div
                                                             ref={provided.innerRef}

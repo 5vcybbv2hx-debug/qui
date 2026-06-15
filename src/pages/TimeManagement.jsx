@@ -1,60 +1,58 @@
+/**
+ * Zeiterfassung — Wrapper
+ *
+ * v2 Verbesserungen:
+ *  - Terminal nicht mehr als gleichwertiger Tab
+ *  - Terminal-Zugang als kompakter Link-Button für Manager/Terminal-Rolle
+ *  - HolidayCreditManager bleibt für Manager
+ */
 import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, LogIn } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
-
-// Import existing page components
 import TimeTrackingPage from './TimeTracking';
 import TerminalClockPage from './TerminalClock';
+import { Monitor } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function TimeManagementPage() {
     const permissions = usePermissions();
-    const [activeTab, setActiveTab] = useState('tracking');
+    const [showTerminal, setShowTerminal] = useState(false);
 
     if (!permissions.canViewOwnTimeEntries && !permissions.isTerminal) {
         return <PermissionDenied message="Du hast keine Berechtigung für die Zeiterfassung." />;
     }
 
+    // Terminal-Modus: direkt anzeigen ohne Wrapper
+    if (permissions.isTerminal && !permissions.isManager) {
+        return <TerminalClockPage />;
+    }
+
     return (
         <div className="min-h-screen bg-background">
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-                {/* Header */}
-                <div className="flex items-center justify-between gap-2 mb-4 sm:mb-6">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Zeiterfassung</h1>
-                        <p className="text-muted-foreground text-xs sm:text-sm mt-1">Arbeitszeiten erfassen und verwalten</p>
-                    </div>
-                    {permissions.isManager && <HolidayCreditManager />}
-                </div>
-
-                {/* Tabs */}
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-                    <TabsList className={`grid w-full bg-card border border-border h-auto p-1 ${(permissions.isManager || permissions.isTerminal) ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                        <TabsTrigger value="tracking" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
-                            <Clock className="w-5 h-5 sm:w-4 sm:h-4" />
-                            <span>Zeiterfassung</span>
-                        </TabsTrigger>
-                        {(permissions.isManager || permissions.isTerminal) && (
-                            <TabsTrigger value="terminal" className="data-[state=active]:bg-amber-600 py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
-                                <LogIn className="w-5 h-5 sm:w-4 sm:h-4" />
-                                <span>Terminal</span>
-                            </TabsTrigger>
-                        )}
-                    </TabsList>
-
-                    <TabsContent value="tracking" className="space-y-0">
-                        <TimeTrackingPage />
-                    </TabsContent>
-
-                    {(permissions.isManager || permissions.isTerminal) && (
-                        <TabsContent value="terminal" className="space-y-0">
-                            <TerminalClockPage />
-                        </TabsContent>
+            {/* Terminal-Zugang für Manager — kleiner Button oben rechts */}
+            {(permissions.isManager || permissions.isTerminal) && (
+                <div className="flex justify-end px-4 pt-4 max-w-6xl mx-auto">
+                    <button
+                        onClick={() => setShowTerminal(v => !v)}
+                        className={cn(
+                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all',
+                            showTerminal
+                                ? 'bg-amber-600 border-amber-600 text-white'
+                                : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'
+                        )}>
+                        <Monitor className="w-3.5 h-3.5" />
+                        {showTerminal ? 'Zeiterfassung' : 'Terminal-Modus'}
+                    </button>
+                    {permissions.isManager && !showTerminal && (
+                        <span className="ml-2">
+                            <HolidayCreditManager />
+                        </span>
                     )}
-                </Tabs>
-            </div>
+                </div>
+            )}
+
+            {showTerminal ? <TerminalClockPage /> : <TimeTrackingPage />}
         </div>
     );
 }

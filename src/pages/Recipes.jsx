@@ -78,12 +78,29 @@ function getScaledIngredients(ingredients, originalServings, viewServings) {
 // ── Detail-Dialog ─────────────────────────────────────────────────────────────
 function RecipeDetailDialog({ recipe, articles, permissions, open, onClose, onEdit, onDelete }) {
     const [servings, setServings] = useState(recipe?.servings || 1);
+    const [activeVariant, setActiveVariant] = useState(null); // null = Basis, index = Variante
 
     if (!recipe) return null;
 
     const scaleFactor = servings / (recipe.servings || 1);
-    const scaledIngredients = getScaledIngredients(recipe.ingredients, recipe.servings || 1, servings);
-    const totalCost = calcTotalCost(recipe.ingredients, articles, scaleFactor);
+    const isLongdrink = recipe.category === 'Longdrink';
+    const hasVariants = isLongdrink && recipe.mix_variants?.length > 0;
+
+    // Aktuelle Variante bestimmen
+    const currentVariantIngredients = hasVariants && activeVariant !== null
+        ? (recipe.mix_variants[activeVariant]?.ingredients || [])
+        : [];
+    // Basis = feste Zutaten (is_base oder wenn keine Varianten vorhanden: alle)
+    const baseIngredients = hasVariants
+        ? (recipe.ingredients || []).filter(i => i.is_base !== false)
+        : (recipe.ingredients || []);
+    // Angezeigte Zutaten = Basis + aktive Variante
+    const displayIngredients = hasVariants && activeVariant !== null
+        ? [...baseIngredients, ...currentVariantIngredients]
+        : (recipe.ingredients || []);
+
+    const scaledIngredients = getScaledIngredients(displayIngredients, recipe.servings || 1, servings);
+    const totalCost = calcTotalCost(displayIngredients, articles, scaleFactor);
     const catColor  = CATEGORY_COLORS[recipe.category] || CATEGORY_COLORS['Sonstiges'];
 
     return (
@@ -119,11 +136,46 @@ function RecipeDetailDialog({ recipe, articles, permissions, open, onClose, onEd
                             className="w-full h-44 object-cover rounded-xl border border-border/50" />
                     )}
 
+                    {/* Varianten-Chips für Longdrinks */}
+                    {hasVariants && (
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2">
+                                Mischvarianten
+                            </p>
+                            <div className="flex gap-1.5 flex-wrap">
+                                <button
+                                    onClick={() => setActiveVariant(null)}
+                                    className={cn(
+                                        'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                                        activeVariant === null
+                                            ? 'bg-blue-500 border-blue-500 text-white'
+                                            : 'border-border text-muted-foreground bg-card hover:text-foreground'
+                                    )}>
+                                    Nur Basis
+                                </button>
+                                {recipe.mix_variants.map((v, i) => (
+                                    <button key={i}
+                                        onClick={() => setActiveVariant(i)}
+                                        className={cn(
+                                            'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                                            activeVariant === i
+                                                ? 'bg-blue-500 border-blue-500 text-white'
+                                                : 'border-border text-muted-foreground bg-card hover:text-foreground'
+                                        )}>
+                                        {v.name || `Variante ${i + 1}`}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Zutaten + Skalierung */}
                     {recipe.ingredients?.length > 0 && (
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Zutaten</p>
+                                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                                    {hasVariants ? (activeVariant !== null ? `Zutaten (${recipe.mix_variants[activeVariant]?.name || 'Variante'})` : 'Basis-Zutaten') : 'Zutaten'}
+                                </p>
                                 {/* Skalierung */}
                                 <div className="flex items-center gap-1.5 bg-secondary rounded-full px-2 py-0.5">
                                     <button onClick={() => setServings(s => Math.max(1, s - 1))}
@@ -304,7 +356,7 @@ export default function Recipes() {
     const [formData, setFormData] = useState({
         name: '', category: 'Cocktail', recipe_type: 'standard',
         slushy_spirit_base: '', slushy_original_volume_liters: '',
-        servings: 1, ingredients: [], preparation: '',
+        servings: 1, ingredients: [], mix_variants: [], preparation: '',
         glass_type: '', garnish: '', notes: '', image_url: ''
     });
 
@@ -364,25 +416,26 @@ export default function Recipes() {
         if (recipe) {
             setSelectedRecipe(recipe);
             setFormData({
-                name: recipe.name, category: recipe.category,
-                recipe_type: recipe.recipe_type || 'standard',
-                slushy_spirit_base: recipe.slushy_spirit_base || '',
-                slushy_original_volume_liters: recipe.slushy_original_volume_liters || '',
-                servings: recipe.servings || 1,
-                ingredients: recipe.ingredients || [],
-                preparation: recipe.preparation || '',
-                glass_type: recipe.glass_type || '',
-                garnish: recipe.garnish || '',
-                notes: recipe.notes || '',
-                image_url: recipe.image_url || '',
-            });
+                    name: recipe.name, category: recipe.category,
+                    recipe_type: recipe.recipe_type || 'standard',
+                    slushy_spirit_base: recipe.slushy_spirit_base || '',
+                    slushy_original_volume_liters: recipe.slushy_original_volume_liters || '',
+                    servings: recipe.servings || 1,
+                    ingredients: recipe.ingredients || [],
+                    mix_variants: recipe.mix_variants || [],
+                    preparation: recipe.preparation || '',
+                    glass_type: recipe.glass_type || '',
+                    garnish: recipe.garnish || '',
+                    notes: recipe.notes || '',
+                    image_url: recipe.image_url || '',
+                });
         } else {
             setSelectedRecipe(null);
             setFormData({
                 name: '', category: categoryFilter !== 'alle' ? categoryFilter : 'Cocktail',
                 recipe_type: activeTab === 'slushy' ? 'slushy' : 'standard',
                 slushy_spirit_base: '', slushy_original_volume_liters: '',
-                servings: 1, ingredients: [], preparation: '',
+                servings: 1, ingredients: [], mix_variants: [], preparation: '',
                 glass_type: '', garnish: '', notes: '', image_url: '',
             });
         }
@@ -831,6 +884,60 @@ Antworte mit JSON: {"name":"...","category":"Cocktail","servings":1,"ingredients
                                 articles={articles}
                             />
                         </div>
+
+                        {/* Mischvarianten für Longdrinks */}
+                        {formData.category === 'Longdrink' && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-xs text-muted-foreground">Mischvarianten (Softdrinks)</Label>
+                                    <Button type="button" variant="outline" size="sm"
+                                        onClick={() => setFormData(f => ({
+                                            ...f,
+                                            mix_variants: [...(f.mix_variants || []), { name: '', ingredients: [] }]
+                                        }))}
+                                        className="h-7 text-xs gap-1">
+                                        <Plus className="w-3 h-3" /> Variante
+                                    </Button>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">
+                                    Feste Basis-Zutaten (Alkohol) oben, variable Softdrink-Optionen hier unten.
+                                </p>
+                                {(formData.mix_variants || []).map((variant, vi) => (
+                                    <div key={vi} className="border border-border rounded-xl p-3 space-y-2 bg-secondary/20">
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                className="h-8 flex-1 text-sm"
+                                                placeholder={`z.B. mit Cola, mit Sprite…`}
+                                                value={variant.name}
+                                                onChange={e => setFormData(f => {
+                                                    const v = [...(f.mix_variants || [])];
+                                                    v[vi] = { ...v[vi], name: e.target.value };
+                                                    return { ...f, mix_variants: v };
+                                                })}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(f => ({
+                                                    ...f,
+                                                    mix_variants: (f.mix_variants || []).filter((_, i) => i !== vi)
+                                                }))}
+                                                className="text-muted-foreground hover:text-destructive transition-colors shrink-0">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        <IngredientSelector
+                                            ingredients={variant.ingredients || []}
+                                            onChange={newIngredients => setFormData(f => {
+                                                const v = [...(f.mix_variants || [])];
+                                                v[vi] = { ...v[vi], ingredients: newIngredients };
+                                                return { ...f, mix_variants: v };
+                                            })}
+                                            articles={articles}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Zubereitung */}
                         <div className="space-y-1.5">

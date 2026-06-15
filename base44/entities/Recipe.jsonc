@@ -73,10 +73,47 @@
           },
           "unit": {
             "type": "string"
+          },
+          "is_base": {
+            "type": "boolean",
+            "description": "Feste Basis-Zutat (z.B. Alkohol bei Longdrinks)"
           }
         }
       },
-      "description": "Zutaten"
+      "description": "Zutaten (bei Longdrinks: Basis-Zutaten / feste Alkohol-Anteile)"
+    },
+    "mix_variants": {
+      "type": "array",
+      "description": "Mischvarianten f\u00fcr Longdrinks (verschiedene Softdrink-Optionen)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Variantenname (z.B. mit Cola, mit Sprite)"
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "article_id": {
+                  "type": "string"
+                },
+                "article_name": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "unit": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "preparation": {
       "type": "string",

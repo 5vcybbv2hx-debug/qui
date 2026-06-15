@@ -503,27 +503,35 @@ export default function WeeklyTasks() {
                                         const h   = Math.max(durationToPx(dur), 24);
                                         const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
                                         const isDraggingThis = draggedItem?.type === 'planned-todo' && draggedItem.item.id === todo.id;
+                                        const isDone = todo.status === 'erledigt';
                                         return (
                                             <div key={todo.id}
                                                 draggable
                                                 onDragStart={e => { e.stopPropagation(); handleDragStartPlannedTodo(e, todo); }}
                                                 onDragEnd={handleDragEnd}
-                                                className={cn('absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-blue-500/25 transition-colors flex', isDraggingThis && 'opacity-40')}
+                                                className={cn(
+                                                    'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-grab active:cursor-grabbing transition-colors flex',
+                                                    isDone
+                                                        ? 'border-green-500/40 bg-green-500/10 opacity-70'
+                                                        : 'border-blue-500/30 bg-blue-500/15 hover:bg-blue-500/25',
+                                                    isDraggingThis && 'opacity-40'
+                                                )}
                                                 style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
                                                 onClick={e => { e.stopPropagation(); setEditItem({ type: 'todo', item: todo }); }}>
-                                                <div className={cn('w-1 shrink-0', pCfg)} />
-                                                <div className="flex-1 px-1.5 py-1 min-w-0">
-                                                    <p className="text-[11px] font-semibold text-blue-200 truncate leading-tight">
+                                                <div className={cn('w-1 shrink-0', isDone ? 'bg-green-500' : pCfg)} />
+                                                <div className="flex-1 px-1.5 py-1 min-w-0 flex items-center gap-1">
+                                                    {isDone && <Check className="w-3 h-3 text-green-400 shrink-0" />}
+                                                    <p className={cn('text-[11px] font-semibold truncate leading-tight', isDone ? 'text-green-300 line-through' : 'text-blue-200')}>
                                                         {todo.planned_time} {todo.title}
                                                     </p>
                                                 </div>
                                             </div>
                                         );
-                                    })}
+                                        })}
 
-                                {/* Termine */}
-                                {weekAppointments
-                                    .filter(a => a.date === activeDateStr)
+                                        {/* Termine */}
+                                        {weekAppointments
+                                        .filter(a => a.date === activeDateStr)
                                     .map(appt => {
                                         const startMin = timeToMinutes(appt.start_time);
                                         if (startMin < hourStart * 60 || startMin >= hourEnd * 60) return null;
@@ -714,22 +722,32 @@ export default function WeeklyTasks() {
                                             const h    = Math.max(durationToPx(dur), 24);
                                             const pCfg = PRIORITY_STRIPE[todo.priority] || PRIORITY_STRIPE.mittel;
                                             const isDraggingThis = draggedItem?.type === 'planned-todo' && draggedItem.item.id === todo.id;
+                                            const isDone = todo.status === 'erledigt';
                                             return (
                                                 <div key={todo.id}
                                                     draggable
                                                     onDragStart={e => { e.stopPropagation(); handleDragStartPlannedTodo(e, todo); }}
                                                     onDragEnd={handleDragEnd}
-                                                    className={cn('absolute left-0.5 right-0.5 z-10 rounded-lg border border-blue-500/30 bg-blue-500/15 overflow-hidden cursor-grab active:cursor-grabbing hover:bg-blue-500/25 transition-colors flex', isDraggingThis && 'opacity-40')}
+                                                    className={cn(
+                                                        'absolute left-0.5 right-0.5 z-10 rounded-lg border overflow-hidden cursor-grab active:cursor-grabbing transition-colors flex',
+                                                        isDone
+                                                            ? 'border-green-500/40 bg-green-500/10 opacity-70'
+                                                            : 'border-blue-500/30 bg-blue-500/15 hover:bg-blue-500/25',
+                                                        isDraggingThis && 'opacity-40'
+                                                    )}
                                                     style={{ top: `${top}px`, height: `${h}px`, minHeight: '24px' }}
                                                     onClick={e => { e.stopPropagation(); setEditItem({ type: 'todo', item: todo }); }}>
-                                                    <div className={cn('w-1 shrink-0', pCfg)} />
-                                                    <div className="flex-1 px-1.5 py-1 min-w-0">
-                                                        <p className="text-[11px] font-semibold text-blue-200 truncate leading-tight">
-                                                            {todo.planned_time} {todo.title}
-                                                        </p>
-                                                        {h > 36 && todo.category && (
-                                                            <p className="text-[10px] text-blue-300/70 truncate">{todo.category}</p>
-                                                        )}
+                                                    <div className={cn('w-1 shrink-0', isDone ? 'bg-green-500' : pCfg)} />
+                                                    <div className="flex-1 px-1.5 py-1 min-w-0 flex items-center gap-1">
+                                                        {isDone && <Check className="w-3 h-3 text-green-400 shrink-0" />}
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className={cn('text-[11px] font-semibold truncate leading-tight', isDone ? 'text-green-300 line-through' : 'text-blue-200')}>
+                                                                {todo.planned_time} {todo.title}
+                                                            </p>
+                                                            {h > 36 && todo.category && (
+                                                                <p className={cn('text-[10px] truncate', isDone ? 'text-green-300/50' : 'text-blue-300/70')}>{todo.category}</p>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
@@ -1056,6 +1074,26 @@ export default function WeeklyTasks() {
                                     )}
                                 </div>
                             </div>
+                            {editItem.item.status === 'erledigt' ? (
+                                <Button
+                                    onClick={() => {
+                                        updateTodo.mutate({ id: editItem.item.id, data: { status: 'offen' } });
+                                        setEditItem(null);
+                                    }}
+                                    variant="outline"
+                                    className="w-full h-9 text-sm text-green-400 border-green-500/40 hover:bg-green-500/10">
+                                    <CheckSquare className="w-4 h-4 mr-1.5" /> Erledigt — rückgängig machen
+                                </Button>
+                            ) : (
+                                <Button
+                                    onClick={() => {
+                                        updateTodo.mutate({ id: editItem.item.id, data: { status: 'erledigt' } });
+                                        setEditItem(null);
+                                    }}
+                                    className="w-full h-9 text-sm bg-green-600 hover:bg-green-700 text-white">
+                                    <Check className="w-4 h-4 mr-1.5" /> Als erledigt markieren
+                                </Button>
+                            )}
                             <Button variant="outline"
                                 onClick={() => { deleteTodoPlanning(editItem.item); setEditItem(null); }}
                                 className="w-full h-9 text-sm text-muted-foreground hover:text-foreground">

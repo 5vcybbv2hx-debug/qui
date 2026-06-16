@@ -71,7 +71,7 @@ import MyShifts from './pages/MyShifts';
 import NotificationSettings from './pages/NotificationSettings';
 import Notifications from './pages/Notifications';
 import Onboarding from './pages/Onboarding';
-import Permissions from './pages/Permissions';
+import PermissionsNew from './pages/PermissionsNew';
 import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
 import Recipes from './pages/Recipes';
@@ -142,7 +142,7 @@ const CORE_PAGES = {
     "NotificationSettings": NotificationSettings,
     "Notifications": Notifications,
     "Onboarding": Onboarding,
-    "Permissions": Permissions,
+    "Permissions": PermissionsNew,
     "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
     "Reports": Reports,

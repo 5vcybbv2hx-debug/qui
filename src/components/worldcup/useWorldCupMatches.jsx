@@ -4,19 +4,9 @@ import { base44 } from '@/api/base44Client';
 export function useWorldCupMatches() {
     return useQuery({
         queryKey: ['world-cup-matches'],
-        queryFn: async () => {
-            const all = [];
-            let skip = 0;
-            const limit = 100;
-            while (true) {
-                const batch = await base44.entities.WorldCupMatch.filter({}, { sort: 'kickoff_time', limit, skip });
-                all.push(...batch);
-                if (batch.length < limit) break;
-                skip += limit;
-            }
-            return all;
-        },
+        queryFn: () => base44.entities.WorldCupMatch.list('kickoff_time', 500),
         staleTime: 2 * 60 * 1000,
+        select: (data) => Array.isArray(data) ? data : [],
     });
 }
 
@@ -26,7 +16,7 @@ export function useWorldCupMatches() {
 export function calculateMatchImportance(match) {
     const kickoff = new Date(match.kickoff_time);
     const hour = kickoff.getHours();
-    const dayOfWeek = kickoff.getDay(); // 0=So, 6=Sa
+    const dayOfWeek = kickoff.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     const isEvening = hour >= 17;
     const round = (match.round || '').toLowerCase();
@@ -36,78 +26,58 @@ export function calculateMatchImportance(match) {
     const isSemiFinal = round.includes('halbfinale');
     const isQuarterFinal = round.includes('viertelfinale');
 
-    // Wichtigkeit berechnen
     let importance = 'low';
     let traffic = 'normal';
     let staffExtra = 0;
 
     if (match.is_germany_game) {
-        importance = 'very_high';
-        traffic = 'extreme';
-        staffExtra = isEvening ? 4 : 3;
+        importance = 'very_high'; traffic = 'extreme'; staffExtra = isEvening ? 4 : 3;
     } else if (isFinal) {
-        importance = 'very_high';
-        traffic = 'extreme';
-        staffExtra = 5;
+        importance = 'very_high'; traffic = 'extreme'; staffExtra = 5;
     } else if (isSemiFinal) {
-        importance = 'very_high';
-        traffic = 'very_busy';
-        staffExtra = 3;
+        importance = 'very_high'; traffic = 'very_busy'; staffExtra = 3;
     } else if (isQuarterFinal) {
-        importance = 'high';
-        traffic = 'very_busy';
-        staffExtra = 2;
+        importance = 'high'; traffic = 'very_busy'; staffExtra = 2;
     } else if (isKnockout) {
-        importance = 'high';
-        traffic = 'busy';
-        staffExtra = 2;
+        importance = 'high'; traffic = 'busy'; staffExtra = 2;
     } else if (match.is_top_game) {
-        importance = 'high';
-        traffic = isEvening ? 'very_busy' : 'busy';
-        staffExtra = isEvening ? 2 : 1;
+        importance = 'high'; traffic = isEvening ? 'very_busy' : 'busy'; staffExtra = isEvening ? 2 : 1;
     } else if (isEvening && isWeekend) {
-        importance = 'high';
-        traffic = 'busy';
-        staffExtra = 1;
+        importance = 'high'; traffic = 'busy'; staffExtra = 1;
     } else if (isEvening) {
-        importance = 'medium';
-        traffic = 'busy';
-        staffExtra = 1;
+        importance = 'medium'; traffic = 'busy'; staffExtra = 1;
     } else if (isWeekend) {
-        importance = 'medium';
-        traffic = 'normal';
-        staffExtra = 0;
+        importance = 'medium'; traffic = 'normal'; staffExtra = 0;
     }
 
     const staffRec = staffExtra > 0 ? `+${staffExtra} Mitarbeiter empfohlen` : 'Normale Besetzung';
-
     return { importance, traffic, staff_recommendation: staffRec };
 }
 
 export function getTrafficColor(traffic) {
     switch (traffic) {
-        case 'extreme': return 'bg-red-500/20 text-red-400 border-red-500/30';
+        case 'extreme':   return 'bg-red-500/20 text-red-400 border-red-500/30';
         case 'very_busy': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-        case 'busy': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-        default: return 'bg-green-500/20 text-green-400 border-green-500/30';
+        case 'busy':      return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+        default:          return 'bg-green-500/20 text-green-400 border-green-500/30';
     }
 }
 
 export function getTrafficLabel(traffic) {
     switch (traffic) {
-        case 'extreme': return 'Extrem voll';
+        case 'extreme':   return 'Extrem voll';
         case 'very_busy': return 'Sehr voll';
-        case 'busy': return 'Erhöhter Andrang';
-        default: return 'Normal';
+        case 'busy':      return 'Erhöhter Andrang';
+        default:          return 'Normal';
     }
 }
 
 export function getTrafficDot(traffic) {
     switch (traffic) {
-        case 'extreme': return '🔴';
+        case 'extreme':   return '🔴';
         case 'very_busy': return '🟠';
-        case 'busy': return '🟡';
-        default: return '🟢';
+        case 'busy':      return '🟡';
+        default:          return '🟢';
     }
 }
 

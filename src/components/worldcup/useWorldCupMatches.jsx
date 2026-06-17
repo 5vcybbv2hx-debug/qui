@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { WorldCupMatch } from '@/api/entities';
 
 export function useWorldCupMatches() {
     return useQuery({
         queryKey: ['world-cup-matches'],
-        queryFn: () => base44.entities.WorldCupMatch.list('kickoff_time', 500),
+        queryFn: async () => {
+            const results = await WorldCupMatch.list('-kickoff_time', 500);
+            return Array.isArray(results) ? results : [];
+        },
         staleTime: 2 * 60 * 1000,
-        select: (data) => Array.isArray(data) ? data : [],
     });
 }
 

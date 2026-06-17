@@ -142,14 +142,17 @@ function TopicCard({ topic, isManager, onOpen, onStatusChange, onDelete }) {
 
 // ── Termin-Card ───────────────────────────────────────────────────────────────
 function ScheduleCard({ schedule, rsvpData, currentEmployee, onRsvp, isManager }) {
+    const [showRsvpList, setShowRsvpList] = React.useState(false);
     if (!schedule) return null;
 
-    const myRsvp = rsvpData.find(r => r.employee_id === currentEmployee?.id)?.status;
-    const zusagen = rsvpData.filter(r => r.status === 'zusage').length;
-    const absagen = rsvpData.filter(r => r.status === 'absage').length;
+    // ── NUR RSVPs für diesen konkreten Termin filtern ──────────────────────
+    const scheduleRsvps = rsvpData.filter(r => r.schedule_id === schedule.id);
+    const myRsvp  = scheduleRsvps.find(r => r.employee_id === currentEmployee?.id)?.status;
+    const zusagen = scheduleRsvps.filter(r => r.status === 'zusage');
+    const absagen = scheduleRsvps.filter(r => r.status === 'absage');
 
     return (
-        <div className="rounded-xl border border-border bg-card p-4 mb-4">
+        <div className="rounded-xl border border-border bg-card p-4 mb-4 space-y-3">
             <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                     <CalendarDays className="w-5 h-5 text-primary" />
@@ -162,12 +165,16 @@ function ScheduleCard({ schedule, rsvpData, currentEmployee, onRsvp, isManager }
                         🕐 {schedule.time} Uhr
                         {schedule.location && <> · 📍 {schedule.location}</>}
                     </p>
-                    {/* RSVP Zähler */}
-                    {(zusagen > 0 || absagen > 0) && (
-                        <div className="flex gap-3 mt-2 text-xs">
-                            <span className="text-green-500">✓ {zusagen} Zusagen</span>
-                            <span className="text-destructive">✗ {absagen} Absagen</span>
-                        </div>
+                    {/* RSVP Zähler — klickbar für Detailansicht */}
+                    {(zusagen.length > 0 || absagen.length > 0) && (
+                        <button
+                            onClick={() => setShowRsvpList(v => !v)}
+                            className="flex gap-3 mt-2 text-xs hover:opacity-80 transition-opacity"
+                        >
+                            <span className="text-green-500">✓ {zusagen.length} Zusagen</span>
+                            <span className="text-destructive">✗ {absagen.length} Absagen</span>
+                            <span className="text-muted-foreground">{showRsvpList ? '▲' : '▼'}</span>
+                        </button>
                     )}
                 </div>
 
@@ -199,6 +206,40 @@ function ScheduleCard({ schedule, rsvpData, currentEmployee, onRsvp, isManager }
                     </div>
                 )}
             </div>
+
+            {/* Aufklappbare Namensliste */}
+            {showRsvpList && (
+                <div className="border-t border-border/50 pt-3 grid grid-cols-2 gap-3">
+                    {zusagen.length > 0 && (
+                        <div>
+                            <p className="text-[10px] font-bold text-green-500 uppercase tracking-wider mb-1.5">
+                                ✓ Zusagen ({zusagen.length})
+                            </p>
+                            <div className="space-y-1">
+                                {zusagen.map(r => (
+                                    <p key={r.id} className="text-xs text-foreground">
+                                        {r.employee_name || '—'}
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {absagen.length > 0 && (
+                        <div>
+                            <p className="text-[10px] font-bold text-destructive uppercase tracking-wider mb-1.5">
+                                ✗ Absagen ({absagen.length})
+                            </p>
+                            <div className="space-y-1">
+                                {absagen.map(r => (
+                                    <p key={r.id} className="text-xs text-foreground">
+                                        {r.employee_name || '—'}
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

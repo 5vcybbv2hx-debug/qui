@@ -1,10 +1,6 @@
 /**
  * Zeiterfassung — Wrapper
- *
- * v2 Verbesserungen:
- *  - Terminal nicht mehr als gleichwertiger Tab
- *  - Terminal-Zugang als kompakter Link-Button für Manager/Terminal-Rolle
- *  - HolidayCreditManager bleibt für Manager
+ * Terminal-Zugang als prominenter Button für Manager
  */
 import React, { useState } from 'react';
 import { usePermissions } from '@/components/auth/usePermissions';
@@ -12,7 +8,7 @@ import PermissionDenied from '@/components/auth/PermissionDenied';
 import HolidayCreditManager from '@/components/dashboard/HolidayCreditManager';
 import TimeTrackingPage from './TimeTracking';
 import TerminalClockPage from './TerminalClock';
-import { Monitor } from 'lucide-react';
+import { Monitor, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function TimeManagementPage() {
@@ -23,36 +19,45 @@ export default function TimeManagementPage() {
         return <PermissionDenied message="Du hast keine Berechtigung für die Zeiterfassung." />;
     }
 
-    // Terminal-Modus: direkt anzeigen ohne Wrapper
+    // Terminal-Nutzer ohne Manager: direkt Terminal zeigen
     if (permissions.isTerminal && !permissions.isManager) {
         return <TerminalClockPage />;
     }
 
+    if (showTerminal) {
+        return (
+            <div className="min-h-screen bg-background">
+                {/* Zurück-Button im Terminal-Modus */}
+                <div className="max-w-6xl mx-auto px-4 pt-4 flex items-center gap-3">
+                    <button
+                        onClick={() => setShowTerminal(false)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-all min-h-[44px]"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Zurück zur Zeiterfassung
+                    </button>
+                </div>
+                <TerminalClockPage />
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-background">
-            {/* Terminal-Zugang für Manager — kleiner Button oben rechts */}
-            {(permissions.isManager || permissions.isTerminal) && (
-                <div className="flex justify-end px-4 pt-4 max-w-6xl mx-auto">
+            {/* Manager-Leiste: Terminal-Zugang + HolidayCreditManager */}
+            {permissions.isManager && (
+                <div className="max-w-6xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
+                    <HolidayCreditManager />
                     <button
-                        onClick={() => setShowTerminal(v => !v)}
-                        className={cn(
-                            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all',
-                            showTerminal
-                                ? 'bg-amber-600 border-amber-600 text-white'
-                                : 'border-border text-muted-foreground hover:text-foreground hover:bg-accent'
-                        )}>
-                        <Monitor className="w-3.5 h-3.5" />
-                        {showTerminal ? 'Zeiterfassung' : 'Terminal-Modus'}
+                        onClick={() => setShowTerminal(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-card text-sm font-medium text-foreground hover:bg-accent transition-all min-h-[44px]"
+                    >
+                        <Monitor className="w-4 h-4 text-muted-foreground" />
+                        Terminal-Modus
                     </button>
-                    {permissions.isManager && !showTerminal && (
-                        <span className="ml-2">
-                            <HolidayCreditManager />
-                        </span>
-                    )}
                 </div>
             )}
-
-            {showTerminal ? <TerminalClockPage /> : <TimeTrackingPage />}
+            <TimeTrackingPage />
         </div>
     );
 }

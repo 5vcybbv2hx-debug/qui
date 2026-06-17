@@ -249,26 +249,31 @@ export default function TeamMeeting() {
     const { data: topics = [] } = useQuery({
         queryKey: ['meeting-topics'],
         queryFn:  () => base44.entities.TeamMeetingTopic.list('-created_date', 200),
+        staleTime: 30_000,
     });
 
     const { data: schedules = [] } = useQuery({
         queryKey: ['meeting-schedules'],
-        queryFn:  () => base44.entities.MeetingSchedule.list('-date', 10),
+        queryFn:  () => base44.entities.TeamMeetingSchedule.list('-date', 10),
+        staleTime: 60_000,
     });
 
     const { data: rsvpData = [] } = useQuery({
         queryKey: ['meeting-rsvp'],
-        queryFn:  () => base44.entities.MeetingRSVP.list('-created_date', 200),
+        queryFn:  () => base44.entities.TeamMeetingRSVP.list('-created_date', 200),
+        staleTime: 30_000,
     });
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
         queryFn:  () => base44.entities.Employee.filter({ is_active: true }),
+        staleTime: 120_000,
     });
 
     const { data: currentUser } = useQuery({
         queryKey: ['current-user'],
         queryFn:  () => base44.auth.me(),
+        staleTime: 120_000,
     });
 
     const currentEmployee = employees.find(e => e.email === currentUser?.email);
@@ -298,8 +303,8 @@ export default function TeamMeeting() {
 
     const scheduleMutation = useMutation({
         mutationFn: (data) => currentSchedule
-            ? base44.entities.MeetingSchedule.update(currentSchedule.id, data)
-            : base44.entities.MeetingSchedule.create(data),
+            ? base44.entities.TeamMeetingSchedule.update(currentSchedule.id, data)
+            : base44.entities.TeamMeetingSchedule.create(data),
         onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['meeting-schedules'] }); setScheduleModalOpen(false); toast.success('Termin gespeichert'); },
         onError:   () => toast.error('Fehler beim Speichern'),
     });
@@ -311,8 +316,8 @@ export default function TeamMeeting() {
             );
             const payload = { employee_id: currentEmployee.id, schedule_id: currentSchedule.id, status, employee_name: currentEmployee.full_name };
             return existing
-                ? base44.entities.MeetingRSVP.update(existing.id, payload)
-                : base44.entities.MeetingRSVP.create(payload);
+                ? base44.entities.TeamMeetingRSVP.update(existing.id, payload)
+                : base44.entities.TeamMeetingRSVP.create(payload);
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meeting-rsvp'] }),
     });

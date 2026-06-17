@@ -4,8 +4,19 @@ import { base44 } from '@/api/base44Client';
 export function useWorldCupMatches() {
     return useQuery({
         queryKey: ['world-cup-matches'],
-        queryFn: () => base44.entities.WorldCupMatch.list('kickoff_time', 500),
-        staleTime: 5 * 60 * 1000,
+        queryFn: async () => {
+            const all = [];
+            let skip = 0;
+            const limit = 100;
+            while (true) {
+                const batch = await base44.entities.WorldCupMatch.filter({}, { sort: 'kickoff_time', limit, skip });
+                all.push(...batch);
+                if (batch.length < limit) break;
+                skip += limit;
+            }
+            return all;
+        },
+        staleTime: 2 * 60 * 1000,
     });
 }
 

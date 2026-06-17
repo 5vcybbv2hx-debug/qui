@@ -346,7 +346,7 @@ export default function TeamMeeting() {
         mutationFn: async (data) => {
             if (currentSchedule) {
                 const oldRsvps = rsvpData.filter(r => r.schedule_id === currentSchedule.id);
-                await Promise.all(oldRsvps.map(r => base44.entities.MeetingRSVP.delete(r.id)));
+                await Promise.all(oldRsvps.map(r => base44.entities.TeamMeetingRSVP.delete(r.id)));
                 return base44.entities.TeamMeetingSchedule.update(currentSchedule.id, data);
             }
             return base44.entities.TeamMeetingSchedule.create(data);

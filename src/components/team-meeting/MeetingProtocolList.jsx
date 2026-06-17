@@ -366,6 +366,7 @@ export default function MeetingProtocolList({ isManager }) {
         queryFn: () => isManager
             ? base44.entities.MeetingProtocol.list('-meeting_date', 50)
             : base44.entities.MeetingProtocol.filter({ status: 'freigegeben' }, '-meeting_date', 50),
+        staleTime: 60_000,
     });
 
     if (isLoading) {

@@ -31,6 +31,127 @@ function StatusBadge({ status }) {
     return <Badge className="bg-secondary text-muted-foreground border border-border text-xs">Entwurf</Badge>;
 }
 
+// ── Protokoll-Text Renderer ──────────────────────────────────────────────────
+function ProtocolTextRenderer({ text }) {
+    if (!text) return (
+        <div className="bg-secondary/20 rounded-xl p-4 border border-border text-sm text-muted-foreground">
+            Kein Protokolltext vorhanden.
+        </div>
+    );
+
+    // Splitte in Abschnitte anhand von Trennlinien (===... oder ---...)
+    const lines = text.split('\n');
+    const sections = [];
+    let currentSection = { type: 'text', title: null, lines: [] };
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        // Haupttitel (========)
+        if (/^={10,}/.test(trimmed)) {
+            if (currentSection.lines.length > 0) {
+                sections.push(currentSection);
+                currentSection = { type: 'text', title: null, lines: [] };
+            }
+            continue;
+        }
+        // Abschnitts-Trenner (--------)
+        if (/^-{10,}/.test(trimmed)) {
+            if (currentSection.lines.length > 0) {
+                sections.push(currentSection);
+                currentSection = { type: 'text', title: null, lines: [] };
+            }
+            continue;
+        }
+        // Abschnitts-Überschrift (GROSSBUCHSTABEN, kurze Zeile)
+        if (/^[A-ZÄÖÜ& \/]{4,}$/.test(trimmed) && trimmed.length < 60) {
+            if (currentSection.lines.length > 0) {
+                sections.push(currentSection);
+            }
+            currentSection = { type: 'section', title: trimmed, lines: [] };
+            continue;
+        }
+        // PROTOKOLL — Header-Zeile
+        if (trimmed.startsWith('PROTOKOLL —') || trimmed.startsWith('Protokollant:') || trimmed.match(/^(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag)/)) {
+            currentSection.lines.push({ type: 'meta', text: trimmed });
+            continue;
+        }
+        // Maßnahmen-Zeile (→)
+        if (trimmed.startsWith('→')) {
+            currentSection.lines.push({ type: 'action', text: trimmed.slice(1).trim() });
+            continue;
+        }
+        // Leere Zeile
+        if (!trimmed) {
+            currentSection.lines.push({ type: 'empty' });
+            continue;
+        }
+        currentSection.lines.push({ type: 'text', text: trimmed });
+    }
+    if (currentSection.lines.length > 0) sections.push(currentSection);
+
+    return (
+        <div className="space-y-3">
+            {sections.map((section, si) => {
+                const nonEmpty = section.lines.filter(l => l.type !== 'empty');
+                if (nonEmpty.length === 0) return null;
+
+                if (section.type === 'section') {
+                    const isMassnahmen = section.title?.includes('MASSNAHMEN') || section.title?.includes('BESCHLÜSSE');
+                    const isOffen      = section.title?.includes('OFFEN') || section.title?.includes('NÄCHSTE');
+
+                    return (
+                        <div key={si} className={cn(
+                            'rounded-xl border p-3.5 space-y-2',
+                            isMassnahmen ? 'border-green-500/20 bg-green-500/5' :
+                            isOffen      ? 'border-amber-500/20 bg-amber-500/5' :
+                                           'border-border bg-secondary/20'
+                        )}>
+                            <p className={cn(
+                                'text-[10px] font-bold uppercase tracking-wider',
+                                isMassnahmen ? 'text-green-500' :
+                                isOffen      ? 'text-amber-500' :
+                                               'text-muted-foreground'
+                            )}>
+                                {isMassnahmen ? '✅ ' : isOffen ? '⏭️ ' : ''}{section.title}
+                            </p>
+                            <div className="space-y-1.5">
+                                {section.lines.map((line, li) => {
+                                    if (line.type === 'empty') return null;
+                                    if (line.type === 'action') return (
+                                        <div key={li} className="flex items-start gap-2 text-sm">
+                                            <span className="text-green-500 font-bold mt-0.5 shrink-0">→</span>
+                                            <span className="text-foreground">{line.text}</span>
+                                        </div>
+                                    );
+                                    return (
+                                        <p key={li} className="text-sm text-foreground leading-relaxed">
+                                            {line.text}
+                                        </p>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                }
+
+                // Meta-Header (Datum etc.)
+                return (
+                    <div key={si} className="rounded-xl border border-border bg-card px-4 py-3 space-y-1">
+                        {section.lines.filter(l => l.type !== 'empty').map((line, li) => (
+                            <p key={li} className={cn(
+                                'text-sm',
+                                line.text?.startsWith('PROTOKOLL') ? 'font-bold text-foreground text-base' : 'text-muted-foreground'
+                            )}>
+                                {line.text}
+                            </p>
+                        ))}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 // ── Detail + Edit Modal ───────────────────────────────────────────────────────
 function ProtocolDetailModal({ protocol, isManager, onClose, onDeleted }) {
     const queryClient = useQueryClient();
@@ -159,11 +280,7 @@ function ProtocolDetailModal({ protocol, isManager, onClose, onDeleted }) {
                                     placeholder="Protokolltext bearbeiten…"
                                 />
                             ) : (
-                                <div className="bg-secondary/20 rounded-lg p-4 border border-border">
-                                    <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                                        {protocol.ai_summary || 'Kein Protokolltext vorhanden.'}
-                                    </pre>
-                                </div>
+                                <ProtocolTextRenderer text={protocol.ai_summary} />
                             )}
                         </div>
 

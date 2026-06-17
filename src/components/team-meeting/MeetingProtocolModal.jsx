@@ -300,42 +300,44 @@ export default function MeetingProtocolModal({
             format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de }),
             schedule?.time ? schedule.time + ' Uhr' : '',
             schedule?.location || '',
-        ].filter(Boolean).join(' · ');
+        ].filter(Boolean).join(' \u00b7 ');
 
-        const prompt = `Du bist Protokollant für ein professionelles Gastronomie-Team.
-Erstelle das Teamsitzungsprotokoll EXAKT in diesem Format. Halte dich strikt an die Struktur.
-Keine Markdown-Symbole wie # * _ oder **. Trennlinien sind genau 40 Bindestriche.
-
-========================================
-PROTOKOLL — TEAMSITZUNG
-${headerLine}
-Protokollant: ${selectedScribe?.name || 'Unbekannt'}
-========================================
-
-AGENDA-PUNKTE
-
-${topicsList || '(keine Agenda-Punkte vorhanden)'}
-
-----------------------------------------
-BESCHLÜSSE & MASSNAHMEN
-
-Extrahiere alle konkreten Handlungspunkte aus Agenda und Notizen.
-Format je Maßnahme (eine pro Zeile):
-→ [Name oder "Team"] — [Was genau] — bis [Datum falls bekannt, sonst "zeitnah"]
-
-Falls keine erkennbar: "(keine Maßnahmen beschlossen)"
-
-----------------------------------------
-OFFENE PUNKTE / NÄCHSTE SITZUNG
-
-Liste vertagte oder ungeklärte Punkte auf. Falls keine: "(keine offenen Punkte)"
-
-========================================
-
-Live-Notizen (zur Auswertung):
-${liveNotes || '(keine)'}
-
-Wichtig: Knappe, präzise Sprache. Keine Füllsätze. Keine Wiederholungen.\`
+        const prompt = [
+            'Du bist Protokollant für ein professionelles Gastronomie-Team.',
+            'Erstelle das Teamsitzungsprotokoll EXAKT in diesem Format. Halte dich strikt an die Struktur.',
+            'Keine Markdown-Symbole wie # * _ oder **. Trennlinien sind genau 40 Bindestriche.',
+            '',
+            '========================================',
+            'PROTOKOLL \u2014 TEAMSITZUNG',
+            headerLine,
+            'Protokollant: ' + (selectedScribe?.name || 'Unbekannt'),
+            '========================================',
+            '',
+            'AGENDA-PUNKTE',
+            '',
+            topicsList || '(keine Agenda-Punkte vorhanden)',
+            '',
+            '----------------------------------------',
+            'BESCHLÜSSE & MASSNAHMEN',
+            '',
+            'Extrahiere alle konkreten Handlungspunkte aus Agenda und Notizen.',
+            'Format je Massnahme (eine pro Zeile):',
+            '-> [Name oder "Team"] -- [Was genau] -- bis [Datum falls bekannt, sonst "zeitnah"]',
+            '',
+            'Falls keine erkennbar: "(keine Massnahmen beschlossen)"',
+            '',
+            '----------------------------------------',
+            'OFFENE PUNKTE / NÄCHSTE SITZUNG',
+            '',
+            'Liste vertagte oder ungeklärte Punkte auf. Falls keine: "(keine offenen Punkte)"',
+            '',
+            '========================================',
+            '',
+            'Live-Notizen (zur Auswertung):',
+            liveNotes || '(keine)',
+            '',
+            'Wichtig: Knappe, präzise Sprache. Keine Füllsätze. Keine Wiederholungen.',
+        ].join('\n');
 
         try {
             setGenerateStep('Schreibe Protokoll…');
@@ -379,7 +381,7 @@ Wichtig: Knappe, präzise Sprache. Keine Füllsätze. Keine Wiederholungen.\`
                         <div className="bg-secondary/30 rounded-xl p-3.5 text-sm space-y-1">
                             <p className="font-semibold text-foreground">
                                 📅 {format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de })}
-                                {schedule?.time && ` · ${schedule.time} Uhr`}
+                                {schedule?.time && (' \u00b7 ' + schedule.time + ' Uhr')}
                             </p>
                             {schedule?.location && <p className="text-muted-foreground text-xs">📍 {schedule.location}</p>}
                             <p className="text-xs text-muted-foreground mt-1">

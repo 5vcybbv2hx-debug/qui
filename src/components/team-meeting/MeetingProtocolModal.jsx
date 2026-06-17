@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,60 +9,123 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Sparkles, CheckCircle, User, ClipboardList, FileCheck, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    Loader2, Sparkles, CheckCircle, User, ClipboardList,
+    FileCheck, ChevronDown, ChevronUp, Save, Eye, EyeOff
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const STEPS = ['scribe', 'notes', 'ai', 'approve'];
 
 const TOPIC_STATUSES = [
-    { value: 'offen', label: '⬜ Offen', color: 'bg-secondary text-muted-foreground' },
-    { value: 'beschlossen', label: '✅ Beschlossen', color: 'bg-green-500/20 text-green-400 border-green-500/30' },
-    { value: 'zu_klaeren', label: '🔄 Noch zu klären', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-    { value: 'keine_einigung', label: '❌ Keine Einigung', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
-    { value: 'vertagt', label: '⏭️ Vertagt', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+    { value: 'offen',         label: 'Offen',          emoji: '⬜', color: 'border-border text-muted-foreground bg-secondary/50' },
+    { value: 'beschlossen',   label: 'Beschlossen',    emoji: '✅', color: 'border-green-500/40 text-green-400 bg-green-500/10' },
+    { value: 'zu_klaeren',    label: 'Zu klären',      emoji: '🔄', color: 'border-blue-500/40 text-blue-400 bg-blue-500/10' },
+    { value: 'keine_einigung',label: 'Keine Einigung', emoji: '❌', color: 'border-destructive/40 text-destructive bg-destructive/10' },
+    { value: 'vertagt',       label: 'Vertagt',        emoji: '⏭️', color: 'border-orange-500/40 text-orange-400 bg-orange-500/10' },
 ];
 
-function TopicStatusRow({ topic, statusEntry, onChange }) {
-    const [expanded, setExpanded] = useState(false);
-    const current = TOPIC_STATUSES.find(s => s.value === (statusEntry?.status || 'offen'));
+// ── Schritt-Indikator ──────────────────────────────────────────────────────────
+function StepIndicator({ step }) {
+    const steps = [
+        { key: 'scribe',  label: 'Protokollant' },
+        { key: 'notes',   label: 'Notizen' },
+        { key: 'ai',      label: 'KI-Protokoll' },
+        { key: 'approve', label: 'Freigabe' },
+    ];
+    const currentIdx = steps.findIndex(s => s.key === step);
 
     return (
-        <div className="border border-border rounded-lg overflow-hidden">
-            <div className="flex items-center gap-2 p-2.5 bg-secondary/20">
+        <div className="mb-5">
+            <div className="flex items-center gap-0">
+                {steps.map((s, i) => (
+                    <React.Fragment key={s.key}>
+                        <div className="flex flex-col items-center gap-1">
+                            <div className={cn(
+                                'w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-all',
+                                i < currentIdx  ? 'bg-green-500 border-green-500 text-white' :
+                                i === currentIdx ? 'bg-primary border-primary text-primary-foreground' :
+                                                   'border-border text-muted-foreground bg-background'
+                            )}>
+                                {i < currentIdx ? <CheckCircle className="w-3.5 h-3.5" /> : i + 1}
+                            </div>
+                            <span className={cn(
+                                'text-[9px] font-medium hidden sm:block',
+                                i === currentIdx ? 'text-foreground' : 'text-muted-foreground'
+                            )}>{s.label}</span>
+                        </div>
+                        {i < steps.length - 1 && (
+                            <div className={cn(
+                                'flex-1 h-0.5 mb-3.5 mx-1 transition-all',
+                                i < currentIdx ? 'bg-green-500' : 'bg-border'
+                            )} />
+                        )}
+                    </React.Fragment>
+                ))}
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-1">
+                Schritt {currentIdx + 1} von {steps.length}
+            </p>
+        </div>
+    );
+}
+
+// ── Thema-Zeile mit Chip-Status ────────────────────────────────────────────────
+function TopicStatusRow({ topic, statusEntry, onChange }) {
+    const [showNote, setShowNote] = useState(!!statusEntry?.notes);
+    const current = statusEntry?.status || 'offen';
+
+    return (
+        <div className={cn(
+            'rounded-xl border p-3 transition-all',
+            current !== 'offen' ? 'border-border bg-secondary/20' : 'border-border/50 bg-card'
+        )}>
+            {/* Thema + Einreicher */}
+            <div className="flex items-start justify-between gap-2 mb-2.5">
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{topic.topic}</p>
-                    <p className="text-xs text-muted-foreground">{topic.employee_name} · {topic.priority}</p>
+                    <p className="text-sm font-semibold text-foreground leading-snug">{topic.topic}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                        {topic.employee_name}
+                        {topic.priority === 'hoch' && <span className="ml-1.5 text-destructive font-medium">· Hoch</span>}
+                    </p>
                 </div>
-                <Select
-                    value={statusEntry?.status || 'offen'}
-                    onValueChange={(val) => onChange({ ...statusEntry, status: val })}
-                >
-                    <SelectTrigger className="w-44 h-8 text-xs">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {TOPIC_STATUSES.map(s => (
-                            <SelectItem key={s.value} value={s.value} className="text-xs">{s.label}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
                 <button
-                    onClick={() => setExpanded(!expanded)}
-                    className="p-1 rounded hover:bg-secondary text-muted-foreground"
+                    onClick={() => setShowNote(v => !v)}
+                    className="text-muted-foreground hover:text-foreground transition-colors p-1 shrink-0"
                     title="Notiz hinzufügen"
                 >
-                    {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {showNote ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
             </div>
-            {expanded && (
-                <div className="p-2 border-t border-border bg-background">
+
+            {/* Status-Chips horizontal scrollbar */}
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+                {TOPIC_STATUSES.map(s => (
+                    <button
+                        key={s.value}
+                        onClick={() => onChange({ ...statusEntry, status: s.value })}
+                        className={cn(
+                            'shrink-0 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all whitespace-nowrap min-h-[32px]',
+                            current === s.value ? s.color : 'border-border/40 text-muted-foreground bg-transparent hover:border-border'
+                        )}
+                    >
+                        {s.emoji} {s.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Notiz-Feld */}
+            {showNote && (
+                <div className="mt-2.5">
                     <Input
-                        placeholder="Kurze Notiz zu diesem Punkt..."
+                        placeholder="Kurze Notiz zu diesem Punkt…"
                         value={statusEntry?.notes || ''}
-                        onChange={(e) => onChange({ ...statusEntry, notes: e.target.value })}
-                        className="text-xs h-8"
+                        onChange={e => onChange({ ...statusEntry, notes: e.target.value })}
+                        className="text-xs h-8 bg-background"
+                        autoFocus
                     />
                 </div>
             )}
@@ -70,18 +133,39 @@ function TopicStatusRow({ topic, statusEntry, onChange }) {
     );
 }
 
-export default function MeetingProtocolModal({ open, onClose, schedule, openTopics, employees, isManager, currentUser, existingProtocol }) {
-    const queryClient = useQueryClient();
-    const [step, setStep] = useState('scribe');
-    const [scribeId, setScribeId] = useState('');
-    const [liveNotes, setLiveNotes] = useState('');
-    const [aiSummary, setAiSummary] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [protocolId, setProtocolId] = useState(null);
-    // { [topicId]: { status: string, notes: string } }
-    const [topicStatuses, setTopicStatuses] = useState({});
+// ── Auto-Save Indicator ────────────────────────────────────────────────────────
+function SaveIndicator({ saving, lastSaved }) {
+    if (saving) return (
+        <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Loader2 className="w-3 h-3 animate-spin" /> Speichert…
+        </span>
+    );
+    if (lastSaved) return (
+        <span className="text-xs text-green-500 flex items-center gap-1">
+            <CheckCircle className="w-3 h-3" /> Gespeichert
+        </span>
+    );
+    return null;
+}
 
-    // Load existing protocol when scribe opens their own draft
+// ── Haupt-Modal ────────────────────────────────────────────────────────────────
+export default function MeetingProtocolModal({
+    open, onClose, schedule, openTopics = [], employees = [],
+    isManager, currentUser, existingProtocol
+}) {
+    const queryClient = useQueryClient();
+    const [step,          setStep]          = useState('scribe');
+    const [scribeId,      setScribeId]      = useState('');
+    const [liveNotes,     setLiveNotes]     = useState('');
+    const [aiSummary,     setAiSummary]     = useState('');
+    const [isGenerating,  setIsGenerating]  = useState(false);
+    const [generateStep,  setGenerateStep]  = useState('');
+    const [protocolId,    setProtocolId]    = useState(null);
+    const [topicStatuses, setTopicStatuses] = useState({});
+    const [lastSaved,     setLastSaved]     = useState(false);
+    const [showPreview,   setShowPreview]   = useState(false);
+    const autoSaveTimer = useRef(null);
+
     useEffect(() => {
         if (open && existingProtocol) {
             setProtocolId(existingProtocol.id);
@@ -91,24 +175,36 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
             if (existingProtocol.topic_statuses) {
                 try { setTopicStatuses(JSON.parse(existingProtocol.topic_statuses)); } catch (_) {}
             }
-            setStep('notes'); // Protokollant startet direkt bei den Notizen
+            setStep('notes');
         }
     }, [open, existingProtocol?.id]);
 
+    // Auto-Save Notizen nach 3 Sekunden Pause
+    useEffect(() => {
+        if (!protocolId || step !== 'notes') return;
+        clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = setTimeout(async () => {
+            await saveDraftMutation.mutateAsync({
+                live_notes: liveNotes,
+                topic_statuses: JSON.stringify(topicStatuses),
+            });
+            setLastSaved(true);
+            setTimeout(() => setLastSaved(false), 3000);
+        }, 3000);
+        return () => clearTimeout(autoSaveTimer.current);
+    }, [liveNotes, topicStatuses, protocolId]);
+
     const selectedScribe = employees.find(e => e.id === scribeId);
-    const meetingDate = schedule?.date || format(new Date(), 'yyyy-MM-dd');
+    const meetingDate    = schedule?.date || format(new Date(), 'yyyy-MM-dd');
 
     const updateTopicStatus = (topicId, entry) => {
         setTopicStatuses(prev => ({ ...prev, [topicId]: entry }));
     };
 
     const saveDraftMutation = useMutation({
-        mutationFn: (data) => {
-            if (protocolId) {
-                return base44.entities.MeetingProtocol.update(protocolId, data);
-            }
-            return base44.entities.MeetingProtocol.create(data);
-        },
+        mutationFn: (data) => protocolId
+            ? base44.entities.MeetingProtocol.update(protocolId, data)
+            : base44.entities.MeetingProtocol.create(data),
         onSuccess: (result) => {
             if (!protocolId && result?.id) setProtocolId(result.id);
             queryClient.invalidateQueries({ queryKey: ['meeting-protocols'] });
@@ -117,34 +213,29 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
 
     const approveMutation = useMutation({
         mutationFn: async () => {
-            // Mark topics based on their individual statuses
             const topicUpdates = openTopics.map(t => {
                 const ts = topicStatuses[t.id];
                 let newStatus = t.status;
-                if (ts?.status === 'beschlossen' || ts?.status === 'zu_klaeren' || ts?.status === 'keine_einigung') {
-                    newStatus = 'besprochen';
-                } else if (ts?.status === 'vertagt') {
-                    newStatus = 'offen'; // bleibt offen, wird vertagt
-                } else if (!ts || ts.status === 'offen') {
-                    newStatus = 'besprochen'; // default: alle besprochenen
-                }
+                if (['beschlossen', 'zu_klaeren', 'keine_einigung'].includes(ts?.status)) newStatus = 'besprochen';
+                else if (ts?.status === 'vertagt') newStatus = 'offen';
+                else newStatus = 'besprochen';
                 return base44.entities.TeamMeetingTopic.update(t.id, {
                     status: newStatus,
                     discussed_at: new Date().toISOString(),
-                    manager_notes: ts?.notes ? (t.manager_notes ? t.manager_notes + '\n' + ts.notes : ts.notes) : t.manager_notes
+                    manager_notes: ts?.notes
+                        ? (t.manager_notes ? t.manager_notes + '\n' + ts.notes : ts.notes)
+                        : t.manager_notes
                 });
             });
             await Promise.all(topicUpdates);
 
             const agendaSnapshot = JSON.stringify(openTopics.map(t => ({
-                id: t.id,
-                topic: t.topic,
-                description: t.description,
+                id: t.id, topic: t.topic, description: t.description,
                 priority: t.priority,
                 status: topicStatuses[t.id]?.status || 'besprochen',
                 protocol_notes: topicStatuses[t.id]?.notes || '',
                 employee_name: t.employee_name,
-                manager_notes: t.manager_notes
+                manager_notes: t.manager_notes,
             })));
 
             return base44.entities.MeetingProtocol.update(protocolId, {
@@ -154,38 +245,34 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
                 status: 'freigegeben',
                 approved_by: currentUser?.full_name || currentUser?.email,
                 approved_at: new Date().toISOString(),
-                topics_marked_discussed: openTopics.map(t => t.id)
+                topics_marked_discussed: openTopics.map(t => t.id),
             });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['meeting-protocols'] });
-            queryClient.invalidateQueries({ queryKey: ['team-meeting-topics'] });
+            queryClient.invalidateQueries({ queryKey: ['meeting-topics'] });
+            toast.success('Protokoll freigegeben ✓');
             onClose();
             resetState();
-        }
+        },
+        onError: () => toast.error('Fehler bei der Freigabe'),
     });
 
     const resetState = () => {
-        setStep('scribe');
-        setScribeId('');
-        setLiveNotes('');
-        setAiSummary('');
-        setProtocolId(null);
-        setTopicStatuses({});
+        setStep('scribe'); setScribeId(''); setLiveNotes('');
+        setAiSummary(''); setProtocolId(null); setTopicStatuses({});
+        setGenerateStep(''); setShowPreview(false);
     };
-
-    const handleClose = () => { onClose(); };
 
     const handleScribeNext = async () => {
         if (!scribeId) return;
         await saveDraftMutation.mutateAsync({
-            meeting_date: meetingDate,
-            meeting_time: schedule?.time || '',
-            meeting_location: schedule?.location || '',
-            scribe_employee_id: scribeId,
+            meeting_date:      meetingDate,
+            meeting_time:      schedule?.time || '',
+            meeting_location:  schedule?.location || '',
+            scribe_employee_id:   scribeId,
             scribe_employee_name: selectedScribe?.name || '',
-            live_notes: '',
-            status: 'entwurf'
+            live_notes: '', status: 'entwurf',
         });
         setStep('notes');
     };
@@ -194,21 +281,22 @@ export default function MeetingProtocolModal({ open, onClose, schedule, openTopi
         await saveDraftMutation.mutateAsync({
             live_notes: liveNotes,
             topic_statuses: JSON.stringify(topicStatuses),
-            status: 'entwurf'
+            status: 'entwurf',
         });
         setStep('ai');
     };
 
     const handleGenerateAI = async () => {
         setIsGenerating(true);
+        setGenerateStep('Analysiere Agendapunkte…');
 
         const topicsList = openTopics.map(t => {
-            const ts = topicStatuses[t.id];
-            const statusLabel = TOPIC_STATUSES.find(s => s.value === (ts?.status || 'offen'))?.label || '';
-            return `- ${t.topic}${t.description ? ` (${t.description})` : ''} → Ergebnis: ${statusLabel}${ts?.notes ? ` — Notiz: ${ts.notes}` : ''}${t.manager_notes ? ` — Manager-Notiz: ${t.manager_notes}` : ''} [Priorität: ${t.priority}]`;
+            const ts    = topicStatuses[t.id];
+            const label = TOPIC_STATUSES.find(s => s.value === (ts?.status || 'offen'))?.label || '';
+            return `- ${t.topic}${t.description ? ` (${t.description})` : ''} → ${label}${ts?.notes ? ` | Notiz: ${ts.notes}` : ''}${t.manager_notes ? ` | Manager: ${t.manager_notes}` : ''} [Prio: ${t.priority}]`;
         }).join('\n');
 
-        const prompt = `Du bist ein professioneller Protokollant für ein Gastronomie-Team. 
+        const prompt = `Du bist ein professioneller Protokollant für ein Gastronomie-Team.
 Erstelle ein strukturiertes, professionelles Teamsitzungsprotokoll auf Deutsch.
 
 Datum: ${format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de })}
@@ -217,26 +305,32 @@ ${schedule?.location ? `Ort: ${schedule.location}` : ''}
 Protokollant: ${selectedScribe?.name || 'Unbekannt'}
 
 Agenda-Punkte mit Ergebnissen:
-${topicsList || 'Keine Agenda-Punkte vorhanden'}
+${topicsList || 'Keine Agenda-Punkte'}
 
 Live-Notizen aus der Sitzung:
 ${liveNotes || 'Keine Live-Notizen'}
 
-Erstelle ein Protokoll mit folgender Struktur:
-1. Besprechungspunkte (jeden Punkt mit Ergebnis: Beschlossen / Noch zu klären / Keine Einigung / Vertagt)
-2. Beschlüsse & Maßnahmen (klare Handlungspunkte mit Verantwortlichen falls erwähnt)
+Erstelle ein Protokoll mit dieser Struktur:
+1. Besprechungspunkte (jeden Punkt mit Ergebnis)
+2. Beschlüsse & Maßnahmen (konkrete Handlungspunkte)
 3. Offene Punkte / nächste Sitzung
 
-Schreibe klar, präzise und professionell.`;
+Schreibe klar, präzise und professionell. Keine Überschriften mit # oder *, nur sauberer Text.`;
 
-        const result = await base44.integrations.Core.InvokeLLM({ prompt });
-        setAiSummary(result);
-        setIsGenerating(false);
-        await saveDraftMutation.mutateAsync({ ai_summary: result, status: 'wartet_auf_freigabe' });
-        setStep('approve');
+        try {
+            setGenerateStep('Schreibe Protokoll…');
+            const result = await base44.integrations.Core.InvokeLLM({ prompt });
+            setAiSummary(result);
+            setGenerateStep('Speichere Entwurf…');
+            await saveDraftMutation.mutateAsync({ ai_summary: result, status: 'wartet_auf_freigabe' });
+            setStep('approve');
+        } catch (e) {
+            toast.error('KI-Generierung fehlgeschlagen');
+        } finally {
+            setIsGenerating(false);
+            setGenerateStep('');
+        }
     };
-
-    const stepIndex = STEPS.indexOf(step);
 
     const statusSummary = openTopics.reduce((acc, t) => {
         const s = topicStatuses[t.id]?.status || 'offen';
@@ -244,56 +338,42 @@ Schreibe klar, präzise und professionell.`;
         return acc;
     }, {});
 
+    const beschlossenCount = statusSummary['beschlossen'] || 0;
+    const offenCount       = statusSummary['offen']       || openTopics.length;
+
     return (
-        <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <Dialog open={open} onOpenChange={() => { onClose(); }}>
+            <DialogContent className="sm:max-w-2xl max-h-[92vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <ClipboardList className="w-5 h-5 text-amber-400" />
-                        Sitzungsprotokoll erstellen
+                        Sitzungsprotokoll
                     </DialogTitle>
                 </DialogHeader>
 
-                {/* Step Indicator */}
-                <div className="flex items-center gap-1 mb-4">
-                    {[
-                        { key: 'scribe', label: 'Protokollant' },
-                        { key: 'notes', label: 'Agenda & Notizen' },
-                        { key: 'ai', label: 'KI-Protokoll' },
-                        { key: 'approve', label: 'Freigabe' }
-                    ].map((s, i) => (
-                        <React.Fragment key={s.key}>
-                            <div className={cn(
-                                'flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium',
-                                step === s.key ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40' :
-                                i < stepIndex ? 'text-green-400' : 'text-muted-foreground'
-                            )}>
-                                {i < stepIndex ? <CheckCircle className="w-3 h-3" /> : <span className="w-4 h-4 rounded-full border flex items-center justify-center text-[10px]">{i + 1}</span>}
-                                <span className="hidden sm:inline">{s.label}</span>
-                            </div>
-                            {i < 3 && <div className="flex-1 h-px bg-border" />}
-                        </React.Fragment>
-                    ))}
-                </div>
+                <StepIndicator step={step} />
 
-                {/* Step: Scribe Selection */}
+                {/* ── Schritt 1: Protokollant ──────────────────────────────── */}
                 {step === 'scribe' && (
                     <div className="space-y-4">
-                        <div className="bg-secondary/30 rounded-lg p-3 text-sm text-muted-foreground">
-                            <p>📅 <strong className="text-foreground">{format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de })}</strong>
-                            {schedule?.time && ` um ${schedule.time} Uhr`}
-                            {schedule?.location && ` · ${schedule.location}`}</p>
-                            <p className="mt-1">Agenda: <strong className="text-foreground">{openTopics.length} offene Punkte</strong></p>
+                        <div className="bg-secondary/30 rounded-xl p-3.5 text-sm space-y-1">
+                            <p className="font-semibold text-foreground">
+                                📅 {format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de })}
+                                {schedule?.time && ` · ${schedule.time} Uhr`}
+                            </p>
+                            {schedule?.location && <p className="text-muted-foreground text-xs">📍 {schedule.location}</p>}
+                            <p className="text-xs text-muted-foreground mt-1">
+                                {openTopics.length} offene Agenda-Punkte
+                            </p>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="flex items-center gap-2">
-                                <User className="w-4 h-4" />
+                        <div>
+                            <Label className="text-xs font-semibold text-muted-foreground mb-2 block">
                                 Wer schreibt heute das Protokoll?
                             </Label>
                             <Select value={scribeId} onValueChange={setScribeId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Protokollant auswählen..." />
+                                    <SelectValue placeholder="Protokollant auswählen…" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {employees.map(emp => (
@@ -304,221 +384,209 @@ Schreibe klar, präzise und professionell.`;
                         </div>
 
                         {selectedScribe && (
-                            <Card className="bg-amber-500/5 border-amber-500/30">
-                                <CardContent className="p-3 flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                                        style={{ backgroundColor: selectedScribe.color || '#f59e0b' }}>
-                                        {selectedScribe.name?.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-foreground">{selectedScribe.name}</p>
-                                        <p className="text-xs text-muted-foreground">{selectedScribe.role}</p>
-                                    </div>
-                                    <Badge className="ml-auto bg-amber-500/20 text-amber-400 border-amber-500/30">Protokollant</Badge>
-                                </CardContent>
-                            </Card>
+                            <>
+                                <Card className="bg-amber-500/5 border-amber-500/30">
+                                    <CardContent className="p-3 flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                                            style={{ backgroundColor: selectedScribe.color || '#f59e0b' }}>
+                                            {selectedScribe.name?.charAt(0)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-foreground">{selectedScribe.name}</p>
+                                            <p className="text-xs text-muted-foreground">{selectedScribe.role}</p>
+                                        </div>
+                                        <Badge className="bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                                            Protokollant
+                                        </Badge>
+                                    </CardContent>
+                                </Card>
+                                <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-xs text-muted-foreground">
+                                    💡 <strong className="text-foreground">{selectedScribe.name}</strong> öffnet auf seinem Gerät die Teamsitzungsseite und klickt auf "Protokoll führen" — dort kann er Live-Notizen schreiben und Punkte abhaken.
+                                </div>
+                            </>
                         )}
 
-                        {selectedScribe && (
-                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-xs text-blue-300">
-                                <p className="font-medium mb-1">💡 So funktioniert es:</p>
-                                <p>{selectedScribe.name} öffnet auf seinem Gerät die Teamsitzungsseite und klickt auf "Protokoll führen". Dort kann er/sie alle Agendapunkte abhaken und Live-Notizen schreiben.</p>
-                            </div>
-                        )}
-
-                        <div className="flex justify-end pt-2">
+                        <div className="flex justify-end pt-1">
                             <Button
                                 onClick={handleScribeNext}
                                 disabled={!scribeId || saveDraftMutation.isPending}
-                                className="bg-amber-600 hover:bg-amber-700"
                             >
-                                {saveDraftMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                {saveDraftMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                                 Sitzung starten →
                             </Button>
                         </div>
                     </div>
                 )}
 
-                {/* Step: Agenda + Live Notes */}
+                {/* ── Schritt 2: Agenda + Notizen ──────────────────────────── */}
                 {step === 'notes' && (
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 rounded-lg p-3">
-                            <User className="w-4 h-4 shrink-0" />
-                            Protokollant: <strong className="text-foreground">{selectedScribe?.name}</strong>
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <User className="w-3.5 h-3.5" />
+                                Protokollant: <strong className="text-foreground">{selectedScribe?.name || '—'}</strong>
+                            </p>
+                            <SaveIndicator saving={saveDraftMutation.isPending} lastSaved={lastSaved} />
                         </div>
 
-                        {/* Agendapunkte mit Status */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label>Agendapunkte abhaken ({openTopics.length})</Label>
-                                <div className="flex gap-1 flex-wrap justify-end">
-                                    {Object.entries(statusSummary).filter(([k]) => k !== 'offen').map(([k, v]) => {
-                                        const s = TOPIC_STATUSES.find(x => x.value === k);
-                                        return s ? <Badge key={k} className={cn('text-[10px]', s.color)}>{v} {s.label.split(' ')[0]}</Badge> : null;
-                                    })}
+                        {/* Agenda-Punkte */}
+                        {openTopics.length > 0 && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-xs font-semibold text-muted-foreground">
+                                        AGENDA-PUNKTE ({openTopics.length})
+                                    </Label>
+                                    {beschlossenCount > 0 && (
+                                        <span className="text-xs text-green-500 font-medium">
+                                            ✓ {beschlossenCount} beschlossen
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="space-y-2 max-h-56 overflow-y-auto pr-1 -mr-1">
+                                    {openTopics.map(t => (
+                                        <TopicStatusRow
+                                            key={t.id}
+                                            topic={t}
+                                            statusEntry={topicStatuses[t.id]}
+                                            onChange={entry => updateTopicStatus(t.id, entry)}
+                                        />
+                                    ))}
                                 </div>
                             </div>
+                        )}
 
-                            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                                {openTopics.length === 0 ? (
-                                    <p className="text-xs text-muted-foreground text-center py-4">Keine offenen Agenda-Punkte</p>
-                                ) : openTopics.map(t => (
-                                    <TopicStatusRow
-                                        key={t.id}
-                                        topic={t}
-                                        statusEntry={topicStatuses[t.id]}
-                                        onChange={(entry) => updateTopicStatus(t.id, entry)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Live-Notizen */}
-                        <div className="space-y-2">
-                            <Label>Sonstige Live-Notizen</Label>
+                        {/* Live-Notizen — volle Größe */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-muted-foreground">
+                                LIVE-NOTIZEN
+                            </Label>
                             <Textarea
                                 value={liveNotes}
-                                onChange={(e) => setLiveNotes(e.target.value)}
-                                placeholder="Weitere Notizen, Diskussionen, spontane Punkte...&#10;- z.B. Neue Öffnungszeiten ab Juli&#10;- Max übernimmt die Getränkebestellung"
-                                rows={6}
-                                className="font-mono text-sm"
+                                onChange={e => setLiveNotes(e.target.value)}
+                                placeholder={"Weitere Punkte, Diskussionen, spontane Themen…\n- z.B. Neue Öffnungszeiten ab Juli\n- Max übernimmt die Getränkebestellung\n- Nächste Sitzung: 15. August"}
+                                rows={8}
+                                className="font-mono text-sm leading-relaxed resize-y min-h-[160px]"
                             />
-                            <p className="text-xs text-muted-foreground">Die KI fasst die Agendapunkte + Notizen zu einem strukturierten Protokoll zusammen.</p>
+                            <p className="text-[11px] text-muted-foreground">
+                                Wird automatisch gespeichert · KI fasst Agenda + Notizen im nächsten Schritt zusammen
+                            </p>
                         </div>
 
-                        <div className="flex justify-between pt-2">
+                        <div className="flex justify-between pt-1">
                             <Button variant="outline" onClick={() => setStep('scribe')}>← Zurück</Button>
-                            <Button
-                                onClick={handleNotesNext}
-                                disabled={saveDraftMutation.isPending}
-                                className="bg-amber-600 hover:bg-amber-700"
-                            >
-                                {saveDraftMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                                KI-Protokoll generieren →
+                            <Button onClick={handleNotesNext} disabled={saveDraftMutation.isPending}>
+                                {saveDraftMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                                Weiter →
                             </Button>
                         </div>
                     </div>
                 )}
 
-                {/* Step: AI Generation */}
+                {/* ── Schritt 3: KI-Protokoll generieren ──────────────────── */}
                 {step === 'ai' && (
                     <div className="space-y-4">
-                        {!aiSummary ? (
-                            <div className="text-center py-8 space-y-4">
-                                <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto">
-                                    <Sparkles className="w-8 h-8 text-amber-400" />
-                                </div>
-                                <div>
-                                    <p className="font-semibold text-foreground">KI-Protokoll generieren</p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Die KI fasst die Agendapunkte mit Ergebnissen und deine Notizen zu einem professionellen Protokoll zusammen.
-                                    </p>
-                                </div>
-                                <Button onClick={handleGenerateAI} disabled={isGenerating} className="bg-amber-600 hover:bg-amber-700">
-                                    {isGenerating ? (
-                                        <><Loader2 className="w-4 h-4 animate-spin mr-2" />Protokoll wird erstellt…</>
-                                    ) : (
-                                        <><Sparkles className="w-4 h-4 mr-2" />Protokoll generieren</>
-                                    )}
-                                </Button>
+                        {/* Zusammenfassung was generiert wird */}
+                        <div className="rounded-xl border border-border bg-secondary/20 p-4 space-y-2 text-sm">
+                            <p className="font-semibold text-foreground">Was wird generiert?</p>
+                            <div className="space-y-1 text-xs text-muted-foreground">
+                                <p>📋 {openTopics.length} Agenda-Punkte mit ihren Ergebnissen</p>
+                                {liveNotes && <p>📝 Deine Live-Notizen ({liveNotes.split('\n').filter(Boolean).length} Zeilen)</p>}
+                                <p>🤖 KI erstellt daraus ein strukturiertes Protokoll</p>
                             </div>
+                        </div>
+
+                        {/* Status-Übersicht */}
+                        {openTopics.length > 0 && (
+                            <div className="flex gap-2 flex-wrap">
+                                {TOPIC_STATUSES.filter(s => statusSummary[s.value] > 0).map(s => (
+                                    <Badge key={s.value} className={cn('text-xs border', s.color)}>
+                                        {s.emoji} {statusSummary[s.value]}× {s.label}
+                                    </Badge>
+                                ))}
+                                {!Object.values(statusSummary).some(Boolean) && (
+                                    <p className="text-xs text-muted-foreground">Alle Punkte als "Besprochen" gewertet</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Generieren-Button + Animation */}
+                        {!isGenerating ? (
+                            <Button onClick={handleGenerateAI} className="w-full h-12 text-base gap-2">
+                                <Sparkles className="w-5 h-5" />
+                                Protokoll generieren
+                            </Button>
                         ) : (
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <Label>KI-Protokoll (bearbeitbar)</Label>
-                                    <Button variant="outline" size="sm" onClick={() => setAiSummary('')}>
-                                        <Sparkles className="w-3 h-3 mr-1" />Neu generieren
-                                    </Button>
-                                </div>
-                                <Textarea
-                                    value={aiSummary}
-                                    onChange={(e) => setAiSummary(e.target.value)}
-                                    rows={14}
-                                    className="font-mono text-sm"
-                                />
-                                <p className="text-xs text-muted-foreground">Du kannst das Protokoll vor der Freigabe noch bearbeiten.</p>
-                                <div className="flex justify-between pt-2">
-                                    <Button variant="outline" onClick={() => setStep('notes')}>← Zurück</Button>
-                                    <Button onClick={() => setStep('approve')} className="bg-amber-600 hover:bg-amber-700">
-                                        Zur Freigabe →
-                                    </Button>
-                                </div>
+                            <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 text-center space-y-3">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                                <p className="text-sm font-semibold text-foreground">{generateStep}</p>
+                                <p className="text-xs text-muted-foreground">Das dauert normalerweise 10–20 Sekunden…</p>
                             </div>
                         )}
-                        {!aiSummary && (
-                            <div className="flex justify-start">
-                                <Button variant="outline" onClick={() => setStep('notes')}>← Zurück</Button>
-                            </div>
-                        )}
+
+                        <div className="flex justify-between pt-1">
+                            <Button variant="outline" onClick={() => setStep('notes')} disabled={isGenerating}>← Zurück</Button>
+                        </div>
                     </div>
                 )}
 
-                {/* Step: Manager Approval */}
+                {/* ── Schritt 4: Freigabe mit Preview ─────────────────────── */}
                 {step === 'approve' && (
                     <div className="space-y-4">
-                        <Card className="bg-green-500/5 border-green-500/30">
-                            <CardContent className="p-4 space-y-2">
-                                <div className="flex items-center gap-2 text-green-400 font-semibold">
-                                    <FileCheck className="w-5 h-5" />
-                                    Protokoll zur Freigabe bereit
-                                </div>
-                                <div className="text-sm text-muted-foreground space-y-1">
-                                    <p>📅 {format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de })}</p>
-                                    <p>✍️ Protokollant: <strong className="text-foreground">{selectedScribe?.name}</strong></p>
-                                    <p>📋 Agenda: <strong className="text-foreground">{openTopics.length} Punkte</strong></p>
-                                </div>
-                                {/* Agendapunkt-Zusammenfassung */}
-                                <div className="flex flex-wrap gap-1.5 pt-1">
-                                    {TOPIC_STATUSES.filter(s => s.value !== 'offen').map(s => {
-                                        const count = openTopics.filter(t => topicStatuses[t.id]?.status === s.value).length;
-                                        if (!count) return null;
-                                        return <Badge key={s.value} className={cn('text-xs', s.color)}>{count}× {s.label}</Badge>;
-                                    })}
-                                    {(() => {
-                                        const unset = openTopics.filter(t => !topicStatuses[t.id] || topicStatuses[t.id].status === 'offen').length;
-                                        return unset > 0 ? <Badge className="text-xs bg-secondary text-muted-foreground">{unset}× werden als besprochen markiert</Badge> : null;
-                                    })()}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {isManager && (
-                            <Card className="bg-amber-500/5 border-amber-500/30">
-                                <CardContent className="p-3 text-sm text-amber-400">
-                                    <p className="font-medium mb-1">⚡ Bei Freigabe wird automatisch:</p>
-                                    <ul className="space-y-0.5 text-amber-300 text-xs">
-                                        <li>• Agenda-Punkte erhalten ihren jeweiligen Status (Beschlossen / Zu klären / etc.)</li>
-                                        <li>• Protokoll für alle Mitarbeiter sichtbar</li>
-                                        <li>• Agenda-Snapshot für Manager gespeichert</li>
-                                    </ul>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        <div className="max-h-48 overflow-y-auto rounded-lg border border-border p-3 bg-secondary/20">
-                            <p className="text-xs text-muted-foreground mb-2 font-medium">Protokollvorschau:</p>
-                            <pre className="text-xs text-foreground whitespace-pre-wrap font-sans">{aiSummary}</pre>
+                        <div className="flex items-center justify-between">
+                            <p className="text-sm font-semibold text-foreground">Protokoll prüfen & freigeben</p>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowPreview(v => !v)}
+                                className="text-xs gap-1.5 text-muted-foreground"
+                            >
+                                {showPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                {showPreview ? 'Bearbeiten' : 'Vorschau'}
+                            </Button>
                         </div>
 
-                        <div className="flex justify-between pt-2">
-                            <Button variant="outline" onClick={() => setStep('ai')}>← Bearbeiten</Button>
-                            {isManager ? (
-                                <Button
-                                    onClick={() => approveMutation.mutate()}
-                                    disabled={approveMutation.isPending}
-                                    className="bg-green-600 hover:bg-green-700"
-                                >
-                                    {approveMutation.isPending ? (
-                                        <><Loader2 className="w-4 h-4 animate-spin mr-2" />Wird freigegeben…</>
-                                    ) : (
-                                        <><CheckCircle className="w-4 h-4 mr-2" />Protokoll freigeben</>
-                                    )}
-                                </Button>
-                            ) : (
-                                <div className="text-sm text-muted-foreground bg-secondary/50 rounded-lg px-4 py-2">
-                                    Wartet auf Manager-Freigabe
-                                </div>
-                            )}
+                        {/* Preview oder Edit */}
+                        {showPreview ? (
+                            <div className="rounded-xl border border-border bg-secondary/20 p-4 max-h-72 overflow-y-auto">
+                                <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+                                    {aiSummary || 'Kein Protokolltext vorhanden.'}
+                                </pre>
+                            </div>
+                        ) : (
+                            <div className="space-y-1.5">
+                                <Label className="text-xs font-semibold text-muted-foreground">PROTOKOLLTEXT BEARBEITEN</Label>
+                                <Textarea
+                                    value={aiSummary}
+                                    onChange={e => setAiSummary(e.target.value)}
+                                    rows={10}
+                                    className="font-mono text-sm leading-relaxed resize-y min-h-[200px]"
+                                    placeholder="Protokolltext…"
+                                />
+                            </div>
+                        )}
+
+                        {/* Hinweis was passiert bei Freigabe */}
+                        <div className="rounded-xl bg-green-500/10 border border-green-500/20 px-4 py-3 text-xs text-green-400 space-y-1">
+                            <p className="font-semibold">Bei Freigabe passiert Folgendes:</p>
+                            <p>✓ Protokoll wird für das Team sichtbar</p>
+                            <p>✓ {openTopics.length} Agenda-Punkte werden als besprochen markiert</p>
+                            <p>✓ Status wechselt zu "Freigegeben"</p>
+                        </div>
+
+                        <div className="flex gap-3 pt-1">
+                            <Button variant="outline" onClick={() => setStep('ai')} className="flex-1">
+                                ← Zurück
+                            </Button>
+                            <Button
+                                onClick={() => approveMutation.mutate()}
+                                disabled={approveMutation.isPending || !aiSummary}
+                                className="flex-1 bg-green-600 hover:bg-green-700 text-white gap-2"
+                            >
+                                {approveMutation.isPending
+                                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Wird freigegeben…</>
+                                    : <><FileCheck className="w-4 h-4" /> Freigeben</>
+                                }
+                            </Button>
                         </div>
                     </div>
                 )}

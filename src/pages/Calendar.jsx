@@ -52,13 +52,9 @@ export default function Calendar() {
         refetchOnWindowFocus: false,
     });
 
-    const mobileWeekEnd = endOfWeek(mobileWeekStart, { weekStartsOn: 1 });
-    const mobileFrom = format(subWeeks(mobileWeekStart, 1), 'yyyy-MM-dd');
-    const mobileTo = format(addWeeks(mobileWeekEnd, 1), 'yyyy-MM-dd');
-
     const { data: mobileShifts = [], isLoading: mobileLoading } = useQuery({
-        queryKey: ['shifts-mobile', format(mobileWeekStart, 'yyyy-MM-dd')],
-        queryFn: () => base44.entities.Shift.filter({ date_gte: mobileFrom, date_lte: mobileTo }, '-date', 200),
+        queryKey: ['shifts-mobile'],
+        queryFn: () => base44.entities.Shift.list('date', 2000),
         enabled: isMobile,
         staleTime: 2 * 60 * 1000,
     });

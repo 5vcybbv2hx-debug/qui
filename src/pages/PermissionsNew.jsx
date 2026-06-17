@@ -182,11 +182,6 @@ export default function PermissionsNew() {
 
   const toggleCat = (cat) => setExpandedCats(prev => ({ ...prev, [cat]: !prev[cat] }));
 
-  // ──── Permission Check ────────────────────────────────────────────────────────
-  if (!permissions.isManager) {
-    return <PermissionDenied message="Nur Manager können Berechtigungen verwalten." />;
-  }
-
   // ──── Kategorien aus Registry ─────────────────────────────────────────────────
   const categories = useMemo(() => {
     const cats = {};
@@ -197,6 +192,11 @@ export default function PermissionsNew() {
     });
     return cats;
   }, []);
+
+  // ──── Permission Check ────────────────────────────────────────────────────────
+  if (!permissions.isManager) {
+    return <PermissionDenied message="Nur Manager können Berechtigungen verwalten." />;
+  }
 
   const activeSummary = getAccessSummary(localPermissions);
   const detectedRole = detectRole(localPermissions);

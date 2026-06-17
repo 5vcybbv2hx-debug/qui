@@ -1,13 +1,24 @@
 import { useQuery } from '@tanstack/react-query';
-import { WorldCupMatch } from '@/api/entities';
+import { base44 } from '@/api/base44Client';
+
+async function fetchAllMatches() {
+    const allMatches = [];
+    let skip = 0;
+    const limit = 50;
+    while (true) {
+        const batch = await base44.entities.WorldCupMatch.list('kickoff_time', limit, skip);
+        if (!Array.isArray(batch) || batch.length === 0) break;
+        allMatches.push(...batch);
+        if (batch.length < limit) break;
+        skip += limit;
+    }
+    return allMatches;
+}
 
 export function useWorldCupMatches() {
     return useQuery({
         queryKey: ['world-cup-matches'],
-        queryFn: async () => {
-            const results = await WorldCupMatch.list('-kickoff_time', 500);
-            return Array.isArray(results) ? results : [];
-        },
+        queryFn: fetchAllMatches,
         staleTime: 2 * 60 * 1000,
     });
 }

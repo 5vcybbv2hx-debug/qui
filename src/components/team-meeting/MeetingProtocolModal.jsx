@@ -296,26 +296,46 @@ export default function MeetingProtocolModal({
             return `- ${t.topic}${t.description ? ` (${t.description})` : ''} → ${label}${ts?.notes ? ` | Notiz: ${ts.notes}` : ''}${t.manager_notes ? ` | Manager: ${t.manager_notes}` : ''} [Prio: ${t.priority}]`;
         }).join('\n');
 
-        const prompt = `Du bist ein professioneller Protokollant für ein Gastronomie-Team.
-Erstelle ein strukturiertes, professionelles Teamsitzungsprotokoll auf Deutsch.
+        const headerLine = [
+            format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de }),
+            schedule?.time ? schedule.time + ' Uhr' : '',
+            schedule?.location || '',
+        ].filter(Boolean).join(' · ');
 
-Datum: ${format(new Date(meetingDate), 'EEEE, dd. MMMM yyyy', { locale: de })}
-${schedule?.time ? `Uhrzeit: ${schedule.time} Uhr` : ''}
-${schedule?.location ? `Ort: ${schedule.location}` : ''}
+        const prompt = `Du bist Protokollant für ein professionelles Gastronomie-Team.
+Erstelle das Teamsitzungsprotokoll EXAKT in diesem Format. Halte dich strikt an die Struktur.
+Keine Markdown-Symbole wie # * _ oder **. Trennlinien sind genau 40 Bindestriche.
+
+========================================
+PROTOKOLL — TEAMSITZUNG
+${headerLine}
 Protokollant: ${selectedScribe?.name || 'Unbekannt'}
+========================================
 
-Agenda-Punkte mit Ergebnissen:
-${topicsList || 'Keine Agenda-Punkte'}
+AGENDA-PUNKTE
 
-Live-Notizen aus der Sitzung:
-${liveNotes || 'Keine Live-Notizen'}
+${topicsList || '(keine Agenda-Punkte vorhanden)'}
 
-Erstelle ein Protokoll mit dieser Struktur:
-1. Besprechungspunkte (jeden Punkt mit Ergebnis)
-2. Beschlüsse & Maßnahmen (konkrete Handlungspunkte)
-3. Offene Punkte / nächste Sitzung
+----------------------------------------
+BESCHLÜSSE & MASSNAHMEN
 
-Schreibe klar, präzise und professionell. Keine Überschriften mit # oder *, nur sauberer Text.`;
+Extrahiere alle konkreten Handlungspunkte aus Agenda und Notizen.
+Format je Maßnahme (eine pro Zeile):
+→ [Name oder "Team"] — [Was genau] — bis [Datum falls bekannt, sonst "zeitnah"]
+
+Falls keine erkennbar: "(keine Maßnahmen beschlossen)"
+
+----------------------------------------
+OFFENE PUNKTE / NÄCHSTE SITZUNG
+
+Liste vertagte oder ungeklärte Punkte auf. Falls keine: "(keine offenen Punkte)"
+
+========================================
+
+Live-Notizen (zur Auswertung):
+${liveNotes || '(keine)'}
+
+Wichtig: Knappe, präzise Sprache. Keine Füllsätze. Keine Wiederholungen.\`
 
         try {
             setGenerateStep('Schreibe Protokoll…');

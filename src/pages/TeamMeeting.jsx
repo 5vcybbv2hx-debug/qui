@@ -343,11 +343,21 @@ export default function TeamMeeting() {
     });
 
     const scheduleMutation = useMutation({
-        mutationFn: (data) => currentSchedule
-            ? base44.entities.TeamMeetingSchedule.update(currentSchedule.id, data)
-            : base44.entities.TeamMeetingSchedule.create(data),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['meeting-schedules'] }); setScheduleModalOpen(false); toast.success('Termin gespeichert'); },
-        onError:   () => toast.error('Fehler beim Speichern'),
+        mutationFn: async (data) => {
+            if (currentSchedule) {
+                const oldRsvps = rsvpData.filter(r => r.schedule_id === currentSchedule.id);
+                await Promise.all(oldRsvps.map(r => base44.entities.MeetingRSVP.delete(r.id)));
+                return base44.entities.TeamMeetingSchedule.update(currentSchedule.id, data);
+            }
+            return base44.entities.TeamMeetingSchedule.create(data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['meeting-schedules'] });
+            queryClient.invalidateQueries({ queryKey: ['meeting-rsvp'] });
+            setScheduleModalOpen(false);
+            toast.success('Termin gespeichert — alle Zusagen wurden zurückgesetzt');
+        },
+        onError: () => toast.error('Fehler beim Speichern'),
     });
 
     const rsvpMutation = useMutation({
@@ -761,10 +771,17 @@ export default function TeamMeeting() {
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <CalendarDays className="w-5 h-5 text-primary" /> Termin festlegen
+                            <CalendarDays className="w-5 h-5 text-primary" />
+                            {currentSchedule ? 'Termin ändern' : 'Termin festlegen'}
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4 mt-2">
+                        {currentSchedule && (
+                            <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2.5 text-xs text-amber-500">
+                                <span className="mt-0.5 shrink-0">⚠️</span>
+                                <span>Beim Ändern werden alle bisherigen Zu- und Absagen zurückgesetzt, damit das Team neu abstimmen kann.</span>
+                            </div>
+                        )}
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <Label className="text-xs text-muted-foreground mb-1.5 block">Datum *</Label>
@@ -785,8 +802,12 @@ export default function TeamMeeting() {
                         </div>
                         <div className="flex gap-3 pt-1">
                             <Button variant="outline" onClick={() => setScheduleModalOpen(false)} className="flex-1">Abbrechen</Button>
-                            <Button onClick={() => scheduleMutation.mutate(scheduleData)} disabled={!scheduleData.date || !scheduleData.time} className="flex-1">
-                                Speichern
+                            <Button
+                                onClick={() => scheduleMutation.mutate(scheduleData)}
+                                disabled={!scheduleData.date || !scheduleData.time || scheduleMutation.isPending}
+                                className="flex-1"
+                            >
+                                {scheduleMutation.isPending ? 'Wird gespeichert…' : currentSchedule ? 'Termin ändern' : 'Termin speichern'}
                             </Button>
                         </div>
                     </div>

@@ -1,1040 +1,771 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, MessageSquare, CheckCircle, Clock, AlertCircle, Archive, RotateCcw, Check, ThumbsUp, ThumbsDown, Settings, Send, ClipboardList } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    Plus, MessageSquare, CheckCircle, Clock, AlertCircle,
+    Archive, RotateCcw, ThumbsUp, ThumbsDown, Settings,
+    Send, ClipboardList, FileText, MoreHorizontal, Pencil,
+    Trash2, Check, Flag, ChevronRight, Users, CalendarDays
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuSeparator, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import TeamMeetingPrintView from '@/components/team-meeting/TeamMeetingPrintView';
 import MeetingProtocolModal from '@/components/team-meeting/MeetingProtocolModal';
 import MeetingProtocolList from '@/components/team-meeting/MeetingProtocolList';
-import { FileText } from 'lucide-react';
-import UnavailabilityManager from '@/components/availability/UnavailabilityManager';
 
-const priorityColors = {
-    'niedrig': 'bg-blue-500/15 text-primary',
-    'normal': 'bg-secondary/50 text-foreground',
-    'hoch': 'bg-red-100 text-red-700'
-};
+// ── Semantic Badge helpers ────────────────────────────────────────────────────
+function PriorityBadge({ priority }) {
+    const map = {
+        hoch:   'bg-destructive/15 text-destructive border-destructive/30',
+        normal: 'bg-secondary text-muted-foreground border-border',
+        niedrig:'bg-primary/10 text-primary border-primary/20',
+    };
+    const labels = { hoch: '🔴 Hoch', normal: 'Normal', niedrig: '🔵 Niedrig' };
+    return (
+        <Badge className={cn('text-[10px] border font-medium', map[priority] || map.normal)}>
+            {labels[priority] || priority}
+        </Badge>
+    );
+}
 
-const statusColors = {
-    'offen': 'bg-amber-100 text-amber-700',
-    'besprochen': 'bg-purple-100 text-purple-700',
-    'erledigt': 'bg-green-100 text-green-700'
-};
+function StatusBadge({ status }) {
+    const map = {
+        offen:      'bg-amber-500/15 text-amber-500 border-amber-500/30',
+        besprochen: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
+        erledigt:   'bg-green-500/15 text-green-500 border-green-500/30',
+    };
+    const icons = { offen: Clock, besprochen: MessageSquare, erledigt: CheckCircle };
+    const Icon = icons[status] || Clock;
+    return (
+        <Badge className={cn('text-[10px] border font-medium gap-1', map[status] || map.offen)}>
+            <Icon className="w-2.5 h-2.5" />
+            {status === 'offen' ? 'Offen' : status === 'besprochen' ? 'Besprochen' : 'Erledigt'}
+        </Badge>
+    );
+}
 
+// ── Thema-Karte ───────────────────────────────────────────────────────────────
+function TopicCard({ topic, isManager, onOpen, onStatusChange, onDelete }) {
+    const isGermany = topic.is_germany_game;
+    return (
+        <button
+            onClick={() => onOpen(topic)}
+            className={cn(
+                'w-full text-left rounded-xl border bg-card p-3.5 transition-all active:scale-[0.99]',
+                'hover:border-border/80 hover:bg-accent/20',
+                topic.priority === 'hoch' ? 'border-destructive/30' : 'border-border',
+            )}
+        >
+            <div className="flex items-start gap-3">
+                {/* Priority dot */}
+                <div className={cn(
+                    'w-2 h-2 rounded-full mt-1.5 shrink-0',
+                    topic.priority === 'hoch'   ? 'bg-destructive' :
+                    topic.priority === 'niedrig' ? 'bg-primary' : 'bg-muted-foreground/40'
+                )} />
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-semibold text-sm text-foreground truncate">
+                            {topic.topic}
+                        </span>
+                        <StatusBadge status={topic.status} />
+                        {topic.priority === 'hoch' && <PriorityBadge priority="hoch" />}
+                    </div>
+
+                    {topic.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                            {topic.description}
+                        </p>
+                    )}
+
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <span>von {topic.employee_name || 'Unbekannt'}</span>
+                        {topic.created_date && (
+                            <span>{format(new Date(topic.created_date), 'd. MMM', { locale: de })}</span>
+                        )}
+                        {topic.manager_notes && (
+                            <span className="text-amber-500 flex items-center gap-1">
+                                <Pencil className="w-2.5 h-2.5" /> Notiz
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Quick actions für Manager */}
+                {isManager && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
+                            <button className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                                <MoreHorizontal className="w-4 h-4" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); onStatusChange(topic, 'besprochen'); }}>
+                                <MessageSquare className="w-4 h-4 mr-2 text-purple-400" /> Als besprochen
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); onStatusChange(topic, 'erledigt'); }}>
+                                <CheckCircle className="w-4 h-4 mr-2 text-green-500" /> Als erledigt
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={e => { e.stopPropagation(); onStatusChange(topic, 'offen'); }}>
+                                <RotateCcw className="w-4 h-4 mr-2 text-amber-500" /> Wieder öffnen
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={e => { e.stopPropagation(); onDelete(topic); }}
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" /> Löschen
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+            </div>
+        </button>
+    );
+}
+
+// ── Termin-Card ───────────────────────────────────────────────────────────────
+function ScheduleCard({ schedule, rsvpData, currentEmployee, onRsvp, isManager }) {
+    if (!schedule) return null;
+
+    const myRsvp = rsvpData.find(r => r.employee_id === currentEmployee?.id)?.status;
+    const zusagen = rsvpData.filter(r => r.status === 'zusage').length;
+    const absagen = rsvpData.filter(r => r.status === 'absage').length;
+
+    return (
+        <div className="rounded-xl border border-border bg-card p-4 mb-4">
+            <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                    <CalendarDays className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground text-sm">
+                        {format(new Date(schedule.date), 'EEEE, dd. MMMM yyyy', { locale: de })}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        🕐 {schedule.time} Uhr
+                        {schedule.location && <> · 📍 {schedule.location}</>}
+                    </p>
+                    {/* RSVP Zähler */}
+                    {(zusagen > 0 || absagen > 0) && (
+                        <div className="flex gap-3 mt-2 text-xs">
+                            <span className="text-green-500">✓ {zusagen} Zusagen</span>
+                            <span className="text-destructive">✗ {absagen} Absagen</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* RSVP Buttons — nur wenn Mitarbeiter angemeldet */}
+                {currentEmployee && (
+                    <div className="flex gap-2 shrink-0">
+                        <button
+                            onClick={() => onRsvp('zusage')}
+                            className={cn(
+                                'min-h-[44px] min-w-[44px] rounded-xl border text-sm font-semibold transition-all px-3',
+                                myRsvp === 'zusage'
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : 'border-border text-muted-foreground hover:border-green-500/50 hover:text-green-500'
+                            )}
+                        >
+                            ✓
+                        </button>
+                        <button
+                            onClick={() => onRsvp('absage')}
+                            className={cn(
+                                'min-h-[44px] min-w-[44px] rounded-xl border text-sm font-semibold transition-all px-3',
+                                myRsvp === 'absage'
+                                    ? 'bg-destructive border-destructive text-white'
+                                    : 'border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive'
+                            )}
+                        >
+                            ✗
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// ── Leerer Zustand ────────────────────────────────────────────────────────────
+function EmptyState({ tab, onAdd }) {
+    const config = {
+        offen:      { icon: '📋', title: 'Keine offenen Themen', sub: 'Reiche ein Thema für die nächste Sitzung ein.' },
+        besprochen: { icon: '💬', title: 'Noch nichts besprochen', sub: 'Themen erscheinen hier sobald sie in der Sitzung behandelt wurden.' },
+        erledigt:   { icon: '✅', title: 'Noch nichts erledigt', sub: 'Abgehakte Punkte landen hier.' },
+        archiv:     { icon: '📦', title: 'Archiv ist leer', sub: 'Archivierte Themen erscheinen hier.' },
+    };
+    const { icon, title, sub } = config[tab] || config.offen;
+    return (
+        <div className="text-center py-14">
+            <p className="text-4xl mb-3">{icon}</p>
+            <p className="font-semibold text-foreground mb-1">{title}</p>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-4">{sub}</p>
+            {tab === 'offen' && (
+                <Button size="sm" onClick={onAdd} className="bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4 mr-1.5" /> Thema einreichen
+                </Button>
+            )}
+        </div>
+    );
+}
+
+// ── Haupt-Komponente ──────────────────────────────────────────────────────────
 export default function TeamMeeting() {
-    const queryClient = useQueryClient();
-    const permissions = usePermissions();
-    const [modalOpen, setModalOpen] = useState(false);
-    const [detailModalOpen, setDetailModalOpen] = useState(false);
-    const [selectedTopic, setSelectedTopic] = useState(null);
+    const queryClient  = useQueryClient();
+    const permissions  = usePermissions();
+
+    const [activeTab,         setActiveTab]         = useState('agenda');
+    const [agendaFilter,      setAgendaFilter]      = useState('offen');
+    const [modalOpen,         setModalOpen]         = useState(false);
+    const [detailModalOpen,   setDetailModalOpen]   = useState(false);
+    const [selectedTopic,     setSelectedTopic]     = useState(null);
     const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-    const [formData, setFormData] = useState({
-        topic: '',
-        description: '',
-        priority: 'normal'
-    });
-    const [printViewOpen, setPrintViewOpen] = useState(false);
-    const [editMode, setEditMode] = useState(false);
-    const [editFormData, setEditFormData] = useState({ topic: '', description: '', priority: 'normal' });
+    const [printViewOpen,     setPrintViewOpen]     = useState(false);
     const [protocolModalOpen, setProtocolModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('agenda'); // 'agenda' | 'archiv' | 'protokolle'
-    const [scheduleData, setScheduleData] = useState({
-        date: '',
-        time: '',
-        location: '',
-        notes: ''
+    const [editMode,          setEditMode]          = useState(false);
+    const [editFormData,      setEditFormData]      = useState({ topic: '', description: '', priority: 'normal' });
+    const [scheduleData,      setScheduleData]      = useState({ date: '', time: '', location: '', notes: '' });
+    const [formData,          setFormData]          = useState({ topic: '', description: '', priority: 'normal' });
+    const [notes,             setNotes]             = useState('');
+
+    // ── Queries ───────────────────────────────────────────────────────────────
+    const { data: topics = [] } = useQuery({
+        queryKey: ['meeting-topics'],
+        queryFn:  () => base44.entities.MeetingTopic.list('-created_date', 200),
+    });
+
+    const { data: schedules = [] } = useQuery({
+        queryKey: ['meeting-schedules'],
+        queryFn:  () => base44.entities.MeetingSchedule.list('-date', 10),
+    });
+
+    const { data: rsvpData = [] } = useQuery({
+        queryKey: ['meeting-rsvp'],
+        queryFn:  () => base44.entities.MeetingRSVP.list('-created_date', 200),
     });
 
     const { data: employees = [] } = useQuery({
         queryKey: ['employees'],
-        queryFn: async () => {
-            return base44.entities.Employee.filter({ is_active: true });
-        }
+        queryFn:  () => base44.entities.Employee.filter({ is_active: true }),
     });
 
-    const { data: currentEmployee } = useQuery({
-        queryKey: ['current-employee'],
-        queryFn: async () => {
-            const user = await base44.auth.me();
-            const emps = await base44.entities.Employee.filter({ email: user.email });
-            return emps[0] || null;
-        }
+    const { data: currentUser } = useQuery({
+        queryKey: ['current-user'],
+        queryFn:  () => base44.auth.me(),
     });
 
-    // Check if current employee is the assigned scribe for an active protocol
-    const { data: activeProtocol } = useQuery({
-        queryKey: ['active-protocol', currentEmployee?.id],
-        queryFn: async () => {
-            if (!currentEmployee?.id) return null;
-            const protocols = await base44.entities.MeetingProtocol.filter({
-                scribe_employee_id: currentEmployee.id,
-                status: 'entwurf'
-            }, '-created_date', 1);
-            return protocols[0] || null;
-        },
-        enabled: !!currentEmployee?.id
-    });
+    const currentEmployee = employees.find(e => e.email === currentUser?.email);
+    const currentSchedule = schedules[0] || null;
 
-    const isScribe = activeProtocol?.scribe_employee_id === currentEmployee?.id;
+    // Ist der aktuelle User der Protokollant?
+    const isScribe = currentSchedule?.scribe_employee_id === currentEmployee?.id;
 
-    const { data: allTopics = [] } = useQuery({
-        queryKey: ['team-meeting-topics', permissions.isManager, currentEmployee?.id],
-        queryFn: async () => {
-            if (permissions.isManager) {
-                // Manager sehen alle Themen
-                return base44.entities.TeamMeetingTopic.list('-created_date');
-            }
-            if (currentEmployee?.id) {
-                // Mitarbeiter sehen nur ihre eigenen
-                return base44.entities.TeamMeetingTopic.filter({ employee_id: currentEmployee.id }, '-created_date');
-            }
-            // Kein Employee-Profil verknüpft → leere Liste
-            return [];
-        },
-        enabled: permissions.isManager || !!currentEmployee?.id
-    });
-
-    // Get meeting schedule
-    const { data: scheduleList = [] } = useQuery({
-        queryKey: ['team-meeting-schedule'],
-        queryFn: async () => {
-            const items = await base44.entities.TeamMeetingSchedule.list('-created_date');
-            return items;
-        }
-    });
-
-    const currentSchedule = scheduleList[0] || null;
-
-    // Get today's meeting RSVP
-    const { data: rsvpData = [] } = useQuery({
-        queryKey: ['team-meeting-rsvp-today', currentSchedule?.date],
-        queryFn: async () => {
-            if (!currentSchedule) return [];
-            return base44.entities.TeamMeetingRSVP.filter({ meeting_date: currentSchedule.date });
-        },
-        enabled: !!currentSchedule
-    });
-
-    const createRsvpMutation = useMutation({
-        mutationFn: (data) => base44.entities.TeamMeetingRSVP.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['team-meeting-rsvp-today']);
-        }
-    });
-
-    const updateRsvpMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.TeamMeetingRSVP.update(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['team-meeting-rsvp-today']);
-        }
-    });
-
-    const createScheduleMutation = useMutation({
-        mutationFn: (data) => {
-            if (currentSchedule) {
-                return base44.entities.TeamMeetingSchedule.update(currentSchedule.id, data);
-            }
-            return base44.entities.TeamMeetingSchedule.create(data);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries(['team-meeting-schedule']);
-            queryClient.invalidateQueries(['team-meeting-rsvp-today']);
-            setScheduleModalOpen(false);
-        }
-    });
-
-    const handleRsvp = (status) => {
-        if (!currentEmployee || !currentSchedule) return;
-        
-        const existingRsvp = rsvpData.find(r => r.employee_id === currentEmployee.id);
-        
-        if (existingRsvp) {
-            updateRsvpMutation.mutate({
-                id: existingRsvp.id,
-                data: { status }
-            });
-        } else {
-            createRsvpMutation.mutate({
-                meeting_date: currentSchedule.date,
-                employee_id: currentEmployee.id,
-                employee_name: currentEmployee.name,
-                status
-            });
-        }
-    };
-
-    const handleScheduleSubmit = (e) => {
-        e.preventDefault();
-        if (!scheduleData.date || !scheduleData.time) {
-            alert('Bitte Datum und Uhrzeit eintragen');
-            return;
-        }
-        createScheduleMutation.mutate(scheduleData);
-    };
-
-    const showArchive = activeTab === 'archiv';
-    const topics = showArchive
-        ? allTopics.filter(t => t.is_archived)
-        : allTopics.filter(t => !t.is_archived);
-
+    // ── Mutations ─────────────────────────────────────────────────────────────
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.TeamMeetingTopic.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['team-meeting-topics']);
-            setModalOpen(false);
-            setFormData({ topic: '', description: '', priority: 'normal' });
-            alert('✓ Dein Thema wurde erfolgreich eingereicht und an die Manager weitergeleitet.');
-        }
+        mutationFn: (data) => base44.entities.MeetingTopic.create(data),
+        onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['meeting-topics'] }); setModalOpen(false); setFormData({ topic: '', description: '', priority: 'normal' }); toast.success('Thema eingereicht'); },
+        onError:    () => toast.error('Fehler beim Speichern'),
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.TeamMeetingTopic.update(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['team-meeting-topics']);
-            setDetailModalOpen(false);
-            setSelectedTopic(null);
-        }
+        mutationFn: ({ id, data }) => base44.entities.MeetingTopic.update(id, data),
+        onSuccess:  () => queryClient.invalidateQueries({ queryKey: ['meeting-topics'] }),
+        onError:    () => toast.error('Fehler beim Aktualisieren'),
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.TeamMeetingTopic.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries(['team-meeting-topics']);
-            setDetailModalOpen(false);
-        }
+        mutationFn: (id) => base44.entities.MeetingTopic.delete(id),
+        onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['meeting-topics'] }); setDetailModalOpen(false); toast.success('Thema gelöscht'); },
+        onError:    () => toast.error('Fehler beim Löschen'),
     });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        let employeeId = currentEmployee?.id;
-        let employeeName = currentEmployee?.name;
+    const scheduleMutation = useMutation({
+        mutationFn: (data) => currentSchedule
+            ? base44.entities.MeetingSchedule.update(currentSchedule.id, data)
+            : base44.entities.MeetingSchedule.create(data),
+        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['meeting-schedules'] }); setScheduleModalOpen(false); toast.success('Termin gespeichert'); },
+        onError:   () => toast.error('Fehler beim Speichern'),
+    });
 
-        // Fallback: User-Account ohne verknüpftes Employee-Profil
-        if (!employeeName) {
-            const user = await base44.auth.me();
-            employeeName = user?.full_name || user?.email || 'Unbekannt';
-        }
-        
+    const rsvpMutation = useMutation({
+        mutationFn: async (status) => {
+            const existing = rsvpData.find(r =>
+                r.employee_id === currentEmployee?.id && r.schedule_id === currentSchedule?.id
+            );
+            const payload = { employee_id: currentEmployee.id, schedule_id: currentSchedule.id, status, employee_name: currentEmployee.full_name };
+            return existing
+                ? base44.entities.MeetingRSVP.update(existing.id, payload)
+                : base44.entities.MeetingRSVP.create(payload);
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['meeting-rsvp'] }),
+    });
+
+    // ── Handler ───────────────────────────────────────────────────────────────
+    const handleSubmit = () => {
+        if (!formData.topic.trim()) return;
         createMutation.mutate({
             ...formData,
-            employee_id: employeeId || '',
-            employee_name: employeeName
+            employee_name: currentEmployee?.full_name || currentUser?.email || 'Anonym',
+            employee_id:   currentEmployee?.id || '',
+            status:        'offen',
+            is_archived:   false,
         });
     };
 
-    const handleStatusChange = (status, topic = selectedTopic) => {
-        if (!topic) return;
-        
-        const updateData = {
-            ...topic,
-            status: status
-        };
-        
-        if (status === 'besprochen' && !topic.discussed_at) {
-            updateData.discussed_at = new Date().toISOString();
-        }
-        
-        if (status === 'erledigt') {
-            updateData.is_archived = true;
-            updateData.archived_at = new Date().toISOString();
-        }
-        
-        updateMutation.mutate({ id: topic.id, data: updateData });
+    const handleStatusChange = (topic, newStatus) => {
+        updateMutation.mutate({ id: topic.id, data: { ...topic, status: newStatus } });
+        toast.success(newStatus === 'erledigt' ? 'Als erledigt markiert' : newStatus === 'besprochen' ? 'Als besprochen markiert' : 'Wieder geöffnet');
     };
 
-    const handleArchiveToggle = (topic) => {
-        updateMutation.mutate({
-            id: topic.id,
-            data: {
-                ...topic,
-                is_archived: !topic.is_archived,
-                archived_at: !topic.is_archived ? new Date().toISOString() : null
-            }
-        });
+    const handleDelete = (topic) => {
+        deleteMutation.mutate(topic.id);
     };
 
-    const handleNotesUpdate = (notes) => {
-        updateMutation.mutate({
-            id: selectedTopic.id,
-            data: { ...selectedTopic, manager_notes: notes }
-        });
+    const handleNotesSave = () => {
+        updateMutation.mutate({ id: selectedTopic.id, data: { ...selectedTopic, manager_notes: notes } });
+        toast.success('Notiz gespeichert');
     };
 
     const openDetail = (topic) => {
         setSelectedTopic(topic);
         setEditMode(false);
         setEditFormData({ topic: topic.topic, description: topic.description || '', priority: topic.priority });
+        setNotes(topic.manager_notes || '');
         setDetailModalOpen(true);
     };
 
     const handleEditSave = () => {
-        updateMutation.mutate({
-            id: selectedTopic.id,
-            data: { ...selectedTopic, ...editFormData }
-        }, {
-            onSuccess: () => setEditMode(false)
+        updateMutation.mutate({ id: selectedTopic.id, data: { ...selectedTopic, ...editFormData } }, {
+            onSuccess: () => { setEditMode(false); toast.success('Gespeichert'); }
         });
     };
 
-    const groupedTopics = {
-        offen: topics.filter(t => t.status === 'offen'),
-        besprochen: topics.filter(t => t.status === 'besprochen'),
-        erledigt: topics.filter(t => t.status === 'erledigt')
+    const handleWhatsApp = () => {
+        if (!currentSchedule) return;
+        const datum    = format(new Date(currentSchedule.date), 'EEEE, dd.MM.yyyy', { locale: de });
+        const ort      = currentSchedule.location ? `\n📍 Ort: ${currentSchedule.location}` : '';
+        const notizen  = currentSchedule.notes    ? `\n💬 ${currentSchedule.notes}`          : '';
+        const appUrl   = window.location.origin + '/TeamMeeting';
+        const text =
+            `📋 *Erinnerung: Teamsitzung*\n\n📅 ${datum}\n🕐 ${currentSchedule.time} Uhr${ort}${notizen}\n\n` +
+            `Bitte bis morgen Bescheid geben:\n${appUrl}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
     };
 
+    // ── Gefilterte Themen ─────────────────────────────────────────────────────
+    const activeTopics   = topics.filter(t => !t.is_archived);
+    const archivedTopics = topics.filter(t =>  t.is_archived);
+
+    const agendaGroups = {
+        offen:      activeTopics.filter(t => t.status === 'offen'),
+        besprochen: activeTopics.filter(t => t.status === 'besprochen'),
+        erledigt:   activeTopics.filter(t => t.status === 'erledigt'),
+    };
+    const visibleTopics = agendaGroups[agendaFilter] || [];
+
+    const openCount     = agendaGroups.offen.length;
+    const besprochenCount = agendaGroups.besprochen.length;
+
+    // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-background">
-            <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                    <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Teamsitzung</h1>
-                        <p className="text-muted-foreground text-sm mt-1">
-                            {currentSchedule ? `${format(new Date(currentSchedule.date), 'EEEE, dd.MM.yyyy', { locale: de })} um ${currentSchedule.time} Uhr` : 'Noch kein Termin festgelegt'}
-                        </p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        {/* Manager: Termin konfigurieren */}
-                        {permissions.isManager && (
-                            <Button
-                                onClick={() => {
-                                    if (currentSchedule) {
-                                        setScheduleData(currentSchedule);
-                                    }
-                                    setScheduleModalOpen(true);
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className="border-primary text-primary hover:bg-primary/10"
-                            >
-                                <Settings className="w-4 h-4 mr-2" />
-                                Termin
-                            </Button>
-                        )}
+            <div className="max-w-3xl mx-auto px-4 pt-5 pb-24 md:pb-8 space-y-4">
 
-                        {/* WhatsApp Erinnerung – nur Manager, nur wenn Termin vorhanden */}
-                        {permissions.isManager && currentSchedule && (
-                            <Button
-                                onClick={() => {
-                                    const datum = format(new Date(currentSchedule.date), 'EEEE, dd.MM.yyyy', { locale: de });
-                                    const uhrzeit = currentSchedule.time + ' Uhr';
-                                    const ort = currentSchedule.location ? `📍 Ort: ${currentSchedule.location}\n` : '';
-                                    const notizen = currentSchedule.notes ? `\n💬 ${currentSchedule.notes}\n` : '';
-                                    const appUrl = window.location.origin + '/TeamMeeting';
-                                    const text =
-                                        `📋 *Erinnerung: Teamsitzung*\n\n` +
-                                        `📅 ${datum}\n` +
-                                        `🕐 ${uhrzeit}\n` +
-                                        `${ort}${notizen}\n` +
-                                        `Bitte gebt bis spätestens morgen Bescheid, ob ihr teilnehmen könnt.\n\n` +
-                                        `✅ Zusage oder ❌ Absage direkt in der App:\n${appUrl}`;
-                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className="border-green-600 text-green-600 hover:bg-green-50"
-                            >
-                                <Send className="w-4 h-4 mr-2" />
-                                WhatsApp
-                            </Button>
-                        )}
-                        
-                        {/* RSVP für Teamsitzung */}
-                        {currentEmployee && currentSchedule && (
-                            <div className="flex gap-2 bg-card rounded-lg p-2">
-                                <Button
-                                    onClick={() => handleRsvp('zusage')}
-                                    variant={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'default' : 'outline'}
-                                    size="sm"
-                                    className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'zusage' ? 'bg-green-600 hover:bg-green-700' : ''}
-                                    title={`Zusage zur Teamsitzung am ${currentSchedule.date}`}
-                                >
-                                    ✓ Zusage
-                                </Button>
-                                <Button
-                                    onClick={() => handleRsvp('absage')}
-                                    variant={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'absage' ? 'default' : 'outline'}
-                                    size="sm"
-                                    className={rsvpData.find(r => r.employee_id === currentEmployee.id)?.status === 'absage' ? 'bg-red-600 hover:bg-red-700' : ''}
-                                    title={`Absage zur Teamsitzung am ${currentSchedule.date}`}
-                                >
-                                    ✗ Absage
-                                </Button>
-                            </div>
-                        )}
-                        {permissions.isManager && (
-                            <Button
-                                onClick={() => setPrintViewOpen(true)}
-                                variant="outline"
-                                size="sm"
-                                className="border-cyan-600 text-cyan-500 hover:bg-cyan-500/10"
-                            >
-                                <FileText className="w-4 h-4 mr-2" />
-                                Agenda drucken
-                            </Button>
-                        )}
-                        {permissions.isManager && (
-                            <Button
-                                onClick={() => setProtocolModalOpen(true)}
-                                variant="outline"
-                                size="sm"
-                                className="border-amber-500 text-amber-400 hover:bg-amber-500/10"
-                            >
-                                <ClipboardList className="w-4 h-4 mr-2" />
-                                Protokoll
-                            </Button>
-                        )}
-                        {/* Protokollant-Button: nur für den zugewiesenen Protokollanten sichtbar */}
-                        {!permissions.isManager && isScribe && (
-                            <Button
-                                onClick={() => setProtocolModalOpen(true)}
-                                size="sm"
-                                className="bg-amber-600 hover:bg-amber-700"
-                            >
-                                <ClipboardList className="w-4 h-4 mr-2" />
-                                Protokoll führen ✍️
-                            </Button>
-                        )}
-                        <Button 
+                {/* ── Header ──────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                            <Users className="w-4.5 h-4.5 text-primary" />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-bold text-foreground leading-none">Teamsitzung</h1>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                {openCount > 0 ? `${openCount} offene Punkte` : 'Agenda verwalten'}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {/* Haupt-Action */}
+                        <Button
+                            size="sm"
                             onClick={() => setModalOpen(true)}
-                            className="bg-amber-600 hover:bg-amber-700"
+                            className="bg-primary hover:bg-primary/90 h-9"
                         >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Thema einreichen
+                            <Plus className="w-4 h-4 mr-1.5" />
+                            <span className="hidden sm:inline">Thema</span>
                         </Button>
-                    </div>
-                </div>
 
-                {/* Tabs */}
-                <div className="flex gap-1 p-1 bg-card border border-border rounded-xl mb-6">
-                    {[
-                        { id: 'agenda', label: 'Agenda', icon: MessageSquare },
-                        { id: 'archiv', label: 'Archiv', icon: Archive },
-                        { id: 'protokolle', label: 'Protokolle', icon: ClipboardList },
-                    ].map(({ id, label, icon: Icon }) => (
-                        <button
-                            key={id}
-                            onClick={() => setActiveTab(id)}
-                            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-sm font-semibold transition-all ${
-                                activeTab === id
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                        >
-                            <Icon className="w-4 h-4" />
-                            <span className="hidden sm:inline">{label}</span>
-                        </button>
-                    ))}
-                </div>
-
-                {/* Protokolle Tab */}
-                {activeTab === 'protokolle' && (
-                    <MeetingProtocolList isManager={permissions.isManager} />
-                )}
-
-                {/* Stats - nur für aktive Themen */}
-                {activeTab !== 'protokolle' && !showArchive && (
-                    <div className="grid grid-cols-3 gap-3 mb-6 animate-fade-in">
-                        <Card className="bg-card border-border">
-                            <CardContent className="p-4 text-center">
-                                <Clock className="w-6 h-6 mx-auto mb-2 text-amber-400" />
-                                <p className="text-2xl font-bold text-foreground">{groupedTopics.offen.length}</p>
-                                <p className="text-xs text-muted-foreground">Offen</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-card border-border">
-                            <CardContent className="p-4 text-center">
-                                <MessageSquare className="w-6 h-6 mx-auto mb-2 text-purple-400" />
-                                <p className="text-2xl font-bold text-foreground">{groupedTopics.besprochen.length}</p>
-                                <p className="text-xs text-muted-foreground">Besprochen</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-card border-border">
-                            <CardContent className="p-4 text-center">
-                                <CheckCircle className="w-6 h-6 mx-auto mb-2 text-green-400" />
-                                <p className="text-2xl font-bold text-foreground">{groupedTopics.erledigt.length}</p>
-                                <p className="text-xs text-muted-foreground">Erledigt</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
-
-                {/* Manager RSVP Übersicht */}
-                {activeTab !== 'protokolle' && permissions.isManager && currentSchedule && (
-                    <Card className="bg-card border-border p-4 mb-6">
-                        <div className="space-y-4">
-                            <h3 className="font-semibold text-foreground">Zusagen für {format(new Date(currentSchedule.date), 'dd.MM.yyyy', { locale: de })}</h3>
-                            
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-green-400">{rsvpData.filter(r => r.status === 'zusage').length}</p>
-                                    <p className="text-xs text-green-400">Zugesagt</p>
-                                </div>
-                                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-red-400">{rsvpData.filter(r => r.status === 'absage').length}</p>
-                                    <p className="text-xs text-red-400">Abgesagt</p>
-                                </div>
-                                <div className="bg-secondary/50 border border-border/70 rounded-lg p-3 text-center">
-                                    <p className="text-2xl font-bold text-foreground/80">{employees.length - rsvpData.length}</p>
-                                    <p className="text-xs text-muted-foreground">Offen</p>
-                                </div>
-                            </div>
-
-                            {/* Detaillierte Liste */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                                {/* Zugesagt */}
-                                {rsvpData.filter(r => r.status === 'zusage').length > 0 && (
-                                    <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3">
-                                        <p className="text-xs font-semibold text-green-300 mb-2">ZUGESAGT ({rsvpData.filter(r => r.status === 'zusage').length})</p>
-                                        <div className="space-y-1">
-                                            {rsvpData.filter(r => r.status === 'zusage').map(rsvp => (
-                                                <p key={rsvp.id} className="text-sm text-green-400">✓ {rsvp.employee_name}</p>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Abgesagt */}
-                                {rsvpData.filter(r => r.status === 'absage').length > 0 && (
-                                    <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
-                                        <p className="text-xs font-semibold text-red-300 mb-2">ABGESAGT ({rsvpData.filter(r => r.status === 'absage').length})</p>
-                                        <div className="space-y-1">
-                                            {rsvpData.filter(r => r.status === 'absage').map(rsvp => (
-                                                <p key={rsvp.id} className="text-sm text-red-400">✗ {rsvp.employee_name}</p>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Offen */}
-                                {(() => {
-                                    const respondedEmployeeIds = new Set(rsvpData.map(r => r.employee_id));
-                                    const pendingEmployees = employees.filter(emp => !respondedEmployeeIds.has(emp.id));
-                                    return pendingEmployees.length > 0 ? (
-                                        <div className="bg-secondary/30 border border-border/70/50 rounded-lg p-3">
-                                            <p className="text-xs font-semibold text-foreground/80 mb-2">OFFEN ({pendingEmployees.length})</p>
-                                            <div className="space-y-1">
-                                                {pendingEmployees.map(emp => (
-                                                    <p key={emp.id} className="text-sm text-muted-foreground">○ {emp.name}</p>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ) : null;
-                                })()}
-                            </div>
-                        </div>
-                    </Card>
-                )}
-
-                {/* Info für Mitarbeiter */}
-                {activeTab !== 'protokolle' && !permissions.isManager && (
-                    <Card className="bg-blue-500/10 border-blue-500/30 p-4 mb-6">
-                        <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                            <div>
-                                <p className="text-sm text-primary font-semibold mb-1">Vertrauliche Themen</p>
-                                <p className="text-xs text-primary">
-                                    Eingereichte Themen werden direkt an die Manager weitergeleitet und sind nur für dich und das Management einsehbar. Du siehst hier nur deine eigenen Einreichungen.
-                                </p>
-                            </div>
-                        </div>
-                    </Card>
-                )}
-
-                {/* Topics by Status */}
-                {activeTab !== 'protokolle' && !showArchive ? (
-                    ['offen', 'besprochen', 'erledigt'].map(status => (
-                        groupedTopics[status].length > 0 && (
-                            <div key={status} className="mb-6">
-                                <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
-                                    {status === 'offen' ? 'Offene Themen' : status === 'besprochen' ? 'Besprochen' : 'Erledigt'}
-                                </h2>
-                                <div className="space-y-3">
-                                    {groupedTopics[status].map((topic, tidx) => (
-                                        <Card 
-                                            key={topic.id}
-                                            className="bg-card border-border hover:bg-accent/30 transition-colors animate-stagger card-pressable"
-                                            style={{ '--delay': `${tidx * 40}ms` }}
-                                        >
-                                            <CardContent className="p-4">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div 
-                                                        className="flex-1 cursor-pointer"
-                                                        onClick={() => openDetail(topic)}
-                                                    >
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <h3 className="font-semibold text-foreground">{topic.topic}</h3>
-                                                            <Badge className={priorityColors[topic.priority]}>
-                                                                {topic.priority}
-                                                            </Badge>
-                                                        </div>
-                                                        {topic.description && (
-                                                            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                                                                {topic.description}
-                                                            </p>
-                                                        )}
-                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                            <span>Von: {topic.employee_name}</span>
-                                                            <span>•</span>
-                                                            <span>{format(new Date(topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2 shrink-0">
-                                                        <Badge className={statusColors[topic.status]}>
-                                                            {topic.status}
-                                                        </Badge>
-                                                        {status === 'erledigt' && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleStatusChange('offen', topic);
-                                                                }}
-                                                                className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                                                                title="Zurück zu offen"
-                                                            >
-                                                                <RotateCcw className="w-4 h-4 text-primary" />
-                                                            </button>
-                                                        )}
-                                                        {status !== 'erledigt' && (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleStatusChange('erledigt', topic);
-                                                                }}
-                                                                className="p-2 rounded-lg hover:bg-green-500/20 transition-colors"
-                                                                title="Als erledigt abhaken"
-                                                            >
-                                                                <Check className="w-4 h-4 text-green-400" />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </div>
-                            </div>
-                        )
-                    ))
-                ) : activeTab === 'archiv' ? (
-                    <div className="space-y-3">
-                        {topics.map((topic, tidx) => (
-
-                            <Card 
-                                key={topic.id}
-                                className="bg-card border-border hover:bg-accent/30 transition-colors animate-stagger card-pressable"
-                                style={{ '--delay': `${tidx * 40}ms` }}
-                            >
-                                <CardContent className="p-4">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div 
-                                            className="flex-1 cursor-pointer"
-                                            onClick={() => openDetail(topic)}
-                                        >
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <h3 className="font-semibold text-foreground">{topic.topic}</h3>
-                                                <Badge className={priorityColors[topic.priority]}>
-                                                    {topic.priority}
-                                                </Badge>
-                                            </div>
-                                            {topic.description && (
-                                                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                                                    {topic.description}
-                                                </p>
-                                            )}
-                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                <span>Von: {topic.employee_name}</span>
-                                                <span>•</span>
-                                                <span>{format(new Date(topic.archived_at || topic.created_date), 'dd.MM.yyyy', { locale: de })}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <Badge className={statusColors[topic.status]}>
-                                                {topic.status}
-                                            </Badge>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedTopic(topic);
-                                                    handleArchiveToggle(topic);
-                                                }}
-                                                className="p-2 rounded-lg hover:bg-primary/15 transition-colors"
-                                                title="Aus Archiv entfernen"
-                                            >
-                                                <RotateCcw className="w-4 h-4 text-primary" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : null}
-
-                {activeTab !== 'protokolle' && topics.length === 0 && (
-                    <div className="text-center py-12">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                        <p className="text-muted-foreground">Noch keine Besprechungspunkte</p>
-                    </div>
-                )}
-
-                {/* Protocol Modal */}
-                <MeetingProtocolModal
-                    open={protocolModalOpen}
-                    onClose={() => setProtocolModalOpen(false)}
-                    schedule={currentSchedule}
-                    openTopics={allTopics.filter(t => !t.is_archived)}
-                    employees={employees}
-                    isManager={permissions.isManager}
-                    currentUser={currentEmployee}
-                    existingProtocol={isScribe ? activeProtocol : null}
-                />
-
-                {/* Print View Modal */}
-                <TeamMeetingPrintView
-                    open={printViewOpen}
-                    onClose={() => setPrintViewOpen(false)}
-                    topics={allTopics}
-                    schedule={currentSchedule}
-                />
-
-                {/* Terminwünsche – nur für Manager sichtbar */}
-                {permissions.isManager && (
-                    <div className="mt-8 border-t border-border pt-6">
-                        <h2 className="text-lg font-bold text-foreground mb-4">Wunschtage der Aushilfen</h2>
-                        <UnavailabilityManager />
-                    </div>
-                )}
-
-                {/* Schedule Modal – Manager nur */}
-                {permissions.isManager && (
-                    <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Teamsitzung planen</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleScheduleSubmit} className="space-y-4 mt-4">
-                                <div className="space-y-2">
-                                    <Label>Datum *</Label>
-                                    <Input
-                                        type="date"
-                                        value={scheduleData.date}
-                                        onChange={(e) => setScheduleData({ ...scheduleData, date: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Uhrzeit *</Label>
-                                    <Input
-                                        type="time"
-                                        value={scheduleData.time}
-                                        onChange={(e) => setScheduleData({ ...scheduleData, time: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Ort</Label>
-                                    <Input
-                                        value={scheduleData.location}
-                                        onChange={(e) => setScheduleData({ ...scheduleData, location: e.target.value })}
-                                        placeholder="z.B. Konferenzraum"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Notizen</Label>
-                                    <Textarea
-                                        value={scheduleData.notes}
-                                        onChange={(e) => setScheduleData({ ...scheduleData, notes: e.target.value })}
-                                        placeholder="Besondere Hinweise..."
-                                        rows={2}
-                                    />
-                                </div>
-
-                                <div className="flex gap-2 pt-4">
-                                    <Button type="button" variant="outline" onClick={() => setScheduleModalOpen(false)} className="flex-1">
-                                        Abbrechen
+                        {/* Manager-Aktionen im Dropdown */}
+                        {permissions.isManager && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="h-9 w-9 p-0">
+                                        <MoreHorizontal className="w-4 h-4" />
                                     </Button>
-                                    <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
-                                        Speichern
-                                    </Button>
-                                </div>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
-                )}
-
-                {/* Create Modal */}
-                <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Thema für Teamsitzung einreichen</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <Label>Thema *</Label>
-                                <Input
-                                    value={formData.topic}
-                                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                                    placeholder="z.B. Neue Cocktails für die Karte"
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Beschreibung</Label>
-                                <Textarea
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    placeholder="Detaillierte Beschreibung..."
-                                    rows={4}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Priorität</Label>
-                                <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="niedrig">Niedrig</SelectItem>
-                                        <SelectItem value="normal">Normal</SelectItem>
-                                        <SelectItem value="hoch">Hoch</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="flex gap-2 pt-4">
-                                <Button type="button" variant="outline" onClick={() => setModalOpen(false)} className="flex-1">
-                                    Abbrechen
-                                </Button>
-                                <Button type="submit" className="flex-1 bg-amber-600 hover:bg-amber-700">
-                                    Einreichen
-                                </Button>
-                            </div>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Detail Modal */}
-                {selectedTopic && (
-                    <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-                        <DialogContent className="sm:max-w-lg">
-                            <DialogHeader>
-                                <DialogTitle>Besprechungspunkt Details</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 mt-4">
-                                <div>
-                                    <div className="flex items-start justify-between gap-3 mb-3">
-                                        <h3 className="font-semibold text-lg">{selectedTopic.topic}</h3>
-                                        <Badge className={priorityColors[selectedTopic.priority]}>
-                                            {selectedTopic.priority}
-                                        </Badge>
-                                    </div>
-                                    {selectedTopic.description && (
-                                        <p className="text-sm text-muted-foreground mb-3">{selectedTopic.description}</p>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-52">
+                                    <DropdownMenuItem onClick={() => { setScheduleData(currentSchedule || { date:'', time:'', location:'', notes:'' }); setScheduleModalOpen(true); }}>
+                                        <Settings className="w-4 h-4 mr-2" /> Termin festlegen
+                                    </DropdownMenuItem>
+                                    {currentSchedule && (
+                                        <DropdownMenuItem onClick={handleWhatsApp}>
+                                            <Send className="w-4 h-4 mr-2 text-green-500" /> WhatsApp Erinnerung
+                                        </DropdownMenuItem>
                                     )}
-                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                        <span>Von: {selectedTopic.employee_name}</span>
-                                        <span>•</span>
-                                        <span>{format(new Date(selectedTopic.created_date), 'dd.MM.yyyy HH:mm', { locale: de })}</span>
-                                    </div>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => setPrintViewOpen(true)}>
+                                        <FileText className="w-4 h-4 mr-2" /> Agenda drucken
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setProtocolModalOpen(true)}>
+                                        <ClipboardList className="w-4 h-4 mr-2 text-amber-400" /> Protokoll erstellen
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+
+                        {/* Protokoll für Protokollanten */}
+                        {!permissions.isManager && isScribe && (
+                            <Button size="sm" onClick={() => setProtocolModalOpen(true)} className="bg-amber-600 hover:bg-amber-700 h-9">
+                                <ClipboardList className="w-4 h-4 mr-1.5" /> Protokoll
+                            </Button>
+                        )}
+                    </div>
+                </div>
+
+                {/* ── Termin-Card ─────────────────────────────────────────── */}
+                {currentSchedule && (
+                    <ScheduleCard
+                        schedule={currentSchedule}
+                        rsvpData={rsvpData}
+                        currentEmployee={currentEmployee}
+                        onRsvp={(status) => rsvpMutation.mutate(status)}
+                        isManager={permissions.isManager}
+                    />
+                )}
+                {!currentSchedule && permissions.isManager && (
+                    <button
+                        onClick={() => { setScheduleData({ date:'', time:'', location:'', notes:'' }); setScheduleModalOpen(true); }}
+                        className="w-full rounded-xl border border-dashed border-border bg-card p-4 flex items-center gap-3 text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+                    >
+                        <CalendarDays className="w-5 h-5" />
+                        <span className="text-sm">Termin für nächste Sitzung festlegen…</span>
+                    </button>
+                )}
+
+                {/* ── Tabs ────────────────────────────────────────────────── */}
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="agenda" className="text-xs gap-1.5">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Agenda
+                            {openCount > 0 && <span className="ml-1 bg-amber-500 text-white text-[9px] font-bold rounded-full px-1.5">{openCount}</span>}
+                        </TabsTrigger>
+                        <TabsTrigger value="archiv" className="text-xs gap-1.5">
+                            <Archive className="w-3.5 h-3.5" /> Archiv
+                        </TabsTrigger>
+                        <TabsTrigger value="protokolle" className="text-xs gap-1.5">
+                            <ClipboardList className="w-3.5 h-3.5" /> Protokolle
+                        </TabsTrigger>
+                    </TabsList>
+
+                    {/* ── Agenda Tab ── */}
+                    <TabsContent value="agenda" className="space-y-3 mt-3">
+                        {/* Status-Filter Chips */}
+                        <div className="flex gap-2">
+                            {[
+                                { id: 'offen',      label: 'Offen',      count: agendaGroups.offen.length },
+                                { id: 'besprochen', label: 'Besprochen', count: agendaGroups.besprochen.length },
+                                { id: 'erledigt',   label: 'Erledigt',   count: agendaGroups.erledigt.length },
+                            ].map(f => (
+                                <button
+                                    key={f.id}
+                                    onClick={() => setAgendaFilter(f.id)}
+                                    className={cn(
+                                        'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                                        agendaFilter === f.id
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'border-border text-muted-foreground hover:border-border/80 hover:text-foreground'
+                                    )}
+                                >
+                                    {f.label}
+                                    {f.count > 0 && (
+                                        <span className={cn(
+                                            'text-[9px] font-bold rounded-full px-1.5',
+                                            agendaFilter === f.id ? 'bg-white/20 text-white' : 'bg-secondary text-muted-foreground'
+                                        )}>
+                                            {f.count}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Themen-Liste */}
+                        {visibleTopics.length === 0 ? (
+                            <EmptyState tab={agendaFilter} onAdd={() => setModalOpen(true)} />
+                        ) : (
+                            <div className="space-y-2">
+                                {visibleTopics
+                                    .sort((a, b) => {
+                                        const prio = { hoch: 0, normal: 1, niedrig: 2 };
+                                        return (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1);
+                                    })
+                                    .map(topic => (
+                                        <TopicCard
+                                            key={topic.id}
+                                            topic={topic}
+                                            isManager={permissions.isManager}
+                                            onOpen={openDetail}
+                                            onStatusChange={handleStatusChange}
+                                            onDelete={handleDelete}
+                                        />
+                                    ))
+                                }
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    {/* ── Archiv Tab ── */}
+                    <TabsContent value="archiv" className="mt-3">
+                        {archivedTopics.length === 0 ? (
+                            <EmptyState tab="archiv" onAdd={() => {}} />
+                        ) : (
+                            <div className="space-y-2">
+                                {archivedTopics.map(topic => (
+                                    <TopicCard
+                                        key={topic.id}
+                                        topic={topic}
+                                        isManager={permissions.isManager}
+                                        onOpen={openDetail}
+                                        onStatusChange={handleStatusChange}
+                                        onDelete={handleDelete}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    {/* ── Protokolle Tab ── */}
+                    <TabsContent value="protokolle" className="mt-3">
+                        <MeetingProtocolList isManager={permissions.isManager} />
+                    </TabsContent>
+                </Tabs>
+            </div>
+
+            {/* ── Thema einreichen Modal ───────────────────────────────────── */}
+            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Plus className="w-5 h-5 text-primary" /> Thema einreichen
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div>
+                            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Thema *</Label>
+                            <Input
+                                placeholder="Worum geht es?"
+                                value={formData.topic}
+                                onChange={e => setFormData(f => ({ ...f, topic: e.target.value }))}
+                                autoFocus
+                            />
+                        </div>
+                        <div>
+                            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Beschreibung</Label>
+                            <Textarea
+                                placeholder="Mehr Details (optional)…"
+                                value={formData.description}
+                                onChange={e => setFormData(f => ({ ...f, description: e.target.value }))}
+                                rows={3}
+                            />
+                        </div>
+                        <div>
+                            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Priorität</Label>
+                            <Select value={formData.priority} onValueChange={v => setFormData(f => ({ ...f, priority: v }))}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="niedrig">🔵 Niedrig</SelectItem>
+                                    <SelectItem value="normal">⚪ Normal</SelectItem>
+                                    <SelectItem value="hoch">🔴 Hoch</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex gap-3 pt-1">
+                            <Button variant="outline" onClick={() => setModalOpen(false)} className="flex-1">Abbrechen</Button>
+                            <Button onClick={handleSubmit} disabled={!formData.topic.trim() || createMutation.isPending} className="flex-1">
+                                {createMutation.isPending ? 'Wird eingereicht…' : 'Einreichen'}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Detail Modal ─────────────────────────────────────────────── */}
+            {selectedTopic && (
+                <Dialog open={detailModalOpen} onOpenChange={v => { if (!v) { setDetailModalOpen(false); setEditMode(false); }}}>
+                    <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 flex-wrap pr-8">
+                                <StatusBadge status={selectedTopic.status} />
+                                <PriorityBadge priority={selectedTopic.priority} />
+                            </DialogTitle>
+                        </DialogHeader>
+
+                        {editMode ? (
+                            <div className="space-y-4 mt-2">
+                                <div>
+                                    <Label className="text-xs text-muted-foreground mb-1 block">Thema</Label>
+                                    <Input value={editFormData.topic} onChange={e => setEditFormData(f => ({ ...f, topic: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground mb-1 block">Beschreibung</Label>
+                                    <Textarea value={editFormData.description} onChange={e => setEditFormData(f => ({ ...f, description: e.target.value }))} rows={3} />
+                                </div>
+                                <div>
+                                    <Label className="text-xs text-muted-foreground mb-1 block">Priorität</Label>
+                                    <Select value={editFormData.priority} onValueChange={v => setEditFormData(f => ({ ...f, priority: v }))}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="niedrig">🔵 Niedrig</SelectItem>
+                                            <SelectItem value="normal">⚪ Normal</SelectItem>
+                                            <SelectItem value="hoch">🔴 Hoch</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button variant="outline" onClick={() => setEditMode(false)} className="flex-1">Abbrechen</Button>
+                                    <Button onClick={handleEditSave} className="flex-1">Speichern</Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-4 mt-2">
+                                <div>
+                                    <p className="font-semibold text-foreground text-base">{selectedTopic.topic}</p>
+                                    {selectedTopic.description && (
+                                        <p className="text-sm text-muted-foreground mt-1">{selectedTopic.description}</p>
+                                    )}
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        Eingereicht von {selectedTopic.employee_name}
+                                        {selectedTopic.created_date && ` · ${format(new Date(selectedTopic.created_date), 'd. MMMM yyyy', { locale: de })}`}
+                                    </p>
                                 </div>
 
+                                {/* Manager-Notizen */}
                                 {permissions.isManager && (
-                                    <>
-                                        {/* Bearbeiten-Modus für Manager */}
-                                        {editMode ? (
-                                            <div className="space-y-3 border-t pt-4">
-                                                <div className="space-y-1">
-                                                    <Label>Thema</Label>
-                                                    <Input
-                                                        value={editFormData.topic}
-                                                        onChange={(e) => setEditFormData({ ...editFormData, topic: e.target.value })}
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label>Beschreibung</Label>
-                                                    <Textarea
-                                                        value={editFormData.description}
-                                                        onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                                                        rows={3}
-                                                    />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label>Priorität</Label>
-                                                    <Select value={editFormData.priority} onValueChange={(v) => setEditFormData({ ...editFormData, priority: v })}>
-                                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="niedrig">Niedrig</SelectItem>
-                                                            <SelectItem value="normal">Normal</SelectItem>
-                                                            <SelectItem value="hoch">Hoch</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <Button variant="outline" onClick={() => setEditMode(false)} className="flex-1">Abbrechen</Button>
-                                                    <Button onClick={handleEditSave} className="flex-1 bg-amber-600 hover:bg-amber-700">Speichern</Button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="border-t pt-3">
-                                                <Button variant="outline" onClick={() => setEditMode(true)} className="w-full border-amber-500 text-amber-400 hover:bg-amber-500/10">
-                                                    Thema bearbeiten
-                                                </Button>
-                                            </div>
-                                        )}
-
-                                        <div className="border-t pt-4">
-                                            <Label className="mb-2 block">Status ändern</Label>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    variant={selectedTopic.status === 'offen' ? 'default' : 'outline'}
-                                                    size="sm"
-                                                    onClick={() => handleStatusChange('offen')}
-                                                    className={selectedTopic.status === 'offen' ? 'bg-amber-600' : ''}
-                                                >
-                                                    Offen
-                                                </Button>
-                                                <Button
-                                                    variant={selectedTopic.status === 'besprochen' ? 'default' : 'outline'}
-                                                    size="sm"
-                                                    onClick={() => handleStatusChange('besprochen')}
-                                                    className={selectedTopic.status === 'besprochen' ? 'bg-purple-600' : ''}
-                                                >
-                                                    Besprochen
-                                                </Button>
-                                                <Button
-                                                    variant={selectedTopic.status === 'erledigt' ? 'default' : 'outline'}
-                                                    size="sm"
-                                                    onClick={() => handleStatusChange('erledigt')}
-                                                    className={selectedTopic.status === 'erledigt' ? 'bg-green-600' : ''}
-                                                >
-                                                    Erledigt
-                                                </Button>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label>Manager-Notizen</Label>
-                                            <Textarea
-                                                value={selectedTopic.manager_notes || ''}
-                                                onChange={(e) => setSelectedTopic({ ...selectedTopic, manager_notes: e.target.value })}
-                                                placeholder="Notizen, Entscheidungen, Maßnahmen..."
-                                                rows={3}
-                                            />
-                                            <Button
-                                                onClick={() => handleNotesUpdate(selectedTopic.manager_notes)}
-                                                size="sm"
-                                                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                                            >
-                                                Notizen speichern
-                                            </Button>
-                                        </div>
-
-                                        <div className="flex gap-2 pt-4 border-t">
-                                            {selectedTopic.is_archived && (
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() => {
-                                                        handleArchiveToggle(selectedTopic);
-                                                        setDetailModalOpen(false);
-                                                    }}
-                                                    className="flex-1 border-primary text-primary hover:bg-primary/10"
-                                                >
-                                                    <RotateCcw className="w-4 h-4 mr-2" />
-                                                    Wiederherstellen
-                                                </Button>
-                                            )}
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => {
-                                                    if (confirm('Besprechungspunkt wirklich löschen?')) {
-                                                        deleteMutation.mutate(selectedTopic.id);
-                                                    }
-                                                }}
-                                                className="flex-1 border-red-600 text-red-600 hover:bg-red-50"
-                                            >
-                                                Löschen
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => setDetailModalOpen(false)}
-                                                className="flex-1"
-                                            >
-                                                Schließen
-                                            </Button>
-                                        </div>
-                                    </>
+                                    <div>
+                                        <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Manager-Notiz</Label>
+                                        <Textarea
+                                            placeholder="Interne Notiz (nur für Manager sichtbar)…"
+                                            value={notes}
+                                            onChange={e => setNotes(e.target.value)}
+                                            rows={2}
+                                        />
+                                        <Button size="sm" variant="outline" onClick={handleNotesSave} className="mt-2">
+                                            Notiz speichern
+                                        </Button>
+                                    </div>
                                 )}
 
-                                {!permissions.isManager && (
-                                    <div className="pt-4 border-t space-y-3">
-                                        {/* Bearbeiten – nur für eigene, noch offene Themen */}
-                                        {selectedTopic.employee_id === currentEmployee?.id && selectedTopic.status === 'offen' && (
-                                            editMode ? (
-                                                <div className="space-y-3">
-                                                    <div className="space-y-1">
-                                                        <Label>Thema</Label>
-                                                        <Input
-                                                            value={editFormData.topic}
-                                                            onChange={(e) => setEditFormData({ ...editFormData, topic: e.target.value })}
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label>Beschreibung</Label>
-                                                        <Textarea
-                                                            value={editFormData.description}
-                                                            onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                                                            rows={3}
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label>Priorität</Label>
-                                                        <Select value={editFormData.priority} onValueChange={(v) => setEditFormData({ ...editFormData, priority: v })}>
-                                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="niedrig">Niedrig</SelectItem>
-                                                                <SelectItem value="normal">Normal</SelectItem>
-                                                                <SelectItem value="hoch">Hoch</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <Button variant="outline" onClick={() => setEditMode(false)} className="flex-1">Abbrechen</Button>
-                                                        <Button onClick={handleEditSave} className="flex-1 bg-amber-600 hover:bg-amber-700">Speichern</Button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <Button variant="outline" onClick={() => setEditMode(true)} className="w-full border-amber-500 text-amber-400 hover:bg-amber-500/10">
-                                                    Thema bearbeiten
-                                                </Button>
-                                            )
-                                        )}
-                                        <Button variant="outline" onClick={() => setDetailModalOpen(false)} className="w-full">
-                                            Schließen
+                                {/* Status-Aktionen */}
+                                {permissions.isManager && (
+                                    <div className="flex flex-wrap gap-2 pt-1">
+                                        <Button size="sm" variant="outline" onClick={() => { handleStatusChange(selectedTopic, 'besprochen'); setDetailModalOpen(false); }}>
+                                            <MessageSquare className="w-3.5 h-3.5 mr-1.5 text-purple-400" /> Besprochen
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={() => { handleStatusChange(selectedTopic, 'erledigt'); setDetailModalOpen(false); }}>
+                                            <CheckCircle className="w-3.5 h-3.5 mr-1.5 text-green-500" /> Erledigt
+                                        </Button>
+                                        <Button size="sm" variant="outline" onClick={() => { handleStatusChange(selectedTopic, 'offen'); setDetailModalOpen(false); }}>
+                                            <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-amber-500" /> Wieder öffnen
+                                        </Button>
+                                        <Button size="sm" variant="ghost" onClick={() => setEditMode(true)}>
+                                            <Pencil className="w-3.5 h-3.5 mr-1.5" /> Bearbeiten
+                                        </Button>
+                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDelete(selectedTopic)}>
+                                            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Löschen
                                         </Button>
                                     </div>
                                 )}
                             </div>
-                        </DialogContent>
-                    </Dialog>
-                )}
-            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
+            )}
+
+            {/* ── Termin Modal ─────────────────────────────────────────────── */}
+            <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <CalendarDays className="w-5 h-5 text-primary" /> Termin festlegen
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label className="text-xs text-muted-foreground mb-1.5 block">Datum *</Label>
+                                <Input type="date" value={scheduleData.date} onChange={e => setScheduleData(s => ({ ...s, date: e.target.value }))} />
+                            </div>
+                            <div>
+                                <Label className="text-xs text-muted-foreground mb-1.5 block">Uhrzeit *</Label>
+                                <Input type="time" value={scheduleData.time} onChange={e => setScheduleData(s => ({ ...s, time: e.target.value }))} />
+                            </div>
+                        </div>
+                        <div>
+                            <Label className="text-xs text-muted-foreground mb-1.5 block">Ort</Label>
+                            <Input placeholder="z.B. Konferenzraum, Online…" value={scheduleData.location || ''} onChange={e => setScheduleData(s => ({ ...s, location: e.target.value }))} />
+                        </div>
+                        <div>
+                            <Label className="text-xs text-muted-foreground mb-1.5 block">Notizen</Label>
+                            <Textarea placeholder="Hinweise für das Team…" value={scheduleData.notes || ''} onChange={e => setScheduleData(s => ({ ...s, notes: e.target.value }))} rows={2} />
+                        </div>
+                        <div className="flex gap-3 pt-1">
+                            <Button variant="outline" onClick={() => setScheduleModalOpen(false)} className="flex-1">Abbrechen</Button>
+                            <Button onClick={() => scheduleMutation.mutate(scheduleData)} disabled={!scheduleData.date || !scheduleData.time} className="flex-1">
+                                Speichern
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Print & Protocol ─────────────────────────────────────────── */}
+            {printViewOpen && (
+                <TeamMeetingPrintView
+                    topics={activeTopics}
+                    schedule={currentSchedule}
+                    onClose={() => setPrintViewOpen(false)}
+                />
+            )}
+            {protocolModalOpen && (
+                <MeetingProtocolModal
+                    open={protocolModalOpen}
+                    onClose={() => setProtocolModalOpen(false)}
+                    topics={activeTopics}
+                    schedule={currentSchedule}
+                    employees={employees}
+                    currentEmployee={currentEmployee}
+                    isManager={permissions.isManager}
+                />
+            )}
         </div>
     );
 }

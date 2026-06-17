@@ -19,7 +19,7 @@ export function useWorldCupMatches() {
     return useQuery({
         queryKey: ['world-cup-matches'],
         queryFn: fetchAllMatches,
-        staleTime: 2 * 60 * 1000,
+        staleTime: 0,
     });
 }
 

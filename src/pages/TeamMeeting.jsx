@@ -248,7 +248,7 @@ export default function TeamMeeting() {
     // ── Queries ───────────────────────────────────────────────────────────────
     const { data: topics = [] } = useQuery({
         queryKey: ['meeting-topics'],
-        queryFn:  () => base44.entities.MeetingTopic.list('-created_date', 200),
+        queryFn:  () => base44.entities.TeamMeetingTopic.list('-created_date', 200),
     });
 
     const { data: schedules = [] } = useQuery({
@@ -279,19 +279,19 @@ export default function TeamMeeting() {
 
     // ── Mutations ─────────────────────────────────────────────────────────────
     const createMutation = useMutation({
-        mutationFn: (data) => base44.entities.MeetingTopic.create(data),
+        mutationFn: (data) => base44.entities.TeamMeetingTopic.create(data),
         onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['meeting-topics'] }); setModalOpen(false); setFormData({ topic: '', description: '', priority: 'normal' }); toast.success('Thema eingereicht'); },
         onError:    () => toast.error('Fehler beim Speichern'),
     });
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.MeetingTopic.update(id, data),
+        mutationFn: ({ id, data }) => base44.entities.TeamMeetingTopic.update(id, data),
         onSuccess:  () => queryClient.invalidateQueries({ queryKey: ['meeting-topics'] }),
         onError:    () => toast.error('Fehler beim Aktualisieren'),
     });
 
     const deleteMutation = useMutation({
-        mutationFn: (id) => base44.entities.MeetingTopic.delete(id),
+        mutationFn: (id) => base44.entities.TeamMeetingTopic.delete(id),
         onSuccess:  () => { queryClient.invalidateQueries({ queryKey: ['meeting-topics'] }); setDetailModalOpen(false); toast.success('Thema gelöscht'); },
         onError:    () => toast.error('Fehler beim Löschen'),
     });

@@ -61,8 +61,6 @@ import DrinkMenu from './pages/DrinkMenu';
 import Employees from './pages/Employees';
 import Events from './pages/Events';
 import Home from './pages/Home';
-import LazyReports from './pages/LazyReports';
-import LazySalesAnalysis from './pages/LazySalesAnalysis';
 import Maintenance from './pages/Maintenance';
 import More from './pages/More';
 import MyArea from './pages/MyArea';
@@ -75,9 +73,7 @@ import PermissionsNew from './pages/PermissionsNew';
 import PriceCalculator from './pages/PriceCalculator';
 import PublicDrinkMenu from './pages/PublicDrinkMenu';
 import Recipes from './pages/Recipes';
-import Reports from './pages/Reports';
 import Restock from './pages/Restock';
-import SalesAnalysis from './pages/SalesAnalysis';
 import GuestHub from './pages/GuestHub';
 import Settings from './pages/Settings';
 import ShiftSwaps from './pages/ShiftSwaps';
@@ -95,7 +91,6 @@ import StorageLocationScan from './pages/StorageLocationScan';
 import Warehouse from './pages/Warehouse';
 import Wastage from './pages/Wastage';
 import BusinessCard from './pages/BusinessCard';
-import ShiftAnalytics from './pages/ShiftAnalytics';
 import WeeklyTasks from './pages/WeeklyTasks';
 import WorldCupSchedule from './pages/WorldCupSchedule';
 
@@ -111,8 +106,6 @@ import DataProtection from './pages/DataProtection';
 import Impressum from './pages/Impressum';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AGB from './pages/AGB';
-import AuditLog from './pages/AuditLog';
-
 
 import __Layout from './Layout.jsx';
 
@@ -132,8 +125,6 @@ const CORE_PAGES = {
     "Employees": Employees,
     "Events": Events,
     "Home": Home,
-    "LazyReports": LazyReports,
-    "LazySalesAnalysis": LazySalesAnalysis,
     "Maintenance": Maintenance,
     "More": More,
     "MyArea": MyArea,
@@ -145,9 +136,7 @@ const CORE_PAGES = {
     "Permissions": PermissionsNew,
     "PriceCalculator": PriceCalculator,
     "Recipes": Recipes,
-    "Reports": Reports,
     "Restock": Restock,
-    "SalesAnalysis": SalesAnalysis,
     "GuestHub": GuestHub,
     "Settings": Settings,
     "ShiftSwaps": ShiftSwaps,
@@ -164,7 +153,6 @@ const CORE_PAGES = {
     "Warehouse": Warehouse,
     "Wastage": Wastage,
     "BusinessCard": BusinessCard,
-    "ShiftAnalytics": ShiftAnalytics,
     "WeeklyTasks": WeeklyTasks,
     "WorldCupSchedule": WorldCupSchedule,
 };
@@ -182,7 +170,6 @@ const SPECIAL_PAGES_WITH_LAYOUT = {
     "Impressum": Impressum,
     "PrivacyPolicy": PrivacyPolicy,
     "AGB": AGB,
-    "AuditLog": AuditLog,
 };
 
 // Public pages: NO layout wrapper (guest/public access)

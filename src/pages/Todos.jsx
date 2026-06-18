@@ -71,6 +71,15 @@ export default function Todos() {
     const [selectMode,         setSelectMode]         = useState(false);
     const [bulkCategoryOpen,   setBulkCategoryOpen]   = useState(false);
     const [showFilters,        setShowFilters]        = useState(false);
+    const [expandedCategories, setExpandedCategories] = useState(new Set());
+
+    const toggleCategory = (cat) => {
+        setExpandedCategories(prev => {
+            const next = new Set(prev);
+            next.has(cat) ? next.delete(cat) : next.add(cat);
+            return next;
+        });
+    };
 
     // Confirm dialogs
     const [archiveConfirm, setArchiveConfirm] = useState(null); // todo id

@@ -654,6 +654,11 @@ export default function Settings() {
                         </div>
                     </TabsContent>
 
+                    {/* Print Tab */}
+                    <TabsContent value="print" className="space-y-6">
+                        <PrintSettingsTab />
+                    </TabsContent>
+
                     </Tabs>
                     </div>
                     </div>

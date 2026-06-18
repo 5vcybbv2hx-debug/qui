@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import {
     Save, Send, RotateCcw, Users, LayoutGrid, List,
     AlertCircle, X, MapPin, Briefcase, Pencil, Plus,
-    Trash2, MoreHorizontal, ChevronDown, Check
+    Trash2, MoreHorizontal, ChevronDown, Check, Loader2
 } from 'lucide-react';
 import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
@@ -21,21 +21,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
-// ── Konstanten ────────────────────────────────────────────────────────────────
+// ── Fallback-Bereiche (nur für Ersteinrichtung) ───────────────────────────────
 const DEFAULT_AREAS = [
-    { name: 'Nichtraucher', roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Zusatz'],       color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30',   badge: 'bg-blue-500/15 text-blue-400' },
-    { name: 'Raucher',      roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Türe', 'Zusatz'], color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30', badge: 'bg-orange-500/15 text-orange-400' },
-    { name: 'Tunnel',       roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Zusatz'],       color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30', badge: 'bg-purple-500/15 text-purple-400' },
+    { name: 'Nichtraucher', roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Zusatz'],        color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30',    badge: 'bg-blue-500/15 text-blue-400',    sort_order: 0 },
+    { name: 'Raucher',      roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Türe', 'Zusatz'], color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30', badge: 'bg-orange-500/15 text-orange-400', sort_order: 1 },
+    { name: 'Tunnel',       roles: ['Service', 'Theke', 'Nachschub', 'Spülen', 'Zusatz'],        color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30', badge: 'bg-purple-500/15 text-purple-400', sort_order: 2 },
 ];
 
 const AREA_COLORS = [
-    { color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30',   badge: 'bg-blue-500/15 text-blue-400' },
+    { color: 'from-blue-500/20 to-blue-600/10 border-blue-500/30',    badge: 'bg-blue-500/15 text-blue-400' },
     { color: 'from-orange-500/20 to-orange-600/10 border-orange-500/30', badge: 'bg-orange-500/15 text-orange-400' },
     { color: 'from-purple-500/20 to-purple-600/10 border-purple-500/30', badge: 'bg-purple-500/15 text-purple-400' },
     { color: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/30', badge: 'bg-emerald-500/15 text-emerald-400' },
-    { color: 'from-red-500/20 to-red-600/10 border-red-500/30',       badge: 'bg-red-500/15 text-red-400' },
-    { color: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',    badge: 'bg-cyan-500/15 text-cyan-400' },
-    { color: 'from-pink-500/20 to-pink-600/10 border-pink-500/30',    badge: 'bg-pink-500/15 text-pink-400' },
+    { color: 'from-red-500/20 to-red-600/10 border-red-500/30',        badge: 'bg-red-500/15 text-red-400' },
+    { color: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/30',     badge: 'bg-cyan-500/15 text-cyan-400' },
+    { color: 'from-pink-500/20 to-pink-600/10 border-pink-500/30',     badge: 'bg-pink-500/15 text-pink-400' },
 ];
 
 function slotKey(area, role) { return `${area}||${role}`; }
@@ -80,7 +80,7 @@ function SlotZone({ area, role, assigned, onAssign, onRemove, selectedEmpId }) {
             className={cn(
                 'min-h-[42px] rounded-lg border px-2 py-1.5 flex flex-wrap gap-1 items-center transition-all',
                 isTargetable
-                    ? 'border-primary border-dashed bg-primary/5 cursor-pointer hover:bg-primary/10 animate-pulse-subtle'
+                    ? 'border-primary border-dashed bg-primary/5 cursor-pointer hover:bg-primary/10'
                     : isEmpty
                         ? 'border-dashed border-border/50 bg-background/30'
                         : 'border-border/40 bg-background/20'
@@ -94,7 +94,7 @@ function SlotZone({ area, role, assigned, onAssign, onRemove, selectedEmpId }) {
                 />
             ))}
             {isEmpty && (
-                <span className={cn('text-[10px] italic pointer-events-none', isTargetable ? 'text-primary/60' : 'text-muted-foreground/40')}>
+                <span className={cn('text-[10px] italic pointer-events-none', isTargetable ? 'text-primary/70' : 'text-muted-foreground/40')}>
                     {isTargetable ? '+ Hier zuweisen' : 'leer'}
                 </span>
             )}
@@ -114,33 +114,97 @@ export default function Stationsplan() {
     const [notes, setNotes] = useState({});
     const [areaNotes, setAreaNotes] = useState({});
     const [editAreasOpen, setEditAreasOpen] = useState(false);
-
-    // Tap-to-Assign: welcher Mitarbeiter ist gerade "aktiv" ausgewählt
     const [selectedEmpId, setSelectedEmpId] = useState(null);
-
-    // Areas aus localStorage
-    const [areas, setAreas] = useState(() => {
-        try { const s = localStorage.getItem('stationsplan_areas'); return s ? JSON.parse(s) : DEFAULT_AREAS; }
-        catch { return DEFAULT_AREAS; }
-    });
     const [editAreas, setEditAreas] = useState([]);
     const [newRoleInputs, setNewRoleInputs] = useState({});
-
-    // Bereich-Refs für Scroll-to-Hint
     const areaRefs = useRef({});
 
-    const saveAreas = (updated) => {
-        setAreas(updated);
-        localStorage.setItem('stationsplan_areas', JSON.stringify(updated));
-    };
+    // ── Bereiche aus DB laden ─────────────────────────────────────────────────
+    const { data: dbAreas = [], isLoading: areasLoading } = useQuery({
+        queryKey: ['station-areas'],
+        queryFn: async () => {
+            const data = await base44.entities.StationArea.filter({ is_active: true }, 'sort_order', 100);
+            return data;
+        },
+        staleTime: 5 * 60 * 1000,
+    });
+
+    // Wenn DB leer → Defaults anzeigen (und einmalig seeden)
+    const areas = useMemo(() => {
+        if (areasLoading) return [];
+        if (dbAreas.length > 0) return dbAreas.sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        return DEFAULT_AREAS;
+    }, [dbAreas, areasLoading]);
+
+    // Einmaliges Seeden wenn noch keine Bereiche in DB
+    const seedMutation = useMutation({
+        mutationFn: async () => {
+            for (let i = 0; i < DEFAULT_AREAS.length; i++) {
+                await base44.entities.StationArea.create({ ...DEFAULT_AREAS[i], sort_order: i, is_active: true });
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['station-areas'] });
+            toast.success('Standard-Bereiche angelegt');
+        },
+    });
+
+    React.useEffect(() => {
+        if (!areasLoading && dbAreas.length === 0) {
+            seedMutation.mutate();
+        }
+    }, [areasLoading, dbAreas.length]);
+
+    // ── Bereiche speichern ────────────────────────────────────────────────────
+    const saveAreasMutation = useMutation({
+        mutationFn: async (updatedAreas) => {
+            for (let i = 0; i < updatedAreas.length; i++) {
+                const a = updatedAreas[i];
+                if (a.id) {
+                    // Update bestehender Bereich
+                    await base44.entities.StationArea.update(a.id, {
+                        name: a.name,
+                        roles: a.roles,
+                        color: a.color,
+                        badge: a.badge,
+                        sort_order: i,
+                        is_active: true,
+                    });
+                } else {
+                    // Neuer Bereich
+                    const colorIdx = i % AREA_COLORS.length;
+                    await base44.entities.StationArea.create({
+                        name: a.name,
+                        roles: a.roles,
+                        color: a.color || AREA_COLORS[colorIdx].color,
+                        badge: a.badge || AREA_COLORS[colorIdx].badge,
+                        sort_order: i,
+                        is_active: true,
+                    });
+                }
+            }
+            // Gelöschte Bereiche deaktivieren
+            const updatedIds = updatedAreas.filter(a => a.id).map(a => a.id);
+            const toDeactivate = dbAreas.filter(a => !updatedIds.includes(a.id));
+            for (const a of toDeactivate) {
+                await base44.entities.StationArea.update(a.id, { is_active: false });
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['station-areas'] });
+            setEditAreasOpen(false);
+            toast.success('Bereiche gespeichert');
+        },
+        onError: () => toast.error('Fehler beim Speichern der Bereiche'),
+    });
 
     const openEditAreas = () => {
-        setEditAreas(areas.map(a => ({ ...a, roles: [...a.roles] })));
+        setEditAreas(areas.map(a => ({ ...a, roles: [...(a.roles || [])] })));
         setNewRoleInputs({});
         setEditAreasOpen(true);
     };
 
-    // ── Queries ───────────────────────────────────────────────────────────────
+    // ── Schichten & Pläne ─────────────────────────────────────────────────────
     const { data: shiftsForDay = [] } = useQuery({
         queryKey: ['shifts-for-stationsplan', selectedDate],
         queryFn: () => base44.entities.Shift.filter({ date: selectedDate }),
@@ -202,7 +266,7 @@ export default function Stationsplan() {
         }
     }, [existingAssignments]);
 
-    // ── Mutations ─────────────────────────────────────────────────────────────
+    // ── Plan speichern ────────────────────────────────────────────────────────
     const saveMutation = useMutation({
         mutationFn: async (status) => {
             let pid = planId;
@@ -266,45 +330,34 @@ export default function Stationsplan() {
 
     const getEmpById = (id) => employeesInShift.find(e => e.employee_id === id);
 
-    // Hints mit Scroll-Target
     const hints = useMemo(() => {
         const h = [];
         if (unassigned.length > 0) h.push({ text: `${unassigned.length} Mitarbeiter ohne Zuweisung`, target: null });
         areas.forEach(area => {
-            if (area.roles.includes('Theke') && (slotMap[slotKey(area.name, 'Theke')]?.length || 0) === 0)
+            if ((area.roles || []).includes('Theke') && (slotMap[slotKey(area.name, 'Theke')]?.length || 0) === 0)
                 h.push({ text: `${area.name}: Theke unbesetzt`, target: area.name });
-            if (area.roles.includes('Service') && (slotMap[slotKey(area.name, 'Service')]?.length || 0) === 0)
+            if ((area.roles || []).includes('Service') && (slotMap[slotKey(area.name, 'Service')]?.length || 0) === 0)
                 h.push({ text: `${area.name}: Service unbesetzt`, target: area.name });
         });
         return h;
     }, [unassigned, slotMap, areas]);
 
-    // ── Tap-to-Assign Handler ─────────────────────────────────────────────────
-    const handleEmpTap = (empId) => {
-        setSelectedEmpId(prev => prev === empId ? null : empId);
-    };
+    // ── Tap-to-Assign ─────────────────────────────────────────────────────────
+    const handleEmpTap = (empId) => setSelectedEmpId(prev => prev === empId ? null : empId);
 
     const handleSlotAssign = (area, role) => {
         if (!selectedEmpId) return;
-        setAssignments(prev => ({
-            ...prev,
-            [selectedEmpId]: { ...(prev[selectedEmpId] || {}), area, role },
-        }));
-        setSelectedEmpId(null); // deselect after assign
+        setAssignments(prev => ({ ...prev, [selectedEmpId]: { ...(prev[selectedEmpId] || {}), area, role } }));
+        setSelectedEmpId(null);
     };
 
     const removeFromSlot = useCallback((empId) => {
-        setAssignments(prev => ({
-            ...prev,
-            [empId]: { ...(prev[empId] || {}), area: '', role: '' },
-        }));
+        setAssignments(prev => ({ ...prev, [empId]: { ...(prev[empId] || {}), area: '', role: '' } }));
     }, []);
 
     const handleReset = () => { setAssignments({}); setNotes({}); setSelectedEmpId(null); };
 
-    const scrollToArea = (areaName) => {
-        areaRefs.current[areaName]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
+    const scrollToArea = (areaName) => areaRefs.current[areaName]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     const currentPlan = existingPlans[0];
 
@@ -326,12 +379,9 @@ export default function Stationsplan() {
                         </Badge>
                     )}
                 </div>
-
                 <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Primäre Aktionen */}
                     <Button
-                        variant="outline"
-                        size="sm"
+                        variant="outline" size="sm"
                         onClick={() => saveMutation.mutate('draft')}
                         disabled={saveMutation.isPending}
                         className="gap-1.5 min-h-[36px]"
@@ -348,8 +398,6 @@ export default function Stationsplan() {
                         <Send className="w-3.5 h-3.5" />
                         <span className="hidden sm:inline">Veröffentlichen</span>
                     </Button>
-
-                    {/* Sekundäre Aktionen im Dropdown */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="icon" className="w-9 h-9 min-h-[36px]">
@@ -358,12 +406,10 @@ export default function Stationsplan() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem onClick={openEditAreas}>
-                                <Pencil className="w-4 h-4 mr-2" />
-                                Bereiche bearbeiten
+                                <Pencil className="w-4 h-4 mr-2" /> Bereiche bearbeiten
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleReset} className="text-destructive focus:text-destructive">
-                                <RotateCcw className="w-4 h-4 mr-2" />
-                                Zuweisung zurücksetzen
+                                <RotateCcw className="w-4 h-4 mr-2" /> Zuweisung zurücksetzen
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -385,44 +431,29 @@ export default function Stationsplan() {
                 >
                     <option value="">Alle Schichten ({shiftsForDay.length} MA)</option>
                     {shiftOptions.map(s => (
-                        <option key={s.id} value={s.id}>
-                            {s.shift_type || 'Schicht'} – {s.start_time}–{s.end_time}
-                        </option>
+                        <option key={s.id} value={s.id}>{s.shift_type || 'Schicht'} – {s.start_time}–{s.end_time}</option>
                     ))}
                 </select>
-
-                {/* View Toggle */}
                 <div className="flex bg-secondary rounded-xl p-1 gap-0.5 ml-auto">
-                    <button
-                        onClick={() => setView('bereiche')}
-                        className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all min-h-[36px]',
-                            view === 'bereiche' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
-                        )}
-                    >
-                        <LayoutGrid className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Bereiche</span>
-                    </button>
-                    <button
-                        onClick={() => setView('mitarbeiter')}
-                        className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all min-h-[36px]',
-                            view === 'mitarbeiter' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
-                        )}
-                    >
-                        <List className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Mitarbeiter</span>
-                    </button>
+                    {[['bereiche', <LayoutGrid className="w-3.5 h-3.5" />, 'Bereiche'], ['mitarbeiter', <List className="w-3.5 h-3.5" />, 'Mitarbeiter']].map(([v, icon, label]) => (
+                        <button key={v} onClick={() => setView(v)}
+                            className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all min-h-[36px]',
+                                view === v ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+                            )}
+                        >
+                            {icon}<span className="hidden sm:inline">{label}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* ── HINTS (klickbar → scroll) ────────────────────────────────── */}
+            {/* ── HINTS ────────────────────────────────────────────────────── */}
             {hints.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                     {hints.map((hint, i) => (
-                        <button
-                            key={i}
+                        <button key={i}
                             onClick={() => hint.target && scrollToArea(hint.target)}
-                            className={cn(
-                                'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all',
+                            className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all',
                                 'bg-amber-500/10 border-amber-500/20 text-amber-400',
                                 hint.target ? 'hover:bg-amber-500/20 cursor-pointer' : 'cursor-default'
                             )}
@@ -435,35 +466,32 @@ export default function Stationsplan() {
                 </div>
             )}
 
+            {/* ── LOADING ───────────────────────────────────────────────────── */}
+            {areasLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Bereiche werden geladen…
+                </div>
+            )}
+
             {/* ── KEIN PERSONAL ────────────────────────────────────────────── */}
-            {employeesInShift.length === 0 ? (
+            {!areasLoading && employeesInShift.length === 0 ? (
                 <Card className="p-12 text-center border-border">
                     <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
                     <p className="text-muted-foreground text-sm">Keine Schichten für dieses Datum gefunden.</p>
                     <p className="text-xs text-muted-foreground/60 mt-1">Bitte zuerst Schichten im Kalender einplanen.</p>
                 </Card>
-            ) : (
+            ) : !areasLoading && (
                 <>
-                    {/* ── POOL: NICHT EINGETEILT (immer oben) ──────────────── */}
-                    <Card className={cn(
-                        'p-4 border transition-all',
-                        selectedEmpId ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'
-                    )}>
+                    {/* ── POOL ─────────────────────────────────────────────── */}
+                    <Card className={cn('p-4 border transition-all', selectedEmpId ? 'border-primary/40 bg-primary/5' : 'border-border bg-card')}>
                         <div className="flex items-center gap-2 mb-3">
                             <Users className="w-4 h-4 text-muted-foreground" />
                             <span className="text-sm font-semibold text-foreground">Heute im Dienst</span>
-                            <Badge className={cn('text-xs', unassigned.length > 0
-                                ? 'bg-amber-500/15 text-amber-400'
-                                : 'bg-emerald-500/15 text-emerald-400'
-                            )}>
-                                {unassigned.length === 0
-                                    ? '✓ Alle eingeteilt'
-                                    : `${unassigned.length} nicht eingeteilt`}
+                            <Badge className={cn('text-xs', unassigned.length === 0 ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400')}>
+                                {unassigned.length === 0 ? '✓ Alle eingeteilt' : `${unassigned.length} nicht eingeteilt`}
                             </Badge>
                             {selectedEmpId && (
-                                <span className="text-xs text-primary ml-auto animate-pulse">
-                                    → Jetzt einen Slot antippen
-                                </span>
+                                <span className="text-xs text-primary ml-auto animate-pulse">→ Slot antippen</span>
                             )}
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -490,12 +518,9 @@ export default function Stationsplan() {
                         {selectedEmpId && (
                             <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
                                 <span className="text-xs text-muted-foreground">
-                                    <strong className="text-foreground">{getEmpById(selectedEmpId)?.employee_name?.split(' ')[0]}</strong> ausgewählt — tippe einen Slot an
+                                    <strong className="text-foreground">{getEmpById(selectedEmpId)?.employee_name?.split(' ')[0]}</strong> ausgewählt
                                 </span>
-                                <button
-                                    onClick={() => setSelectedEmpId(null)}
-                                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                                >
+                                <button onClick={() => setSelectedEmpId(null)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
                                     <X className="w-3 h-3" /> Abbrechen
                                 </button>
                             </div>
@@ -507,18 +532,18 @@ export default function Stationsplan() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {areas.map(area => (
                                 <Card
-                                    key={area.name}
+                                    key={area.id || area.name}
                                     ref={el => areaRefs.current[area.name] = el}
                                     className={cn('p-4 bg-gradient-to-br border', area.color)}
                                 >
                                     <div className="flex items-center gap-2 mb-3">
                                         <Badge className={cn('text-xs font-bold px-2', area.badge)}>{area.name}</Badge>
                                         <span className="text-xs text-muted-foreground">
-                                            {area.roles.reduce((acc, r) => acc + (slotMap[slotKey(area.name, r)]?.length || 0), 0)} MA
+                                            {(area.roles || []).reduce((acc, r) => acc + (slotMap[slotKey(area.name, r)]?.length || 0), 0)} MA
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        {area.roles.map(role => (
+                                        {(area.roles || []).map(role => (
                                             <div key={role}>
                                                 <div className="flex items-center gap-1.5 mb-1">
                                                     <Briefcase className="w-3 h-3 text-muted-foreground" />
@@ -537,16 +562,13 @@ export default function Stationsplan() {
                                                 />
                                             </div>
                                         ))}
-                                        {/* Bereichs-Notiz */}
-                                        <div className="pt-1">
-                                            <textarea
-                                                rows={2}
-                                                placeholder="Notiz für diesen Bereich…"
-                                                value={areaNotes[area.name] || ''}
-                                                onChange={e => setAreaNotes(prev => ({ ...prev, [area.name]: e.target.value }))}
-                                                className="w-full rounded-lg border border-dashed border-border/40 bg-background/30 px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-primary/50 transition-colors"
-                                            />
-                                        </div>
+                                        <textarea
+                                            rows={2}
+                                            placeholder="Notiz für diesen Bereich…"
+                                            value={areaNotes[area.name] || ''}
+                                            onChange={e => setAreaNotes(prev => ({ ...prev, [area.name]: e.target.value }))}
+                                            className="w-full rounded-lg border border-dashed border-border/40 bg-background/30 px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/40 resize-none focus:outline-none focus:border-primary/50 transition-colors mt-1"
+                                        />
                                     </div>
                                 </Card>
                             ))}
@@ -572,38 +594,31 @@ export default function Stationsplan() {
                                                 </div>
                                             </div>
                                             <div className="flex flex-wrap gap-2 flex-1">
-                                                <select
-                                                    value={asgn.area || ''}
+                                                <select value={asgn.area || ''}
                                                     onChange={e => setAssignments(prev => ({ ...prev, [emp.employee_id]: { ...(prev[emp.employee_id] || {}), area: e.target.value } }))}
                                                     className="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground flex-1 min-w-[110px] min-h-[44px]"
                                                 >
                                                     <option value="">Kein Bereich</option>
-                                                    {areas.map(a => <option key={a.name} value={a.name}>{a.name}</option>)}
+                                                    {areas.map(a => <option key={a.id || a.name} value={a.name}>{a.name}</option>)}
                                                 </select>
-                                                <select
-                                                    value={asgn.role || ''}
+                                                <select value={asgn.role || ''}
                                                     onChange={e => setAssignments(prev => ({ ...prev, [emp.employee_id]: { ...(prev[emp.employee_id] || {}), role: e.target.value } }))}
                                                     className="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground flex-1 min-w-[100px] min-h-[44px]"
                                                 >
                                                     <option value="">Keine Rolle</option>
                                                     {(asgn.area
                                                         ? areas.find(a => a.name === asgn.area)?.roles
-                                                        : areas.flatMap(a => a.roles).filter((v, i, arr) => arr.indexOf(v) === i)
+                                                        : areas.flatMap(a => a.roles || []).filter((v, i, arr) => arr.indexOf(v) === i)
                                                     )?.map(r => <option key={r} value={r}>{r}</option>)}
                                                 </select>
-                                                <select
-                                                    value={asgn.secondary_role || ''}
+                                                <select value={asgn.secondary_role || ''}
                                                     onChange={e => setAssignments(prev => ({ ...prev, [emp.employee_id]: { ...(prev[emp.employee_id] || {}), secondary_role: e.target.value } }))}
                                                     className="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground flex-1 min-w-[110px] min-h-[44px]"
                                                 >
                                                     <option value="">Zusatzrolle</option>
-                                                    {['Service', 'Theke', 'Spülen', 'Nachschub', 'Türe'].map(r => (
-                                                        <option key={r} value={r}>{r}</option>
-                                                    ))}
+                                                    {['Service', 'Theke', 'Spülen', 'Nachschub', 'Türe'].map(r => <option key={r} value={r}>{r}</option>)}
                                                 </select>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Notiz..."
+                                                <input type="text" placeholder="Notiz..."
                                                     value={note}
                                                     onChange={e => setNotes(prev => ({ ...prev, [emp.employee_id]: e.target.value }))}
                                                     className="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground flex-1 min-w-[120px] min-h-[44px]"
@@ -631,7 +646,7 @@ export default function Stationsplan() {
                     </DialogHeader>
                     <div className="space-y-4 py-2">
                         {editAreas.map((area, areaIdx) => (
-                            <Card key={areaIdx} className="p-4 border-border bg-card space-y-3">
+                            <Card key={area.id || areaIdx} className="p-4 border-border bg-card space-y-3">
                                 <div className="flex items-center gap-2">
                                     <Input
                                         value={area.name}
@@ -639,9 +654,7 @@ export default function Stationsplan() {
                                         className="font-semibold flex-1"
                                         placeholder="Bereichsname"
                                     />
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
+                                    <Button variant="ghost" size="icon"
                                         onClick={() => setEditAreas(prev => prev.filter((_, i) => i !== areaIdx))}
                                         className="text-destructive hover:bg-destructive/10 shrink-0"
                                     >
@@ -649,7 +662,7 @@ export default function Stationsplan() {
                                     </Button>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                    {area.roles.map((role, ri) => (
+                                    {(area.roles || []).map((role, ri) => (
                                         <div key={ri} className="flex items-center gap-1 bg-secondary rounded-lg px-2 py-1">
                                             <Input
                                                 value={role}
@@ -675,24 +688,20 @@ export default function Stationsplan() {
                                             value={newRoleInputs[areaIdx] || ''}
                                             onChange={e => setNewRoleInputs(prev => ({ ...prev, [areaIdx]: e.target.value }))}
                                             onKeyDown={e => {
-                                                if (e.key === 'Enter') {
-                                                    const val = (newRoleInputs[areaIdx] || '').trim();
-                                                    if (!val) return;
-                                                    setEditAreas(prev => prev.map((a, i) => i === areaIdx ? { ...a, roles: [...a.roles, val] } : a));
-                                                    setNewRoleInputs(prev => ({ ...prev, [areaIdx]: '' }));
-                                                }
+                                                if (e.key !== 'Enter') return;
+                                                const val = (newRoleInputs[areaIdx] || '').trim();
+                                                if (!val) return;
+                                                setEditAreas(prev => prev.map((a, i) => i === areaIdx ? { ...a, roles: [...(a.roles || []), val] } : a));
+                                                setNewRoleInputs(prev => ({ ...prev, [areaIdx]: '' }));
                                             }}
                                             placeholder="+ Rolle"
                                             className="h-7 w-24 text-xs"
                                         />
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="w-7 h-7"
+                                        <Button size="icon" variant="ghost" className="w-7 h-7"
                                             onClick={() => {
                                                 const val = (newRoleInputs[areaIdx] || '').trim();
                                                 if (!val) return;
-                                                setEditAreas(prev => prev.map((a, i) => i === areaIdx ? { ...a, roles: [...a.roles, val] } : a));
+                                                setEditAreas(prev => prev.map((a, i) => i === areaIdx ? { ...a, roles: [...(a.roles || []), val] } : a));
                                                 setNewRoleInputs(prev => ({ ...prev, [areaIdx]: '' }));
                                             }}
                                         >
@@ -702,21 +711,26 @@ export default function Stationsplan() {
                                 </div>
                             </Card>
                         ))}
-                        <Button
-                            variant="outline"
-                            className="w-full gap-2"
+                        <Button variant="outline" className="w-full gap-2"
                             onClick={() => {
                                 const idx = editAreas.length % AREA_COLORS.length;
                                 setEditAreas(prev => [...prev, { name: 'Neuer Bereich', roles: [], ...AREA_COLORS[idx] }]);
                             }}
                         >
-                            <Plus className="w-4 h-4" />
-                            Bereich hinzufügen
+                            <Plus className="w-4 h-4" /> Bereich hinzufügen
                         </Button>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setEditAreasOpen(false)}>Abbrechen</Button>
-                        <Button onClick={() => { saveAreas(editAreas); setEditAreasOpen(false); }}>Speichern</Button>
+                        <Button
+                            onClick={() => saveAreasMutation.mutate(editAreas)}
+                            disabled={saveAreasMutation.isPending}
+                        >
+                            {saveAreasMutation.isPending
+                                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Speichern…</>
+                                : 'Speichern'
+                            }
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

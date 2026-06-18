@@ -509,19 +509,15 @@ export default function MyShiftsPage() {
                         <h1 className="text-xl font-bold text-foreground">Meine Schichten</h1>
                         <p className="text-xs text-muted-foreground mt-0.5">{employee.name}</p>
                     </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-9 w-9">
-                                <MoreVertical className="w-4 h-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem onClick={() => setSyncOpen(true)}>
-                                <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                                Kalender-Sync
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSyncOpen(true)}
+                        className="gap-1.5 min-h-[44px] text-xs"
+                    >
+                        <Calendar className="w-4 h-4 text-amber-500" />
+                        <span>Kalender</span>
+                    </Button>
                 </div>
 
                 {/* ── Nächste Schicht Hero ──────────────────────────────── */}

@@ -96,8 +96,6 @@ import WorldCupSchedule from './pages/WorldCupSchedule';
 
 // Special pages (manual imports — non-standard routing)
 import CleaningChecklist from './pages/CleaningChecklist';
-import Closing from './pages/Closing';
-import Opening from './pages/Opening';
 // EmployeeHome removed — Dashboard is now the central entry point
 import EmployeeProfile from './pages/EmployeeProfile';
 
@@ -160,8 +158,6 @@ const CORE_PAGES = {
 // Special pages: with Layout wrapper
 const SPECIAL_PAGES_WITH_LAYOUT = {
     "CleaningChecklist": CleaningChecklist,
-    "Closing": Closing,
-    "Opening": Opening,
 
     "EmployeeProfile": EmployeeProfile,
 

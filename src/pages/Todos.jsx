@@ -29,11 +29,10 @@ import { getUserDisplayName } from '@/lib/userDisplayName';
 const PRIORITY_ORDER = { dringend: 0, hoch: 1, mittel: 2, niedrig: 3 };
 
 const STATUS_TABS = [
-    { value: 'offen',          label: 'Offen' },
-    { value: 'in_bearbeitung', label: 'Aktiv' },
-    { value: 'erledigt',       label: 'Erledigt' },
-    { value: 'alle',           label: 'Alle' },
-    { value: 'wartung',        label: '🔧 Wartung' },
+    { value: 'offen',    label: 'Offen' },
+    { value: 'erledigt', label: 'Erledigt' },
+    { value: 'alle',     label: 'Alle' },
+    { value: 'wartung',  label: '🔧 Wartung' },
 ];
 
 const PRIORITY_FILTERS = [
@@ -428,7 +427,6 @@ export default function Todos() {
                         {STATUS_TABS.map(({ value, label }) => {
                             const count = value === 'wartung' ? maintenanceTodos.length
                                 : value === 'offen' ? openCount
-                                : value === 'in_bearbeitung' ? inProgressCount
                                 : value === 'erledigt' ? doneCount
                                 : visibleTodos.length;
                             return (

@@ -48,7 +48,7 @@ export default function QRCodeGenerator({ itemId, itemName, type = 'recipe' }) {
     const handlePrint = () => {
         if (canvasRef.current) {
             const printWindow = window.open('', '', 'width=600,height=600');
-            printWindow.document.write(`
+            printWindow.document.write(`<style>@page{size:A6 portrait;margin:5mm}</style>
                 <html>
                 <head>
                     <title>QR-Code: ${itemName}</title>

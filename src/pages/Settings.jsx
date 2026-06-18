@@ -20,7 +20,7 @@ import CalendarExport from '@/components/calendar/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import PushNotificationManager from '@/components/notifications/PushNotificationManager';
 import LegalStatusPanel from '@/components/legal/LegalStatusPanel';
-import { FileText , Printer } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const notificationTypes = [

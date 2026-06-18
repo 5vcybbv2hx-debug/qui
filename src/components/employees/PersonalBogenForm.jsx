@@ -245,8 +245,15 @@ export default function PersonalBogenForm({ employee, onSave, isLoading = false,
               { value: 'Teilzeit', label: 'Teilzeit' },
               { value: 'Minijob', label: 'Minijob' },
             ]} {...f} />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <TextField label="Stundensatz (€)" field="hourly_rate" type="number" {...f} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField label="Stundenlohn (€/h)" field="hourly_rate" type="number" {...f}
+                hint={formData.contract_type === 'Vollzeit' || formData.contract_type === 'Teilzeit' ? 'Für stundenbasierte Abrechnung' : undefined}
+              />
+              <TextField label="Festgehalt (€/Monat)" field="monthly_salary" type="number" {...f}
+                hint="Nur für Festangestellte mit Monatsgehalt"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <TextField label="Wochenstunden" field="weekly_hours" type="number" {...f} />
               <TextField label="Urlaubstage/Jahr" field="vacation_days_per_year" type="number" {...f} />
             </div>

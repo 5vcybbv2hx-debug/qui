@@ -32,6 +32,10 @@
       "format": "date-time",
       "description": "Zeitstempel der Fertigstellung"
     },
+    "completed_by": {
+      "type": "string",
+      "description": "Wer hat abgehakt (Manager-Name)"
+    },
     "notes": {
       "type": "string",
       "description": "Notizen zur Aufgabe"

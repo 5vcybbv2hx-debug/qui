@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -202,10 +203,11 @@ export default function TerminalClock() {
 
                 await updateMutation.mutateAsync({ id: activeEntry.id, data: updateData });
 
-                const message = newStatus === 'on_break'
-                    ? `☕ ${employeeToProcess.name} - Pause gestartet`
-                    : `✓ ${employeeToProcess.name} - Pause beendet`;
-                alert(message);
+                if (newStatus === 'on_break') {
+                    toast.success(`☕ ${employeeToProcess.name} — Pause gestartet`);
+                } else {
+                    toast.success(`${employeeToProcess.name} — Pause beendet ✓`);
+                }
             }
         } else if (selectedAction === 'out') {
             if (!activeEntry) {
@@ -286,10 +288,10 @@ export default function TerminalClock() {
                     setEarningsModalOpen(true);
                 } else {
                     const wasOtherEmployee = targetEmployee && targetEmployee.id !== selectedEmployee?.id;
-                    const message = wasOtherEmployee 
-                        ? `✓ ${employeeToProcess.name} ausgestempelt (von ${selectedEmployee.name})\nArbeitszeit: ${Math.round(hours * 10) / 10}h${pauseText}`
-                        : `✓ ${employeeToProcess.name} ausgestempelt\nArbeitszeit: ${Math.round(hours * 10) / 10}h${pauseText}`;
-                    alert(message);
+                    const outMsg = wasOtherEmployee
+                        ? `${employeeToProcess.name} ausgestempelt (von ${selectedEmployee.name}) · ${Math.round(hours * 10) / 10}h`
+                        : `${employeeToProcess.name} ausgestempelt ✓ · ${Math.round(hours * 10) / 10}h`;
+                    toast.success(outMsg);
                 }
             }
         }

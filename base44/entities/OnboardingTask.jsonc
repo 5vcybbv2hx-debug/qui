@@ -4,11 +4,15 @@
   "properties": {
     "category": {
       "type": "string",
-      "description": "Kategorie (z.B. Kasse und EC Ger\u00e4te)"
+      "description": "Kategorie (z.B. Kasse und EC Geräte)"
     },
     "category_icon": {
       "type": "string",
-      "description": "Icon f\u00fcr die Kategorie (Emoji)"
+      "description": "Icon für die Kategorie (Emoji)"
+    },
+    "category_color": {
+      "type": "string",
+      "description": "Farbklasse für die Kategorie (z.B. blue, amber)"
     },
     "title": {
       "type": "string",
@@ -16,7 +20,11 @@
     },
     "description": {
       "type": "string",
-      "description": "Detaillierte Beschreibung"
+      "description": "Kurze Beschreibung"
+    },
+    "instructions": {
+      "type": "string",
+      "description": "Ausführliche Schritt-für-Schritt-Anleitung (optional, ausklappbar)"
     },
     "order": {
       "type": "number",

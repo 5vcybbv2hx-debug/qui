@@ -146,13 +146,13 @@ export default function Inventory() {
                 setLastScanned(null);
             }, 2000);
         } else {
-            alert('Artikel nicht gefunden: ' + barcode);
+            toast.error(`Artikel nicht gefunden: ${barcode}`);
         }
     };
 
     const handleSave = () => {
         if (Object.keys(counts).length === 0) {
-            alert('Keine Zählungen vorhanden');
+            toast.warning('Keine Zählungen vorhanden');
             return;
         }
 

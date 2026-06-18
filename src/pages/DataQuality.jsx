@@ -124,8 +124,16 @@ function EmployeeQualitySection({ employees }) {
                             <Progress value={emp.completion} className="h-1.5 mb-2" />
                             <div className="flex flex-wrap gap-1.5">
                                 {Object.entries(emp.missing).map(([section, fields]) => (
-                                    <span key={section} className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded-full">
-                                        {SECTIONS[section]?.label}: {fields.length} Feld{fields.length > 1 ? 'er' : ''}
+                                    <span key={section} className={cn(
+                                        'text-[10px] px-2 py-0.5 rounded-full font-medium',
+                                        section === 'lohn'
+                                            ? 'bg-amber-500/20 text-amber-400'
+                                            : 'bg-secondary text-muted-foreground'
+                                    )}>
+                                        {section === 'lohn'
+                                            ? '💶 Kein Lohn hinterlegt'
+                                            : `${SECTIONS[section]?.label}: ${fields.length} Feld${fields.length > 1 ? 'er' : ''}`
+                                        }
                                     </span>
                                 ))}
                             </div>

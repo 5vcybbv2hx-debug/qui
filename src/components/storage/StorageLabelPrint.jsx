@@ -339,6 +339,7 @@ export default function StorageLabelPrint({ open, onClose, location }) {
     const [configKey, setConfigKey] = useState('standard');
     const [outputFormat, setOutputFormat] = useState('png'); // 'pdf' | 'png'
     const [loading, setLoading] = useState(false);
+    const { settings, PRINT_AREAS } = usePrintSettings();
 
     useEffect(() => {
         if (!location?.id || !open) return;
@@ -383,7 +384,8 @@ export default function StorageLabelPrint({ open, onClose, location }) {
                 url = URL.createObjectURL(blob);
                 const win = window.open('', '_blank');
                 if (win) {
-                    win.document.write(`<html><body style="margin:0"><img src="${url}" style="width:100%;display:block" onload="window.print()"/></body></html>`);
+                    const labelFmt = PRINT_AREAS[settings.labels || 'label_62']?.format || '62mm 29mm';
+                    win.document.write(`<html><head><style>@page{size:${labelFmt};margin:0}body{margin:0}</style></head><body style="margin:0"><img src="${url}" style="width:100%;display:block" onload="window.print()"/></body></html>`);
                     win.document.close();
                 }
             } else {

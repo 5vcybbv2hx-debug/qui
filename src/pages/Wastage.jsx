@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -101,7 +102,7 @@ export default function Wastage() {
             handleSelectArticle(article);
             setScannerOpen(false);
         } else {
-            alert('Artikel nicht in der Datenbank gefunden');
+            toast.error('Artikel nicht in der Datenbank gefunden');
         }
     };
 
@@ -114,13 +115,13 @@ export default function Wastage() {
         e.preventDefault();
         
         if (!selectedArticle) {
-            alert('Bitte wähle einen Artikel aus');
+            toast.warning('Bitte wähle einen Artikel aus');
             return;
         }
 
         const qty = parseFloat(quantity);
         if (isNaN(qty) || qty <= 0) {
-            alert('Bitte gültige Menge eingeben');
+            toast.warning('Bitte gültige Menge eingeben');
             return;
         }
 

@@ -178,7 +178,7 @@ export default function Cleaning() {
     const handlePinVerified = async (pin) => {
         const employee = employees.find(e => e.pin === pin);
         if (!employee) {
-            alert('Falsche PIN!');
+            toast.error('Falsche PIN — bitte nochmal versuchen');
             return;
         }
 

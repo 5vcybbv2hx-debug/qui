@@ -81,8 +81,6 @@ function ShoppingRow({ item, suppliers, onStatusChange, onEdit, onDelete }) {
                     'w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
                     item.status === 'erhalten'
                         ? 'border-green-500 bg-green-500'
-                        : item.status === 'bestellt'
-                        ? 'border-blue-500 bg-blue-500/20 hover:bg-blue-500'
                         : 'border-border hover:border-amber-500 active:scale-90'
                 )}>
                 {item.status === 'erhalten' && <Check className="w-3.5 h-3.5 text-white" />}

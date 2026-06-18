@@ -51,11 +51,10 @@ function timeAgo(isoStr) {
     } catch { return ''; }
 }
 
-// Status-Kette: offen → bestellt → erhalten
-const STATUS_NEXT = { offen: 'bestellt', bestellt: 'erhalten' };
+// Status-Kette: offen → erhalten
+const STATUS_NEXT = { offen: 'erhalten' };
 const STATUS_CFG = {
     offen:    { label: 'Offen',     bg: 'bg-slate-500/15 text-slate-300 border-slate-500/25' },
-    bestellt: { label: 'Bestellt',  bg: 'bg-blue-500/15 text-blue-400 border-blue-500/25' },
     erhalten: { label: 'Erhalten',  bg: 'bg-green-500/15 text-green-400 border-green-500/25' },
 };
 
@@ -87,7 +86,6 @@ function ShoppingRow({ item, suppliers, onStatusChange, onEdit, onDelete }) {
                         : 'border-border hover:border-amber-500 active:scale-90'
                 )}>
                 {item.status === 'erhalten' && <Check className="w-3.5 h-3.5 text-white" />}
-                {item.status === 'bestellt' && <Package className="w-3 h-3 text-blue-300" />}
             </button>
 
             {/* Name + Meta */}
@@ -356,7 +354,7 @@ export default function Shopping() {
         : items.filter(i => i.category === supplierFilter);
 
     const openItems     = filteredItems.filter(i => i.status === 'offen');
-    const orderedItems  = filteredItems.filter(i => i.status === 'bestellt');
+    const orderedItems  = [];
     const receivedItems = filteredItems.filter(i => i.status === 'erhalten');
 
     if (!permissions.canViewShopping)
@@ -374,7 +372,7 @@ export default function Shopping() {
                             Einkaufsliste
                         </h1>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                            {openItems.length} offen · {orderedItems.length} bestellt · {receivedItems.length} erhalten
+                            {openItems.length} offen · {receivedItems.length} erhalten
                         </p>
                     </div>
 
@@ -498,25 +496,7 @@ export default function Shopping() {
                     </div>
                 )}
 
-                {/* ── Bestellt ─────────────────────────────────────────── */}
-                {orderedItems.length > 0 && (
-                    <div className="space-y-2">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-0.5">
-                            Bestellt ({orderedItems.length})
-                        </p>
-                        {orderedItems.map(item => (
-                            <ShoppingRow key={item.id}
-                                item={item}
-                                suppliers={suppliers}
-                                onStatusChange={handleStatusChange}
-                                onEdit={openModal}
-                                onDelete={setDeleteConfirm}
-                            />
-                        ))}
-                    </div>
-                )}
-
-                {/* ── Erhalten (einklappbar) ────────────────────────────── */}
+{/* ── Erhalten (einklappbar) ────────────────────────────── */}
                 {receivedItems.length > 0 && (
                     <div className="space-y-2">
                         <div className="flex items-center justify-between px-0.5">

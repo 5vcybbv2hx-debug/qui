@@ -151,6 +151,10 @@
       "type": "number",
       "description": "Stundensatz in Euro"
     },
+    "monthly_salary": {
+      "type": "number",
+      "description": "Festgehalt in Euro (monatlich, für Festangestellte)"
+    },
     "vacation_days_per_year": {
       "type": "number",
       "description": "Urlaubstage pro Jahr"

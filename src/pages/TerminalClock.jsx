@@ -121,7 +121,7 @@ export default function TerminalClock() {
         // Beim Ausstempeln anderer: Prüfe Berechtigung
         if (action === 'out' && currentEmployee && employee.id !== currentEmployee.id) {
             if (!permissions.isManager && !permissions.canClockOutOthers) {
-                alert('❌ Du hast keine Berechtigung, andere Mitarbeiter auszustempeln.');
+                toast.error('Keine Berechtigung, andere Mitarbeiter auszustempeln');
                 return;
             }
             // Manager/Berechtigte verwenden eigene PIN
@@ -139,7 +139,7 @@ export default function TerminalClock() {
         // Unterstützt beide Formate: Klartext-PIN (alt) und SHA-256 Hash (neu)
         const pinMatches = selectedEmployee.pin === hashedInput || selectedEmployee.pin === pin;
         if (!pinMatches) {
-            alert('Falsche PIN!');
+            toast.error('Falsche PIN — bitte nochmal versuchen');
             return;
         }
 
@@ -164,9 +164,9 @@ export default function TerminalClock() {
                         pause_minutes: (activeEntry.pause_minutes || 0) + pauseDuration
                     }
                 });
-                alert(`✓ ${employeeToProcess.name} - Pause beendet`);
+                toast.success(`${employeeToProcess.name} — Pause beendet ✓`);
             } else if (activeEntry && activeEntry.status === 'clocked_in') {
-                alert('Du bist bereits eingestempelt!');
+                toast.warning('Du bist bereits eingestempelt');
             } else {
                 await clockMutation.mutateAsync({
                     employee_id: employeeToProcess.id,
@@ -179,12 +179,12 @@ export default function TerminalClock() {
                 if (isFirstOfDay) {
                     setNightWatchModalOpen(true);
                 } else {
-                    alert(`✓ ${employeeToProcess.name} eingestempelt`);
+                    toast.success(`${employeeToProcess.name} eingestempelt ✓`);
                 }
             }
         } else if (selectedAction === 'pause') {
             if (!activeEntry) {
-                alert(`${employeeToProcess.name} ist nicht eingestempelt!`);
+                toast.warning(`${employeeToProcess.name} ist nicht eingestempelt`);
             } else {
                 // PAUSE TOGGLE: clocked_in → on_break → clocked_in
                 const newStatus = activeEntry.status === 'clocked_in' ? 'on_break' : 'clocked_in';
@@ -211,7 +211,7 @@ export default function TerminalClock() {
             }
         } else if (selectedAction === 'out') {
             if (!activeEntry) {
-                alert(`${employeeToProcess.name} ist nicht eingestempelt!`);
+                toast.warning(`${employeeToProcess.name} ist nicht eingestempelt`);
             } else {
                 const clockIn = new Date(activeEntry.clock_in);
                 const clockOut = new Date();
@@ -617,7 +617,7 @@ export default function TerminalClock() {
                                 <Button
                                     onClick={() => {
                                         setNightWatchModalOpen(false);
-                                        alert(`✓ ${selectedEmployee?.name} eingestempelt`);
+                                        toast.success(`${selectedEmployee?.name} eingestempelt ✓`);
                                     }}
                                     variant="outline"
                                     className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
@@ -628,7 +628,7 @@ export default function TerminalClock() {
                                     onClick={async () => {
                                         await wastageCreationMutation.mutateAsync();
                                         setNightWatchModalOpen(false);
-                                        alert(`✓ ${selectedEmployee?.name} eingestempelt\n✓ Nachtwächterliste eingetragen`);
+                                        toast.success(`${selectedEmployee?.name} eingestempelt ✓ | Nachtwächterliste eingetragen ✓`);
                                     }}
                                     className="flex-1 bg-amber-600 hover:bg-amber-700"
                                     disabled={wastageCreationMutation.isPending}

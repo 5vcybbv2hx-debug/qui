@@ -137,12 +137,14 @@ export default function TimeTracking() {
                 });
             }
         },
-        onSuccess: () => { invalidateTimeEntries(); setModalOpen(false); setSelectedEntry(null); },
+        onSuccess: () => { invalidateTimeEntries(); setModalOpen(false); setSelectedEntry(null); toast.success('Zeiteintrag erstellt'); },
+        onError: (err) => toast.error('Fehler beim Erstellen: ' + err.message),
     });
 
     const updateMutation = useMutation({
         mutationFn: ({ id, data }) => base44.entities.TimeEntry.update(id, data),
-        onSuccess: () => { invalidateTimeEntries(); setModalOpen(false); setSelectedEntry(null); },
+        onSuccess: () => { invalidateTimeEntries(); setModalOpen(false); setSelectedEntry(null); toast.success('Zeiteintrag gespeichert'); },
+        onError: (err) => toast.error('Fehler beim Speichern: ' + err.message),
     });
 
     const deleteMutation = useMutation({
@@ -295,7 +297,6 @@ export default function TimeTracking() {
 
     // ── Handlers ───────────────────────────────────────────────────────────────
     const handleSave = (data, id) => {
-        if (id && !permissions.isManager) data = { ...data, status: 'entwurf' };
         if (id) updateMutation.mutate({ id, data });
         else createMutation.mutate(data);
     };

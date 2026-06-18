@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
 import {
-    Plus, CheckSquare, Tag, Search, X, ListChecks,
+    Plus, CheckSquare, Tag, Search, X, ListChecks, Wrench,
     Trash2, Archive, CheckCheck, Square, FolderInput, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
@@ -560,7 +560,30 @@ export default function Todos() {
                 )}
 
                 {/* ── Liste ──────────────────────────────────────────────── */}
-                {isLoading ? (
+                {statusFilter === 'wartung' ? (
+                    /* ── Wartungs-Tab ──────────────────────────────────── */
+                    maintenanceTodos.length === 0 ? (
+                        <div className="text-center py-14 text-muted-foreground">
+                            <Wrench className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                            <p className="font-semibold text-foreground">Keine Wartungserinnerungen</p>
+                            <p className="text-sm mt-1">Sobald eine Wartung fällig wird, erscheint sie hier.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {maintenanceTodos.map(todo => (
+                                <TodoCard
+                                    key={todo.id}
+                                    todo={todo}
+                                    currentUserName={currentUserName}
+                                    isAdmin={isAdmin}
+                                    onToggle={(t) => toggleStatusMutation.mutate(t)}
+                                    onEdit={(t) => { setEditingTodo(t); setShowTodoModal(true); }}
+                                    onArchive={(t) => archiveMutation.mutate(t)}
+                                />
+                            ))}
+                        </div>
+                    )
+                ) : isLoading ? (
                     <div className="space-y-2">
                         {Array.from({ length: 4 }).map((_, i) => (
                             <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />

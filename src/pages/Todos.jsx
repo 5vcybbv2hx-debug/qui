@@ -426,7 +426,8 @@ export default function Todos() {
                 {!showArchived && (
                     <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
                         {STATUS_TABS.map(({ value, label }) => {
-                            const count = value === 'offen' ? openCount
+                            const count = value === 'wartung' ? maintenanceTodos.length
+                                : value === 'offen' ? openCount
                                 : value === 'in_bearbeitung' ? inProgressCount
                                 : value === 'erledigt' ? doneCount
                                 : visibleTodos.length;

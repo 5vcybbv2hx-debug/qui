@@ -1,12 +1,14 @@
 /**
  * ModuleCenter.jsx — Modulverwaltung für Admins/Manager
+ * v3 — kompaktes Redesign: sticky Kategorie-Chips, aktive Module visuell hervorgehoben,
+ *      klickbare Cards, Dependency-Badges inline, Statusübersicht im Header
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import {
     Package, Users, Calendar, Clock, CheckSquare, Brush,
@@ -14,24 +16,23 @@ import {
     FileText, BarChart2, Wrench, Star, Shield, Settings,
     ChevronRight, Info, Lock, MapPin, ClipboardList, Euro,
     Trophy, Archive, BarChart, QrCode, Banknote, AlertTriangle,
+    Zap, CheckCircle2, Circle,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 
-// ── Modul-Registry ────────────────────────────────────────────────────────
+// ── Modul-Registry ─────────────────────────────────────────────────────────
 
 const MODULE_REGISTRY = [
     // KERN
     {
         id: 'mitarbeiter',
         name: 'Mitarbeiter',
-        description: 'Mitarbeiterverwaltung, Personalbogen, Dokumente, RV-Befreiung',
+        description: 'Mitarbeiterverwaltung, Personalbogen, Dokumente',
         icon: Users,
         color: 'bg-blue-600',
         category: 'kern',
@@ -44,7 +45,7 @@ const MODULE_REGISTRY = [
     {
         id: 'schichten',
         name: 'Schichtplanung',
-        description: 'Schichtplan, Teamkalender, Schichttausch, Anforderungen, Schichtanalyse',
+        description: 'Schichtplan, Teamkalender, Schichttausch, Analyse',
         icon: Calendar,
         color: 'bg-purple-600',
         category: 'planung',
@@ -98,7 +99,7 @@ const MODULE_REGISTRY = [
     {
         id: 'businesscard',
         name: 'Digitale Visitenkarte',
-        description: 'Digitale Visitenkarte mit QR-Code zum Abscannen für Gäste',
+        description: 'Digitale Visitenkarte mit QR-Code für Gäste',
         icon: QrCode,
         color: 'bg-teal-600',
         category: 'gast',
@@ -109,7 +110,7 @@ const MODULE_REGISTRY = [
     {
         id: 'aufgaben',
         name: 'Aufgaben & To-Dos',
-        description: 'Aufgabenverwaltung, Kategorien, Fälligkeiten, Anhänge',
+        description: 'Aufgabenverwaltung, Kategorien, Fälligkeiten',
         icon: CheckSquare,
         color: 'bg-orange-600',
         category: 'betrieb',
@@ -137,7 +138,7 @@ const MODULE_REGISTRY = [
     {
         id: 'stationsplan',
         name: 'Stationsplan',
-        description: 'Stationen zuweisen, Mitarbeiter einplanen, Überblick über Positionen',
+        description: 'Stationen zuweisen, Mitarbeiter einplanen',
         icon: MapPin,
         color: 'bg-fuchsia-600',
         category: 'betrieb',
@@ -149,7 +150,7 @@ const MODULE_REGISTRY = [
     {
         id: 'artikel',
         name: 'Artikel & Lager',
-        description: 'Artikelverwaltung, Bestand, Inventur, Lagerverwaltung, Schwund',
+        description: 'Artikelverwaltung, Bestand, Inventur, Lagerverwaltung',
         icon: Package,
         color: 'bg-zinc-600',
         category: 'lager',
@@ -179,7 +180,7 @@ const MODULE_REGISTRY = [
     {
         id: 'lieferanten',
         name: 'Kontakte & Partner',
-        description: 'Lieferanten, Steuerberater, Anwälte, Dienstleister',
+        description: 'Lieferanten, Steuerberater, Dienstleister',
         icon: Package,
         color: 'bg-stone-600',
         category: 'lager',
@@ -200,7 +201,7 @@ const MODULE_REGISTRY = [
     {
         id: 'menu',
         name: 'Getränkekarte',
-        description: 'Digitale Speisekarte, Public Menu, Tagesangebote, QR-Code',
+        description: 'Digitale Speisekarte, Public Menu, QR-Code',
         icon: Wine,
         color: 'bg-red-700',
         category: 'karte',
@@ -210,7 +211,7 @@ const MODULE_REGISTRY = [
     {
         id: 'kalkulation',
         name: 'Preiskalkulation',
-        description: 'Getränkekalkulation, Marge, Deckungsbeitrag, Preisvorschläge',
+        description: 'Getränkekalkulation, Marge, Deckungsbeitrag',
         icon: TrendingUp,
         color: 'bg-emerald-600',
         category: 'karte',
@@ -223,7 +224,7 @@ const MODULE_REGISTRY = [
     {
         id: 'analytics',
         name: 'Berichte & Analytik',
-        description: 'Tagesabschluss, Umsatzanalyse, Lohnberichte, DATEV-Export',
+        description: 'Tagesabschluss, Umsatzanalyse, Lohnberichte, DATEV',
         icon: BarChart2,
         color: 'bg-violet-600',
         category: 'analytics',
@@ -246,7 +247,7 @@ const MODULE_REGISTRY = [
     {
         id: 'buchhaltung',
         name: 'Buchhaltung',
-        description: 'Kassenbuch, Belege, Debitoren/Kreditoren, Monatsabschluss, DATEV-Export',
+        description: 'Kassenbuch, Belege, Debitoren/Kreditoren, DATEV-Export',
         icon: Euro,
         color: 'bg-emerald-700',
         category: 'verwaltung',
@@ -276,17 +277,17 @@ const MODULE_REGISTRY = [
 ];
 
 const CATEGORIES = {
-    kern:        { name: 'Kern',                  color: 'text-blue-400'      },
-    planung:     { name: 'Planung & Personal',    color: 'text-purple-400'    },
-    gast:        { name: 'Gäste & Events',        color: 'text-green-400'     },
-    betrieb:     { name: 'Betrieb & Operativ',    color: 'text-amber-400'     },
-    lager:       { name: 'Lager & Einkauf',       color: 'text-zinc-400'      },
-    karte:       { name: 'Karte & Rezepte',       color: 'text-red-400'       },
-    analytics:   { name: 'Analytik & Reports',   color: 'text-violet-400'    },
-    verwaltung:  { name: 'Verwaltung',            color: 'text-cyan-400'      },
+    kern:        { name: 'Kern',               emoji: '⚙️'  },
+    planung:     { name: 'Planung',            emoji: '📅'  },
+    gast:        { name: 'Gäste',             emoji: '🪑'  },
+    betrieb:     { name: 'Betrieb',           emoji: '🔧'  },
+    lager:       { name: 'Lager',             emoji: '📦'  },
+    karte:       { name: 'Karte',             emoji: '🍹'  },
+    analytics:   { name: 'Analytik',          emoji: '📊'  },
+    verwaltung:  { name: 'Verwaltung',        emoji: '📁'  },
 };
 
-// ── Modul-State via CompanyInfo (persistent in DB) ────────────────────────
+// ── Modul-State via CompanyInfo ────────────────────────────────────────────
 
 function useModuleState(companyInfo) {
     const queryClient = useQueryClient();
@@ -322,111 +323,92 @@ function useModuleState(companyInfo) {
     return { isEnabled, setModule, isSaving: saveMut.isPending };
 }
 
-// ── ModuleCard ────────────────────────────────────────────────────────────
+// ── ModuleRow — kompakte Listenzeile ──────────────────────────────────────
 
-function ModuleCard({ module, isEnabled, onToggle, allModules, isSaving, isEnabledFn }) {
+function ModuleRow({ module, isEnabled, onToggle, allModules, isSaving, isEnabledFn }) {
+    const navigate = useNavigate();
     const Icon = module.icon;
-    const requires   = (module.requires   || []).map(id => allModules.find(m => m.id === id)).filter(Boolean);
-    const dependents = (module.dependents || []).map(id => allModules.find(m => m.id === id)).filter(Boolean);
 
-    // Kann nur deaktiviert werden wenn kein Pflicht-Modul und keine aktiven Dependents
-    const activeDependents = dependents.filter(d => isEnabledFn ? isEnabledFn(d) : false);
-    const canDisable = !module.required && activeDependents.length === 0;
+    const requires      = (module.requires   || []).map(id => allModules.find(m => m.id === id)).filter(Boolean);
+    const dependents    = (module.dependents || []).map(id => allModules.find(m => m.id === id)).filter(Boolean);
+    const activeDeps    = dependents.filter(d => isEnabledFn ? isEnabledFn(d) : false);
+    const canDisable    = !module.required && activeDeps.length === 0;
+    const missingReqs   = requires.filter(r => isEnabledFn && !isEnabledFn(r));
+
+    const handleRowClick = (e) => {
+        // Klick auf Switch oder Button nicht navigieren
+        if (e.target.closest('button') || e.target.closest('[role="switch"]')) return;
+        if (isEnabled) navigate(createPageUrl(module.page));
+    };
 
     return (
-        <Card className={cn(
-            'border transition-all duration-200',
-            isEnabled ? 'border-border bg-card' : 'border-border/40 bg-card/40 opacity-60'
-        )}>
-            <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                    {/* Icon */}
-                    <div className={cn(
-                        'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
-                        module.color,
-                        !isEnabled && 'grayscale opacity-50'
+        <div
+            onClick={handleRowClick}
+            className={cn(
+                'flex items-center gap-3 px-4 py-3 transition-all duration-150',
+                isEnabled
+                    ? 'cursor-pointer hover:bg-secondary/40 active:bg-secondary/60'
+                    : 'opacity-50 cursor-default',
+            )}
+        >
+            {/* Icon */}
+            <div className={cn(
+                'w-9 h-9 rounded-xl flex items-center justify-center shrink-0',
+                module.color,
+                !isEnabled && 'grayscale'
+            )}>
+                <Icon className="w-4 h-4 text-white" />
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className={cn(
+                        'text-sm font-semibold',
+                        isEnabled ? 'text-foreground' : 'text-muted-foreground'
                     )}>
-                        <Icon className="w-5 h-5 text-white" />
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                            <p className="text-sm font-semibold text-foreground">{module.name}</p>
-                            {module.required && (
-                                <Badge className="text-[10px] bg-blue-500/20 text-blue-400 border-blue-500/30 py-0">Pflicht</Badge>
-                            )}
-                            {module.sensitive && (
-                                <Badge className="text-[10px] bg-red-500/20 text-red-400 border-red-500/30 py-0 flex items-center gap-0.5">
-                                    <Lock className="w-2.5 h-2.5" />Admin
-                                </Badge>
-                            )}
-                        </div>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{module.description}</p>
-
-                        {/* Benötigt */}
-                        {requires.length > 0 && (
-                            <div className="flex items-center gap-1 mt-2 flex-wrap">
-                                <span className="text-[10px] text-muted-foreground">Benötigt:</span>
-                                {requires.map(r => (
-                                    <Badge key={r.id} variant="outline" className="text-[10px] py-0">{r.name}</Badge>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Warnung: aktive Dependents blockieren Deaktivierung */}
-                        {!canDisable && !module.required && isEnabled && activeDependents.length > 0 && (
-                            <div className="flex items-center gap-1 mt-2">
-                                <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
-                                <span className="text-[10px] text-amber-400">
-                                    Wird benötigt von: {activeDependents.map(d => d.name).join(', ')}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Rechts: Switch + Link */}
-                    <div className="flex flex-col items-end gap-2 shrink-0 ml-2">
-                        <Switch
-                            checked={isEnabled}
-                            onCheckedChange={onToggle}
-                            disabled={module.required || !canDisable || isSaving}
-                        />
-                        <Link to={createPageUrl(module.page)}>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs h-8 gap-1 text-muted-foreground hover:text-foreground min-h-[44px] px-2"
-                            >
-                                Öffnen <ChevronRight className="w-3 h-3" />
-                            </Button>
-                        </Link>
-                    </div>
+                        {module.name}
+                    </span>
+                    {module.required && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-medium">
+                            Pflicht
+                        </span>
+                    )}
+                    {module.sensitive && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 font-medium flex items-center gap-0.5">
+                            <Lock className="w-2.5 h-2.5" />Admin
+                        </span>
+                    )}
                 </div>
-            </CardContent>
-        </Card>
-    );
-}
+                <p className="text-xs text-muted-foreground truncate">{module.description}</p>
 
-// ── Stats Header ──────────────────────────────────────────────────────────
+                {/* Warnungen inline */}
+                {isEnabled && activeDeps.length > 0 && (
+                    <p className="text-[10px] text-amber-400 mt-0.5 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        Benötigt von: {activeDeps.map(d => d.name).join(', ')}
+                    </p>
+                )}
+                {isEnabled && missingReqs.length > 0 && (
+                    <p className="text-[10px] text-red-400 mt-0.5 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        Benötigt: {missingReqs.map(r => r.name).join(', ')}
+                    </p>
+                )}
+            </div>
 
-function ModuleStats({ modules, isEnabled }) {
-    const total  = modules.length;
-    const active = modules.filter(m => isEnabled(m)).length;
-    return (
-        <div className="grid grid-cols-3 gap-3">
-            {[
-                { label: 'Gesamt',  value: total,          color: 'text-foreground'       },
-                { label: 'Aktiv',   value: active,         color: 'text-green-400'        },
-                { label: 'Inaktiv', value: total - active, color: 'text-muted-foreground' },
-            ].map(s => (
-                <Card key={s.label} className="bg-card border-border">
-                    <CardContent className="p-3 text-center">
-                        <p className={cn('text-2xl font-bold', s.color)}>{s.value}</p>
-                        <p className="text-xs text-muted-foreground">{s.label}</p>
-                    </CardContent>
-                </Card>
-            ))}
+            {/* Rechts: Status-Dot + Switch */}
+            <div className="flex items-center gap-2 shrink-0">
+                {isEnabled && (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
+                )}
+                <Switch
+                    checked={isEnabled}
+                    onCheckedChange={onToggle}
+                    disabled={module.required || (!canDisable && isEnabled) || isSaving}
+                    className="data-[state=checked]:bg-amber-500"
+                />
+            </div>
         </div>
     );
 }
@@ -436,6 +418,7 @@ function ModuleStats({ modules, isEnabled }) {
 export default function ModuleCenter() {
     const permissions        = usePermissions();
     const [selectedCategory, setSelectedCategory] = useState('alle');
+    const chipRef            = useRef(null);
 
     const { data: companyInfo } = useQuery({
         queryKey: ['company-info'],
@@ -451,96 +434,136 @@ export default function ModuleCenter() {
     if (!permissions.isManager) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <Card className="p-8 max-w-sm text-center border-border bg-card">
+                <div className="p-8 max-w-sm text-center border border-border rounded-2xl bg-card">
                     <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
                     <h2 className="text-lg font-bold text-foreground mb-2">Kein Zugriff</h2>
                     <p className="text-sm text-muted-foreground">Nur Manager und Admins können das Modulcenter verwalten.</p>
-                </Card>
+                </div>
             </div>
         );
     }
 
-    const categories = ['alle', ...Object.keys(CATEGORIES)];
-    const filtered   = selectedCategory === 'alle'
+    const allCategories = ['alle', ...Object.keys(CATEGORIES)];
+
+    const filtered = selectedCategory === 'alle'
         ? MODULE_REGISTRY
         : MODULE_REGISTRY.filter(m => m.category === selectedCategory);
 
+    // Gruppiert für Sektions-Überschriften
     const grouped = filtered.reduce((acc, m) => {
         if (!acc[m.category]) acc[m.category] = [];
         acc[m.category].push(m);
         return acc;
     }, {});
 
+    const totalActive = MODULE_REGISTRY.filter(m => isEnabled(m)).length;
+    const total       = MODULE_REGISTRY.length;
+
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-8">
-            <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+            <div className="max-w-2xl mx-auto">
 
-                {/* Header */}
-                <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                            <Package className="w-5 h-5 text-amber-500" />
+                {/* ── Header ────────────────────────────────────────────── */}
+                <div className="px-4 pt-4 pb-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                                <Zap className="w-5 h-5 text-amber-500" />
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-bold text-foreground">Modulcenter</h1>
+                                <p className="text-xs text-muted-foreground">Module aktivieren & verwalten</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-xl sm:text-2xl font-bold text-foreground">Modulcenter</h1>
-                            <p className="text-sm text-muted-foreground">Module aktivieren & verwalten</p>
+
+                        {/* Aktiv-Counter */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card border border-border">
+                            <CheckCircle2 className="w-4 h-4 text-amber-500" />
+                            <span className="text-sm font-bold text-foreground">{totalActive}</span>
+                            <span className="text-xs text-muted-foreground">/ {total} aktiv</span>
                         </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mt-3 h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                            style={{ width: `${(totalActive / total) * 100}%` }}
+                        />
                     </div>
                 </div>
 
-                {/* Hinweis */}
-                <Alert className="mb-6 bg-blue-500/10 border-blue-500/30">
-                    <Info className="h-4 w-4 text-blue-400" />
-                    <AlertDescription className="text-blue-300 text-sm">
-                        Aktivierungsstatus wird in den Firmendaten gespeichert und gilt für alle Nutzer.
-                        Module mit Abhängigkeiten können erst deaktiviert werden, wenn abhängige Module deaktiviert sind.
-                    </AlertDescription>
-                </Alert>
+                {/* ── Sticky Kategorie Chips ────────────────────────────── */}
+                <div
+                    ref={chipRef}
+                    className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2"
+                >
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                        {allCategories.map(cat => {
+                            const info = CATEGORIES[cat];
+                            const count = cat === 'alle'
+                                ? MODULE_REGISTRY.filter(m => isEnabled(m)).length
+                                : MODULE_REGISTRY.filter(m => m.category === cat && isEnabled(m)).length;
+                            const catTotal = cat === 'alle'
+                                ? MODULE_REGISTRY.length
+                                : MODULE_REGISTRY.filter(m => m.category === cat).length;
 
-                {/* Stats */}
-                <ModuleStats modules={MODULE_REGISTRY} isEnabled={isEnabled} />
-
-                {/* Kategorie Filter */}
-                <div className="flex gap-2 overflow-x-auto pb-2 mt-6 scrollbar-hide">
-                    {categories.map(cat => (
-                        <button
-                            key={cat}
-                            onClick={() => setSelectedCategory(cat)}
-                            className={cn(
-                                'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all border min-h-[36px]',
-                                selectedCategory === cat
-                                    ? 'bg-amber-500 text-slate-900 border-amber-500 font-semibold'
-                                    : 'bg-card border-border text-muted-foreground hover:text-foreground'
-                            )}
-                        >
-                            {cat === 'alle' ? `Alle (${MODULE_REGISTRY.length})` : CATEGORIES[cat]?.name || cat}
-                        </button>
-                    ))}
+                            return (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={cn(
+                                        'flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border',
+                                        selectedCategory === cat
+                                            ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                                            : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                                    )}
+                                >
+                                    {cat === 'alle' ? '✦' : info?.emoji}
+                                    <span>{cat === 'alle' ? 'Alle' : info?.name}</span>
+                                    <span className={cn(
+                                        'text-[10px] px-1.5 py-0.5 rounded-full font-bold',
+                                        selectedCategory === cat
+                                            ? 'bg-white/20 text-white'
+                                            : 'bg-secondary text-muted-foreground'
+                                    )}>
+                                        {count}/{catTotal}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                {/* Module nach Kategorien */}
-                <div className="mt-6 space-y-8">
+                {/* ── Modul-Listen ──────────────────────────────────────── */}
+                <div className="px-0 pt-2 space-y-3">
                     {Object.entries(grouped).map(([cat, modules]) => (
                         <div key={cat}>
-                            <h3 className={cn(
-                                'text-xs font-bold uppercase tracking-widest mb-3',
-                                CATEGORIES[cat]?.color || 'text-muted-foreground'
-                            )}>
-                                {CATEGORIES[cat]?.name || cat}
-                                <span className="ml-2 font-normal text-muted-foreground normal-case tracking-normal">
-                                    ({modules.filter(m => isEnabled(m)).length}/{modules.length} aktiv)
-                                </span>
-                            </h3>
-                            <div className="space-y-3">
+                            {/* Kategorie-Header — nur bei "alle" anzeigen */}
+                            {selectedCategory === 'alle' && (
+                                <div className="flex items-center gap-2 px-4 py-2 mt-2">
+                                    <span className="text-base">{CATEGORIES[cat]?.emoji}</span>
+                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                        {CATEGORIES[cat]?.name}
+                                    </span>
+                                    <div className="flex-1 h-px bg-border" />
+                                    <span className="text-xs text-muted-foreground">
+                                        {modules.filter(m => isEnabled(m)).length}/{modules.length}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Modul-Karte als Liste */}
+                            <div className="mx-3 rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border/60">
                                 {modules.map(module => (
-                                    <ModuleCard
+                                    <ModuleRow
                                         key={module.id}
                                         module={module}
                                         isEnabled={isEnabled(module)}
-                                        isEnabledFn={isEnabled}
-                                        onToggle={(v) => setModule(module.id, v)}
+                                        onToggle={(val) => setModule(module.id, val)}
                                         allModules={MODULE_REGISTRY}
                                         isSaving={isSaving}
+                                        isEnabledFn={isEnabled}
                                     />
                                 ))}
                             </div>
@@ -548,29 +571,10 @@ export default function ModuleCenter() {
                     ))}
                 </div>
 
-                {/* Quick Links */}
-                <Card className="mt-8 border-border bg-card">
-                    <CardContent className="p-4">
-                        <p className="text-sm font-semibold text-foreground mb-3">Einstellungen & Verwaltung</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {[
-                                { to: 'Settings',        icon: Settings,      label: 'Einstellungen'   },
-                                { to: 'CompanySettings', icon: FileText,      label: 'Firmendaten'     },
-                                { to: 'Permissions',     icon: Shield,        label: 'Berechtigungen'  },
-                                { to: 'DataExport',      icon: Package,       label: 'Datenexport'     },
-                                { to: 'Dashboard',       icon: ClipboardList, label: 'Dashboard'       },
-                                { to: 'AuditLog',        icon: Archive,       label: 'Audit Log'       },
-                            ].map(l => (
-                                <Link key={l.to} to={createPageUrl(l.to)}>
-                                    <div className="flex items-center gap-2 p-3 rounded-xl bg-secondary/40 hover:bg-secondary transition-all min-h-[44px]">
-                                        <l.icon className="w-4 h-4 text-muted-foreground shrink-0" />
-                                        <span className="text-xs text-foreground font-medium">{l.label}</span>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* ── Footer-Hinweis ─────────────────────────────────────── */}
+                <p className="text-xs text-muted-foreground text-center px-4 pt-6 pb-2">
+                    Änderungen gelten sofort für alle Nutzer · Tippe auf ein aktives Modul zum Öffnen
+                </p>
 
             </div>
         </div>

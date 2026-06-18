@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import { Input } from '@/components/ui/input';
-import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info, Pencil, Check, X, ChevronDown, ChevronUp, ArrowDownToLine } from 'lucide-react';
+import { Upload, DollarSign, Users, Gift, Loader2, ChevronLeft, ChevronRight, CalendarDays, RefreshCw, CheckCircle2, TrendingDown, Info, Pencil, Check, X, ChevronDown, ChevronUp, ArrowDownToLine, MoreHorizontal, BookOpen } from 'lucide-react';
 import { format, parseISO, addDays, subDays, isToday } from 'date-fns';
 import { de } from 'date-fns/locale';
 import PDFUploadModal from '@/components/dailyanalysis/PDFUploadModal.jsx';
@@ -17,6 +17,9 @@ import DailyRevenueList from '@/components/dailyanalysis/DailyRevenueList.jsx';
 import InsightsPanel from '@/components/dailyanalysis/InsightsPanel.jsx';
 import PeriodAnalysis from '@/components/dailyanalysis/PeriodAnalysis.jsx';
 import { cn } from '@/lib/utils';
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 
 // An employee is "daily-paid" (Aushilfe) if their role is Aushilfe OR they have an hourly_rate but no monthly contract
 const isDailyPaid = (employee) => {
@@ -364,19 +367,29 @@ export default function DailyAnalysis() {
             <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-3">
                     <div>
-                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Tagesabschluss</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Tagesabrechnung</h1>
                         <p className="text-sm text-muted-foreground">Z-Abschlag · Personal · Trinkgeld</p>
                     </div>
                     <div className="flex gap-2 shrink-0">
-                        <Button size="sm" variant="outline"
-                            onClick={handleReanalyzeAll}
-                            disabled={reanalyzingAll || dailyRevenues.filter(r => r.pdf_url).length === 0}
-                            className="text-xs"
-                        >
-                            {reanalyzingAll ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                            PDFs ({dailyRevenues.filter(r => r.pdf_url).length})
-                        </Button>
-
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="icon" className="w-9 h-9 min-h-[36px]">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuItem
+                                    onClick={handleReanalyzeAll}
+                                    disabled={reanalyzingAll || dailyRevenues.filter(r => r.pdf_url).length === 0}
+                                >
+                                    {reanalyzingAll
+                                        ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        : <RefreshCw className="w-4 h-4 mr-2" />
+                                    }
+                                    PDFs neu analysieren ({dailyRevenues.filter(r => r.pdf_url).length})
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 
@@ -479,6 +492,27 @@ export default function DailyAnalysis() {
             {viewMode === 'tag' && (
             <div className="space-y-4">
 
+            {/* Empty State — kein Z-Abschlag */}
+            {!todayRevenue && (
+                <Card className="border-dashed border-border bg-card">
+                    <CardContent className="py-10 flex flex-col items-center gap-3 text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+                            <Upload className="w-6 h-6 text-amber-400" />
+                        </div>
+                        <div>
+                            <p className="font-semibold text-foreground">Kein Z-Abschlag für diesen Tag</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">PDF hochladen um Umsatz, Personal und Trinkgeld zu analysieren</p>
+                        </div>
+                        <Button
+                            onClick={() => setUploadModalOpen(true)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white gap-2"
+                        >
+                            <Upload className="w-4 h-4" /> Z-Abschlag hochladen
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* KPI Grid */}
             <div className="grid grid-cols-2 gap-3">
                 {/* Revenue */}
@@ -487,21 +521,7 @@ export default function DailyAnalysis() {
                     <Button size="sm" variant="outline" className="mt-2 w-full h-8 text-xs" onClick={() => setUploadModalOpen(true)}>
                         <Upload className="w-3 h-3 mr-1" /> Z-Abschlag
                     </Button>
-                    {todayRevenue && (
-                        alreadyTransferred ? (
-                            <div className="mt-1.5 flex items-center justify-center gap-1 text-[10px] text-green-400 font-semibold">
-                                <CheckCircle2 className="w-3 h-3" /> Im Kassenbuch
-                            </div>
-                        ) : (
-                            <Button size="sm"
-                                onClick={handleTransferToCashbook}
-                                disabled={transferring}
-                                className="mt-1.5 w-full h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white">
-                                <ArrowDownToLine className="w-3 h-3 mr-1" />
-                                {transferring ? 'Übertrage…' : 'Ins Kassenbuch'}
-                            </Button>
-                        )
-                    )}
+
                 </KpiCard>
 
                 {/* Tip */}
@@ -584,6 +604,58 @@ export default function DailyAnalysis() {
                     )}
                 </KpiCard>
             </div>
+
+            {/* Kassenbuch Transfer — prominent nach KPI-Cards */}
+            {todayRevenue && (
+                <Card className={cn(
+                    'border transition-all',
+                    alreadyTransferred
+                        ? 'border-green-500/30 bg-green-500/5'
+                        : 'border-blue-500/30 bg-blue-500/5'
+                )}>
+                    <CardContent className="px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                                    alreadyTransferred ? 'bg-green-500/15' : 'bg-blue-500/15'
+                                )}>
+                                    {alreadyTransferred
+                                        ? <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                        : <BookOpen className="w-4 h-4 text-blue-400" />
+                                    }
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-foreground">Kassenbuch</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {alreadyTransferred
+                                            ? 'Umsatz bereits übertragen'
+                                            : `${todayRevenue.revenue?.toFixed(2) ?? '–'} € bereit zum Übertragen`
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                            {alreadyTransferred ? (
+                                <Badge className="bg-green-500/15 text-green-400 border-green-500/30 shrink-0">
+                                    ✓ Übertragen
+                                </Badge>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    onClick={handleTransferToCashbook}
+                                    disabled={transferring}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shrink-0 min-h-[36px]"
+                                >
+                                    {transferring
+                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        : <ArrowDownToLine className="w-3.5 h-3.5" />
+                                    }
+                                    {transferring ? 'Übertrage…' : 'Ins Kassenbuch'}
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Bar minus Personnel */}
             {revenue > 0 && (

@@ -295,6 +295,21 @@ export default function Todos() {
         return result;
     }, [displayTodos, statusFilter, categoryFilter, priorityFilter, personFilter, searchQuery, sortBy]);
 
+    // ── Gruppierung nach Kategorie ───────────────────────────────────────────
+    const todosByCategory = useMemo(() => {
+        const map = new Map();
+        filteredTodos.forEach(todo => {
+            const cat = todo.category || 'Sonstiges';
+            if (!map.has(cat)) map.set(cat, []);
+            map.get(cat).push(todo);
+        });
+        return Array.from(map.entries()).sort(([a], [b]) => {
+            if (a === 'Sonstiges') return 1;
+            if (b === 'Sonstiges') return -1;
+            return a.localeCompare(b);
+        });
+    }, [filteredTodos]);
+
     const openCount       = visibleTodos.filter(t => t.status === 'offen').length;
     const inProgressCount = visibleTodos.filter(t => t.status === 'in_bearbeitung').length;
     const doneCount       = visibleTodos.filter(t => t.status === 'erledigt').length;

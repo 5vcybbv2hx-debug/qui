@@ -65,15 +65,6 @@ export default function OperatorDashboard() {
         queryFn: () => base44.entities.ShoppingList.list()
     });
 
-    const { data: closingSessions = [] } = useQuery({
-        queryKey: ['op-closing'],
-        queryFn: () => base44.entities.ClosingSession.filter({ date: todayStr })
-    });
-
-    const { data: openingSessions = [] } = useQuery({
-        queryKey: ['op-opening'],
-        queryFn: () => base44.entities.OpeningSession.filter({ date: todayStr })
-    });
 
     if (permissions.isLoading) return null;
     if (!permissions.isManager) return <PermissionDenied />;
@@ -89,8 +80,6 @@ export default function OperatorDashboard() {
     const kanbanItems = shopping.filter(s => s.status === 'offen');
     const orderedItems = shopping.filter(s => s.status === 'bestellt');
 
-    const closingSession = closingSessions[0] || null;
-    const openingSession = openingSessions[0] || null;
 
     return (
         <div className="min-h-screen bg-background pb-24 md:pb-0">
@@ -130,48 +119,10 @@ export default function OperatorDashboard() {
                         color={kanbanItems.length > 0 ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-card border-border text-foreground'}
                         to={createPageUrl('Shopping')}
                     />
-                    <StatCard
-                        icon={ClipboardCheck}
-                        label="Abschluss heute"
-                        value={closingSession?.is_complete ? '✓' : `${closingSession?.completion_rate ?? 0}%`}
-                        sub={closingSession?.completed_by || (closingSession ? 'In Bearbeitung' : 'Nicht gestartet')}
-                        color={closingSession?.is_complete ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-card border-border text-foreground'}
-                        to={createPageUrl('Closing')}
-                    />
+                    
                 </div>
 
-                {/* Opening / Closing Status */}
-                <section>
-                    <SectionHeader icon={Sun} title="Tagesstart & Abschluss" color="text-amber-400" />
-                    <div className="grid grid-cols-2 gap-3">
-                        <Link to={createPageUrl('Opening')} className={cn(
-                            'rounded-2xl border p-4 flex items-center gap-3 transition-all hover:opacity-80',
-                            openingSession?.is_complete ? 'bg-green-500/10 border-green-500/30' : 'bg-card border-border'
-                        )}>
-                            <Sun className={cn('w-7 h-7 shrink-0', openingSession?.is_complete ? 'text-green-400' : openingSession ? 'text-amber-400' : 'text-muted-foreground')} />
-                            <div className="min-w-0">
-                                <p className="text-xs text-muted-foreground">Eröffnung</p>
-                                <p className="text-sm font-bold text-foreground">
-                                    {!openingSession ? 'Nicht gestartet' : openingSession.is_complete ? 'Abgeschlossen' : `${openingSession.completion_rate ?? 0}%`}
-                                </p>
-                                {openingSession?.started_by && <p className="text-xs text-muted-foreground truncate">{openingSession.started_by}</p>}
-                            </div>
-                        </Link>
-                        <Link to={createPageUrl('Closing')} className={cn(
-                            'rounded-2xl border p-4 flex items-center gap-3 transition-all hover:opacity-80',
-                            closingSession?.is_complete ? 'bg-green-500/10 border-green-500/30' : 'bg-card border-border'
-                        )}>
-                            <ClipboardCheck className={cn('w-7 h-7 shrink-0', closingSession?.is_complete ? 'text-green-400' : closingSession ? 'text-violet-400' : 'text-muted-foreground')} />
-                            <div className="min-w-0">
-                                <p className="text-xs text-muted-foreground">Abschluss</p>
-                                <p className="text-sm font-bold text-foreground">
-                                    {!closingSession ? 'Nicht gestartet' : closingSession.is_complete ? 'Abgeschlossen' : `${closingSession.completion_rate ?? 0}%`}
-                                </p>
-                                {closingSession?.started_by && <p className="text-xs text-muted-foreground truncate">{closingSession.started_by}</p>}
-                            </div>
-                        </Link>
-                    </div>
-                </section>
+                
 
                 {/* Smart Suggestions */}
                 <SmartSuggestions />

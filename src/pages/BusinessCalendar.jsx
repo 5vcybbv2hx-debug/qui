@@ -1,6 +1,7 @@
 /**
  * BusinessCalendar.jsx — Betriebskalender & Sondertage
- * Mobile-first, einfache Bedienung für Betreiber/Manager
+ * v2 — Chip-Grid für Tagesart, Inline-Label im Kalender, kein Tab-Wechsel,
+ *      Monatsübersicht, Auto-Fill Feedback, Schnell-Löschen
  */
 
 import React, { useState, useEffect } from 'react';
@@ -10,8 +11,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO,
 import { de } from 'date-fns/locale';
 import {
     ChevronLeft, ChevronRight, Plus, Save,
-    Palmtree, AlertTriangle,
-    Clock, Info, Trash2, Wand2, Leaf
+    Palmtree, AlertTriangle, Clock, Info, Trash2, Wand2, Leaf,
+    CalendarDays, X, CheckCircle2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,30 +21,31 @@ import { cn } from '@/lib/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { getHolidaysBW, getHolidayName } from '@/components/shifts/getHolidays';
+import { toast } from 'sonner';
 
 // ── Konfiguration ──────────────────────────────────────────────────────────
 
 export const DAY_TYPES = [
-    { id: 'normal',                   label: 'Normaler Betrieb',      color: 'bg-secondary/80',   textColor: 'text-foreground/70',  dot: 'bg-muted-foreground'   },
-    { id: 'sonderoeffnung',           label: 'Sonderöffnung',         color: 'bg-amber-600',   textColor: 'text-amber-300',  dot: 'bg-amber-400'   },
-    { id: 'vorfeiertag',              label: 'Vorfeiertag',           color: 'bg-orange-600',  textColor: 'text-orange-300', dot: 'bg-orange-400'  },
-    { id: 'feiertag',                 label: 'Feiertag',              color: 'bg-red-600',     textColor: 'text-red-300',    dot: 'bg-red-400'     },
-    { id: 'eventtag',                 label: 'Eventtag',              color: 'bg-purple-600',  textColor: 'text-purple-300', dot: 'bg-purple-400'  },
-    { id: 'lange_nacht',              label: 'Lange Nacht',           color: 'bg-indigo-600',  textColor: 'text-indigo-300', dot: 'bg-indigo-400'  },
-    { id: 'inventurtag',              label: 'Inventurtag',           color: 'bg-cyan-600',    textColor: 'text-cyan-300',   dot: 'bg-cyan-400'    },
-    { id: 'geschlossen',              label: 'Geschlossen',           color: 'bg-secondary/50',   textColor: 'text-muted-foreground',  dot: 'bg-muted-foreground/60'   },
-    { id: 'geschlossen_mit_reinigung',label: 'Geschl. + Reinigung',   color: 'bg-teal-700',    textColor: 'text-teal-300',   dot: 'bg-teal-400'    },
-    { id: 'saisonstart',              label: 'Saisonstart',           color: 'bg-green-600',   textColor: 'text-green-300',  dot: 'bg-green-400'   },
-    { id: 'saisonende',               label: 'Saisonende',            color: 'bg-yellow-700',  textColor: 'text-yellow-300', dot: 'bg-yellow-400'  },
-    { id: 'betriebsferien',           label: 'Betriebsferien',        color: 'bg-pink-700',    textColor: 'text-pink-300',   dot: 'bg-pink-400'    },
-    { id: 'wartungstag',              label: 'Wartungstag',           color: 'bg-secondary',    textColor: 'text-foreground/70',  dot: 'bg-secondary'    },
+    { id: 'normal',                    label: 'Normaler Betrieb',     emoji: '✅', color: 'bg-secondary/80',   textColor: 'text-foreground/70',  dot: 'bg-muted-foreground',   short: ''          },
+    { id: 'sonderoeffnung',            label: 'Sonderöffnung',        emoji: '⭐', color: 'bg-amber-600',      textColor: 'text-amber-300',      dot: 'bg-amber-400',          short: 'Sonder'    },
+    { id: 'vorfeiertag',               label: 'Vorfeiertag',          emoji: '🌟', color: 'bg-orange-600',     textColor: 'text-orange-300',     dot: 'bg-orange-400',         short: 'Vor-FT'    },
+    { id: 'feiertag',                  label: 'Feiertag',             emoji: '🎉', color: 'bg-red-600',        textColor: 'text-red-300',        dot: 'bg-red-400',            short: 'FT'        },
+    { id: 'eventtag',                  label: 'Eventtag',             emoji: '🎵', color: 'bg-purple-600',     textColor: 'text-purple-300',     dot: 'bg-purple-400',         short: 'Event'     },
+    { id: 'lange_nacht',               label: 'Lange Nacht',          emoji: '🌙', color: 'bg-indigo-600',     textColor: 'text-indigo-300',     dot: 'bg-indigo-400',         short: 'Nacht'     },
+    { id: 'inventurtag',               label: 'Inventurtag',          emoji: '📦', color: 'bg-cyan-600',       textColor: 'text-cyan-300',       dot: 'bg-cyan-400',           short: 'Invent.'   },
+    { id: 'geschlossen',               label: 'Geschlossen',          emoji: '🔒', color: 'bg-zinc-700',       textColor: 'text-muted-foreground', dot: 'bg-zinc-500',         short: 'Geschl.'   },
+    { id: 'geschlossen_mit_reinigung', label: 'Geschl. + Reinigung',  emoji: '🧹', color: 'bg-teal-700',       textColor: 'text-teal-300',       dot: 'bg-teal-400',           short: 'Reinig.'   },
+    { id: 'saisonstart',               label: 'Saisonstart',          emoji: '🌿', color: 'bg-green-600',      textColor: 'text-green-300',      dot: 'bg-green-400',          short: 'Saison↑'   },
+    { id: 'saisonende',                label: 'Saisonende',           emoji: '🍂', color: 'bg-yellow-700',     textColor: 'text-yellow-300',     dot: 'bg-yellow-400',         short: 'Saison↓'   },
+    { id: 'betriebsferien',            label: 'Betriebsferien',       emoji: '🏖️', color: 'bg-pink-700',       textColor: 'text-pink-300',       dot: 'bg-pink-400',           short: 'Ferien'    },
+    { id: 'wartungstag',               label: 'Wartungstag',          emoji: '🔧', color: 'bg-slate-600',      textColor: 'text-foreground/70',  dot: 'bg-slate-400',          short: 'Wartung'   },
 ];
 
 export function getDayTypeConfig(id) {
     return DAY_TYPES.find(d => d.id === id) || DAY_TYPES[0];
 }
 
-// ── Tag-Drawer ─────────────────────────────────────────────────────────────
+// ── DayDrawer — kompakt mit Chip-Grid ─────────────────────────────────────
 
 function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cleaningTasks = [] }) {
     const initialDate = day ? format(day, 'yyyy-MM-dd') : '';
@@ -56,8 +58,8 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cl
         closing_time_override: existing?.closing_time_override || '',
         notes: existing?.notes || '',
     });
-    // Terrassen-Aufgaben für Saisonstart/-ende
     const [selectedTasks, setSelectedTasks] = useState([]);
+    const [confirmDelete, setConfirmDelete] = useState(false);
 
     useEffect(() => {
         setDateStr(day ? format(day, 'yyyy-MM-dd') : '');
@@ -70,13 +72,13 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cl
             notes: existing?.notes || '',
         });
         setSelectedTasks([]);
+        setConfirmDelete(false);
     }, [existing, day]);
 
-    const cfg = getDayTypeConfig(form.day_type);
-    const isClosed = ['geschlossen', 'geschlossen_mit_reinigung', 'betriebsferien'].includes(form.day_type);
-    const isSaison = ['saisonstart', 'saisonende'].includes(form.day_type);
+    const cfg       = getDayTypeConfig(form.day_type);
+    const isClosed  = ['geschlossen', 'geschlossen_mit_reinigung', 'betriebsferien'].includes(form.day_type);
+    const isSaison  = ['saisonstart', 'saisonende'].includes(form.day_type);
 
-    // Terrassen-Reinigungsaufgaben
     const terrassenTasks = cleaningTasks.filter(t =>
         t.area?.toLowerCase().includes('terrasse') || t.area?.toLowerCase().includes('außen')
     );
@@ -102,17 +104,47 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cl
     return (
         <Drawer open={open} onOpenChange={onClose}>
             <DrawerContent className="bg-card border-border max-h-[90vh]">
-                <DrawerHeader className="border-b border-border pb-3">
-                    <DrawerTitle className="text-foreground">
-                        {existing ? 'Sondertag bearbeiten' : 'Neuer Sondertag'}
-                    </DrawerTitle>
-                </DrawerHeader>
-                <div className="overflow-y-auto p-4 space-y-4 pb-8">
 
-                    {/* Datum änderbar */}
+                {/* Header — Datum + Schnell-Aktionen */}
+                <div className={cn('px-4 pt-4 pb-3 border-b border-border flex items-center justify-between', cfg.color)}>
+                    <div>
+                        <p className="text-xs font-medium text-white/70">
+                            {day ? format(day, "EEEE", { locale: de }) : ''}
+                        </p>
+                        <p className="text-lg font-bold text-white">
+                            {day ? format(day, "d. MMMM yyyy", { locale: de }) : ''}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {canEdit && existing && existing.day_type !== 'normal' && (
+                            confirmDelete ? (
+                                <button
+                                    onClick={() => { onDelete(existing.id); setConfirmDelete(false); }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 text-white text-xs font-semibold"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" /> Löschen?
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setConfirmDelete(true)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 text-white"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            )
+                        )}
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 text-white">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="overflow-y-auto p-4 space-y-5 pb-8">
+
+                    {/* Datum */}
                     {canEdit && (
                         <div>
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Datum</p>
+                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Datum</p>
                             <input
                                 type="date"
                                 value={dateStr}
@@ -125,38 +157,37 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cl
                     {!canEdit && existing && (
                         <div className={cn('px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2', cfg.color, 'text-white')}>
                             <Info className="w-4 h-4" />
-                            {cfg.label}
-                            {existing.title && ` — ${existing.title}`}
+                            {cfg.label}{existing.title && ` — ${existing.title}`}
                         </div>
                     )}
 
                     {canEdit && (
                         <>
-                            {/* Tagesart */}
+                            {/* Tagesart — Chip-Grid */}
                             <div>
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Tagesart</p>
-                                <div className="grid grid-cols-2 gap-2">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Tagesart</p>
+                                <div className="grid grid-cols-2 gap-1.5">
                                     {DAY_TYPES.map(dt => (
                                         <button
                                             key={dt.id}
                                             onClick={() => setForm(f => ({ ...f, day_type: dt.id }))}
                                             className={cn(
-                                                'flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium border-2 transition-all text-left',
+                                                'flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left min-h-[44px]',
                                                 form.day_type === dt.id
-                                                    ? `${dt.color} text-white border-transparent`
-                                                    : 'bg-secondary/30 border-border text-muted-foreground hover:border-primary/50'
+                                                    ? `${dt.color} text-white shadow-md scale-[1.02]`
+                                                    : 'bg-secondary/40 text-muted-foreground hover:bg-secondary/60'
                                             )}
                                         >
-                                            <div className={cn('w-2.5 h-2.5 rounded-full shrink-0', dt.dot)} />
+                                            <span className="text-base leading-none">{dt.emoji}</span>
                                             <span className="text-xs leading-tight">{dt.label}</span>
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Titel */}
+                            {/* Bezeichnung */}
                             <div>
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Bezeichnung (optional)</p>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Bezeichnung <span className="font-normal normal-case">(optional)</span></p>
                                 <input
                                     value={form.title}
                                     onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
@@ -168,52 +199,39 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cl
                             {/* Sonderöffnungszeiten */}
                             {!isClosed && (
                                 <div>
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Sonderöffnungszeiten (optional)</p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Sonderöffnungszeiten <span className="font-normal normal-case">(optional)</span></p>
                                     <div className="flex items-center gap-3">
                                         <div className="flex-1">
                                             <label className="text-xs text-muted-foreground mb-1 block">Von</label>
-                                            <input
-                                                type="time"
-                                                value={form.opening_time_override}
+                                            <input type="time" value={form.opening_time_override}
                                                 onChange={e => setForm(f => ({ ...f, opening_time_override: e.target.value }))}
-                                                className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm"
-                                            />
+                                                className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm" />
                                         </div>
                                         <div className="flex-1">
                                             <label className="text-xs text-muted-foreground mb-1 block">Bis</label>
-                                            <input
-                                                type="time"
-                                                value={form.closing_time_override}
+                                            <input type="time" value={form.closing_time_override}
                                                 onChange={e => setForm(f => ({ ...f, closing_time_override: e.target.value }))}
-                                                className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm"
-                                            />
+                                                className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-foreground text-sm" />
                                         </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">Bei Nachtbetrieb: Schließzeit z.B. 04:00 (nächster Tag)</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Nachtbetrieb: Schließzeit z.B. 04:00</p>
                                 </div>
                             )}
 
-                            {/* Terrassen-Aufgaben bei Saisonstart/-ende */}
+                            {/* Terrassen-Aufgaben */}
                             {isSaison && terrassenTasks.length > 0 && (
                                 <div>
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
                                         <Leaf className="w-3.5 h-3.5 text-green-400" />
-                                        Terrassen-Aufgaben aktivieren
-                                    </p>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                        {form.day_type === 'saisonstart' ? 'Welche Aufgaben sollen zum Saisonstart erledigt werden?' : 'Welche Aufgaben sollen zum Saisonende erledigt werden?'}
+                                        Terrassen-Aufgaben
                                     </p>
                                     <div className="space-y-1.5">
                                         {terrassenTasks.map(task => (
-                                            <label key={task.id} className="flex items-center gap-2 p-2 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedTasks.includes(task.id)}
+                                            <label key={task.id} className="flex items-center gap-2 p-2.5 rounded-xl bg-secondary/30 hover:bg-secondary/50 cursor-pointer">
+                                                <input type="checkbox" checked={selectedTasks.includes(task.id)}
                                                     onChange={e => setSelectedTasks(prev =>
                                                         e.target.checked ? [...prev, task.id] : prev.filter(id => id !== task.id)
-                                                    )}
-                                                    className="rounded"
-                                                />
+                                                    )} className="rounded" />
                                                 <div>
                                                     <p className="text-sm text-foreground">{task.title}</p>
                                                     <p className="text-xs text-muted-foreground">{task.area}</p>
@@ -226,42 +244,23 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cl
 
                             {/* Notiz */}
                             <div>
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Notiz</p>
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Interne Notiz <span className="font-normal normal-case">(optional)</span></p>
                                 <textarea
                                     value={form.notes}
                                     onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                                    placeholder="Interne Notiz..."
+                                    placeholder="Nur für Manager sichtbar…"
                                     rows={2}
-                                    className="w-full px-3 py-2 rounded-xl bg-secondary/50 border border-border text-foreground text-sm placeholder:text-muted-foreground resize-none"
+                                    className="w-full px-3 py-2.5 rounded-xl bg-secondary/50 border border-border text-foreground text-sm placeholder:text-muted-foreground resize-none"
                                 />
                             </div>
 
-                            {/* Buttons */}
-                            <div className="flex gap-2 pt-2">
-                                {existing && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => onDelete(existing.id)}
-                                        className="text-destructive border-destructive/30 hover:bg-destructive/10"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                )}
-                                <Button onClick={handleSave} className="flex-1 bg-primary hover:bg-primary/90 gap-2">
-                                    <Save className="w-4 h-4" />
-                                    Speichern
-                                </Button>
-                            </div>
+                            {/* Speichern */}
+                            <Button onClick={handleSave}
+                                className="w-full bg-amber-600 hover:bg-amber-700 text-white min-h-[48px] font-semibold">
+                                <Save className="w-4 h-4 mr-2" />
+                                {existing ? 'Änderungen speichern' : 'Sondertag anlegen'}
+                            </Button>
                         </>
-                    )}
-
-                    {/* Hinweis Zeiterfassung */}
-                    {existing && isClosed && (
-                        <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                            <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                            <p className="text-xs text-blue-300">Zeiterfassung ist auch an diesem Tag möglich — Mitarbeiter können uneingeschränkt stempeln.</p>
-                        </div>
                     )}
                 </div>
             </DrawerContent>
@@ -269,145 +268,189 @@ function DayDrawer({ day, existing, open, onClose, onSave, onDelete, canEdit, cl
     );
 }
 
-// ── Monatskalender ─────────────────────────────────────────────────────────
+// ── Monatskalender ────────────────────────────────────────────────────────
 
 function MonthCalendar({ currentMonth, specialDays, onDayClick, openingHours }) {
-    const days = eachDayOfInterval({
-        start: startOfMonth(currentMonth),
-        end: endOfMonth(currentMonth),
-    });
+    const start  = startOfMonth(currentMonth);
+    const end    = endOfMonth(currentMonth);
+    const days   = eachDayOfInterval({ start, end });
 
-    const firstDayOfWeek = startOfMonth(currentMonth).getDay();
-    const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    // Mo=0..So=6
+    const rawOffset = getDay(start);
+    const offset    = rawOffset === 0 ? 6 : rawOffset - 1;
 
-    const DE_DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-    const holidays = [
+    const holidays = getHolidaysBW ? [
         ...getHolidaysBW(currentMonth.getFullYear()),
         ...getHolidaysBW(currentMonth.getFullYear() + 1),
-    ];
+    ] : [];
 
-    const getSpecialDay = (date) => specialDays.find(s => s.date === format(date, 'yyyy-MM-dd'));
-    const getHoliday = (date) => getHolidayName(date, holidays);
-    const getOpeningHour = (date) => {
-        const weekdayName = DE_DAYS[date.getDay()];
-        return openingHours?.find(o => o.day_of_week === weekdayName);
+    const getSpecialDay = (day) =>
+        specialDays.find(d => d.date === format(day, 'yyyy-MM-dd'));
+
+    const getHoliday = (day) => {
+        const ds = format(day, 'yyyy-MM-dd');
+        const h  = holidays.find(h => format(h.date, 'yyyy-MM-dd') === ds);
+        return h?.name || null;
+    };
+
+    const DE_DAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    const getOpeningHour = (day) => {
+        if (!openingHours?.length) return null;
+        return openingHours.find(o => o.day_of_week === DE_DAYS[getDay(day)]) || null;
     };
 
     return (
         <div>
-            {/* Wochentage Header */}
+            {/* Wochentag-Header */}
             <div className="grid grid-cols-7 mb-1">
-                {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
+                {['Mo','Di','Mi','Do','Fr','Sa','So'].map(d => (
                     <div key={d} className="text-center text-[10px] font-bold text-muted-foreground py-1">{d}</div>
                 ))}
             </div>
+
+            {/* Tage */}
             <div className="grid grid-cols-7 gap-0.5">
                 {Array.from({ length: offset }).map((_, i) => <div key={`e-${i}`} />)}
                 {days.map(day => {
-                    const special = getSpecialDay(day);
-                    const holiday = getHoliday(day);
-                    const oh = getOpeningHour(day);
-                    const cfg = special ? getDayTypeConfig(special.day_type) : null;
-                    const today = isToday(day);
+                    const special       = getSpecialDay(day);
+                    const holiday       = getHoliday(day);
+                    const oh            = getOpeningHour(day);
+                    const cfg           = special ? getDayTypeConfig(special.day_type) : null;
+                    const today         = isToday(day);
                     const isRegularClosed = !special && oh?.is_closed;
-                    const isHolidayDay = !special && !!holiday;
+                    const isHolidayDay  = !special && !!holiday;
+                    const shortLabel    = special ? getDayTypeConfig(special.day_type).short : '';
 
                     return (
                         <button
                             key={day.toISOString()}
                             onClick={() => onDayClick(day, special)}
                             className={cn(
-                                'relative aspect-square flex flex-col items-center justify-center rounded-xl transition-all active:scale-95 text-xs font-medium',
-                                today && !special && !isHolidayDay ? 'ring-2 ring-primary bg-primary/10 text-primary font-bold' : '',
-                                special ? `${cfg.color} text-white` :
-                                isHolidayDay ? 'bg-red-500/20 text-red-300' :
-                                isRegularClosed ? 'bg-secondary/40 text-muted-foreground' :
-                                'hover:bg-accent/50 text-foreground',
+                                'relative flex flex-col items-center justify-start pt-1 pb-0.5 rounded-xl transition-all active:scale-95 min-h-[52px]',
+                                today && !special && !isHolidayDay
+                                    ? 'ring-2 ring-amber-500 bg-amber-500/10'
+                                    : '',
+                                special
+                                    ? `${cfg.color} text-white`
+                                    : isHolidayDay
+                                        ? 'bg-red-500/15 text-red-300'
+                                        : isRegularClosed
+                                            ? 'bg-secondary/30 text-muted-foreground/60'
+                                            : 'hover:bg-accent/50 text-foreground',
                             )}
-                            title={holiday || (oh?.is_closed ? 'Regulär geschlossen' : oh ? `${oh.open_time || ''}–${oh.close_time || ''}` : '')}
                         >
-                            <span>{format(day, 'd')}</span>
-                            {/* Dot für Feiertag */}
-                            {isHolidayDay && (
-                                <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-red-400" />
+                            <span className={cn('text-xs font-bold', today && !special ? 'text-amber-400' : '')}>
+                                {format(day, 'd')}
+                            </span>
+                            {/* Inline-Label */}
+                            {shortLabel && (
+                                <span className="text-[8px] leading-tight text-white/80 px-0.5 text-center truncate w-full">
+                                    {shortLabel}
+                                </span>
                             )}
-                            {/* Dot für Sondertag mit Titel */}
-                            {special && special.title && !isHolidayDay && (
-                                <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white/60" />
+                            {/* Feiertag Emoji */}
+                            {isHolidayDay && (
+                                <span className="text-[10px]">🎉</span>
+                            )}
+                            {/* Regular closed dot */}
+                            {isRegularClosed && !special && (
+                                <div className="w-1 h-1 rounded-full bg-muted-foreground/40 mt-0.5" />
                             )}
                         </button>
                     );
                 })}
             </div>
-            {/* Öffnungszeiten-Legende */}
-            {openingHours && openingHours.length > 0 && (
-                <div className="mt-4 pt-3 border-t border-border">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Öffnungszeiten dieser Woche</p>
-                    <div className="grid grid-cols-7 gap-0.5 text-center">
-                        {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((label, idx) => {
-                            const dayName = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'][idx];
-                            const oh = openingHours.find(o => o.day_of_week === dayName);
-                            return (
-                                <div key={label}>
-                                    <p className="text-[9px] text-muted-foreground">{label}</p>
-                                    {oh?.is_closed ? (
-                                        <p className="text-[9px] text-muted-foreground font-medium">–</p>
-                                    ) : oh ? (
-                                        <p className="text-[9px] text-green-400 font-medium leading-tight">{oh.open_time?.slice(0,5) || '?'}</p>
-                                    ) : (
-                                        <p className="text-[9px] text-muted-foreground/40">–</p>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
 
-// ── Liste kommender Sondertage ─────────────────────────────────────────────
+// ── Monatsübersicht ────────────────────────────────────────────────────────
+
+function MonthSummary({ specialDays, currentMonth }) {
+    const monthStr = format(currentMonth, 'yyyy-MM');
+    const thisMonth = specialDays.filter(d => d.date.startsWith(monthStr) && d.day_type !== 'normal');
+
+    if (thisMonth.length === 0) return null;
+
+    // Gruppieren
+    const byType = thisMonth.reduce((acc, d) => {
+        const cfg = getDayTypeConfig(d.day_type);
+        if (!acc[d.day_type]) acc[d.day_type] = { cfg, days: [] };
+        acc[d.day_type].days.push(d);
+        return acc;
+    }, {});
+
+    return (
+        <div className="mx-0 mt-3 p-3 rounded-xl bg-secondary/30 border border-border/50">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">
+                {format(currentMonth, 'MMMM', { locale: de })} — {thisMonth.length} Sondertag{thisMonth.length !== 1 ? 'e' : ''}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+                {Object.entries(byType).map(([type, { cfg, days }]) => (
+                    <div key={type} className={cn(
+                        'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium text-white',
+                        cfg.color
+                    )}>
+                        <span>{cfg.emoji}</span>
+                        <span>{cfg.label}</span>
+                        {days.length > 1 && <span className="bg-white/20 px-1 rounded-full">{days.length}×</span>}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ── Kommende Sondertage (Scroll-Liste unter Kalender) ─────────────────────
 
 function UpcomingList({ specialDays, onDayClick }) {
     const upcoming = [...specialDays]
         .filter(d => d.day_type !== 'normal' && d.date >= format(new Date(), 'yyyy-MM-dd'))
         .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(0, 10);
+        .slice(0, 8);
 
-    if (upcoming.length === 0) {
-        return (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-                Keine kommenden Sondertage eingetragen
-            </div>
-        );
-    }
+    if (upcoming.length === 0) return (
+        <div className="text-center py-6 text-muted-foreground text-sm">
+            Keine kommenden Sondertage eingetragen
+        </div>
+    );
 
     return (
         <div className="space-y-2">
             {upcoming.map(d => {
-                const cfg = getDayTypeConfig(d.day_type);
+                const cfg  = getDayTypeConfig(d.day_type);
                 const date = parseISO(d.date);
+                const daysUntil = Math.round((date - new Date()) / 86400000);
                 return (
-                    <button
-                        key={d.id}
-                        onClick={() => onDayClick(date, d)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-primary/50 transition-all text-left"
-                    >
-                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', cfg.color)}>
-                            <span className="text-white font-bold text-sm">{format(date, 'd')}</span>
+                    <button key={d.id} onClick={() => onDayClick(date, d)}
+                        className="w-full flex items-center gap-3 p-3 rounded-xl bg-card border border-border hover:border-amber-500/40 transition-all text-left active:scale-[0.98]">
+                        <div className={cn('w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0', cfg.color)}>
+                            <span className="text-white font-bold text-sm leading-none">{format(date, 'd')}</span>
+                            <span className="text-white/70 text-[9px]">{format(date, 'MMM', { locale: de })}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                                <Badge className={cn('text-[10px] px-1.5 py-0', cfg.color, 'text-white border-0')}>{cfg.label}</Badge>
-                                {d.is_closed && <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">Geschlossen</Badge>}
+                            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                <span className="text-base">{cfg.emoji}</span>
+                                <span className="text-xs font-semibold text-foreground">{cfg.label}</span>
                             </div>
-                            <p className="text-sm font-semibold text-foreground truncate">{d.title || format(date, "EEEE, d. MMM", { locale: de })}</p>
+                            <p className="text-sm text-foreground truncate">
+                                {d.title || format(date, "EEEE, d. MMMM", { locale: de })}
+                            </p>
                             {d.opening_time_override && (
-                                <p className="text-xs text-muted-foreground">{d.opening_time_override}{d.closing_time_override ? ` – ${d.closing_time_override}` : ''}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    <Clock className="w-3 h-3 inline mr-0.5" />
+                                    {d.opening_time_override}{d.closing_time_override ? ` – ${d.closing_time_override}` : ''}
+                                </p>
                             )}
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div className="text-right shrink-0">
+                            <span className={cn(
+                                'text-xs font-semibold',
+                                daysUntil === 0 ? 'text-amber-400' : daysUntil <= 3 ? 'text-orange-400' : 'text-muted-foreground'
+                            )}>
+                                {daysUntil === 0 ? 'Heute' : daysUntil === 1 ? 'Morgen' : `in ${daysUntil}d`}
+                            </span>
+                        </div>
                     </button>
                 );
             })}
@@ -418,31 +461,27 @@ function UpcomingList({ specialDays, onDayClick }) {
 // ── Feiertage ─────────────────────────────────────────────────────────────
 
 function HolidayList() {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const year = new Date().getFullYear();
+    const today    = format(new Date(), 'yyyy-MM-dd');
+    const year     = new Date().getFullYear();
     const holidays = [
         ...getHolidaysBW(year),
         ...getHolidaysBW(year + 1),
-    ]
-    .filter(h => format(h.date, 'yyyy-MM-dd') >= today)
-    .slice(0, 8);
+    ].filter(h => format(h.date, 'yyyy-MM-dd') >= today).slice(0, 6);
 
     return (
-        <div className="mt-4">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Nächste Feiertage (BW)</p>
-            <div className="space-y-1.5">
-                {holidays.map((h, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
-                        <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-red-300">{format(h.date, 'd')}</span>
-                        </div>
-                        <div>
-                            <p className="text-sm font-semibold text-foreground">{h.name}</p>
-                            <p className="text-xs text-muted-foreground">{format(h.date, "EEEE, d. MMMM yyyy", { locale: de })}</p>
-                        </div>
+        <div className="space-y-1.5">
+            {holidays.map((h, i) => (
+                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl bg-red-500/8 border border-red-500/15">
+                    <div className="w-9 h-9 rounded-xl bg-red-500/20 flex flex-col items-center justify-center shrink-0">
+                        <span className="text-xs font-bold text-red-300 leading-none">{format(h.date, 'd')}</span>
+                        <span className="text-[9px] text-red-300/70">{format(h.date, 'MMM', { locale: de })}</span>
                     </div>
-                ))}
-            </div>
+                    <div>
+                        <p className="text-sm font-semibold text-foreground">{h.name}</p>
+                        <p className="text-xs text-muted-foreground">{format(h.date, "EEEE, d. MMMM yyyy", { locale: de })}</p>
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }
@@ -450,16 +489,15 @@ function HolidayList() {
 // ── MAIN ──────────────────────────────────────────────────────────────────
 
 export default function BusinessCalendar() {
-    const permissions = usePermissions();
-    const queryClient = useQueryClient();
+    const permissions  = usePermissions();
+    const queryClient  = useQueryClient();
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [selectedDay, setSelectedDay] = useState(null);
+    const [selectedDay, setSelectedDay]   = useState(null);
     const [selectedExisting, setSelectedExisting] = useState(null);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [view, setView] = useState('kalender'); // 'kalender' | 'liste'
+    const [drawerOpen, setDrawerOpen]     = useState(false);
+    const [autoFilling, setAutoFilling]   = useState(false);
 
     const canEdit = permissions.isManager || permissions.isAdmin;
-    const [autoFilling, setAutoFilling] = useState(false);
 
     const { data: specialDays = [] } = useQuery({
         queryKey: ['business-calendar'],
@@ -478,69 +516,20 @@ export default function BusinessCalendar() {
         enabled: canEdit,
     });
 
-    // Wochentag-Index (0=So, 1=Mo...) → OpeningHours-Eintrag
-    const DE_DAYS = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-
-    const handleAutoFill = async () => {
-        if (openingHours.length === 0) {
-            alert('Keine Standardöffnungszeiten hinterlegt. Bitte zuerst unter Einstellungen → Öffnungszeiten eintragen.');
-            return;
-        }
-        setAutoFilling(true);
-        const monthDays = eachDayOfInterval({
-            start: startOfMonth(currentMonth),
-            end: endOfMonth(currentMonth),
-        });
-        const existingDates = new Set(specialDays.map(d => d.date));
-        const toCreate = [];
-
-        for (const day of monthDays) {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            if (existingDates.has(dateStr)) continue; // bereits eingetragen
-
-            const weekdayName = DE_DAYS[getDay(day)];
-            const oh = openingHours.find(o => o.day_of_week === weekdayName);
-            if (!oh) continue;
-
-            toCreate.push({
-                date: dateStr,
-                day_type: oh.is_closed ? 'geschlossen' : 'normal',
-                title: '',
-                is_closed: oh.is_closed || false,
-                is_special_opening: false,
-                is_pre_holiday: false,
-                is_holiday: false,
-                is_event_day: false,
-                is_long_night: false,
-                is_inventory_day: false,
-                is_cleaning_only_day: false,
-                opening_time_override: oh.is_closed ? '' : (oh.open_time || ''),
-                closing_time_override: oh.is_closed ? '' : (oh.close_time || ''),
-                notes: oh.is_closed ? 'Regulär geschlossen' : '',
-                updated_by: permissions.employeeName || 'Auto-Befüllung',
-            });
-        }
-
-        // In Batches von 10 erstellen
-        for (let i = 0; i < toCreate.length; i += 10) {
-            await Promise.all(toCreate.slice(i, i + 10).map(d => base44.entities.BusinessCalendarDay.create(d)));
-        }
-
-        queryClient.invalidateQueries({ queryKey: ['business-calendar'] });
-        setAutoFilling(false);
-    };
+    const DE_DAYS = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
 
     const saveMutation = useMutation({
         mutationFn: async (data) => {
-            if (selectedExisting) {
-                return base44.entities.BusinessCalendarDay.update(selectedExisting.id, { ...data, updated_by: permissions.employeeName || 'Manager' });
-            }
-            return base44.entities.BusinessCalendarDay.create({ ...data, updated_by: permissions.employeeName || 'Manager' });
+            const existing = specialDays.find(d => d.date === data.date);
+            if (existing) return base44.entities.BusinessCalendarDay.update(existing.id, data);
+            return base44.entities.BusinessCalendarDay.create(data);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['business-calendar'] });
             setDrawerOpen(false);
+            toast.success('Gespeichert');
         },
+        onError: () => toast.error('Fehler beim Speichern'),
     });
 
     const deleteMutation = useMutation({
@@ -548,7 +537,9 @@ export default function BusinessCalendar() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['business-calendar'] });
             setDrawerOpen(false);
+            toast.success('Sondertag entfernt');
         },
+        onError: () => toast.error('Fehler beim Löschen'),
     });
 
     const handleDayClick = (day, existing) => {
@@ -557,145 +548,148 @@ export default function BusinessCalendar() {
         setDrawerOpen(true);
     };
 
-    // Stats
-    const thisMonthDays = specialDays.filter(d => d.date.startsWith(format(currentMonth, 'yyyy-MM')));
-    const closedCount = thisMonthDays.filter(d => d.is_closed).length;
-    const specialCount = thisMonthDays.filter(d => d.day_type !== 'normal').length;
+    const handleAutoFill = async () => {
+        if (openingHours.length === 0) {
+            toast.error('Keine Standardöffnungszeiten hinterlegt. Bitte zuerst in Einstellungen eintragen.');
+            return;
+        }
+        setAutoFilling(true);
+        const monthDays      = eachDayOfInterval({ start: startOfMonth(currentMonth), end: endOfMonth(currentMonth) });
+        const existingDates  = new Set(specialDays.map(d => d.date));
+        let created = 0;
+
+        for (const day of monthDays) {
+            const dateStr    = format(day, 'yyyy-MM-dd');
+            if (existingDates.has(dateStr)) continue;
+            const weekdayName = DE_DAYS[getDay(day)];
+            const oh          = openingHours.find(o => o.day_of_week === weekdayName);
+            if (oh?.is_closed) {
+                await base44.entities.BusinessCalendarDay.create({
+                    date: dateStr,
+                    day_type: 'geschlossen',
+                    title: `Regulär geschlossen (${weekdayName})`,
+                    is_closed: true,
+                });
+                created++;
+            }
+        }
+        queryClient.invalidateQueries({ queryKey: ['business-calendar'] });
+        setAutoFilling(false);
+        toast.success(created > 0 ? `${created} Tage automatisch befüllt` : 'Keine neuen Einträge — alles bereits vorhanden');
+    };
+
+    // Stats für diesen Monat
+    const monthStr   = format(currentMonth, 'yyyy-MM');
+    const thisMonth  = specialDays.filter(d => d.date.startsWith(monthStr));
+    const closedCount  = thisMonth.filter(d => ['geschlossen','geschlossen_mit_reinigung','betriebsferien'].includes(d.day_type)).length;
+    const specialCount = thisMonth.filter(d => !['geschlossen','geschlossen_mit_reinigung','betriebsferien','normal'].includes(d.day_type)).length;
 
     return (
-        <div className="min-h-screen bg-background pb-28 md:pb-8 animate-page-enter">
-            <div className="max-w-2xl mx-auto px-3 py-4">
+        <div className="min-h-screen bg-background pb-24 md:pb-8">
+            <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-5">
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h1 className="text-xl font-bold text-foreground">Betriebskalender</h1>
-                        <p className="text-xs text-muted-foreground">Sondertage & besondere Öffnungszeiten</p>
+                {/* ── Header ──────────────────────────────────────────── */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center">
+                            <CalendarDays className="w-5 h-5 text-amber-500" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold text-foreground">Betriebskalender</h1>
+                            <p className="text-xs text-muted-foreground">Sondertage & Öffnungszeiten</p>
+                        </div>
                     </div>
                     {canEdit && (
                         <div className="flex gap-2">
-                            <Button
-                                onClick={handleAutoFill}
-                                disabled={autoFilling}
-                                size="sm"
-                                variant="outline"
-                                className="gap-1 text-xs border-primary/40 text-primary hover:bg-primary/10"
-                                title="Monat anhand Standardöffnungszeiten automatisch befüllen"
-                            >
+                            <Button variant="outline" size="sm" onClick={handleAutoFill} disabled={autoFilling}
+                                className="h-9 gap-1.5 text-xs">
                                 <Wand2 className="w-3.5 h-3.5" />
-                                {autoFilling ? 'Befülle...' : 'Auto'}
+                                {autoFilling ? 'Läuft…' : 'Auto-Fill'}
                             </Button>
-                            <Button
-                                onClick={() => handleDayClick(new Date(), null)}
-                                size="sm"
-                                className="bg-primary gap-1"
-                            >
-                                <Plus className="w-4 h-4" /> Sondertag
+                            <Button size="sm" onClick={() => handleDayClick(new Date(), null)}
+                                className="h-9 bg-amber-600 hover:bg-amber-700 text-white gap-1.5">
+                                <Plus className="w-4 h-4" />
+                                <span className="hidden sm:inline">Sondertag</span>
                             </Button>
                         </div>
                     )}
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                    <Card className="bg-card border-border">
-                        <CardContent className="p-3 text-center">
-                            <p className="text-xl font-bold text-foreground">{specialCount}</p>
-                            <p className="text-[10px] text-muted-foreground">Sondertage</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card border-border">
-                        <CardContent className="p-3 text-center">
-                            <p className="text-xl font-bold text-red-400">{closedCount}</p>
-                            <p className="text-[10px] text-muted-foreground">Geschlossen</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-card border-border">
-                        <CardContent className="p-3 text-center">
-                            <p className="text-xl font-bold text-amber-400">{specialDays.filter(d => d.date >= format(new Date(), 'yyyy-MM-dd') && d.day_type !== 'normal').length}</p>
-                            <p className="text-[10px] text-muted-foreground">Kommend</p>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* View Toggle */}
-                <div className="flex bg-secondary/30 rounded-xl p-1 mb-4 gap-1">
-                    {[{ id: 'kalender', label: 'Kalender' }, { id: 'liste', label: 'Übersicht' }].map(v => (
-                        <button
-                            key={v.id}
-                            onClick={() => setView(v.id)}
-                            className={cn(
-                                'flex-1 py-2 rounded-lg text-sm font-medium transition-all',
-                                view === v.id ? 'bg-card text-foreground shadow' : 'text-muted-foreground'
-                            )}
-                        >
-                            {v.label}
+                {/* ── Kalender Card ────────────────────────────────────── */}
+                <div className="bg-card border border-border rounded-2xl p-4">
+                    {/* Monat Navigation */}
+                    <div className="flex items-center justify-between mb-4">
+                        <button onClick={() => setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+                            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-accent/50 transition-colors">
+                            <ChevronLeft className="w-5 h-5" />
                         </button>
-                    ))}
+                        <div className="text-center">
+                            <h2 className="text-base font-bold text-foreground">
+                                {format(currentMonth, 'MMMM yyyy', { locale: de })}
+                            </h2>
+                            <p className="text-xs text-muted-foreground">
+                                {specialCount > 0 && `${specialCount} Event${specialCount > 1 ? 's' : ''}`}
+                                {specialCount > 0 && closedCount > 0 && ' · '}
+                                {closedCount > 0 && `${closedCount}× geschlossen`}
+                            </p>
+                        </div>
+                        <button onClick={() => setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+                            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-accent/50 transition-colors">
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <MonthCalendar
+                        currentMonth={currentMonth}
+                        specialDays={specialDays}
+                        onDayClick={handleDayClick}
+                        openingHours={openingHours}
+                    />
+
+                    {/* Monats-Zusammenfassung direkt unter Kalender */}
+                    <MonthSummary specialDays={specialDays} currentMonth={currentMonth} />
                 </div>
 
-                {/* Kalender View */}
-                {view === 'kalender' && (
-                    <Card className="bg-card border-border">
-                        <CardContent className="p-4">
-                            {/* Monat Navigation */}
-                            <div className="flex items-center justify-between mb-4">
-                                <button onClick={() => setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-                                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent/50">
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <h2 className="text-base font-bold text-foreground">
-                                    {format(currentMonth, 'MMMM yyyy', { locale: de })}
-                                </h2>
-                                <button onClick={() => setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-                                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-accent/50">
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <MonthCalendar
-                                currentMonth={currentMonth}
-                                specialDays={specialDays}
-                                onDayClick={handleDayClick}
-                                openingHours={openingHours}
-                            />
-                        </CardContent>
-                    </Card>
-                )}
+                {/* ── Kommende Sondertage ──────────────────────────────── */}
+                <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        Nächste Sondertage
+                    </p>
+                    <UpcomingList specialDays={specialDays} onDayClick={handleDayClick} />
+                </div>
 
-                {/* Liste View */}
-                {view === 'liste' && (
-                    <>
-                        <UpcomingList specialDays={specialDays} onDayClick={handleDayClick} />
-                        {/* Nächste Feiertage */}
-                        <HolidayList />
-                    </>
-                )}
+                {/* ── Feiertage BW ─────────────────────────────────────── */}
+                <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                        Nächste Feiertage (BW)
+                    </p>
+                    <HolidayList />
+                </div>
 
-                {/* Legende */}
-                <div className="mt-4">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Legende</p>
-                    <div className="grid grid-cols-2 gap-1.5">
+                {/* ── Legende kompakt ──────────────────────────────────── */}
+                <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Legende</p>
+                    <div className="grid grid-cols-2 gap-1">
                         {DAY_TYPES.filter(d => d.id !== 'normal').map(dt => (
                             <div key={dt.id} className="flex items-center gap-2">
-                                <div className={cn('w-3 h-3 rounded-full shrink-0', dt.dot)} />
+                                <span className="text-sm">{dt.emoji}</span>
                                 <span className="text-xs text-muted-foreground">{dt.label}</span>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Hinweis Zeiterfassung */}
-                <Card className="mt-4 border-blue-500/20 bg-blue-500/5">
-                    <CardContent className="p-3 flex items-start gap-2">
-                        <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                        <p className="text-xs text-blue-300">
-                            Zeiterfassung ist unabhängig vom Betriebskalender — Mitarbeiter können immer stempeln, auch an geschlossenen Tagen.
-                        </p>
-                    </CardContent>
-                </Card>
+                {/* ── Info ─────────────────────────────────────────────── */}
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-500/8 border border-blue-500/15">
+                    <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-300">
+                        Zeiterfassung ist unabhängig vom Betriebskalender — Mitarbeiter können immer stempeln, auch an geschlossenen Tagen.
+                    </p>
+                </div>
+
             </div>
 
-            {/* Day Drawer */}
+            {/* ── Drawer ───────────────────────────────────────────────── */}
             <DayDrawer
                 day={selectedDay}
                 existing={selectedExisting}

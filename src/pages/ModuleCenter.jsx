@@ -229,7 +229,7 @@ const MODULE_REGISTRY = [
         category: 'analytics',
         page: 'DailyAnalysis',
         sensitive: true,
-        subpages: ['Reports', 'SalesAnalysis', 'Closing'],
+        subpages: ['Reports', 'SalesAnalysis'],
         dependents: ['buchhaltung'],
     },
     {

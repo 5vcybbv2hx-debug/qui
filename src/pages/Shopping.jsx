@@ -311,7 +311,7 @@ export default function Shopping() {
         let article = articles.find(a => a.barcode === eanInput.trim());
         if (!article) article = articles.find(a => a.name.toLowerCase() === input);
         if (!article) article = articles.find(a => a.name.toLowerCase().includes(input));
-        if (!article) { alert('Artikel nicht gefunden'); setEanInput(''); return; }
+        if (!article) { toast.error('Artikel nicht gefunden'); setEanInput(''); return; }
 
         const existing = items.find(i => i.item_name === article.name && i.status === 'offen');
         if (existing) {

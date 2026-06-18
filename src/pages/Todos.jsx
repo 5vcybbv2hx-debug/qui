@@ -550,68 +550,101 @@ export default function Todos() {
                         )}
                     </div>
                 ) : !showArchived ? (
-                    /* Aktive Todos — gruppiert nach Status */
-                    <div className="space-y-6">
-                        {['offen', 'in_bearbeitung', 'erledigt'].map(status => {
-                            const statusTodos = statusFilter === 'alle'
-                                ? filteredTodos.filter(t => t.status === status)
-                                : filteredTodos;
-                            if (statusFilter !== 'alle' && status !== statusFilter) return null;
-                            if (statusTodos.length === 0) return null;
-
-                            const sectionLabel = {
-                                offen: 'Offen',
-                                in_bearbeitung: 'In Bearbeitung',
-                                erledigt: 'Erledigt',
-                            }[status];
-
-                            const sectionDot = {
-                                offen: 'bg-slate-400',
-                                in_bearbeitung: 'bg-blue-400',
-                                erledigt: 'bg-green-400',
-                            }[status];
+                    /* Aktive Todos — gruppiert nach Kategorie (Akkordeon) */
+                    <div className="space-y-2">
+                        {todosByCategory.map(([category, categoryTodos]) => {
+                            const isOpen = expandedCategories.has(category);
+                            const doneCount  = categoryTodos.filter(t => t.status === 'erledigt').length;
+                            const totalCount = categoryTodos.length;
+                            const allDone    = doneCount === totalCount;
+                            const hasDringend = categoryTodos.some(t => t.priority === 'dringend' && t.status !== 'erledigt');
 
                             return (
-                                <div key={status}>
-                                    {statusFilter === 'alle' && (
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className={cn('w-2 h-2 rounded-full', sectionDot)} />
-                                            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                                                {sectionLabel} ({statusTodos.length})
-                                            </h3>
+                                <div key={category} className="rounded-2xl border border-border bg-card overflow-hidden">
+                                    {/* ── Kategorie-Header ──────────────────────────────── */}
+                                    <button
+                                        onClick={() => toggleCategory(category)}
+                                        className={cn(
+                                            'w-full flex items-center gap-3 px-4 py-3.5 min-h-[56px] transition-colors text-left',
+                                            isOpen ? 'bg-secondary/50' : 'hover:bg-secondary/30'
+                                        )}
+                                    >
+                                        {/* Kategorie-Name */}
+                                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                                            <span className="font-semibold text-sm text-foreground truncate">
+                                                {category}
+                                            </span>
+                                            {hasDringend && (
+                                                <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-red-500/15 text-red-500 font-bold">
+                                                    Dringend
+                                                </span>
+                                            )}
                                         </div>
-                                    )}
-                                    <div className="space-y-2">
-                                        {statusTodos.map((todo, idx) => (
-                                            <div key={todo.id}
-                                                className="flex items-center gap-2 animate-stagger"
-                                                style={{ '--delay': `${idx * 30}ms` }}>
-                                                {selectMode && (
-                                                    <button onClick={() => toggleSelect(todo.id)}
-                                                        className="shrink-0 w-6 h-6 flex items-center justify-center">
-                                                        {selectedIds.has(todo.id)
-                                                            ? <CheckSquare className="w-5 h-5 text-amber-400" />
-                                                            : <Square className="w-5 h-5 text-muted-foreground" />}
-                                                    </button>
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <TodoCard
-                                                        todo={todo}
-                                                        employees={employees}
-                                                        onStatusChange={selectMode ? null : handleStatusChange}
-                                                        onEdit={selectMode ? null : handleEdit}
-                                                        onDelete={selectMode ? null : (id) => setDeleteConfirm(id)}
-                                                        onArchive={selectMode ? null : (id) => setArchiveConfirm(id)}
-                                                        onQuickUpdate={selectMode ? null : handleQuickUpdate}
-                                                        showArchiveButton={!selectMode && todo.status === 'erledigt'}
-                                                        sortBy={sortBy}
-                                                        allTodos={statusTodos}
-                                                        idx={idx}
+
+                                        {/* Fortschritts-Pill */}
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <div className="flex items-center gap-1.5">
+                                                {/* Mini Progress Bar */}
+                                                <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                                                    <div
+                                                        className={cn(
+                                                            'h-full rounded-full transition-all duration-500',
+                                                            allDone ? 'bg-emerald-500' : 'bg-amber-500'
+                                                        )}
+                                                        style={{ width: totalCount > 0 ? `${(doneCount / totalCount) * 100}%` : '0%' }}
                                                     />
                                                 </div>
+                                                <span className={cn(
+                                                    'text-xs font-semibold tabular-nums',
+                                                    allDone ? 'text-emerald-500' : 'text-muted-foreground'
+                                                )}>
+                                                    {doneCount}/{totalCount}
+                                                </span>
                                             </div>
-                                        ))}
-                                    </div>
+
+                                            {/* Pfeil */}
+                                            <ChevronRight className={cn(
+                                                'w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0',
+                                                isOpen && 'rotate-90'
+                                            )} />
+                                        </div>
+                                    </button>
+
+                                    {/* ── Aufgaben-Liste ──────────────────────────────── */}
+                                    {isOpen && (
+                                        <div className="border-t border-border divide-y divide-border/50">
+                                            {categoryTodos.map((todo, todoIdx) => (
+                                                <div
+                                                    key={todo.id}
+                                                    className="flex items-center gap-2 px-3 py-2"
+                                                >
+                                                    {selectMode && (
+                                                        <button onClick={() => toggleSelect(todo.id)}
+                                                            className="shrink-0 w-6 h-6 flex items-center justify-center">
+                                                            {selectedIds.has(todo.id)
+                                                                ? <CheckSquare className="w-5 h-5 text-amber-400" />
+                                                                : <Square className="w-5 h-5 text-muted-foreground" />}
+                                                        </button>
+                                                    )}
+                                                    <div className="flex-1 min-w-0">
+                                                        <TodoCard
+                                                            todo={todo}
+                                                            employees={employees}
+                                                            onStatusChange={selectMode ? null : handleStatusChange}
+                                                            onEdit={selectMode ? null : handleEdit}
+                                                            onDelete={selectMode ? null : (id) => setDeleteConfirm(id)}
+                                                            onArchive={selectMode ? null : (id) => setArchiveConfirm(id)}
+                                                            onQuickUpdate={selectMode ? null : handleQuickUpdate}
+                                                            showArchiveButton={!selectMode && todo.status === 'erledigt'}
+                                                            sortBy={sortBy}
+                                                            allTodos={categoryTodos}
+                                                            idx={todoIdx}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}

@@ -22,10 +22,9 @@ const priorityConfig = {
     dringend: { stripe: 'bg-red-500',    label: 'Dringend', cardBg: 'bg-red-500/8 border-red-500/25' },
 };
 
-const statusCycle = { offen: 'in_bearbeitung', in_bearbeitung: 'erledigt', erledigt: 'offen' };
+const statusCycle = { offen: 'erledigt', erledigt: 'offen', in_bearbeitung: 'erledigt' }; // in_bearbeitung → erledigt als Migration
 const statusConfig = {
     offen:          { icon: Circle,      color: 'text-slate-400',  label: 'Offen' },
-    in_bearbeitung: { icon: Loader,      color: 'text-blue-400',   label: 'In Bearbeitung' },
     erledigt:       { icon: CheckCircle, color: 'text-green-500',  label: 'Erledigt' },
 };
 
@@ -45,7 +44,6 @@ export default function TodoCard({
     const [showAttachments,setShowAttachments] = useState(false);
 
     const isCompleted  = todo.status === 'erledigt';
-    const isInProgress = todo.status === 'in_bearbeitung';
     const pCfg        = priorityConfig[todo.priority] || priorityConfig.mittel;
     const StatusIcon  = statusConfig[todo.status]?.icon || Circle;
     const statusColor = statusConfig[todo.status]?.color || 'text-slate-400';
@@ -95,7 +93,7 @@ export default function TodoCard({
                             onClick={() => onStatusChange(todo, statusCycle[todo.status])}
                             className={cn('mt-0.5 shrink-0 transition-all active:scale-75', statusColor)}
                             title={`${statusConfig[todo.status]?.label} → weiterklicken`}>
-                            <StatusIcon className={cn('w-6 h-6', isInProgress && 'animate-spin')} />
+                            <StatusIcon className="w-6 h-6" />
                         </button>
                     )}
                     {!onStatusChange && (
@@ -163,8 +161,6 @@ export default function TodoCard({
                                                     <DropdownMenuItem onClick={() => onStatusChange(todo, 'offen')}>
                                                         <Circle className="w-4 h-4 mr-2 text-slate-400" />Offen
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => onStatusChange(todo, 'in_bearbeitung')}>
-                                                        <Loader className="w-4 h-4 mr-2 text-blue-400" />In Bearbeitung
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => onStatusChange(todo, 'erledigt')}>
                                                         <CheckCircle className="w-4 h-4 mr-2 text-green-500" />Erledigt

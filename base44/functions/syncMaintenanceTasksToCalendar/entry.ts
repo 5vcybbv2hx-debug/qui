@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
                     await base44.asServiceRole.entities.TodoItem.create({
                         title: `⏰ Wartung: ${task.equipment_name}`,
                         description: `${task.task_description}\nWartung fällig am: ${new Date(task.next_maintenance).toLocaleDateString('de-DE')}`,
-                        category: "Sonstiges",
+                        category: "Wartung",
                         priority: "hoch",
                         status: "offen",
                         due_date: reminderDateStr,

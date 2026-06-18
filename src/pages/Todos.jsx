@@ -7,7 +7,7 @@ import { STALE } from '@/lib/queryUtils';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
 import {
     Plus, CheckSquare, Tag, Search, X, ListChecks,
-    Trash2, Archive, CheckCheck, Square, FolderInput, ChevronDown
+    Trash2, Archive, CheckCheck, Square, FolderInput, ChevronDown, ChevronRight
 } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { toast } from 'sonner';

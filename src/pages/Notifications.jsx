@@ -120,7 +120,7 @@ export default function Notifications() {
              return Promise.all(promises);
          },
          onSuccess: () => {
-             queryClient.invalidateQueries(['notifications']);
+             queryClient.invalidateQueries({ queryKey: ['notifications'] });
          }
      });
 

@@ -573,11 +573,12 @@ export default function Todos() {
                                 <TodoCard
                                     key={todo.id}
                                     todo={todo}
-                                    currentUserName={currentUserName}
-                                    isAdmin={isAdmin}
-                                    onToggle={(t) => toggleStatusMutation.mutate(t)}
-                                    onEdit={(t) => { setEditingTodo(t); setShowTodoModal(true); }}
-                                    onArchive={(t) => archiveMutation.mutate(t)}
+                                    employees={employees}
+                                    onStatusChange={handleStatusChange}
+                                    onEdit={handleEdit}
+                                    onArchive={(id) => setArchiveConfirm(id)}
+                                    onDelete={(id) => setDeleteConfirm(id)}
+                                    onQuickUpdate={handleQuickUpdate}
                                 />
                             ))}
                         </div>

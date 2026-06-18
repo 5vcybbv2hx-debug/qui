@@ -159,8 +159,7 @@ export default function TodoCard({
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuLabel className="text-xs text-muted-foreground">Status</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => onStatusChange(todo, 'offen')}>
-                                                        <Circle className="w-4 h-4 mr-2 text-slate-400" />Offen
-                                                    </DropdownMenuItem>
+                                                       <Circle className="w-4 h-4 mr-2 text-slate-400" />Offen
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => onStatusChange(todo, 'erledigt')}>
                                                         <CheckCircle className="w-4 h-4 mr-2 text-green-500" />Erledigt

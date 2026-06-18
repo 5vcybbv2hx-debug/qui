@@ -33,6 +33,7 @@ const STATUS_TABS = [
     { value: 'in_bearbeitung', label: 'Aktiv' },
     { value: 'erledigt',       label: 'Erledigt' },
     { value: 'alle',           label: 'Alle' },
+    { value: 'wartung',        label: '🔧 Wartung' },
 ];
 
 const PRIORITY_FILTERS = [
@@ -234,12 +235,17 @@ export default function Todos() {
 
     // ── Derived data ──────────────────────────────────────────────────────────
     const visibleTodos = useMemo(() => todos.filter(todo => {
+        if (todo.category === 'Wartung') return false; // Wartungs-Todos separat
         const assignees = todo.assigned_to_names?.length > 0
             ? todo.assigned_to_names
             : todo.assigned_to ? [todo.assigned_to] : [];
         if (assignees.length === 0 || isAdmin) return true;
         return assignees.includes(currentUserName);
     }), [todos, currentUserName, isAdmin]);
+
+    const maintenanceTodos = useMemo(() => todos.filter(todo =>
+        todo.category === 'Wartung' && !todo.is_archived
+    ), [todos]);
 
     const visibleArchivedTodos = useMemo(() => dbArchivedTodos.filter(todo => {
         const assignees = todo.assigned_to_names?.length > 0

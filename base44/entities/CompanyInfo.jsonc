@@ -133,6 +133,10 @@
     "module_states": {
       "type": "string",
       "description": "JSON-String mit Aktivierungsstatus der Module (ModuleCenter)"
+    },
+    "print_settings": {
+      "type": "string",
+      "description": "JSON-String mit Druckformat-Einstellungen pro Bereich"
     }
   },
   "required": [

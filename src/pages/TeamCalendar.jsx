@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
-import { Calendar } from 'lucide-react';
+import { Calendar, Trophy } from 'lucide-react';
 import { usePermissions } from '@/components/auth/usePermissions';
 import PermissionDenied from '@/components/auth/PermissionDenied';
 import UnifiedCalendarView from '@/components/calendar/UnifiedCalendarView';
@@ -36,6 +36,9 @@ export default function TeamCalendar() {
     const [selectedDay,       setSelectedDay]       = useState(null);
     const [showDayDrawer,     setShowDayDrawer]     = useState(false);
     const [viewMonth,         setViewMonth]         = useState(new Date());
+    const [showWcMatches,     setShowWcMatches]     = useState(() => {
+        try { return localStorage.getItem('teamcal_wc') !== 'false'; } catch { return true; }
+    });
 
     // Datumsbereich: einen Monat vor/nach dem sichtbaren Monat
     const shiftFrom = format(subMonths(startOfMonth(viewMonth), 1), 'yyyy-MM-dd');
@@ -89,6 +92,11 @@ export default function TeamCalendar() {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleEventClick = event => { setSelectedEvent(event); setShowEventModal(true); };
+    const toggleWcMatches  = () => {
+        const next = !showWcMatches;
+        setShowWcMatches(next);
+        try { localStorage.setItem('teamcal_wc', next ? 'true' : 'false'); } catch {}
+    };
     const handleDayClick   = day   => { setSelectedDay(day);     setShowDayDrawer(true);  };
 
     if (!permissions.canViewShifts) return <PermissionDenied />;
@@ -109,12 +117,26 @@ export default function TeamCalendar() {
                             </p>
                         </div>
                     </div>
-                    <TeamCalendarExport
-                        shifts={shifts}
-                        vacations={vacations}
-                        holidays={holidays}
-                        employees={employees}
-                    />
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={toggleWcMatches}
+                            title={showWcMatches ? 'WM-Spiele ausblenden' : 'WM-Spiele einblenden'}
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all min-h-[44px] ${
+                                showWcMatches
+                                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                                    : 'border-border text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            <Trophy className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">WM</span>
+                        </button>
+                        <TeamCalendarExport
+                            shifts={shifts}
+                            vacations={vacations}
+                            holidays={holidays}
+                            employees={employees}
+                        />
+                    </div>
                 </div>
 
                 {/* ── Kalender ────────────────────────────────────────────── */}
@@ -127,7 +149,7 @@ export default function TeamCalendar() {
                     maintenanceTasks={maintenanceTasks}
                     events={events}
                     reservations={reservations}
-                    wcMatches={wcMatches}
+                    wcMatches={showWcMatches ? wcMatches : []}
                     onEventClick={handleEventClick}
                     selectedEmployees={selectedEmployees}
                     onEmployeeToggle={setSelectedEmployees}

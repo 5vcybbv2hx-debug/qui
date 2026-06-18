@@ -7,7 +7,8 @@ import { STALE } from '@/lib/queryUtils';
 import { useErrorHandler } from '@/components/error/ErrorHandler';
 import {
     Plus, CheckSquare, Tag, Search, X, ListChecks, Wrench,
-    Trash2, Archive, CheckCheck, Square, FolderInput, ChevronDown, ChevronRight
+    Trash2, Archive, CheckCheck, Square, FolderInput, ChevronDown, ChevronRight,
+    Calendar, User2, CalendarDays, Send
 } from 'lucide-react';
 import { queueMutation, syncMutations } from '@/components/utils/offlineSync';
 import { toast } from 'sonner';
@@ -61,6 +62,12 @@ export default function Todos() {
     const [selectedTodo,       setSelectedTodo]       = useState(null);
     const [statusFilter,       setStatusFilter]       = useState('offen');
     const [categoryFilter,     setCategoryFilter]     = useState('alle');
+    // ── Quick-Add State ───────────────────────────────────────────────────────
+    const [quickTitle,        setQuickTitle]        = useState('');
+    const [quickExpanded,     setQuickExpanded]     = useState(false);
+    const [quickCategory,     setQuickCategory]     = useState('');
+    const [quickDue,          setQuickDue]          = useState('');
+    const [quickAssignees,    setQuickAssignees]    = useState([]);
     const [priorityFilter,     setPriorityFilter]     = useState('alle');
     const [personFilter,       setPersonFilter]       = useState('alle');
     const [showArchived,       setShowArchived]       = useState(false);
@@ -232,6 +239,28 @@ export default function Todos() {
         setStatusFilter('offen');
     };
 
+    // ── Quick-Add Submit ──────────────────────────────────────────────────────
+    const handleQuickAdd = () => {
+        const title = quickTitle.trim();
+        if (!title) return;
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const resolvedDue = quickDue === 'heute' ? today : quickDue === 'morgen' ? tomorrow : quickDue || null;
+        createMutation.mutate({
+            title,
+            category: quickCategory || 'Sonstiges',
+            priority: 'mittel',
+            status: 'offen',
+            due_date: resolvedDue,
+            assigned_to_names: quickAssignees.length > 0 ? quickAssignees : [],
+        });
+        setQuickTitle('');
+        setQuickCategory('');
+        setQuickDue('');
+        setQuickAssignees([]);
+        setQuickExpanded(false);
+    };
+
     // ── Derived data ──────────────────────────────────────────────────────────
     const visibleTodos = useMemo(() => todos.filter(todo => {
         if (todo.category === 'Wartung') return false; // Wartungs-Todos separat
@@ -377,13 +406,126 @@ export default function Todos() {
                         <Button
                             size="sm"
                             onClick={() => { setSelectedTodo(null); setModalOpen(true); }}
-                            className="h-9 bg-amber-600 hover:bg-amber-700 text-white gap-1.5">
+                            variant="outline"
+                            className="h-9 gap-1.5">
                             <Plus className="w-4 h-4" />
-                            <span className="hidden sm:inline">Neue Aufgabe</span>
-                            <span className="sm:hidden">Neu</span>
+                            <span className="hidden sm:inline">Vollformular</span>
                         </Button>
                     </div>
                 </div>
+
+                {/* ── Quick-Add ─────────────────────────────────────────── */}
+                {permissions.canCreateTodos !== false && (
+                    <div className={cn(
+                        'rounded-2xl border bg-card transition-all duration-200',
+                        quickExpanded ? 'border-amber-500/50 shadow-sm shadow-amber-500/10' : 'border-border'
+                    )}>
+                        {/* Eingabezeile */}
+                        <div className="flex items-center gap-2 px-3 py-2">
+                            <Plus className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <input
+                                type="text"
+                                value={quickTitle}
+                                onChange={e => { setQuickTitle(e.target.value); if (!quickExpanded && e.target.value) setQuickExpanded(true); }}
+                                onFocus={() => setQuickExpanded(true)}
+                                onKeyDown={e => { if (e.key === 'Enter') handleQuickAdd(); if (e.key === 'Escape') { setQuickExpanded(false); setQuickTitle(''); }}}
+                                placeholder="Neue Aufgabe…"
+                                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none min-h-[36px]"
+                            />
+                            {quickTitle.trim() && (
+                                <button
+                                    onClick={handleQuickAdd}
+                                    className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition-colors">
+                                    <Send className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Erweiterte Optionen — erscheinen beim Tippen */}
+                        {quickExpanded && (
+                            <div className="px-3 pb-3 space-y-2.5 border-t border-border pt-2.5">
+
+                                {/* Kategorie-Chips */}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Tag className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                    {['Einkauf', 'Reparatur', 'Bar', 'Lager', 'Event', 'Sonstiges'].map(cat => (
+                                        <button key={cat}
+                                            onClick={() => setQuickCategory(quickCategory === cat ? '' : cat)}
+                                            className={cn(
+                                                'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                                                quickCategory === cat
+                                                    ? 'bg-amber-500 border-amber-500 text-white'
+                                                    : 'border-border text-muted-foreground hover:text-foreground bg-background'
+                                            )}>
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Datum-Chips */}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                    {[
+                                        { label: 'Heute', value: 'heute' },
+                                        { label: 'Morgen', value: 'morgen' },
+                                    ].map(d => (
+                                        <button key={d.value}
+                                            onClick={() => setQuickDue(quickDue === d.value ? '' : d.value)}
+                                            className={cn(
+                                                'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                                                quickDue === d.value
+                                                    ? 'bg-blue-500 border-blue-500 text-white'
+                                                    : 'border-border text-muted-foreground hover:text-foreground bg-background'
+                                            )}>
+                                            {d.label}
+                                        </button>
+                                    ))}
+                                    <input
+                                        type="date"
+                                        value={['heute','morgen'].includes(quickDue) ? '' : quickDue}
+                                        onChange={e => setQuickDue(e.target.value)}
+                                        className={cn(
+                                            'px-2.5 py-1 rounded-full text-xs font-medium border transition-all bg-background text-muted-foreground',
+                                            quickDue && !['heute','morgen'].includes(quickDue) ? 'border-blue-500 text-blue-500' : 'border-border'
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Personen-Chips */}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <User2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                    {allAssignees.slice(0, 8).map(name => (
+                                        <button key={name}
+                                            onClick={() => setQuickAssignees(prev =>
+                                                prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+                                            )}
+                                            className={cn(
+                                                'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                                                quickAssignees.includes(name)
+                                                    ? 'bg-emerald-500 border-emerald-500 text-white'
+                                                    : 'border-border text-muted-foreground hover:text-foreground bg-background'
+                                            )}>
+                                            {name.split(' ')[0]}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Details-Link */}
+                                <div className="flex justify-between items-center pt-0.5">
+                                    <button
+                                        onClick={() => { setSelectedTodo(null); setModalOpen(true); setQuickExpanded(false); setQuickTitle(''); }}
+                                        className="text-xs text-muted-foreground hover:text-foreground underline">
+                                        Mehr Optionen…
+                                    </button>
+                                    <button onClick={() => { setQuickExpanded(false); setQuickTitle(''); }}
+                                        className="text-xs text-muted-foreground hover:text-foreground">
+                                        Abbrechen
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* ── Suche ──────────────────────────────────────────────── */}
                 <div className="relative">

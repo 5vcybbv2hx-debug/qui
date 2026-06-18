@@ -272,8 +272,9 @@ export default function TerminalClock() {
 
                 const pauseText = pauseMinuten > 0 ? `\n${pauseMinuten}min Pause (bezahlt)` : '';
 
-                // Zeige Verdienst für alle Mitarbeiter mit Stundenlohn
-                if (employeeToProcess.hourly_rate) {
+                // Zeige Verdienst nur bei Stundenlohn (nicht bei Monatsgehalt-Festangestellten)
+                const tcHasMonthly = employeeToProcess.monthly_salary && parseFloat(employeeToProcess.monthly_salary) > 0;
+                if (employeeToProcess.hourly_rate && !tcHasMonthly) {
                     const earnings = (Math.round(hours * 100) / 100) * employeeToProcess.hourly_rate;
                     setEarningsData({
                         name: employeeToProcess.name,

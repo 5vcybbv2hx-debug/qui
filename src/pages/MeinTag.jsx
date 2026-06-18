@@ -104,8 +104,9 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
                 employee_confirmed_at: now.toISOString(),
             });
 
-            // Verdienst zurückgeben wenn Stundenlohn hinterlegt
-            if (employee?.hourly_rate) {
+            // Verdienst Modal: nur bei Stundenlohn (nicht bei Monatsgehalt)
+            const hasMonthly = employee?.monthly_salary && parseFloat(employee.monthly_salary) > 0;
+            if (employee?.hourly_rate && !hasMonthly) {
                 const earnings = Math.round(totalHours * employee.hourly_rate * 100) / 100;
                 return {
                     name: employee.name,

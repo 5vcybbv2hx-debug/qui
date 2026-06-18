@@ -1,3 +1,4 @@
+import { usePrintSettings } from '@/lib/usePrintSettings';
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,6 +10,7 @@ import jsPDF from 'jspdf';
 export default function LabelPrinter({ articles = [] }) {
     const [open, setOpen] = useState(false);
     const [selectedArticles, setSelectedArticles] = useState([]);
+    const { settings, PRINT_AREAS } = usePrintSettings();
 
     const toggleArticle = (articleId) => {
         setSelectedArticles(prev =>
@@ -132,7 +134,7 @@ export default function LabelPrinter({ articles = [] }) {
     <title>Etiketten</title>
     <style>
         @page {
-            size: 62mm 29mm;
+            size: ${PRINT_AREAS[settings.labels || 'label_62']?.format || '62mm 29mm'};
             margin: 0;
         }
         * {

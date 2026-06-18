@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PERMISSION_REGISTRY, STANDARD_ROLES, PERMISSION_LEVELS } from '@/lib/permissionRegistry';
+import { PERMISSION_MATRIX, EMPLOYEE_ROLES } from '@/components/auth/roleConfig';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -180,6 +181,28 @@ export default function PermissionsNew() {
     }
   };
 
+  // ── Auf Rollenstandard zurücksetzen ──────────────────────────────────────────
+  // Berechnet die korrekten Permissions aus der roleConfig Matrix (can-keys)
+  // und löscht alle falschen customPerms-Overrides
+  const handleResetToRoleDefault = () => {
+    if (!selectedEmployee) return;
+    const empRole = selectedEmployee.role; // z.B. "Manager"
+    // Alle boolean-basierten Permissions aus PERMISSION_MATRIX für diese Rolle berechnen
+    const matrixDefaults = {};
+    Object.entries(PERMISSION_MATRIX).forEach(([key, rule]) => {
+      if (rule.adminOnly) return;
+      matrixDefaults[key] = rule.roles.includes(empRole);
+    });
+    // Nur die true-Werte behalten (false = kein Override nötig, da default)
+    const cleanPerms = {};
+    Object.entries(matrixDefaults).forEach(([key, val]) => {
+      if (val) cleanPerms[key] = true;
+    });
+    setLocalPermissions(cleanPerms);
+    setHasChanges(true);
+    toast.success(`Auf Rollenstandard "${empRole}" zurückgesetzt — bitte speichern!`, { duration: 4000 });
+  };
+
   const toggleCat = (cat) => setExpandedCats(prev => ({ ...prev, [cat]: !prev[cat] }));
 
   // ──── Kategorien aus Registry ─────────────────────────────────────────────────
@@ -311,6 +334,41 @@ export default function PermissionsNew() {
                   </div>
                 </div>
               </SheetHeader>
+
+              {/* ── Rollenstandard-Reset Banner ────────────────────────── */}
+              {(() => {
+                // Prüfe ob customPerms falsche Overrides enthalten
+                const empRole = selectedEmployee.role;
+                const wrongOverrides = empRole ? Object.entries(localPermissions).filter(([key, val]) => {
+                  const rule = PERMISSION_MATRIX[key];
+                  if (!rule) return false;
+                  const shouldBe = rule.roles.includes(empRole);
+                  return val === false && shouldBe; // false-Override obwohl Rolle es haben sollte
+                }) : [];
+                if (wrongOverrides.length === 0) return null;
+                return (
+                  <div className="mx-4 mt-3 flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-amber-500 text-lg">⚠️</span>
+                      <div>
+                        <p className="text-xs font-semibold text-amber-500">
+                          {wrongOverrides.length} Berechtigungen fälschlicherweise gesperrt
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          Für Rolle "{empRole}" sollten diese aktiv sein
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleResetToRoleDefault}
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold transition-colors min-h-[36px]"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Zurücksetzen
+                    </button>
+                  </div>
+                );
+              })()}
 
               {/* Scrollbarer Inhalt */}
               <div className="flex-1 overflow-y-auto">

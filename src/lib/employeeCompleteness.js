@@ -103,11 +103,21 @@ export function getMissingFields(employee) {
     }
   });
 
-  // Lohn-Check: jeder aktive Mitarbeiter braucht entweder Stundenlohn oder Festgehalt
-  const hasHourly  = employee.hourly_rate  && parseFloat(employee.hourly_rate)  > 0;
-  const hasMonthly = employee.monthly_salary && parseFloat(employee.monthly_salary) > 0;
-  if (!hasHourly && !hasMonthly && employee.is_active !== false) {
-    missing['lohn'] = ['hourly_rate_or_monthly_salary'];
+  // Lohn-Check: nur für lohnrelevante Vertragsarten (Vollzeit, Teilzeit, Minijob)
+  // Manager und Orga-Rollen werden ausgenommen
+  const lohnRoles = ['Aushilfe', 'Vollzeit'];
+  const lohnContracts = ['Vollzeit', 'Teilzeit', 'Minijob'];
+  const isLohnRelevant =
+    lohnContracts.includes(employee.contract_type) ||
+    lohnRoles.includes(employee.role);
+  const isManagerOrOrga = employee.role === 'Manager' || employee.role === 'Orga';
+
+  if (isLohnRelevant && !isManagerOrOrga && employee.is_active !== false) {
+    const hasHourly  = employee.hourly_rate   && parseFloat(employee.hourly_rate)  > 0;
+    const hasMonthly = employee.monthly_salary && parseFloat(employee.monthly_salary) > 0;
+    if (!hasHourly && !hasMonthly) {
+      missing['lohn'] = ['hourly_rate_or_monthly_salary'];
+    }
   }
 
   return missing;

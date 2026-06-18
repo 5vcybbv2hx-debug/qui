@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PullToRefresh } from '@/components/ui/pull-to-refresh';
 import { useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/components/utils/haptics';
-import { ArrowLeft, LogOut, Search, ScanLine, Settings } from 'lucide-react';
+import { ArrowLeft, LogOut, Search, ScanLine, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import BarcodeScanner from '@/components/restock/BarcodeScanner';
 import { mainNavigation, additionalPages, allPages } from '@/components/navigation/navigationConfig';
 import { useActiveNavigation } from '@/components/navigation/useActiveNavigation';
@@ -34,6 +34,16 @@ import PushPermissionPrompt from '@/components/pwa/PushPermissionPrompt';
 export default function Layout({ children, currentPageName }) {
     // ── State ────────────────────────────────────────────────────────────────
     const [searchOpen, setSearchOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        try { return localStorage.getItem('sidebar_collapsed') === 'true'; } catch { return false; }
+    });
+    const toggleSidebar = () => {
+        setSidebarCollapsed(prev => {
+            const next = !prev;
+            try { localStorage.setItem('sidebar_collapsed', next ? 'true' : 'false'); } catch {}
+            return next;
+        });
+    };
     const [scannerOpen, setScannerOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [currentUser, setCurrentUser] = React.useState(null);
@@ -248,19 +258,35 @@ export default function Layout({ children, currentPageName }) {
                 />
 
                 {/* Desktop Sidebar */}
-                <aside className="hidden md:flex md:w-72 md:flex-col md:fixed md:inset-y-0">
+                <aside className={`hidden md:flex md:flex-col md:fixed md:inset-y-0 transition-all duration-300 ${sidebarCollapsed ? 'md:w-16' : 'md:w-72'}`}>
                     <div className="flex flex-col flex-grow bg-card border-r border-border/50 pt-8 overflow-y-auto backdrop-blur-xl">
-                        {/* Logo */}
-                        <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3 px-6 mb-8 group">
-                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all"
-                                style={{ background: 'linear-gradient(135deg, var(--brand-from), var(--brand-via))', boxShadow: '0 4px 20px color-mix(in srgb, var(--brand-from) 30%, transparent)' }}>
-                                <span className="font-bold text-xl" style={{ color: 'var(--brand-fg)' }}>B</span>
+                        {/* Logo + Collapse-Toggle */}
+                        <div className="flex items-center justify-between px-3 mb-6">
+                            <Link to={createPageUrl('Dashboard')} className={`flex items-center gap-3 group transition-all ${sidebarCollapsed ? 'justify-center w-full' : ''}`}>
+                                <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shrink-0"
+                                    style={{ background: 'linear-gradient(135deg, var(--brand-from), var(--brand-via))', boxShadow: '0 4px 20px color-mix(in srgb, var(--brand-from) 30%, transparent)' }}>
+                                    <span className="font-bold text-lg" style={{ color: 'var(--brand-fg)' }}>B</span>
+                                </div>
+                                {!sidebarCollapsed && <span className="text-lg font-bold text-foreground tracking-tight">BarManager</span>}
+                            </Link>
+                            {!sidebarCollapsed && (
+                                <button onClick={toggleSidebar} title="Sidebar einklappen"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
+                                    <PanelLeftClose className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+                        {sidebarCollapsed && (
+                            <div className="flex justify-center mb-4">
+                                <button onClick={toggleSidebar} title="Sidebar ausklappen"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all">
+                                    <PanelLeftOpen className="w-4 h-4" />
+                                </button>
                             </div>
-                            <span className="text-xl font-bold text-foreground tracking-tight">BarManager</span>
-                        </Link>
+                        )}
 
                         {/* Search Bar */}
-                        <div className="px-4 mb-6">
+                        <div className={`px-4 mb-6 ${sidebarCollapsed ? 'hidden' : ''}`}>
                             <button
                                 onClick={() => setSearchOpen(true)}
                                 className="w-full flex items-center gap-3 px-4 py-2 rounded-xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all border border-border/50"
@@ -279,9 +305,11 @@ export default function Layout({ children, currentPageName }) {
 
                                 return (
                                     <div key={section.id}>
-                                        <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                                            {section.name}
-                                        </h3>
+                                        {!sidebarCollapsed && (
+                                            <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                                                {section.name}
+                                            </h3>
+                                        )}
                                         <div className="space-y-1">
                                             {visibleItems.map((item) => {
                                                 const isActive = isPageActive(item.page);
@@ -289,8 +317,10 @@ export default function Layout({ children, currentPageName }) {
                                                     <Link
                                                         key={item.name}
                                                         to={createPageUrl(item.page)}
+                                                        title={sidebarCollapsed ? item.name : undefined}
                                                         className={cn(
-                                                            "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all",
+                                                            "flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
+                                                            sidebarCollapsed ? "justify-center px-2 py-3" : "px-4 py-3",
                                                             isActive 
                                                                 ? "shadow-lg" 
                                                                 : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
@@ -300,8 +330,8 @@ export default function Layout({ children, currentPageName }) {
                                                             color: 'var(--brand-fg)'
                                                         } : {}}
                                                     >
-                                                        <item.icon className="w-5 h-5" />
-                                                        {item.name}
+                                                        <item.icon className="w-5 h-5 shrink-0" />
+                                                        {!sidebarCollapsed && item.name}
                                                     </Link>
                                                 );
                                             })}
@@ -346,24 +376,27 @@ export default function Layout({ children, currentPageName }) {
                         </nav>
 
                         {/* Footer */}
-                        <div className="p-4 border-t border-border/50 space-y-3">
-                            {permissions.isManager && currentUser && (
+                        <div className={`border-t border-border/50 space-y-3 ${sidebarCollapsed ? 'p-2' : 'p-4'}`}>
+                            {!sidebarCollapsed && permissions.isManager && currentUser && (
                                 <div className="flex justify-center">
                                     <NotificationBell userEmail={currentUser.email} userRole={currentUser.role} />
                                 </div>
                             )}
-                            <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur">
-                                <p className="text-sm font-bold text-amber-500">Bar Management</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">
-                                    {permissions.employeeRole || 'Alles im Griff'}
-                                </p>
-                            </div>
+                            {!sidebarCollapsed && (
+                                <div className="px-4 py-3 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/10 border border-amber-500/20 backdrop-blur">
+                                    <p className="text-sm font-bold text-amber-500">Bar Management</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                        {permissions.employeeRole || 'Alles im Griff'}
+                                    </p>
+                                </div>
+                            )}
                             <button
                                 onClick={async () => { await oneSignalLogout(); base44.auth.logout(); }}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all text-sm font-medium border border-border/50"
+                                title="Abmelden"
+                                className={`w-full flex items-center justify-center gap-2 rounded-xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-all text-sm font-medium border border-border/50 ${sidebarCollapsed ? 'px-2 py-3' : 'px-4 py-3'}`}
                             >
                                 <LogOut className="w-4 h-4" />
-                                Abmelden
+                                {!sidebarCollapsed && 'Abmelden'}
                             </button>
                         </div>
                     </div>

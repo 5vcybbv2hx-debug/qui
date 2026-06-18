@@ -168,7 +168,7 @@ export default function Reports() {
 
     // ── CSV Export ───────────────────────────────────────────────────────────
     const exportCSV = (rows, filename) => {
-        if (!rows.length) { alert('Keine Daten zum Exportieren'); return; }
+        if (!rows.length) { toast.warning('Keine Daten zum Exportieren'); return; }
         const headers = Object.keys(rows[0]).filter(k => k !== 'id');
         const csv = [
             headers.join(','),

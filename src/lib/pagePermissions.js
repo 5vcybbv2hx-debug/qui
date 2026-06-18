@@ -84,8 +84,6 @@ export const PAGE_PERMISSIONS = {
     AuditLog:                'canViewAuditLog',
 
     // ── Öffnung / Schließung ───────────────────────────────────────────────────
-    Opening:                 'canViewCleaning',
-    Closing:                 'canViewCleaning',
 
     // ── Betriebsinternes ──────────────────────────────────────────────────────
     OperatorDashboard:       'isAdmin',

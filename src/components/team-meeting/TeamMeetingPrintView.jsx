@@ -22,7 +22,7 @@ export default function TeamMeetingPrintView({ open, onClose, topics, schedule }
     const handlePrint = () => {
         const content = printRef.current;
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(`
+        printWindow.document.write(`<style>@page{size:A4 portrait;margin:15mm}</style>
             <!DOCTYPE html>
             <html>
             <head>

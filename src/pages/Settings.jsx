@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info, Palette, Calendar, Bell, CheckSquare, AlertTriangle, Users, Package, Sparkles, Volume2 } from 'lucide-react';
+import { Settings as SettingsIcon, Moon, Sun, Monitor, Clock, Globe, Download, Trash2, Info, Palette, Calendar, Bell, CheckSquare, AlertTriangle, Users, Package, Sparkles, Volume2 , Printer } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CompanyInfoEditor from '@/components/settings/CompanyInfoEditor';
 import CalendarExportTab from '@/components/settings/CalendarExportTab';
+import PrintSettingsTab from '@/components/settings/PrintSettingsTab';
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ import CalendarExport from '@/components/calendar/CalendarExport';
 import LiveSyncInstructions from '@/components/calendar/LiveSyncInstructions';
 import PushNotificationManager from '@/components/notifications/PushNotificationManager';
 import LegalStatusPanel from '@/components/legal/LegalStatusPanel';
-import { FileText } from 'lucide-react';
+import { FileText , Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const notificationTypes = [
@@ -192,7 +193,7 @@ export default function Settings() {
 
                  {/* Tabs */}
                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                     <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 bg-card border border-border h-auto p-1">
+                     <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 bg-card border border-border h-auto p-1">
                          <TabsTrigger value="appearance" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <SettingsIcon className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Allgemein</span>
@@ -208,6 +209,10 @@ export default function Settings() {
                          <TabsTrigger value="legal" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
                              <Info className="w-5 h-5 sm:w-4 sm:h-4" />
                              <span>Rechtliches</span>
+                         </TabsTrigger>
+                         <TabsTrigger value="print" className="py-3 sm:py-2.5 text-xs sm:text-sm flex-col sm:flex-row gap-1">
+                             <Printer className="w-5 h-5 sm:w-4 sm:h-4" />
+                             <span>Drucken</span>
                          </TabsTrigger>
                      </TabsList>
 

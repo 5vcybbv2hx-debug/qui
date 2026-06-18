@@ -25,6 +25,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { Link } from 'react-router-dom';
@@ -140,6 +141,7 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
     const duration = activeEntry ? formatDuration(calcWorkMinutes(activeEntry.clock_in, now)) : null;
 
     return (
+        <>
         <Card className={cn(
             'border-2 transition-all',
             activeEntry
@@ -248,6 +250,7 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
                 </div>
             </DialogContent>
         </Dialog>
+        </>
     );
 }
 

@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, Download, QrCode, Share2, Loader2, Image } from 'lucide-react';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
+import { usePrintSettings } from '@/lib/usePrintSettings';
 
 // ─── Brother QL-800 label dimensions (mm) ────────────────────────────────────
 const LABEL_CONFIGS = {

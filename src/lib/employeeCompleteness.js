@@ -36,6 +36,11 @@ export const SECTIONS = {
     icon: 'User',
     color: 'blue'
   },
+  lohn: {
+    label: 'Lohn & Vergütung',
+    icon: 'Euro',
+    color: 'amber'
+  },
   adresse: {
     label: 'Adresse',
     icon: 'MapPin',
@@ -97,6 +102,13 @@ export function getMissingFields(employee) {
       missing[section] = sectionMissing;
     }
   });
+
+  // Lohn-Check: jeder aktive Mitarbeiter braucht entweder Stundenlohn oder Festgehalt
+  const hasHourly  = employee.hourly_rate  && parseFloat(employee.hourly_rate)  > 0;
+  const hasMonthly = employee.monthly_salary && parseFloat(employee.monthly_salary) > 0;
+  if (!hasHourly && !hasMonthly && employee.is_active !== false) {
+    missing['lohn'] = ['hourly_rate_or_monthly_salary'];
+  }
 
   return missing;
 }

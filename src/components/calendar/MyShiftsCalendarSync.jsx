@@ -4,7 +4,7 @@
  */
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, Copy, Check, RefreshCw, AlertCircle, ExternalLink } from 'lucide-react';
+import { Calendar, Copy, Check, RefreshCw, AlertCircle, ExternalLink, Smartphone } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { toast } from 'sonner';
@@ -13,7 +13,9 @@ import { cn } from '@/lib/utils';
 const getFunctionUrl = (name) => {
     const appId  = appParams.appId;
     const base   = (appParams.appBaseUrl || '').replace(/\/$/, '');
-    const origin = base || window.location.origin;
+    // Immer HTTPS erzwingen — verhindert "unsichere Verbindung" Warnung in Kalender-Apps
+    let origin = base || window.location.origin;
+    if (origin.startsWith('http://')) origin = origin.replace('http://', 'https://');
     return `${origin}/api/apps/${appId}/functions/${name}`;
 };
 
@@ -24,6 +26,10 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
 
     const calendarUrl = calToken
         ? `${getFunctionUrl('myShiftsCalendar')}?employee_id=${employeeId}&token=${calToken}`
+        : null;
+    // webcal:// öffnet direkt die Kalender-App auf iPhone/iPad
+    const webcalUrl = calendarUrl
+        ? calendarUrl.replace(/^https?:\/\//, 'webcal://')
         : null;
 
     const generateToken = async () => {
@@ -93,6 +99,17 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
                     </Button>
                 </div>
             </div>
+
+            {/* Direkt-Öffnen Button — öffnet Kalender-App sofort */}
+            {webcalUrl && (
+                <a
+                    href={webcalUrl}
+                    className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold transition-colors min-h-[44px]"
+                >
+                    <Smartphone className="w-4 h-4" />
+                    Kalender direkt abonnieren
+                </a>
+            )}
 
             {/* Info-Badge */}
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/8 border border-amber-500/20">

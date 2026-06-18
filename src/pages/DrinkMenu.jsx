@@ -144,7 +144,7 @@ export default function DrinkMenuPage() {
                                         Link teilen
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => window.print()}>
+                                    <DropdownMenuItem onClick={() => { const s=document.createElement('style'); s.id='__pf__'; s.textContent='@media print{@page{size:A4 portrait;margin:10mm}}'; document.head.appendChild(s); window.print(); setTimeout(()=>{const e=document.getElementById('__pf__');if(e)e.remove();},3000); }}>
                                         <Printer className="w-4 h-4 mr-2" />
                                         Drucken
                                     </DropdownMenuItem>

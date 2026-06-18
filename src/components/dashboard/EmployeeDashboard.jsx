@@ -134,8 +134,8 @@ export default function EmployeeDashboard({ currentEmployee, isManager, onSwitch
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries(['clock-entries']);
-            queryClient.invalidateQueries(['time-entries']);
+            queryClient.invalidateQueries({ queryKey: ['clock-entries'] });
+            queryClient.invalidateQueries({ queryKey: ['time-entries'] });
         }
     });
 

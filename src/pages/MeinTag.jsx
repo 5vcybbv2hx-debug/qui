@@ -59,6 +59,7 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
     const now = useLiveClock(10000);
     const activeEntry = clockEntries.find(e => e.employee_id === employee?.id && isActiveEntry(e));
     const onBreak = activeEntry?.status === 'on_break';
+    const [earningsData, setEarningsData] = React.useState(null);
 
     const clockInMutation = useMutation({
         mutationFn: () => {
@@ -78,7 +79,8 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
             const now = new Date(); // fresh timestamp at click moment
             const totalMinutes = calcWorkMinutes(activeEntry.clock_in, now);
             const breakMinutes = totalMinutes > 9 * 60 ? 45 : totalMinutes > 6 * 60 ? 30 : 0;
-            const totalHours = Math.round(((totalMinutes - breakMinutes) / 60) * 100) / 100;
+            const workedMinutes = totalMinutes - breakMinutes;
+            const totalHours = Math.round((workedMinutes / 60) * 100) / 100;
             const entryDate = format(new Date(activeEntry.clock_in), 'yyyy-MM-dd');
             const startTime = format(new Date(activeEntry.clock_in), 'HH:mm');
 
@@ -101,10 +103,28 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
                 employee_confirmed: true,
                 employee_confirmed_at: now.toISOString(),
             });
+
+            // Verdienst zurückgeben wenn Stundenlohn hinterlegt
+            if (employee?.hourly_rate) {
+                const earnings = Math.round(totalHours * employee.hourly_rate * 100) / 100;
+                return {
+                    name: employee.name,
+                    hours: totalHours,
+                    hourlyRate: employee.hourly_rate,
+                    earnings,
+                    breakMinutes,
+                    clockIn: startTime,
+                    clockOut: format(now, 'HH:mm'),
+                };
+            }
+            return null;
         },
-        onSuccess: () => {
+        onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ['meinTag-clock'] });
             queryClient.invalidateQueries({ queryKey: ['time-entries'] });
+            if (result?.earnings != null) {
+                setEarningsData(result);
+            }
         },
     });
 
@@ -185,6 +205,48 @@ function ClockWidget({ employee, clockEntries, onRefresh }) {
                 </div>
             </CardContent>
         </Card>
+
+        {/* Verdienst-Modal */}
+        <Dialog open={!!earningsData} onOpenChange={(open) => { if (!open) setEarningsData(null); }}>
+            <DialogContent className="sm:max-w-sm bg-card border-border text-foreground">
+                <div className="space-y-5 pt-2">
+                    <div className="text-center">
+                        <p className="text-3xl mb-1">🎉</p>
+                        <h2 className="text-xl font-bold text-foreground">Gut gemacht!</h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            {earningsData?.clockIn} – {earningsData?.clockOut} Uhr
+                        </p>
+                    </div>
+
+                    {earningsData?.earnings != null && (
+                        <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-green-700 p-6 text-center">
+                            <p className="text-5xl font-bold text-white mb-1">
+                                {earningsData.earnings.toFixed(2)} €
+                            </p>
+                            <p className="text-green-100 text-sm">
+                                {earningsData.hours.toFixed(2)}h × {earningsData.hourlyRate.toFixed(2)} €/h
+                            </p>
+                            {earningsData.breakMinutes > 0 && (
+                                <p className="text-green-200 text-xs mt-1">
+                                    inkl. {earningsData.breakMinutes} Min. Pause abgezogen
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    <p className="text-center text-sm text-muted-foreground">
+                        Vielen Dank für deine Arbeit heute! 💪
+                    </p>
+
+                    <button
+                        onClick={() => setEarningsData(null)}
+                        className="w-full h-12 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold transition-colors"
+                    >
+                        Okay, verstanden
+                    </button>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 

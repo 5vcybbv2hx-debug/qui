@@ -8,17 +8,31 @@ export default function PushPermissionPrompt({ employeeId, isAuthenticated }) {
     const [show, setShow] = useState(false);
 
     useEffect(() => {
-        console.log('[PushPrompt] check', { isAuthenticated, employeeId, seen: localStorage.getItem(PROMPT_KEY), notifPerm: 'Notification' in window ? Notification.permission : 'N/A' });
         if (!isAuthenticated || !employeeId) return;
-        // Nur zeigen wenn noch nicht gesehen
-        if (localStorage.getItem(PROMPT_KEY)) return;
-        // Browser muss Notifications unterstützen
         if (!('Notification' in window)) return;
-        // Nur zeigen wenn noch nicht entschieden (default) ODER wenn bereits granted (dann trotzdem kein Prompt nötig)
         if (Notification.permission === 'denied') return;
 
-        // Kurz warten damit die App erstmal geladen ist
-        const t = setTimeout(() => setShow(true), 2000);
+        // Bereits erlaubt → direkt OneSignal-Subscription sicherstellen (kein Prompt)
+        if (Notification.permission === 'granted') {
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            window.OneSignalDeferred.push(async function (OneSignal) {
+                try {
+                    const subscribed = await OneSignal.User.PushSubscription.optedIn;
+                    if (!subscribed) {
+                        await OneSignal.User.PushSubscription.optIn();
+                        console.log('[PushPrompt] Auto-subscribed (permission was already granted)');
+                    }
+                } catch (err) {
+                    console.error('[PushPrompt] Auto-subscribe error:', err);
+                }
+            });
+            localStorage.setItem(PROMPT_KEY, '1');
+            return;
+        }
+
+        // Noch nicht entschieden → Prompt nach kurzer Verzögerung zeigen
+        if (localStorage.getItem(PROMPT_KEY)) return;
+        const t = setTimeout(() => setShow(true), 2500);
         return () => clearTimeout(t);
     }, [isAuthenticated, employeeId]);
 

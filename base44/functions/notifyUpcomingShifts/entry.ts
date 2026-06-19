@@ -22,11 +22,7 @@ async function pushToEmployee(employeeId, title, message) {
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
-        if (user?.role !== 'admin') {
-            return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-        }
-
+        // Kein Auth-Guard — Funktion wird von Automation (kein User-Kontext) aufgerufen
         const now = new Date();
         const fourHoursLater = new Date(now.getTime() + 4 * 60 * 60 * 1000);
         const todayStr = now.toISOString().split('T')[0];

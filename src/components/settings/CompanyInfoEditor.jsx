@@ -35,7 +35,7 @@ export default function CompanyInfoEditor() {
 
     const { data: companies = [], isLoading } = useQuery({
         queryKey: ['company-info'],
-        queryFn: () => base44.entities.CompanyInfo.filter({}, { sort: '-last_updated', limit: 10 }),
+        queryFn: () => base44.entities.CompanyInfo.list(),
     });
 
     const company      = companies?.[0] || null;

@@ -8,11 +8,13 @@
  * - Inaktive ausblendbar
  */
 import React, { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
 import {
-    Plus, UserPlus, Mail, Phone, Globe, MapPin, X,
+    Plus, UserPlus, Mail, Phone, Globe, MapPin, X, ShoppingCart,
     Building2, Clock, Package, ChevronDown, Star,
     Briefcase, Scale, Shield, Users, MoreVertical,
     Eye, EyeOff, Search, PhoneCall

@@ -81,7 +81,6 @@ import Shopping from './pages/Shopping';
 import Suppliers from './pages/Suppliers';
 import TeamCalendar from './pages/TeamCalendar';
 import TeamMeeting from './pages/TeamMeeting';
-import TerminalClock from './pages/TerminalClock';
 import TimeManagement from './pages/TimeManagement';
 import TimeTracking from './pages/TimeTracking';
 import Todos from './pages/Todos';
@@ -142,7 +141,6 @@ const CORE_PAGES = {
     "Suppliers": Suppliers,
     "TeamCalendar": TeamCalendar,
     "TeamMeeting": TeamMeeting,
-    "TerminalClock": TerminalClock,
     "TimeManagement": TimeManagement,
     "TimeTracking": TimeTracking,
     "Todos": Todos,

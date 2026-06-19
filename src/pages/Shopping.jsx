@@ -31,6 +31,7 @@ import SmartCombobox from '@/components/ui/SmartCombobox';
 import ArticlePickerSheet from '../components/shopping/ArticlePickerSheet';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { toast } from 'sonner';
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 const SUPPLIER_COLORS = [

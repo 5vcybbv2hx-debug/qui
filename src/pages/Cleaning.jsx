@@ -21,6 +21,7 @@ import AreasManager from '@/components/cleaning/AreasManager';
 import PinVerification from '@/components/terminal/PinVerification';
 import { usePermissions } from '@/components/auth/usePermissions';
 import { getUserDisplayName } from '@/lib/userDisplayName';
+import { toast } from 'sonner';
 
 export default function Cleaning() {
     const queryClient = useQueryClient();

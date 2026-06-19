@@ -103,9 +103,16 @@ export default function CompanyInfoEditor() {
     // Logo upload
     const uploadLogo = async (file) => {
         if (!file?.type.startsWith('image/')) { toast.error('Nur Bilddateien erlaubt'); return; }
+        if (file.size > 5 * 1024 * 1024) { toast.error('Datei zu groß (max. 5 MB)'); return; }
         setUploading(true);
         try {
-            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            const reader = new FileReader();
+            const base64 = await new Promise((resolve, reject) => {
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            const { file_url } = await base44.integrations.Core.UploadFile({ file: base64 });
             set('logo_url', file_url);
             toast.success('Logo hochgeladen');
         } catch (err) {

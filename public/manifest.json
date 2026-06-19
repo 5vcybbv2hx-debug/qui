@@ -4,8 +4,8 @@
   "description": "Bar Management App für QUI Balingen",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0d0b",
-  "theme_color": "#4a7c59",
+  "background_color": "#161a12",
+  "theme_color": "#8A9B6E",
   "icons": [
     {
       "src": "/icon-192.png",

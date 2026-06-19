@@ -22,7 +22,7 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
     const [loading,  setLoading]  = useState(false);
 
     const calendarUrl = calToken
-        ? `${getFunctionUrl('myShiftsCalendar')}?employee_id=${employeeId}&token=${calToken}`
+        ? `${getFunctionUrl('my-shifts-calendar')}?employee_id=${employeeId}&token=${calToken}`
         : null;
     // webcal:// öffnet direkt die Kalender-App auf iPhone/iPad
     const webcalUrl = calendarUrl

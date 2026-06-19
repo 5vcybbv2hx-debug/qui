@@ -9,8 +9,7 @@
  * 
  * Example file structure:
  * 
- *   import HomePage from './pages/HomePage';
- *   import Dashboard from './pages/Dashboard';
+ *    *   import Dashboard from './pages/Dashboard';
  *   import Settings from './pages/Settings';
  *   
  *   export const PAGES = {

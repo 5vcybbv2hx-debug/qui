@@ -335,8 +335,8 @@ export default function DataQuality() {
                             bgColor="bg-amber-500/20"
                             items={articles}
                             checks={ARTICLE_CHECKS}
-                            linkFn={() => '/Articles'}
-                            linkLabel="Zur Liste"
+                            linkFn={(item) => `/Warehouse?search=${encodeURIComponent(item.name)}`}
+                            linkLabel="Öffnen"
                         />
 
                         <CheckSection
@@ -346,8 +346,8 @@ export default function DataQuality() {
                             bgColor="bg-red-500/20"
                             items={menuItems}
                             checks={MENU_CHECKS}
-                            linkFn={() => '/DrinkMenu'}
-                            linkLabel="Zur Karte"
+                            linkFn={(item) => `/DrinkMenu?highlight=${encodeURIComponent(item.name)}`}
+                            linkLabel="Öffnen"
                         />
                     </>
                 )}

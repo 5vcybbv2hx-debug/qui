@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 const getFunctionUrl = (name) => {
     const appId = appParams.appId;
-    return `https://api.base44.com/api/apps/${appId}/functions/${name}`;
+    return `https://base44.app/api/apps/${appId}/functions/${name}`;
 };
 
 export default function MyShiftsCalendarSync({ employeeId, existingToken }) {

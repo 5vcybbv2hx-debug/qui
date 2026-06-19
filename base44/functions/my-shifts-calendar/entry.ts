@@ -2,23 +2,7 @@
 // Kein User-Auth nötig: Apple/Google/Outlook rufen diese URL ohne Auth-Header auf.
 // Sicherheit: employee_id + calendar_token (zufällig, 32 Zeichen) im Query-String.
 
-const APP_ID = Deno.env.get('BASE44_APP_ID');
-const API_BASE = `https://api.base44.com/api/apps/${APP_ID}/entities`;
-
-// ─── Base44 REST Helper ────────────────────────────────────────────────────────
-async function apiGet(entity, query = {}, sort = 'created_date', limit = 500) {
-    const params = new URLSearchParams({
-        __query: JSON.stringify(query),
-        __sort: sort,
-        __limit: String(limit),
-        __service_role: 'true',
-    });
-    const res = await fetch(`${API_BASE}/${entity}?${params}`, {
-        headers: { 'Content-Type': 'application/json' }
-    });
-    if (!res.ok) throw new Error(`API ${entity}: ${res.status}`);
-    return res.json();
-}
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ─── ICS helpers ───────────────────────────────────────────────────────────────
 const nowStamp = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -138,24 +122,25 @@ Deno.serve(async (req) => {
     }
 
     try {
-        // Employee laden — direkt per REST ohne User-Auth
-        const empResults = await apiGet('Employee', { id: employeeId }, 'name', 1);
+        // asServiceRole funktioniert auch ohne User-Auth-Header (externe Kalender-Clients)
+        const base44 = createClientFromRequest(req);
+
+        const empResults = await base44.asServiceRole.entities.Employee.filter({ id: employeeId }, 'name', 1);
         const employee = empResults?.[0] || null;
 
         if (!employee) {
             return new Response('Employee not found', { status: 404 });
         }
 
-        // Token validieren
         if (!employee.calendar_token || employee.calendar_token !== token) {
             return new Response('Invalid or expired token', { status: 403 });
         }
 
         // Alle Daten parallel laden
         const [shifts, allEmployees, meetings] = await Promise.all([
-            apiGet('Shift', { employee_id: employeeId }, '-date', 500).catch(() => []),
-            apiGet('Employee', { is_active: true }, 'name', 200).catch(() => []),
-            apiGet('TeamMeetingSchedule', {}, '-date', 100).catch(() => []),
+            base44.asServiceRole.entities.Shift.filter({ employee_id: employeeId }, '-date', 500).catch(() => []),
+            base44.asServiceRole.entities.Employee.filter({ is_active: true }, 'name', 200).catch(() => []),
+            base44.asServiceRole.entities.TeamMeetingSchedule.list('-date', 100).catch(() => []),
         ]);
 
         const shiftEvents    = shifts.map(shiftToEvent);

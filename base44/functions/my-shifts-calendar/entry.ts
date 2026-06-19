@@ -1,4 +1,24 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+// my-shifts-calendar — öffentlicher ICS-Feed, Token-basierte Authentifizierung
+// Kein User-Auth nötig: Apple/Google/Outlook rufen diese URL ohne Auth-Header auf.
+// Sicherheit: employee_id + calendar_token (zufällig, 32 Zeichen) im Query-String.
+
+const APP_ID = Deno.env.get('BASE44_APP_ID');
+const API_BASE = `https://api.base44.com/api/apps/${APP_ID}/entities`;
+
+// ─── Base44 REST Helper ────────────────────────────────────────────────────────
+async function apiGet(entity, query = {}, sort = 'created_date', limit = 500) {
+    const params = new URLSearchParams({
+        __query: JSON.stringify(query),
+        __sort: sort,
+        __limit: String(limit),
+        __service_role: 'true',
+    });
+    const res = await fetch(`${API_BASE}/${entity}?${params}`, {
+        headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) throw new Error(`API ${entity}: ${res.status}`);
+    return res.json();
+}
 
 // ─── ICS helpers ───────────────────────────────────────────────────────────────
 const nowStamp = () => new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -13,14 +33,12 @@ function shiftToEvent(s) {
     const d        = s.date.replace(/-/g, '');
     const startMin = timeToMin(s.start_time);
     const endMin   = timeToMin(s.end_time);
-
     let endDate = d;
     if (endMin <= startMin) {
         const next = new Date(s.date + 'T00:00:00');
         next.setDate(next.getDate() + 1);
         endDate = next.toISOString().split('T')[0].replace(/-/g, '');
     }
-
     const lines = [
         'BEGIN:VEVENT',
         `UID:shift-${s.id}@barshift.app`,
@@ -39,14 +57,13 @@ function birthdayToEvent(e) {
     const parts = e.birthday.split('-');
     if (parts.length < 3) return null;
     const [, mm, dd] = parts;
-    const today     = new Date();
-    const thisYear  = today.getFullYear();
-    const thisDate  = new Date(thisYear, Number(mm) - 1, Number(dd));
+    const today    = new Date();
+    const thisYear = today.getFullYear();
+    const thisDate = new Date(thisYear, Number(mm) - 1, Number(dd));
     const startYear = thisDate < today ? thisYear + 1 : thisYear;
-    const yDate     = `${startYear}${mm.padStart(2,'0')}${dd.padStart(2,'0')}`;
-    const endDay    = new Date(startYear, Number(mm) - 1, Number(dd) + 1);
-    const yEnd      = `${endDay.getFullYear()}${mm.padStart(2,'0')}${String(endDay.getDate()).padStart(2,'0')}`;
-
+    const yDate = `${startYear}${mm.padStart(2,'0')}${dd.padStart(2,'0')}`;
+    const endDay = new Date(startYear, Number(mm) - 1, Number(dd) + 1);
+    const yEnd  = `${endDay.getFullYear()}${mm.padStart(2,'0')}${String(endDay.getDate()).padStart(2,'0')}`;
     return [
         'BEGIN:VEVENT',
         `UID:bday-${e.id}@barshift.app`,
@@ -63,12 +80,12 @@ function birthdayToEvent(e) {
 
 function meetingToEvent(m) {
     if (!m.date) return null;
-    const d   = m.date.replace(/-/g, '');
+    const d    = m.date.replace(/-/g, '');
     const time = m.time || '18:00';
-    const st  = time.replace(':', '');
+    const st   = time.replace(':', '');
     const endH = String(Math.min(parseInt(time.split(':')[0]) + 2, 23)).padStart(2, '0');
     const endMin = time.split(':')[1] || '00';
-    const et  = `${endH}${endMin}`;
+    const et   = `${endH}${endMin}`;
     const lines = [
         'BEGIN:VEVENT',
         `UID:meeting-${m.id}@barshift.app`,
@@ -113,41 +130,32 @@ Deno.serve(async (req) => {
     }
 
     const reqUrl = new URL(req.url);
-    let employeeId = reqUrl.searchParams.get('employee_id');
-    let token      = reqUrl.searchParams.get('token');
-
-    if (req.method === 'POST') {
-        try {
-            const body = await req.json();
-            employeeId = employeeId || body.employee_id;
-            token      = token      || body.token;
-        } catch (_) {}
-    }
+    const employeeId = reqUrl.searchParams.get('employee_id');
+    const token      = reqUrl.searchParams.get('token');
 
     if (!employeeId || !token) {
         return new Response('employee_id and token are required', { status: 400 });
     }
 
     try {
-        // createClientFromRequest + asServiceRole: funktioniert auch ohne User-Auth (externe Kalender-Apps)
-        const base44 = createClientFromRequest(req);
-
-        const results = await base44.asServiceRole.entities.Employee.filter({ id: employeeId }, 'name', 1);
-        const employee = results?.[0] || null;
+        // Employee laden — direkt per REST ohne User-Auth
+        const empResults = await apiGet('Employee', { id: employeeId }, 'name', 1);
+        const employee = empResults?.[0] || null;
 
         if (!employee) {
             return new Response('Employee not found', { status: 404 });
         }
 
+        // Token validieren
         if (!employee.calendar_token || employee.calendar_token !== token) {
             return new Response('Invalid or expired token', { status: 403 });
         }
 
         // Alle Daten parallel laden
         const [shifts, allEmployees, meetings] = await Promise.all([
-            base44.asServiceRole.entities.Shift.filter({ employee_id: employeeId }, '-date', 500).catch(() => []),
-            base44.asServiceRole.entities.Employee.filter({ is_active: true }, 'name', 200).catch(() => []),
-            base44.asServiceRole.entities.TeamMeetingSchedule.list('-date', 100).catch(() => []),
+            apiGet('Shift', { employee_id: employeeId }, '-date', 500).catch(() => []),
+            apiGet('Employee', { is_active: true }, 'name', 200).catch(() => []),
+            apiGet('TeamMeetingSchedule', {}, '-date', 100).catch(() => []),
         ]);
 
         const shiftEvents    = shifts.map(shiftToEvent);

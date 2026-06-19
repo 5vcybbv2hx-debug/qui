@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils';
 
 const getFunctionUrl = (name) => {
     const appId = appParams.appId;
-    // Immer die feste Base44-API-Domain verwenden — garantiert HTTPS
     return `https://api.base44.com/api/apps/${appId}/functions/${name}`;
 };
 
@@ -157,7 +156,15 @@ export default function MyShiftsCalendarSync({ employeeId, existingToken }) {
             </div>
 
             {/* Neuen Link generieren */}
-            <div className="pt-1 border-t border-border">
+            <div className="pt-2 border-t border-border space-y-2">
+                {calendarUrl?.startsWith('http://') && (
+                    <div className="flex items-start gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30">
+                        <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                        <p className="text-xs text-red-400 font-medium">
+                            Dein Link ist veraltet (http://) — bitte neuen Link generieren!
+                        </p>
+                    </div>
+                )}
                 <button onClick={generateToken} disabled={loading}
                     className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50">
                     <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} />

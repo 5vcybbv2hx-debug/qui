@@ -5,8 +5,8 @@
 @layer base {
   :root {
     /* Brand gradient tokens */
-    --brand-from: #0891b2;
-    --brand-via: #0e7490;
+    --brand-from: #8A9B6E;
+    --brand-via: #6b7a54;
     --brand-fg: #ffffff;
 
     /* Light mode — vollständig durchdesignt */

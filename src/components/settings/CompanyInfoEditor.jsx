@@ -142,15 +142,7 @@ export default function CompanyInfoEditor() {
         </Card>
     );
 
-    if (!company) return (
-        <Card className="p-4 bg-amber-500/10 border-amber-500/30 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-            <div>
-                <p className="text-sm font-semibold text-amber-600">Betriebsdaten nicht gefunden</p>
-                <p className="text-xs text-amber-600/80 mt-1">Lege hier die ersten Firmendaten an.</p>
-            </div>
-        </Card>
-    );
+    // Kein early-return bei !company — Formular immer rendern, damit neue Daten angelegt werden können
 
     return (
         <div className="space-y-3">

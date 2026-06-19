@@ -177,6 +177,13 @@ function SupplierCard({ supplier, linkedArticles, onEdit, onToggleActive }) {
                         <DropdownMenuItem onClick={() => onEdit(supplier)}>
                             Bearbeiten
                         </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <a href={`/Shopping?supplier=${encodeURIComponent(supplier.name)}`}
+                               className="flex items-center gap-2 cursor-pointer">
+                                <ShoppingCart className="w-4 h-4" />
+                                Einkauf starten
+                            </a>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onToggleActive(supplier)}
                             className={isInactive ? 'text-green-400 focus:text-green-400' : 'text-muted-foreground'}>

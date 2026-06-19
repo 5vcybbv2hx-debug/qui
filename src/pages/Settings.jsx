@@ -313,16 +313,7 @@ export default function Settings() {
                             <CompanyInfoEditor />
                         </div>
 
-                        {/* Finanzen Section */}
-                        <Card className="p-4 bg-card border-border">
-                            <h3 className="font-semibold text-foreground mb-3">Finanzen</h3>
-                            <p className="text-xs text-muted-foreground mb-4">
-                                DATEV-Integration für Lohnbuchführung und Steuerberater-Export.
-                            </p>
-                            <p className="text-xs text-muted-foreground italic">
-                                ℹ️ Diese Felder werden in der CompanyInfoEditor aktualisiert.
-                            </p>
-                        </Card>
+
                     </div>
                 )}
 

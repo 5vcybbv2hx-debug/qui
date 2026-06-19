@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import {
     Calendar, Clock, CheckSquare, AlertCircle, ArrowRight, Users, ShoppingCart,
-    Sparkles, Package, AlertTriangle, CalendarCheck, Umbrella, TrendingUp, Wrench
+    Sparkles, Package, AlertTriangle, CalendarCheck, Umbrella, TrendingUp, Wrench, Euro, ReceiptText
 } from 'lucide-react';
 import { getTaskStatus } from '@/lib/maintenanceUtils';
 import { Card, CardContent } from "@/components/ui/card";
@@ -159,7 +159,7 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                         </Link>
                     )}
                     {pendingVacationRequests.length > 0 && (
-                        <Link to={createPageUrl('MyArea')}>
+                        <Link to={createPageUrl('Vacation')}>
                             <Card className="bg-blue-900/20 border-blue-800/30 hover:bg-blue-900/30 transition-colors">
                                 <CardContent className="p-4">
                                     <div className="flex items-center gap-3">
@@ -215,9 +215,9 @@ export default function ManagerDashboard({ onSwitchToEmployee, currentEmployee, 
                 {/* Quick Tiles */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                        { page: 'Warehouse', color: 'bg-orange-600', icon: ShoppingCart, label: 'Einkauf', sub: `${openShoppingItems.length} offen` },
+                        { page: 'Shopping', color: 'bg-orange-600', icon: ShoppingCart, label: 'Einkauf', sub: `${openShoppingItems.length} offen` },
                         { page: 'Cleaning', color: 'bg-pink-600', icon: Sparkles, label: 'Putzen', sub: `${cleaningProgress}% erledigt` },
-                        { page: 'Events', color: 'bg-indigo-600', icon: Calendar, label: 'Events', sub: `${todayEvents.length} heute` },
+                        { page: 'AccountingDashboard', color: 'bg-emerald-600', icon: TrendingUp, label: 'Buchhaltung', sub: 'Übersicht' },
                         { page: 'Warehouse', color: 'bg-teal-600', icon: Package, label: 'Lager', sub: `${articles.length} Artikel` },
                     ].map(({ page, color, icon: Icon, label, sub }, idx) => (
                         <Link key={label} to={createPageUrl(page)}>

@@ -20,14 +20,20 @@ export function useOneSignal({ employeeId, isAuthenticated }) {
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         window.OneSignalDeferred.push(async function (OneSignal) {
             try {
+                // Init mit explizitem await — login() erst danach
                 await OneSignal.init({
                     appId: ONESIGNAL_APP_ID,
                     serviceWorkerPath: '/OneSignalSDKWorker.js',
                     notifyButton: { enable: false },
+                    allowLocalhostAsSecureOrigin: true, // für lokale Entwicklung
                 });
 
-                // Employee-ID als External User ID setzen (Permission wird via PushPermissionPrompt angefragt)
+                // Employee Entity-ID als External User ID setzen
+                // Damit können Backend-Funktionen per Employee-ID targeten
+                const currentUserId = await OneSignal.User.getOnesignalId();
+                console.log('[OneSignal] Initialized, onesignalId:', currentUserId);
                 await OneSignal.login(String(employeeId));
+                console.log('[OneSignal] Logged in as employee:', employeeId);
             } catch (err) {
                 console.error('[OneSignal] Init error:', err);
             }

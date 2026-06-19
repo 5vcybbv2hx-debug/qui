@@ -264,8 +264,8 @@ export default function Layout({ children, currentPageName }) {
                         <div className="flex items-center justify-between px-3 mb-6">
                             <Link to={createPageUrl('Dashboard')} className={`flex items-center gap-3 group transition-all ${sidebarCollapsed ? 'justify-center w-full' : ''}`}>
                                 <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shrink-0"
-                                    style={{ background: 'linear-gradient(135deg, var(--brand-from), var(--brand-via))', boxShadow: '0 4px 20px color-mix(in srgb, var(--brand-from) 30%, transparent)' }}>
-                                    <span className="font-bold text-lg" style={{ color: 'var(--brand-fg)' }}>B</span>
+                                    style={{ background: 'linear-gradient(135deg, #8A9B6E, #6b7a54)', boxShadow: '0 4px 20px color-mix(in srgb, #8A9B6E 30%, transparent)' }}>
+                                    <span className="font-bold text-lg" style={{ color: '#ffffff' }}>B</span>
                                 </div>
                                 {!sidebarCollapsed && <span className="text-lg font-bold text-foreground tracking-tight">BarManager</span>}
                             </Link>
@@ -326,8 +326,8 @@ export default function Layout({ children, currentPageName }) {
                                                                 : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                                                         )}
                                                         style={isActive ? {
-                                                            background: 'linear-gradient(to right, var(--brand-from), var(--brand-via))',
-                                                            color: 'var(--brand-fg)'
+                                                            background: 'linear-gradient(to right, #8A9B6E, #6b7a54)',
+                                                            color: '#ffffff'
                                                         } : {}}
                                                     >
                                                         <item.icon className="w-5 h-5 shrink-0" />
@@ -361,8 +361,8 @@ export default function Layout({ children, currentPageName }) {
                                                             : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                                                     )}
                                                     style={isActive ? {
-                                                        background: 'linear-gradient(to right, var(--brand-from), var(--brand-via))',
-                                                        color: 'var(--brand-fg)'
+                                                        background: 'linear-gradient(to right, #8A9B6E, #6b7a54)',
+                                                        color: '#ffffff'
                                                     } : {}}
                                                 >
                                                     <item.icon className="w-5 h-5" />

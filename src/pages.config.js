@@ -52,7 +52,6 @@ import ArticleEdit from './pages/ArticleEdit';
 import Articles from './pages/Articles';
 import Calendar from './pages/Calendar';
 import Cleaning from './pages/Cleaning';
-import CompanySettings from './pages/CompanySettings';
 import DailyAnalysis from './pages/DailyAnalysis';
 import DailySpecialsDisplay from './pages/DailySpecialsDisplay';
 import Dashboard from './pages/Dashboard';
@@ -113,7 +112,6 @@ const CORE_PAGES = {
     "Articles": Articles,
     "Calendar": Calendar,
     "Cleaning": Cleaning,
-    "CompanySettings": CompanySettings,
     "DailyAnalysis": DailyAnalysis,
     "DailySpecialsDisplay": DailySpecialsDisplay,
     "Dashboard": Dashboard,

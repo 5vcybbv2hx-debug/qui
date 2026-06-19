@@ -44,7 +44,6 @@ export const ROUTES = {
   
   // Settings
   SETTINGS: '/Settings',
-  COMPANY_SETTINGS: '/CompanySettings',
   PERMISSIONS: '/Permissions',
   
   // Public
@@ -76,7 +75,6 @@ export const BREADCRUMB_PATHS = {
   '/Shifts': 'Schichten',
   '/ShiftSwaps': 'Schichtwechsel',
   '/Settings': 'Einstellungen',
-  '/CompanySettings': 'Firmeneinstellungen',
   '/DrinkMenu': 'Getränkekarte',
   '/Articles': 'Artikel',
   '/Reservations': 'Reservierungen',

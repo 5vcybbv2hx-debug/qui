@@ -107,7 +107,6 @@ export const additionalPages = [
     { name: 'Dokumente',      page: 'Documents',        icon: FolderOpen, permission: 'canViewSettings'         },
     { name: 'Wartung',        page: 'Maintenance',      icon: Wrench,     permission: 'canViewSettings'         },
     { name: 'Einstellungen',  page: 'Settings',         icon: Settings,   permission: 'canViewSettings'         },
-    { name: 'Firmendaten',    page: 'CompanySettings',  icon: FileText,   permission: 'canEditCompanySettings'  },
     { name: 'Einarbeitung',   page: 'Onboarding',       icon: Users,      permission: 'canViewOnboarding'       },
     { name: 'Visitenkarte',   page: 'BusinessCard',     icon: QrCode,     permission: 'canViewMeinTag'          },
     { name: 'Modulcenter',       page: 'ModuleCenter',     icon: Layers,    permission: 'canViewSettings'        },

@@ -10,7 +10,8 @@
  *  - Ehemalige bleibt aufklappbar
  */
 import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '@/lib/queryUtils';
@@ -356,6 +357,17 @@ export default function Employees() {
                                                 <span className="text-[10px] text-blue-400 font-medium">
                                                     · Urlaub bis {format(parseISO(onVacation.end_date), 'dd.MM.', { locale: de })}
                                                 </span>
+                                            )}
+                                            {permissions.isManager && (
+                                                <Link
+                                                    to={`${createPageUrl('TimeManagement')}?employee=${emp.id}`}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-0.5"
+                                                    title="Zeiterfassung öffnen"
+                                                >
+                                                    <Clock className="w-2.5 h-2.5" />
+                                                    Zeiten
+                                                </Link>
                                             )}
                                         </div>
                                     </div>

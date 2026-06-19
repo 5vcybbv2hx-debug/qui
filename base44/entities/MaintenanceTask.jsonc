@@ -2,62 +2,143 @@
   "name": "MaintenanceTask",
   "type": "object",
   "properties": {
-    "equipment_name": { "type": "string", "description": "Name des Geräts/Bereichs" },
+    "equipment_name": {
+      "type": "string",
+      "description": "Name des Ger\u00e4ts/Bereichs"
+    },
     "category": {
       "type": "string",
-      "enum": ["Sicherheit", "Technik", "Hygiene", "Elektrik", "Sonstiges"],
+      "enum": [
+        "Sicherheit",
+        "Technik",
+        "Hygiene",
+        "Elektrik",
+        "Sonstiges"
+      ],
       "default": "Technik",
       "description": "Kategorie"
     },
-    "task_description": { "type": "string", "description": "Was muss gewartet werden" },
+    "task_description": {
+      "type": "string",
+      "description": "Was muss gewartet werden"
+    },
     "frequency": {
       "type": "string",
-      "enum": ["täglich","wöchentlich","monatlich","quartalsweise","halbjährlich","jährlich","alle zwei Jahre"],
+      "enum": [
+        "t\u00e4glich",
+        "w\u00f6chentlich",
+        "monatlich",
+        "quartalsweise",
+        "halbj\u00e4hrlich",
+        "j\u00e4hrlich",
+        "alle zwei Jahre"
+      ],
       "description": "Wartungsintervall"
     },
-    "last_maintenance": { "type": "string", "format": "date", "description": "Letzte Wartung" },
-    "next_maintenance": { "type": "string", "format": "date", "description": "Nächste Wartung" },
-    "responsible": { "type": "string", "description": "Verantwortliche Person (Mitarbeiter-Name)" },
-    "responsible_id": { "type": "string", "description": "Mitarbeiter-ID des Verantwortlichen" },
+    "last_maintenance": {
+      "type": "string",
+      "format": "date",
+      "description": "Letzte Wartung"
+    },
+    "next_maintenance": {
+      "type": "string",
+      "format": "date",
+      "description": "N\u00e4chste Wartung"
+    },
+    "responsible": {
+      "type": "string",
+      "description": "Verantwortliche Person (Mitarbeiter-Name)"
+    },
+    "responsible_id": {
+      "type": "string",
+      "description": "Mitarbeiter-ID des Verantwortlichen"
+    },
     "status": {
       "type": "string",
-      "enum": ["überfällig","bald fällig","erledigt"],
+      "enum": [
+        "\u00fcberf\u00e4llig",
+        "bald f\u00e4llig",
+        "erledigt"
+      ],
       "default": "erledigt",
       "description": "Status (wird automatisch berechnet)"
     },
-    "completion_notes": { "type": "string", "description": "Notiz beim letzten Erledigen" },
-    "notes": { "type": "string", "description": "Allgemeine Notizen / Prüfberichte" },
+    "completion_notes": {
+      "type": "string",
+      "description": "Notiz beim letzten Erledigen"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Allgemeine Notizen / Pr\u00fcfberichte"
+    },
     "history": {
       "type": "array",
       "description": "Wartungshistorie",
       "items": {
         "type": "object",
         "properties": {
-          "date":       { "type": "string", "description": "Datum der Wartung (ISO)" },
-          "done_by":    { "type": "string", "description": "Wer hat erledigt" },
-          "note":       { "type": "string", "description": "Notiz" }
+          "date": {
+            "type": "string",
+            "description": "Datum der Wartung (ISO)"
+          },
+          "done_by": {
+            "type": "string",
+            "description": "Wer hat erledigt"
+          },
+          "note": {
+            "type": "string",
+            "description": "Notiz"
+          }
         }
       }
     },
-    "enable_reminders":    { "type": "boolean", "default": true },
-    "reminder_days_before":{ "type": "number",  "default": 7 },
-    "sync_to_calendar":    { "type": "boolean", "default": true },
-    "is_active":           { "type": "boolean", "default": true },
+    "enable_reminders": {
+      "type": "boolean",
+      "default": true
+    },
+    "reminder_days_before": {
+      "type": "number",
+      "default": 7
+    },
+    "sync_to_calendar": {
+      "type": "boolean",
+      "default": true
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
     "contacts": {
       "type": "array",
       "description": "Wartungsfirma / Ansprechpartner",
       "items": {
         "type": "object",
         "properties": {
-          "id":             { "type": "string" },
-          "company_name":   { "type": "string" },
-          "contact_person": { "type": "string" },
-          "phone":          { "type": "string" },
-          "mobile":         { "type": "string" },
-          "email":          { "type": "string" }
+          "id": {
+            "type": "string"
+          },
+          "company_name": {
+            "type": "string"
+          },
+          "contact_person": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "mobile": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
         }
       }
     }
   },
-  "required": ["equipment_name", "category", "frequency"]
+  "required": [
+    "equipment_name",
+    "category",
+    "frequency"
+  ]
 }

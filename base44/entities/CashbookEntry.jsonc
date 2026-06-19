@@ -9,7 +9,15 @@
     },
     "entry_type": {
       "type": "string",
-      "enum": ["Einnahme", "Ausgabe", "Privatentnahme", "Privateinlage", "Trinkgeld", "Kassensturz", "Sonstiges"],
+      "enum": [
+        "Einnahme",
+        "Ausgabe",
+        "Privatentnahme",
+        "Privateinlage",
+        "Trinkgeld",
+        "Kassensturz",
+        "Sonstiges"
+      ],
       "description": "Buchungsart"
     },
     "amount": {
@@ -38,7 +46,13 @@
     },
     "payment_method": {
       "type": "string",
-      "enum": ["Bar", "EC", "Kreditkarte", "Überweisung", "Sonstiges"],
+      "enum": [
+        "Bar",
+        "EC",
+        "Kreditkarte",
+        "\u00dcberweisung",
+        "Sonstiges"
+      ],
       "description": "Zahlungsart"
     },
     "file_url": {
@@ -47,13 +61,17 @@
     },
     "source": {
       "type": "string",
-      "enum": ["manuell", "z_abschlag", "import"],
+      "enum": [
+        "manuell",
+        "z_abschlag",
+        "import"
+      ],
       "default": "manuell",
       "description": "Herkunft des Eintrags"
     },
     "daily_revenue_id": {
       "type": "string",
-      "description": "Verknüpfter Tagesabschluss (ID)"
+      "description": "Verkn\u00fcpfter Tagesabschluss (ID)"
     },
     "notes": {
       "type": "string",
@@ -61,9 +79,17 @@
     },
     "status": {
       "type": "string",
-      "enum": ["offen", "gebucht", "exportiert"],
+      "enum": [
+        "offen",
+        "gebucht",
+        "exportiert"
+      ],
       "default": "offen"
     }
   },
-  "required": ["date", "entry_type", "amount"]
+  "required": [
+    "date",
+    "entry_type",
+    "amount"
+  ]
 }

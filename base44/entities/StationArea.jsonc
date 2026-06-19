@@ -8,12 +8,14 @@
     },
     "roles": {
       "type": "array",
-      "items": { "type": "string" },
-      "description": "Liste der Rollen in diesem Bereich (z.B. Service, Theke, Spülen)"
+      "items": {
+        "type": "string"
+      },
+      "description": "Liste der Rollen in diesem Bereich (z.B. Service, Theke, Sp\u00fclen)"
     },
     "color": {
       "type": "string",
-      "description": "Tailwind Gradient-Klasse für die Card (z.B. from-blue-500/20 to-blue-600/10 border-blue-500/30)"
+      "description": "Tailwind Gradient-Klasse f\u00fcr die Card (z.B. from-blue-500/20 to-blue-600/10 border-blue-500/30)"
     },
     "badge": {
       "type": "string",
@@ -30,5 +32,8 @@
       "default": true
     }
   },
-  "required": ["name", "roles"]
+  "required": [
+    "name",
+    "roles"
+  ]
 }

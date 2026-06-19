@@ -36,11 +36,11 @@
     "planned_date": {
       "type": "string",
       "format": "date",
-      "description": "Eingeplant für Datum"
+      "description": "Eingeplant f\u00fcr Datum"
     },
     "planned_time": {
       "type": "string",
-      "description": "Eingeplant für Uhrzeit (HH:MM)"
+      "description": "Eingeplant f\u00fcr Uhrzeit (HH:MM)"
     },
     "planned_duration": {
       "type": "number",
@@ -49,7 +49,7 @@
     },
     "assigned_to": {
       "type": "string",
-      "description": "Zugewiesen an (Rückwärtskompatibilität)"
+      "description": "Zugewiesen an (R\u00fcckw\u00e4rtskompatibilit\u00e4t)"
     },
     "assigned_to_names": {
       "type": "array",
@@ -66,7 +66,7 @@
         "Event",
         "Bar",
         "Lager",
-        "Küche",
+        "K\u00fcche",
         "Sonstiges"
       ],
       "default": "Sonstiges"

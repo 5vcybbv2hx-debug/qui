@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { createPageUrl } from '@/utils';
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { STALE } from '@/lib/queryUtils';
@@ -147,6 +148,13 @@ export default function DrinkMenuPage() {
                                     <DropdownMenuItem onClick={() => { const s=document.createElement('style'); s.id='__pf__'; s.textContent='@media print{@page{size:A4 portrait;margin:10mm}}'; document.head.appendChild(s); window.print(); setTimeout(()=>{const e=document.getElementById('__pf__');if(e)e.remove();},3000); }}>
                                         <Printer className="w-4 h-4 mr-2" />
                                         Drucken
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem asChild>
+                                        <a href="/Recipes" className="flex items-center gap-2 cursor-pointer">
+                                            <BookOpen className="w-4 h-4" />
+                                            Rezepte
+                                        </a>
                                     </DropdownMenuItem>
                                     {permissions.isAdmin && (
                                         <>

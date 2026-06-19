@@ -147,6 +147,17 @@ export default function CompanyInfoEditor() {
     return (
         <div className="space-y-3">
 
+            {/* ── Neu-anlegen-Banner ────────────────────────────────────── */}
+            {!company && !isLoading && (
+                <Card className="p-3 bg-blue-500/10 border-blue-500/30 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm font-semibold text-blue-600">Neue Betriebsdaten anlegen</p>
+                        <p className="text-xs text-blue-600/80 mt-1">Fülle die Felder aus und klicke auf Speichern.</p>
+                    </div>
+                </Card>
+            )}
+
             {/* ── Duplikat-Banner ────────────────────────────────────────── */}
             {hasDuplicates && (
                 <Card className="p-3 bg-amber-500/10 border-amber-500/30 flex items-start justify-between gap-3">

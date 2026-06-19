@@ -11,12 +11,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const getFunctionUrl = (name) => {
-    const appId  = appParams.appId;
-    const base   = (appParams.appBaseUrl || '').replace(/\/$/, '');
-    // Immer HTTPS erzwingen — verhindert "unsichere Verbindung" Warnung in Kalender-Apps
-    let origin = base || window.location.origin;
-    if (origin.startsWith('http://')) origin = origin.replace('http://', 'https://');
-    return `${origin}/api/apps/${appId}/functions/${name}`;
+    const appId = appParams.appId;
+    // Immer die feste Base44-API-Domain verwenden — garantiert HTTPS
+    return `https://api.base44.com/api/apps/${appId}/functions/${name}`;
 };
 
 export default function MyShiftsCalendarSync({ employeeId, existingToken }) {

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
     Plus, Wine, Search, Eye, EyeOff, Link2,
-    ExternalLink, Copy, Share2, Info,
+    ExternalLink, Copy, Share2, Info, BookOpen,
     MoreVertical, Printer, ChevronDown, AlertTriangle
 } from "lucide-react";
 import { ALLERGENS, ADDITIVES } from '../components/menu/AllergenSelector';

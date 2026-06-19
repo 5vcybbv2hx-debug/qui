@@ -57,13 +57,13 @@ const MODULE_REGISTRY = [
     {
         id: 'zeiterfassung',
         name: 'Zeiterfassung',
-        description: 'Stempeluhr, Zeiteinträge, ArbZG-Prüfung, Terminal',
+        description: 'Stempeluhr, Zeiteinträge, ArbZG-Prüfung',
         icon: Clock,
         color: 'bg-indigo-600',
         category: 'planung',
         page: 'TimeManagement',
         requires: ['mitarbeiter'],
-        subpages: ['TerminalClock', 'TimeTracking'],
+        subpages: ['TimeTracking'],
     },
     {
         id: 'urlaub',

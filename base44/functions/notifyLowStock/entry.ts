@@ -22,11 +22,7 @@ async function pushToEmployees(employeeIds, title, message) {
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
-        if (user?.role !== 'admin') {
-            return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-        }
-
+        // Kein Auth-Guard — Funktion wird von Automation aufgerufen
         const articles = await base44.asServiceRole.entities.Article.filter({ is_active: true });
         const lowStockArticles = articles.filter(a => a.min_stock && a.current_stock <= a.min_stock);
 
